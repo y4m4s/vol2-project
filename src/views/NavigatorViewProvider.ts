@@ -1,141 +1,88 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
 import { AdviceMode } from "../shared/types";
+import * as fs from "fs";
+import * as path from "path";
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = "aiPairNavigator.sidebar";
-
-  private view?: vscode.WebviewView;
-
+  public static readonly viewType = "navigatorView";
+  private _view?: vscode.WebviewView;
   public constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly controller: NavigatorController
-  ) {}
+  ) { }
 
   public resolveWebviewView(
-    webviewView: vscode.WebviewView,
-    _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    webviewView: vscode.WebviewView, //表示するサイドバーのパネル本体
+    _context: vscode.WebviewViewResolveContext, 
+    _token: vscode.CancellationToken //キャンセル信号
   ): void {
-    this.view = webviewView;
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [this.extensionUri]
-    };
-    webviewView.webview.html = this.render("manual");
+    this._view = webviewView; // パネルをクラス変数に保存
 
-    webviewView.webview.onDidReceiveMessage(async (message: { type: string }) => {
-      switch (message.type) {
-        case "connect":
-          await this.controller.connectCopilot();
-          await this.refresh("manual");
+    webviewView.webview.options = {
+      enableScripts: true, //JavaScriptを動かす許可
+      localResourceRoots: [this.extensionUri] //読み込んでいいフォルダーを限定
+    };
+    webviewView.webview.html = this.render(webviewView.webview, "manual"); //HTMLを生成して表示
+
+    // コントローラーからのイベントを受け取る。
+    webviewView.webview.onDidReceiveMessage(async (message:{type:string,}) =>{
+      // メッセージの種類によって処理を分岐
+      switch(message.type){
+        case "connect": //Connectボタンが押されたとき
+          await this.controller.connectCopilot(); //Copilotに接続して状態を更新
+          await this.refresh("manual"); //画面更新
           return;
-        case "ask":
-          const guidance = await this.controller.askForGuidance();
-          void vscode.window.showInformationMessage(guidance);
-          return;
-        default:
+        case "ask": //Ask for guidanceボタンが押されたとき
+          const guidance = await this.controller.askForGuidance(); //AIにアドバイスを求める
+          void vscode.window.showInformationMessage(guidance); //アドバイスをポップアップで表示
           return;
       }
     });
   }
 
   public async refresh(mode: AdviceMode = "manual"): Promise<void> {
-    if (!this.view) {
+    if (!this._view) {
       return;
     }
-
-    this.view.webview.html = this.render(mode);
+    this._view.webview.html = this.render(this._view.webview, mode); //HTMLを生成して表示
   }
 
-  private render(mode: AdviceMode): string {
-    const state = this.controller.getViewState(mode);
+  private render(webview: vscode.Webview, mode: AdviceMode): string {
+    const state = this.controller.getViewState(mode); //コントローラーから現在の状態を取得
+
+        // コンテキスト情報を1つの文字列にまとめる
     const contextSummary = [
       state.contextPreview.activeFilePath ? `Active file: ${state.contextPreview.activeFilePath}` : "Active file: none",
       state.contextPreview.selectedText ? `Selection: ${this.escapeHtml(state.contextPreview.selectedText)}` : "Selection: none",
       `Diagnostics: ${state.contextPreview.diagnosticsSummary.length}`
     ].join("<br/>");
 
-    return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Pair Navigator</title>
-    <style>
-      body {
-        font-family: var(--vscode-font-family);
-        color: var(--vscode-foreground);
-        background: var(--vscode-sideBar-background);
-        padding: 16px;
-      }
-      .card {
-        border: 1px solid var(--vscode-panel-border);
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 12px;
-        background: var(--vscode-editorWidget-background);
-      }
-      .muted {
-        color: var(--vscode-descriptionForeground);
-      }
-      button {
-        width: 100%;
-        border: 0;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-top: 8px;
-        cursor: pointer;
-        color: var(--vscode-button-foreground);
-        background: var(--vscode-button-background);
-      }
-      button.secondary {
-        color: var(--vscode-button-secondaryForeground);
-        background: var(--vscode-button-secondaryBackground);
-      }
-      code {
-        white-space: pre-wrap;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <strong>AI Pair Navigator</strong>
-      <p class="muted">Minimum scaffold for a learning-focused pair-programming navigator.</p>
-    </div>
-    <div class="card">
-      <strong>Connection</strong>
-      <p>Status: <code>${state.connectionState}</code></p>
-      <p class="muted">${this.escapeHtml(state.statusMessage)}</p>
-      <button id="connect">Connect Copilot</button>
-    </div>
-    <div class="card">
-      <strong>Mode</strong>
-      <p><code>${mode}</code></p>
-      <p class="muted">The real mode switching logic can be added next.</p>
-    </div>
-    <div class="card">
-      <strong>Context preview</strong>
-      <p class="muted">${contextSummary}</p>
-      <button id="ask" class="secondary">Ask For Guidance</button>
-    </div>
-    <script>
-      const vscode = acquireVsCodeApi();
-      document.getElementById('connect')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'connect' });
-      });
-      document.getElementById('ask')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'ask' });
-      });
-    </script>
-  </body>
-</html>`;
-  }
+    // style.css のパスをWebViewで読める形に変換
+    const cssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "style.css");
+    const cssUri = webview.asWebviewUri(cssPath).toString();
+
+    // index.html をファイルから読み込む
+    const htmlPath = path.join(this.extensionUri.fsPath, "src", "views", "index.html");
+    let html = fs.readFileSync(htmlPath, "utf8");
+
+    // プレースホルダーを実際の値に置き換える
+    html = html
+      .replace("{{cssUri}}", cssUri)                                          // CSSのパス
+      .replace("{{connectionState}}", this.escapeHtml(state.connectionState)) // 接続状態
+      .replace("{{statusMessage}}", this.escapeHtml(state.statusMessage))     // ステータスメッセージ
+      .replace("{{mode}}", this.escapeHtml(mode))                             // モード
+      .replace("{{contextSummary}}", contextSummary);                         // コンテキスト情報
+
+    return html;
+}
 
   private escapeHtml(value: string): string {
     return value
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+      .replace("&","&amp;")
+      .replace("<","&lt;")
+      .replace(">","&gt;")
+      .replace('"',"&quot;")
+      .replace("'","&#39;");
   }
 }
