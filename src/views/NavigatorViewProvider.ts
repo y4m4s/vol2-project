@@ -79,10 +79,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
 
   private escapeHtml(value: string): string {
     return value
-      .replace("&","&amp;")
-      .replace("<","&lt;")
-      .replace(">","&gt;")
-      .replace('"',"&quot;")
-      .replace("'","&#39;");
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
   }
 }
