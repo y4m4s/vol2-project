@@ -1,0 +1,99 @@
+{
+  "name": "ai-pair-navigator",
+  "displayName": "AI Pair Navigator",
+  "description": "A VS Code extension scaffold for an AI pair-programming navigator focused on learning support.",
+  "version": "0.0.1",
+  "publisher": "local-dev",
+  "private": true,
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:aiPairNavigator.sidebar",
+    "onCommand:aiPairNavigator.connectCopilot",
+    "onCommand:aiPairNavigator.askForGuidance"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiPairNavigator.connectCopilot",
+        "title": "AI Pair Navigator: Connect Copilot"
+      },
+      {
+        "command": "aiPairNavigator.askForGuidance",
+        "title": "AI Pair Navigator: Ask For Guidance"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiPairNavigator",
+          "title": "AI Navigator",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "aiPairNavigator": [
+        {
+          "type": "webview",
+          "id": "aiPairNavigator.sidebar",
+          "name": "Navigator"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Pair Navigator",
+      "properties": {
+        "aiPairNavigator.mode": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "always"
+          ],
+          "default": "manual",
+          "description": "Controls whether advice is shown only on demand or continuously."
+        },
+        "aiPairNavigator.requestIntervalMs": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "description": "Minimum interval between automatic AI requests."
+        },
+        "aiPairNavigator.idleDelayMs": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 500,
+          "description": "Idle time before automatic feedback can be triggered."
+        },
+        "aiPairNavigator.excludedGlobs": {
+          "type": "array",
+          "default": [
+            "**/.env",
+            "**/dist/**",
+            "**/build/**",
+            "**/node_modules/**"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns excluded from context collection."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "@types/vscode": "^1.99.0",
+    "typescript": "^5.8.3"
+  }
+}
