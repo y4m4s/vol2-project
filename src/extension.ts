@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await viewProvider.refresh();
     }),
     vscode.commands.registerCommand("aiPairNavigator.askForGuidance", async () => {
-      const guidance = await controller.askForGuidance();
+      const guidance = await controller.askForGuidance("manual");
       void vscode.window.showInformationMessage(guidance);
     })
   );

@@ -1,7 +1,7 @@
 import { ContextCollector } from "../services/ContextCollector";
 import { CopilotService } from "../services/CopilotService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
-import { NavigatorViewState } from "../shared/types";
+import { AdviceMode, NavigatorViewState } from "../shared/types";
 
 export class NavigatorController {
   public constructor(
@@ -14,11 +14,11 @@ export class NavigatorController {
     await this.knowledgeStore.initialize();
   }
 
-  public getViewState(mode: NavigatorViewState["mode"]): NavigatorViewState {
+  public getViewState(mode: AdviceMode): NavigatorViewState {
     return {
       connectionState: this.copilotService.getConnectionState(),
       mode,
-      statusMessage: "Scaffold mode: services are placeholders and ready for implementation.",
+      statusMessage: "",
       contextPreview: this.contextCollector.collectPreview()
     };
   }
@@ -27,7 +27,8 @@ export class NavigatorController {
     return this.copilotService.connect();
   }
 
-  public async askForGuidance(): Promise<string> {
-    return this.copilotService.requestGuidance();
+  public async askForGuidance(mode: AdviceMode): Promise<string> {
+    const context = this.contextCollector.collectPreview();
+    return this.copilotService.requestGuidance(context, mode);
   }
 }

@@ -6,6 +6,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "aiPairNavigator.sidebar";
 
   private view?: vscode.WebviewView;
+  private currentMode: AdviceMode = "manual";
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
@@ -22,17 +23,21 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
       localResourceRoots: [this.extensionUri]
     };
-    webviewView.webview.html = this.render("manual");
+    webviewView.webview.html = this.render();
 
     webviewView.webview.onDidReceiveMessage(async (message: { type: string }) => {
       switch (message.type) {
         case "connect":
           await this.controller.connectCopilot();
-          await this.refresh("manual");
+          await this.refresh();
           return;
         case "ask":
-          const guidance = await this.controller.askForGuidance();
+          const guidance = await this.controller.askForGuidance(this.currentMode);
           void vscode.window.showInformationMessage(guidance);
+          return;
+        case "switchMode":
+          this.currentMode = this.currentMode === "manual" ? "always" : "manual";
+          await this.refresh();
           return;
         default:
           return;
@@ -40,21 +45,23 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  public async refresh(mode: AdviceMode = "manual"): Promise<void> {
+  public async refresh(): Promise<void> {
     if (!this.view) {
       return;
     }
 
-    this.view.webview.html = this.render(mode);
+    this.view.webview.html = this.render();
   }
 
-  private render(mode: AdviceMode): string {
-    const state = this.controller.getViewState(mode);
+  private render(): string {
+    const state = this.controller.getViewState(this.currentMode);
     const contextSummary = [
       state.contextPreview.activeFilePath ? `Active file: ${state.contextPreview.activeFilePath}` : "Active file: none",
       state.contextPreview.selectedText ? `Selection: ${this.escapeHtml(state.contextPreview.selectedText)}` : "Selection: none",
       `Diagnostics: ${state.contextPreview.diagnosticsSummary.length}`
     ].join("<br/>");
+
+    const canSwitchToAlways = state.connectionState === "connected";
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -93,6 +100,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
         color: var(--vscode-button-secondaryForeground);
         background: var(--vscode-button-secondaryBackground);
       }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       code {
         white-space: pre-wrap;
       }
@@ -106,18 +117,18 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
     <div class="card">
       <strong>Connection</strong>
       <p>Status: <code>${state.connectionState}</code></p>
-      <p class="muted">${this.escapeHtml(state.statusMessage)}</p>
-      <button id="connect">Connect Copilot</button>
+      <button id="connect">Copilot に接続</button>
     </div>
     <div class="card">
-      <strong>Mode</strong>
-      <p><code>${mode}</code></p>
-      <p class="muted">The real mode switching logic can be added next.</p>
+      <strong>モード</strong>
+      <p><code>${state.mode === "manual" ? "必要時モード" : "常時モード"}</code></p>
+      <button id="switchMode" class="secondary"${canSwitchToAlways || state.mode === "always" ? "" : " disabled"}>${state.mode === "manual" ? "常時モードに切り替え" : "必要時モードに切り替え"}</button>
+      ${!canSwitchToAlways && state.mode === "manual" ? '<p class="muted">接続後に常時モードへ切り替えできます</p>' : ""}
     </div>
     <div class="card">
-      <strong>Context preview</strong>
+      <strong>コンテキスト</strong>
       <p class="muted">${contextSummary}</p>
-      <button id="ask" class="secondary">Ask For Guidance</button>
+      <button id="ask" class="secondary">ガイダンスを求める</button>
     </div>
     <script>
       const vscode = acquireVsCodeApi();
@@ -126,6 +137,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
       });
       document.getElementById('ask')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'ask' });
+      });
+      document.getElementById('switchMode')?.addEventListener('click', (e) => {
+        if (e.currentTarget.disabled) { return; }
+        vscode.postMessage({ type: 'switchMode' });
       });
     </script>
   </body>

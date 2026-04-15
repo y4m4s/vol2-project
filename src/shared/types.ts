@@ -1,6 +1,7 @@
 export type ConnectionState =
   | "disconnected"
   | "connecting"
+  | "consent_pending"
   | "connected"
   | "restricted"
   | "unavailable";
