@@ -251,6 +251,8 @@ v1 では以下のモジュール分割を推奨する。
 - 基本的な文脈収集
 - 画面状態の ViewModel 化
 
+詳細設計は `docs/09-phase1-implementation-design.md` を参照する。
+
 ### Phase 2
 
 - 送信計画と送信範囲確認
