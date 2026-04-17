@@ -1,0 +1,171 @@
+/* ========================================
+   s02-main.css - メイン画面
+   ======================================== */
+
+/* --- ステータスヘッダー --- */
+.status-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0 10px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.status-dot.disconnected {
+  background: #888;
+}
+
+.status-label {
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+.header-icons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.header-icons button {
+  width: auto;
+  background: transparent;
+  color: var(--vscode-foreground);
+  padding: 4px;
+  margin: 0;
+  font-size: 1.1em;
+  opacity: 0.7;
+}
+
+.header-icons button:hover {
+  opacity: 1;
+}
+
+/* --- モード切替タブ --- */
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 6px;
+}
+
+.mode-tabs button {
+  flex: 1;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 0;
+  font-size: 0.88em;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.mode-tabs button.active {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-foreground);
+  font-weight: bold;
+}
+
+.mode-note {
+  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 10px;
+}
+
+/* --- 参照文脈 --- */
+.context-ref {
+  margin-bottom: 10px;
+}
+
+.context-ref .ref-title {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 4px;
+}
+
+.context-ref .ref-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9em;
+  margin-bottom: 2px;
+}
+
+.context-ref .ref-icon {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.ref-warning {
+  color: #facc15;
+}
+
+/* --- チャットエリア --- */
+.chat-area {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.empty-chat {
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+}
+
+.empty-chat .empty-title {
+  font-size: 1em;
+  margin-bottom: 8px;
+  color: var(--vscode-foreground);
+}
+
+.empty-chat .empty-desc {
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+/* --- 入力エリア --- */
+.input-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  margin-bottom: 6px;
+}
+
+.input-row input[type="text"] {
+  flex: 1;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.93em;
+  outline: none;
+}
+
+.input-row .send-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+}
+
+/* --- この箇所を相談ボタン --- */
+.consult-btn {
+  margin-top: 0;
+}

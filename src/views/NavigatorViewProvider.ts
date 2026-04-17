@@ -1,141 +1,164 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
 import { AdviceMode } from "../shared/types";
+import * as fs from "fs";
+import * as path from "path";
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "aiPairNavigator.sidebar";
-
-  private view?: vscode.WebviewView;
-
+  private _view?: vscode.WebviewView;
+  private _currentScreen: string = "s01"; // 今表示している画面ID
+  private _screenHistory: string[] = []; // 画面の履歴（戻る用）
   public constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly controller: NavigatorController
-  ) {}
+  ) { }
 
   public resolveWebviewView(
-    webviewView: vscode.WebviewView,
+    webviewView: vscode.WebviewView, //表示するサイドバーのパネル本体
     _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    _token: vscode.CancellationToken //キャンセル信号
   ): void {
-    this.view = webviewView;
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [this.extensionUri]
-    };
-    webviewView.webview.html = this.render("manual");
+    this._view = webviewView; // パネルをクラス変数に保存
 
-    webviewView.webview.onDidReceiveMessage(async (message: { type: string }) => {
+    webviewView.webview.options = {
+      enableScripts: true, //JavaScriptを動かす許可
+      localResourceRoots: [this.extensionUri] //読み込んでいいフォルダーを限定
+    };
+    webviewView.webview.html = this.render(webviewView.webview, "manual"); //HTMLを生成して表示
+
+    // コントローラーからのイベントを受け取る。
+    webviewView.webview.onDidReceiveMessage(async (message: { type: string, }) => {
+      // メッセージの種類によって処理を分岐
       switch (message.type) {
-        case "connect":
-          await this.controller.connectCopilot();
-          await this.refresh("manual");
+        case "connect": //Connectボタンが押されたとき
+          await this.controller.connectCopilot(); //Copilotに接続して状態を更新
+          await this.refresh("manual"); //画面更新
           return;
-        case "ask":
-          const guidance = await this.controller.askForGuidance();
-          void vscode.window.showInformationMessage(guidance);
+        case "ask": //Ask for guidanceボタンが押されたとき
+          const guidance = await this.controller.askForGuidance(); //AIにアドバイスを求める
+          void vscode.window.showInformationMessage(guidance); //アドバイスをポップアップで表示
           return;
-        default:
+        case "navigate": // 画面移動ボタンが押されたとき
+          this._screenHistory.push(this._currentScreen); // 今の画面を履歴に追加
+          this._currentScreen = (message as any).screen; // 移動先の画面IDをセット
+          await this.refresh();                          // 画面を更新
+          return;
+        case "navigateBack": // 戻るボタンが押されたとき
+          if (this._screenHistory.length > 0) {
+            this._currentScreen = this._screenHistory.pop()!; // 履歴から1つ取り出す
+          }
+          await this.refresh(); // 画面を更新
           return;
       }
     });
   }
 
   public async refresh(mode: AdviceMode = "manual"): Promise<void> {
-    if (!this.view) {
+    if (!this._view) {
       return;
     }
-
-    this.view.webview.html = this.render(mode);
+    this._view.webview.html = this.render(this._view.webview, mode); //HTMLを生成して表示
   }
 
-  private render(mode: AdviceMode): string {
-    const state = this.controller.getViewState(mode);
-    const contextSummary = [
-      state.contextPreview.activeFilePath ? `Active file: ${state.contextPreview.activeFilePath}` : "Active file: none",
-      state.contextPreview.selectedText ? `Selection: ${this.escapeHtml(state.contextPreview.selectedText)}` : "Selection: none",
-      `Diagnostics: ${state.contextPreview.diagnosticsSummary.length}`
-    ].join("<br/>");
+  private render(webview: vscode.Webview, mode: AdviceMode): string {
+    const state = this.controller.getViewState(mode); //コントローラーから現在の状態を取得
 
-    return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Pair Navigator</title>
-    <style>
-      body {
-        font-family: var(--vscode-font-family);
-        color: var(--vscode-foreground);
-        background: var(--vscode-sideBar-background);
-        padding: 16px;
-      }
-      .card {
-        border: 1px solid var(--vscode-panel-border);
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 12px;
-        background: var(--vscode-editorWidget-background);
-      }
-      .muted {
-        color: var(--vscode-descriptionForeground);
-      }
-      button {
-        width: 100%;
-        border: 0;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-top: 8px;
-        cursor: pointer;
-        color: var(--vscode-button-foreground);
-        background: var(--vscode-button-background);
-      }
-      button.secondary {
-        color: var(--vscode-button-secondaryForeground);
-        background: var(--vscode-button-secondaryBackground);
-      }
-      code {
-        white-space: pre-wrap;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <strong>AI Pair Navigator</strong>
-      <p class="muted">Minimum scaffold for a learning-focused pair-programming navigator.</p>
-    </div>
-    <div class="card">
-      <strong>Connection</strong>
-      <p>Status: <code>${state.connectionState}</code></p>
-      <p class="muted">${this.escapeHtml(state.statusMessage)}</p>
-      <button id="connect">Connect Copilot</button>
-    </div>
-    <div class="card">
-      <strong>Mode</strong>
-      <p><code>${mode}</code></p>
-      <p class="muted">The real mode switching logic can be added next.</p>
-    </div>
-    <div class="card">
-      <strong>Context preview</strong>
-      <p class="muted">${contextSummary}</p>
-      <button id="ask" class="secondary">Ask For Guidance</button>
-    </div>
-    <script>
-      const vscode = acquireVsCodeApi();
-      document.getElementById('connect')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'connect' });
-      });
-      document.getElementById('ask')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'ask' });
-      });
-    </script>
-  </body>
-</html>`;
+    // --- CSS パス ---
+    // 全画面共通CSS
+    const commonCssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", "common.css");
+    const commonCssUri = webview.asWebviewUri(commonCssPath).toString();
+
+    // 画面固有CSS（存在する画面のみ）
+    const screenCssFiles: Record<string, string> = {
+      s01: "s01-connection.css",
+      s02: "s02-main.css",
+      s04: "s04-context-check.css",
+      s05: "s05-knowledge.css",
+      s06: "s06-settings.css",
+    };
+    const screenCssFile = screenCssFiles[this._currentScreen];
+    let screenCssUri = "";
+    if (screenCssFile) {
+      const screenCssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", screenCssFile);
+      screenCssUri = webview.asWebviewUri(screenCssPath).toString();
+    }
+
+    // --- HTML テンプレート読み込み ---
+    const screenFiles: Record<string, string> = {
+      s01: "s01-connection.html",    // 初回接続画面
+      s02: "s02-main.html",          // メイン画面
+      s03: "s03-advice-detail.html", // アドバイス詳細
+      s04: "s04-context-check.html", // 送信範囲確認
+      s05: "s05-knowledge.html",     // ナレッジ管理
+      s06: "s06-settings.html",      // 設定
+      s07: "s07-error.html",         // エラー画面
+    };
+
+    const htmlFile = screenFiles[this._currentScreen] ?? "s01-connection.html";
+    const htmlPath = path.join(this.extensionUri.fsPath, "src", "views", "screens", htmlFile);
+    let html = fs.readFileSync(htmlPath, "utf8");
+
+    // --- コンテキスト情報 ---
+    const activeFilePath = state.contextPreview.activeFilePath;
+    const activeFileRef = activeFilePath
+      ? `${this.escapeHtml(activeFilePath)}`
+      : "none";
+    const diagnosticsCount = state.contextPreview.diagnosticsSummary.length;
+    const diagnosticsRef = diagnosticsCount > 0
+      ? `警告 ${diagnosticsCount}件`
+      : "警告 なし";
+    const connectionLabel = state.connectionState === "connected" ? "接続済み" : state.connectionState;
+    const statusDotClass = state.connectionState === "connected" ? "" : "disconnected";
+
+    // --- プレースホルダー置換 ---
+    html = html
+      // CSS
+      .replace("{{commonCssUri}}", commonCssUri)
+      .replace("{{screenCssUri}}", screenCssUri)
+      // 旧CSSプレースホルダー（s03, s07用の後方互換）
+      .replace("{{cssUri}}", commonCssUri)
+      // 接続状態
+      .replace("{{connectionState}}", this.escapeHtml(state.connectionState))
+      .replace("{{connectionLabel}}", this.escapeHtml(connectionLabel))
+      .replace("{{statusDotClass}}", statusDotClass)
+      // メッセージ
+      .replace("{{errorMessage}}", this.escapeHtml(state.statusMessage))
+      .replace("{{statusMessage}}", this.escapeHtml(state.statusMessage))
+      // モード
+      .replace("{{mode}}", this.escapeHtml(mode))
+      .replace("{{modeManualActive}}", mode === "manual" ? "active" : "")
+      .replace("{{modeAlwaysActive}}", mode === "always" ? "active" : "")
+      .replace("{{modeManualSelected}}", mode === "manual" ? "selected" : "")
+      .replace("{{modeAlwaysSelected}}", mode === "always" ? "selected" : "")
+      // 参照文脈
+      .replace("{{activeFileRef}}", activeFileRef)
+      .replace("{{diagnosticsRef}}", diagnosticsRef)
+      // 送信範囲
+      .replace("{{targetFilesList}}", "")    // 動的生成予定
+      .replace("{{estimatedSize}}", "")       // 動的生成予定
+      // ナレッジ
+      .replace("{{knowledgeList}}", "")       // 動的生成予定
+      // 設定デフォルト値
+      .replace("{{requestIntervalSec}}", "60")
+      .replace("{{requestIntervalSec}}", "60")
+      .replace("{{idleDelaySec}}", "13")
+      .replace("{{idleDelaySec}}", "13")
+      .replace("{{suppressDuplicateChecked}}", "")
+      .replace("{{alwaysModeChecked}}", "")
+      .replace("{{excludeGlobs}}", "**/.env\n**/node_modules/**\n**/dist/**\n**/build/**")
+      // コンテキストサマリ（旧形式の後方互換）
+      .replace("{{contextSummary}}", "");
+
+    return html;
   }
 
   private escapeHtml(value: string): string {
     return value
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
   }
 }

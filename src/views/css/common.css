@@ -1,0 +1,140 @@
+/* ========================================
+   common.css - 全画面共通スタイル
+   ======================================== */
+
+/* --- リセット・ベース --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  padding: 12px;
+  line-height: 1.5;
+}
+
+/* --- カード --- */
+.card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--vscode-editorWidget-background);
+}
+
+/* --- テキスト --- */
+.muted {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.92em;
+}
+
+.section-title {
+  font-weight: bold;
+  font-size: 1.05em;
+  margin-bottom: 8px;
+}
+
+.page-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  margin-bottom: 12px;
+}
+
+code {
+  white-space: pre-wrap;
+}
+
+/* --- ボタン --- */
+button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 0.93em;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+button.danger {
+  color: #f87171;
+  background: transparent;
+  border: 1px solid #f8717144;
+}
+
+/* --- 戻るヘッダー --- */
+.back-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 12px;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  font-size: 0.9em;
+}
+
+.back-header:hover {
+  opacity: 0.7;
+}
+
+/* --- バッジ --- */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.badge-green {
+  color: #22c55e;
+  background: #22c55e22;
+}
+
+.badge-gray {
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-badge-background);
+}
+
+/* --- リスト --- */
+ul.bullet-list {
+  list-style: disc;
+  padding-left: 20px;
+  color: var(--vscode-descriptionForeground);
+  margin: 6px 0;
+}
+
+ul.bullet-list li {
+  margin-bottom: 3px;
+  font-size: 0.92em;
+}
