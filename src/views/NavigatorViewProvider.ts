@@ -21,14 +21,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   public resolveWebviewView(
-    webviewView: vscode.WebviewView,
+    webviewView: vscode.WebviewView, //表示するサイドバーのパネル本体
     _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    _token: vscode.CancellationToken //キャンセル信号
   ): void {
-    this.view = webviewView;
+    this._view = webviewView; // パネルをクラス変数に保存
+
     webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [this.extensionUri]
+      enableScripts: true, //JavaScriptを動かす許可
+      localResourceRoots: [this.extensionUri] //読み込んでいいフォルダーを限定
     };
 
     this.clearViewDisposables();
@@ -319,6 +320,8 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     return value
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
   }
 }

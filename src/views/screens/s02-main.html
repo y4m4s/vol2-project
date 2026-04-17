@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <link rel="stylesheet" href="{{commonCssUri}}" />
+    <link rel="stylesheet" href="{{screenCssUri}}" />
+  </head>
+  <body>
+
+    <!-- S02-01: ステータスヘッダー -->
+    <div class="status-header">
+      <div class="status-dot {{statusDotClass}}"></div>
+      <span class="status-label">{{connectionLabel}}</span>
+      <div class="header-icons">
+        <button id="btnContextCheck" title="送信範囲確認">&#x25CE;</button>
+        <button id="btnKnowledge" title="ナレッジ管理">&#x1F4D6;</button>
+        <button id="btnSettings" title="設定">&#x2699;</button>
+      </div>
+    </div>
+
+    <!-- S02-02: モード切替タブ -->
+    <div class="mode-tabs">
+      <button id="modeManual" class="{{modeManualActive}}">&#x2692; 必要時モード</button>
+      <button id="modeAlways" class="{{modeAlwaysActive}}">&#x26A1; 常時モード</button>
+    </div>
+    <div class="mode-note">※ 常時モードは初回接続完了後に設定で有効化できます</div>
+
+    <!-- S02-03: 現在の参照文脈 -->
+    <div class="context-ref">
+      <div class="ref-title">現在の参照文脈</div>
+      <div class="ref-item">
+        <span class="ref-icon">&#x1F4C4;</span>
+        <span>{{activeFileRef}}</span>
+      </div>
+      <div class="ref-item ref-warning">
+        <span class="ref-icon">&#x26A0;</span>
+        <span>{{diagnosticsRef}}</span>
+      </div>
+    </div>
+
+    <!-- S02-04: チャットエリア -->
+    <div class="chat-area" id="chatHistory">
+      <div class="empty-chat">
+        <div class="empty-title">会話を開始してください</div>
+        <div class="empty-desc">
+          質問や確認したいことを入力するか、<br>
+          「この箇所を相談」で現在の文脈について質問できます
+        </div>
+      </div>
+    </div>
+
+    <!-- S02-05: 入力欄 -->
+    <div class="input-row">
+      <input type="text" id="inputArea" placeholder="" />
+      <button class="send-btn" id="send">&#x27A4;</button>
+    </div>
+
+    <!-- S02-06: この箇所を相談 -->
+    <button id="askContext" class="secondary consult-btn">&#x1F4CB; この箇所を相談</button>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById('send')?.addEventListener('click', () => {
+        const text = document.getElementById('inputArea').value;
+        vscode.postMessage({ type: 'ask', text });
+      });
+      document.getElementById('askContext')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'askContext' });
+      });
+      document.getElementById('modeManual')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'setMode', mode: 'manual' });
+      });
+      document.getElementById('modeAlways')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'setMode', mode: 'always' });
+      });
+      document.getElementById('btnContextCheck')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's04' });
+      });
+      document.getElementById('btnKnowledge')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's05' });
+      });
+      document.getElementById('btnSettings')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's06' });
+      });
+    </script>
+  </body>
+</html>

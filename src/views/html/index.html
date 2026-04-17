@@ -1,0 +1,39 @@
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="card">
+      <strong>AI Pair Navigator</strong>
+      <p class="muted">Minimum scaffold for a learning-focused pair-programming navigator.</p>
+    </div>
+    <div class="card">
+      <strong>Connection</strong>
+      <p>Status: <code>${state.connectionState}</code></p>
+      <p class="muted">${this.escapeHtml(state.statusMessage)}</p>
+      <button id="connect">Connect Copilot</button>
+    </div>
+    <div class="card">
+      <strong>Mode</strong>
+      <p><code>${mode}</code></p>
+      <p class="muted">The real mode switching logic can be added next.</p>
+    </div>
+    <div class="card">
+      <strong>Context preview</strong>
+      <p class="muted">${contextSummary}</p>
+      <button id="ask" class="secondary">Ask For Guidance</button>
+    </div>
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById('connect')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'connect' });
+      });
+      document.getElementById('ask')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'ask' });
+      });
+    </script>
+  </body>
+</html>

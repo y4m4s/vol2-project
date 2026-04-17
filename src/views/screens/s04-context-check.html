@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="{{commonCssUri}}" />
+    <link rel="stylesheet" href="{{screenCssUri}}" />
+  </head>
+  <body>
+
+    <!-- 戻るヘッダー -->
+    <div class="back-header" id="back">&#x2190; 戻る</div>
+
+    <!-- S04-00: タイトル -->
+    <div class="page-title">送信範囲確認</div>
+    <div class="page-subtitle">AIに送信される情報の範囲と除外設定を確認できます</div>
+
+    <!-- S04-01: 送信対象カテゴリ -->
+    <div class="section-title">送信対象カテゴリ</div>
+
+    <div class="category-card">
+      <span class="cat-icon material-symbols-outlined">description</span>
+      <div class="cat-body">
+        <div class="cat-name">アクティブファイル断片</div>
+        <div class="cat-desc">現在編集中のファイルの内容</div>
+      </div>
+      <span class="cat-badge badge badge-green">有効</span>
+    </div>
+
+    <div class="category-card">
+      <span class="cat-icon material-symbols-outlined">highlight_alt</span>
+      <div class="cat-body">
+        <div class="cat-name">選択範囲</div>
+        <div class="cat-desc">エディタで選択している範囲</div>
+      </div>
+      <span class="cat-badge badge badge-green">有効</span>
+    </div>
+
+    <div class="category-card">
+      <span class="cat-icon material-symbols-outlined">warning</span>
+      <div class="cat-body">
+        <div class="cat-name">診断情報</div>
+        <div class="cat-desc">エラーや警告の情報</div>
+      </div>
+      <span class="cat-badge badge badge-green">有効</span>
+    </div>
+
+    <div class="category-card">
+      <span class="cat-icon material-symbols-outlined">edit_note</span>
+      <div class="cat-body">
+        <div class="cat-name">最近の編集範囲</div>
+        <div class="cat-desc">直近で編集した箇所</div>
+      </div>
+      <span class="cat-badge badge badge-green">有効</span>
+    </div>
+
+    <div class="category-card">
+      <span class="cat-icon material-symbols-outlined">code</span>
+      <div class="cat-body">
+        <div class="cat-name">関連シンボル</div>
+        <div class="cat-desc">関数や変数の定義・参照</div>
+      </div>
+      <span class="cat-badge badge badge-green">有効</span>
+    </div>
+
+    <!-- S04-02: 対象ファイル一覧 -->
+    <div class="section-title" style="margin-top:14px;">対象ファイル一覧</div>
+
+    {{targetFilesList}}
+
+    <!-- S04-03: 除外設定 -->
+    <div class="section-title" style="margin-top:14px;">除外設定</div>
+    <div class="exclude-config">
+      <div class="pattern-label">除外パターン:</div>
+      <div class="pattern-list">
+        **/.env<br>
+        **/node_modules/**<br>
+        **/dist/**<br>
+        **/build/**
+      </div>
+      <div class="max-size">最大ファイルサイズ: 1024 KB</div>
+    </div>
+
+    <!-- S04-04: 推定送信量 -->
+    <div class="estimated-card">
+      <span class="est-icon material-symbols-outlined">inventory_2</span>
+      <div class="est-body">
+        <div class="est-title">推定送信量</div>
+        <div class="est-detail">{{estimatedSize}}</div>
+      </div>
+    </div>
+
+    <!-- S04-05: アクションボタン -->
+    <div class="s04-actions">
+      <button id="editExclude" class="btn-action"><span class="material-symbols-outlined">settings</span> 除外設定を編集</button>
+      <button id="close" class="btn-action btn-back">閉じる</button>
+    </div>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById('editExclude')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's06' });
+      });
+      document.getElementById('close')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigateBack' });
+      });
+      document.getElementById('back')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigateBack' });
+      });
+    </script>
+  </body>
+</html>
