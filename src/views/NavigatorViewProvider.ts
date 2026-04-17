@@ -1,18 +1,24 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
-import { AdviceMode } from "../shared/types";
-import * as fs from "fs";
-import * as path from "path";
+import { DiagnosticSummary, NavigatorViewModel } from "../shared/types";
 
-export class NavigatorViewProvider implements vscode.WebviewViewProvider {
+export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "aiPairNavigator.sidebar";
-  private _view?: vscode.WebviewView;
-  private _currentScreen: string = "s01"; // 今表示している画面ID
-  private _screenHistory: string[] = []; // 画面の履歴（戻る用）
+
+  private view?: vscode.WebviewView;
+  private readonly disposables: vscode.Disposable[] = [];
+  private readonly viewDisposables: vscode.Disposable[] = [];
+
   public constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly controller: NavigatorController
-  ) { }
+  ) {
+    this.disposables.push(
+      this.controller.onDidChangeState(() => {
+        void this.refresh();
+      })
+    );
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView, //表示するサイドバーのパネル本体
@@ -25,132 +31,289 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
       enableScripts: true, //JavaScriptを動かす許可
       localResourceRoots: [this.extensionUri] //読み込んでいいフォルダーを限定
     };
-    webviewView.webview.html = this.render(webviewView.webview, "manual"); //HTMLを生成して表示
 
-    // コントローラーからのイベントを受け取る。
-    webviewView.webview.onDidReceiveMessage(async (message: { type: string, }) => {
-      // メッセージの種類によって処理を分岐
-      switch (message.type) {
-        case "connect": //Connectボタンが押されたとき
-          await this.controller.connectCopilot(); //Copilotに接続して状態を更新
-          await this.refresh("manual"); //画面更新
-          return;
-        case "ask": //Ask for guidanceボタンが押されたとき
-          const guidance = await this.controller.askForGuidance(); //AIにアドバイスを求める
-          void vscode.window.showInformationMessage(guidance); //アドバイスをポップアップで表示
-          return;
-        case "navigate": // 画面移動ボタンが押されたとき
-          this._screenHistory.push(this._currentScreen); // 今の画面を履歴に追加
-          this._currentScreen = (message as any).screen; // 移動先の画面IDをセット
-          await this.refresh();                          // 画面を更新
-          return;
-        case "navigateBack": // 戻るボタンが押されたとき
-          if (this._screenHistory.length > 0) {
-            this._currentScreen = this._screenHistory.pop()!; // 履歴から1つ取り出す
-          }
-          await this.refresh(); // 画面を更新
-          return;
-      }
-    });
+    this.clearViewDisposables();
+    this.viewDisposables.push(
+      webviewView.webview.onDidReceiveMessage(async (message: { type: string }) => {
+        switch (message.type) {
+          case "connect":
+            await this.controller.connectCopilot();
+            return;
+          case "ask":
+            await this.controller.askForGuidance();
+            return;
+          case "refresh":
+            await this.refresh();
+            return;
+          default:
+            return;
+        }
+      })
+    );
+
+    webviewView.webview.html = this.render();
   }
 
-  public async refresh(mode: AdviceMode = "manual"): Promise<void> {
-    if (!this._view) {
+  public async refresh(): Promise<void> {
+    if (!this.view) {
       return;
     }
-    this._view.webview.html = this.render(this._view.webview, mode); //HTMLを生成して表示
+
+    this.view.webview.html = this.render();
   }
 
-  private render(webview: vscode.Webview, mode: AdviceMode): string {
-    const state = this.controller.getViewState(mode); //コントローラーから現在の状態を取得
+  public dispose(): void {
+    this.clearViewDisposables();
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
+  }
 
-    // --- CSS パス ---
-    // 全画面共通CSS
-    const commonCssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", "common.css");
-    const commonCssUri = webview.asWebviewUri(commonCssPath).toString();
+  private render(): string {
+    const model = this.controller.getViewModel();
 
-    // 画面固有CSS（存在する画面のみ）
-    const screenCssFiles: Record<string, string> = {
-      s01: "s01-connection.css",
-      s02: "s02-main.css",
-      s04: "s04-context-check.css",
-      s05: "s05-knowledge.css",
-      s06: "s06-settings.css",
-    };
-    const screenCssFile = screenCssFiles[this._currentScreen];
-    let screenCssUri = "";
-    if (screenCssFile) {
-      const screenCssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", screenCssFile);
-      screenCssUri = webview.asWebviewUri(screenCssPath).toString();
+    return `<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background: var(--vscode-sideBar-background);
+        padding: 16px;
+        line-height: 1.5;
+      }
+      .stack > * + * {
+        margin-top: 12px;
+      }
+      .card {
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--vscode-editorWidget-background);
+      }
+      .muted {
+        color: var(--vscode-descriptionForeground);
+      }
+      .banner {
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid transparent;
+      }
+      .banner.info {
+        background: color-mix(in srgb, var(--vscode-button-background) 18%, transparent);
+      }
+      .banner.warning,
+      .banner.error {
+        background: color-mix(in srgb, var(--vscode-inputValidation-errorBackground) 40%, transparent);
+      }
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-top: 8px;
+        cursor: pointer;
+        color: var(--vscode-button-foreground);
+        background: var(--vscode-button-background);
+      }
+      button.secondary {
+        color: var(--vscode-button-secondaryForeground);
+        background: var(--vscode-button-secondaryBackground);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      code {
+        white-space: pre-wrap;
+      }
+      .section-title {
+        display: block;
+        margin-bottom: 6px;
+      }
+      .guidance {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stack">
+      ${this.renderHeader(model)}
+      ${this.renderStatusMessage(model)}
+      ${this.renderScreen(model)}
+    </div>
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById("connect")?.addEventListener("click", () => {
+        vscode.postMessage({ type: "connect" });
+      });
+      document.getElementById("ask")?.addEventListener("click", () => {
+        vscode.postMessage({ type: "ask" });
+      });
+      document.getElementById("refresh")?.addEventListener("click", () => {
+        vscode.postMessage({ type: "refresh" });
+      });
+    </script>
+  </body>
+</html>`;
+  }
+
+  private renderHeader(model: NavigatorViewModel): string {
+    return `
+      <div class="card">
+        <strong>AI Pair Navigator</strong>
+        <p class="muted">学習支援に特化したペアプログラミング用ナビゲーターです。</p>
+        <p>Status: <code>${this.escapeHtml(model.connectionState)}</code></p>
+      </div>
+    `;
+  }
+
+  private renderStatusMessage(model: NavigatorViewModel): string {
+    if (!model.statusMessage) {
+      return "";
     }
 
-    // --- HTML テンプレート読み込み ---
-    const screenFiles: Record<string, string> = {
-      s01: "s01-connection.html",    // 初回接続画面
-      s02: "s02-main.html",          // メイン画面
-      s03: "s03-advice-detail.html", // アドバイス詳細
-      s04: "s04-context-check.html", // 送信範囲確認
-      s05: "s05-knowledge.html",     // ナレッジ管理
-      s06: "s06-settings.html",      // 設定
-      s07: "s07-error.html",         // エラー画面
+    return `
+      <div class="banner ${this.escapeHtml(model.statusMessage.kind)}">
+        ${this.escapeHtml(model.statusMessage.text)}
+      </div>
+    `;
+  }
+
+  private renderScreen(model: NavigatorViewModel): string {
+    switch (model.screen) {
+      case "main":
+        return this.renderMain(model);
+      case "error":
+        return this.renderError(model);
+      case "onboarding":
+      default:
+        return this.renderOnboarding(model);
+    }
+  }
+
+  private renderOnboarding(model: NavigatorViewModel): string {
+    return `
+      <div class="card">
+        <strong class="section-title">はじめに</strong>
+        <p class="muted">Copilot と接続すると、現在のファイルや選択範囲、diagnostics をもとに手動ガイダンスを受けられます。</p>
+        <ul>
+          <li>VS Code Desktop が必要です</li>
+          <li>Workspace Trust が有効である必要があります</li>
+          <li>Phase 1 では必要時モードのみ利用できます</li>
+        </ul>
+        <button id="connect"${model.canConnect ? "" : " disabled"}>${model.isBusy ? "接続中..." : "Copilot に接続"}</button>
+      </div>
+      <div class="card">
+        <strong class="section-title">送信対象の最小要約</strong>
+        <ul>
+          <li>アクティブファイル: ${this.escapeHtml(model.contextPreview.activeFilePath ?? "なし")}</li>
+          <li>選択テキスト: ${this.escapeHtml(model.contextPreview.selectedTextPreview ?? "なし")}</li>
+          <li>Diagnostics: ${model.contextPreview.diagnosticsSummary.length} 件</li>
+        </ul>
+      </div>
+    `;
+  }
+
+  private renderMain(model: NavigatorViewModel): string {
+    return `
+      <div class="card">
+        <strong class="section-title">手動ガイダンス</strong>
+        <p><code>必要時モード</code></p>
+        <p class="muted">常時モードは Phase 3 で有効化予定です。</p>
+        <button id="ask" class="secondary"${model.canAskForGuidance ? "" : " disabled"}>${model.isBusy ? "ガイダンス生成中..." : "ガイダンスを求める"}</button>
+        ${model.connectionState !== "connected" ? `<button id="connect"${model.canConnect ? "" : " disabled"}>Copilot に接続し直す</button>` : ""}
+      </div>
+      <div class="card">
+        <strong class="section-title">現在の文脈</strong>
+        <ul>
+          <li>アクティブファイル: ${this.escapeHtml(model.contextPreview.activeFilePath ?? "なし")}</li>
+          <li>選択テキスト: ${this.escapeHtml(model.contextPreview.selectedTextPreview ?? "なし")}</li>
+          <li>Diagnostics: ${model.contextPreview.diagnosticsSummary.length} 件</li>
+        </ul>
+        ${this.renderDiagnostics(model.contextPreview.diagnosticsSummary)}
+      </div>
+      <div class="card">
+        <strong class="section-title">最新アドバイス</strong>
+        ${
+          model.latestGuidance
+            ? `
+              <p class="muted">取得時刻: ${this.escapeHtml(this.formatRequestedAt(model.latestGuidance.requestedAt))}</p>
+              <div class="guidance">${this.escapeHtml(model.latestGuidance.text)}</div>
+            `
+            : '<p class="muted">まだガイダンスはありません。接続後に手動で生成できます。</p>'
+        }
+      </div>
+    `;
+  }
+
+  private renderError(model: NavigatorViewModel): string {
+    const { title, description } = this.getErrorCopy(model);
+
+    return `
+      <div class="card">
+        <strong class="section-title">${this.escapeHtml(title)}</strong>
+        <p class="muted">${this.escapeHtml(description)}</p>
+        <button id="connect"${model.canConnect ? "" : " disabled"}>Copilot に接続し直す</button>
+        <button id="refresh" class="secondary">状態を更新</button>
+      </div>
+      <div class="card">
+        <strong class="section-title">現在の文脈</strong>
+        <ul>
+          <li>アクティブファイル: ${this.escapeHtml(model.contextPreview.activeFilePath ?? "なし")}</li>
+          <li>選択テキスト: ${this.escapeHtml(model.contextPreview.selectedTextPreview ?? "なし")}</li>
+          <li>Diagnostics: ${model.contextPreview.diagnosticsSummary.length} 件</li>
+        </ul>
+      </div>
+    `;
+  }
+
+  private renderDiagnostics(diagnostics: DiagnosticSummary[]): string {
+    if (diagnostics.length === 0) {
+      return '<p class="muted">Diagnostics はありません。</p>';
+    }
+
+    const items = diagnostics
+      .map((diagnostic) => {
+        const source = diagnostic.source ? ` (${this.escapeHtml(diagnostic.source)})` : "";
+        return `<li>${this.escapeHtml(diagnostic.severity)}${source} L${diagnostic.line}: ${this.escapeHtml(diagnostic.message)}</li>`;
+      })
+      .join("");
+
+    return `<ul>${items}</ul>`;
+  }
+
+  private getErrorCopy(model: NavigatorViewModel): { title: string; description: string } {
+    if (model.connectionState === "unavailable") {
+      return {
+        title: "Copilot を利用できません",
+        description: model.statusMessage?.text ?? "Workspace Trust や Copilot の利用状態を確認してください。"
+      };
+    }
+
+    return {
+      title: "現在は利用が制限されています",
+      description: model.statusMessage?.text ?? "少し時間を置いてから再試行してください。"
     };
+  }
 
-    const htmlFile = screenFiles[this._currentScreen] ?? "s01-connection.html";
-    const htmlPath = path.join(this.extensionUri.fsPath, "src", "views", "screens", htmlFile);
-    let html = fs.readFileSync(htmlPath, "utf8");
+  private formatRequestedAt(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ja-JP");
+  }
 
-    // --- コンテキスト情報 ---
-    const activeFilePath = state.contextPreview.activeFilePath;
-    const activeFileRef = activeFilePath
-      ? `${this.escapeHtml(activeFilePath)}`
-      : "none";
-    const diagnosticsCount = state.contextPreview.diagnosticsSummary.length;
-    const diagnosticsRef = diagnosticsCount > 0
-      ? `警告 ${diagnosticsCount}件`
-      : "警告 なし";
-    const connectionLabel = state.connectionState === "connected" ? "接続済み" : state.connectionState;
-    const statusDotClass = state.connectionState === "connected" ? "" : "disconnected";
-
-    // --- プレースホルダー置換 ---
-    html = html
-      // CSS
-      .replace("{{commonCssUri}}", commonCssUri)
-      .replace("{{screenCssUri}}", screenCssUri)
-      // 旧CSSプレースホルダー（s03, s07用の後方互換）
-      .replace("{{cssUri}}", commonCssUri)
-      // 接続状態
-      .replace("{{connectionState}}", this.escapeHtml(state.connectionState))
-      .replace("{{connectionLabel}}", this.escapeHtml(connectionLabel))
-      .replace("{{statusDotClass}}", statusDotClass)
-      // メッセージ
-      .replace("{{errorMessage}}", this.escapeHtml(state.statusMessage))
-      .replace("{{statusMessage}}", this.escapeHtml(state.statusMessage))
-      // モード
-      .replace("{{mode}}", this.escapeHtml(mode))
-      .replace("{{modeManualActive}}", mode === "manual" ? "active" : "")
-      .replace("{{modeAlwaysActive}}", mode === "always" ? "active" : "")
-      .replace("{{modeManualSelected}}", mode === "manual" ? "selected" : "")
-      .replace("{{modeAlwaysSelected}}", mode === "always" ? "selected" : "")
-      // 参照文脈
-      .replace("{{activeFileRef}}", activeFileRef)
-      .replace("{{diagnosticsRef}}", diagnosticsRef)
-      // 送信範囲
-      .replace("{{targetFilesList}}", "")    // 動的生成予定
-      .replace("{{estimatedSize}}", "")       // 動的生成予定
-      // ナレッジ
-      .replace("{{knowledgeList}}", "")       // 動的生成予定
-      // 設定デフォルト値
-      .replace("{{requestIntervalSec}}", "60")
-      .replace("{{requestIntervalSec}}", "60")
-      .replace("{{idleDelaySec}}", "13")
-      .replace("{{idleDelaySec}}", "13")
-      .replace("{{suppressDuplicateChecked}}", "")
-      .replace("{{alwaysModeChecked}}", "")
-      .replace("{{excludeGlobs}}", "**/.env\n**/node_modules/**\n**/dist/**\n**/build/**")
-      // コンテキストサマリ（旧形式の後方互換）
-      .replace("{{contextSummary}}", "");
-
-    return html;
+  private clearViewDisposables(): void {
+    while (this.viewDisposables.length > 0) {
+      this.viewDisposables.pop()?.dispose();
+    }
   }
 
   private escapeHtml(value: string): string {
