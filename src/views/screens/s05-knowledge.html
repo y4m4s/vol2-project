@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <link rel="stylesheet" href="{{commonCssUri}}" />
+    <link rel="stylesheet" href="{{screenCssUri}}" />
+  </head>
+  <body>
+
+    <!-- 戻るヘッダー -->
+    <div class="back-header" id="back">&#x2190; 戻る</div>
+
+    <!-- S05-00: タイトル -->
+    <div class="page-title">ナレッジ管理</div>
+
+    <!-- S05-01: 検索バー -->
+    <div class="search-bar">
+      <span class="search-icon">&#x1F50D;</span>
+      <input id="searchInput" type="text" placeholder="" />
+    </div>
+
+    <!-- S05-02: フィルタタブ -->
+    <div class="filter-tabs">
+      <button id="filterAll" class="active">すべて</button>
+      <button id="filterActive">有効</button>
+      <button id="filterDisabled">無効</button>
+    </div>
+
+    <!-- S05-03: ナレッジ一覧（空状態） -->
+    <div class="empty-state" id="knowledgeEmpty">
+      <div class="empty-title">まだナレッジがありません</div>
+      <div class="empty-desc">アドバイス詳細画面から保存できます</div>
+    </div>
+
+    <!-- S05-03b: ナレッジ一覧（データあり時） -->
+    <div id="knowledgeList" style="display:none;">
+      {{knowledgeList}}
+    </div>
+
+    <!-- S05-04: 下部アクション -->
+    <div class="bottom-actions">
+      <button id="exportKnowledge" class="secondary">&#x2913; エクスポート</button>
+      <button id="resetKnowledge" class="danger">&#x21BA; リセット</button>
+    </div>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById('searchInput')?.addEventListener('input', (e) => {
+        vscode.postMessage({ type: 'searchKnowledge', query: e.target.value });
+      });
+      document.getElementById('exportKnowledge')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'exportKnowledge' });
+      });
+      document.getElementById('resetKnowledge')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'resetKnowledge' });
+      });
+      document.getElementById('back')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigateBack' });
+      });
+
+      // フィルタタブ切り替え
+      document.querySelectorAll('.filter-tabs button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tabs button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          vscode.postMessage({ type: 'filterKnowledge', filter: btn.textContent });
+        });
+      });
+    </script>
+  </body>
+</html>

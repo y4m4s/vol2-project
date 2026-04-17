@@ -1,0 +1,81 @@
+/* ========================================
+   s05-knowledge.css - ナレッジ管理画面
+   ======================================== */
+
+/* --- 検索バー --- */
+.search-bar {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.search-bar .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  pointer-events: none;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px 12px 10px 34px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  font-size: 0.93em;
+  outline: none;
+}
+
+/* --- フィルタタブ --- */
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.filter-tabs button {
+  flex: 1;
+  padding: 6px 8px;
+  margin: 0;
+  border-radius: 8px;
+  font-size: 0.85em;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.filter-tabs button.active {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-foreground);
+  font-weight: bold;
+}
+
+/* --- 空状態 --- */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.empty-state .empty-title {
+  font-size: 0.95em;
+  margin-bottom: 6px;
+  color: var(--vscode-foreground);
+}
+
+.empty-state .empty-desc {
+  font-size: 0.85em;
+}
+
+/* --- 下部ボタン横並び --- */
+.bottom-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bottom-actions button {
+  flex: 1;
+}

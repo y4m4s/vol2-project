@@ -1,0 +1,245 @@
+/* ========================================
+   s06-settings.css - 設定画面
+   ======================================== */
+
+/* --- セクション見出し --- */
+.settings-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  font-size: 0.95em;
+  margin: 14px 0 8px;
+}
+
+.settings-section .material-symbols-outlined {
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.settings-section:first-of-type {
+  margin-top: 4px;
+}
+
+/* --- 設定項目（ラベル+コントロール横並び） --- */
+.setting-item {
+  padding: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  background: var(--vscode-editorWidget-background);
+  margin-bottom: 8px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setting-label {
+  font-weight: bold;
+  font-size: 0.93em;
+}
+
+.setting-desc {
+  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+}
+
+/* --- ドロップダウン --- */
+.dropdown-wrap select {
+  padding: 8px 12px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  font-size: 0.9em;
+  outline: none;
+  appearance: auto;
+}
+
+/* --- アクションボタン --- */
+.s06-actions {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.s06-actions button {
+  margin-top: 6px;
+}
+
+.s06-actions button:first-child {
+  margin-top: 0;
+}
+
+.s06-actions .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* --- グレーボタン（初期値に戻す） --- */
+.btn-gray {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.93em;
+  color: var(--vscode-foreground);
+  background: var(--vscode-input-background);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-gray:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
+}
+
+/* --- トグルスイッチ --- */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  background: var(--vscode-editorWidget-background);
+  margin-bottom: 8px;
+}
+
+.toggle-row .toggle-label {
+  flex: 1;
+}
+
+.toggle-row .toggle-label .toggle-title {
+  font-weight: bold;
+  font-size: 0.93em;
+}
+
+.toggle-row .toggle-label .toggle-desc {
+  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+}
+
+/* CSS-only toggle switch */
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--vscode-foreground);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.switch input:checked + .slider {
+  background: var(--vscode-button-background);
+  border-color: var(--vscode-button-background);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+  background: var(--vscode-button-foreground);
+}
+
+/* --- スライダー（range） --- */
+.range-group {
+  margin-bottom: 14px;
+}
+
+.range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.range-header .range-label {
+  font-size: 0.9em;
+}
+
+.range-header .range-value {
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.range-group input[type="range"] {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 3px;
+  background: var(--vscode-input-background);
+  outline: none;
+}
+
+.range-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+
+/* --- 送信対象トグル一覧 --- */
+.context-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  background: var(--vscode-editorWidget-background);
+  margin-bottom: 6px;
+  font-size: 0.93em;
+}
+
+/* --- 除外パターン textarea --- */
+.exclude-textarea textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.88em;
+  resize: vertical;
+  outline: none;
+}

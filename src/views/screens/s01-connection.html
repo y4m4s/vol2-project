@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pair Navigator</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="{{commonCssUri}}" />
+    <link rel="stylesheet" href="{{screenCssUri}}" />
+  </head>
+  <body>
+
+    <!-- S01-01: 学習支援インフォボックス -->
+    <div class="info-box">
+      <div class="info-icon">i</div>
+      <div>
+        <div class="info-title">学習支援が目的です</div>
+        <ul>
+          <li>答えを代行するのではなく、考え方や観点を提示</li>
+          <li>プロジェクト文脈を踏まえたアドバイス</li>
+          <li>詰まりポイントをナレッジとして蓄積</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- S01-02: 送信される情報 -->
+    <div class="card">
+      <div class="section-title">送信される情報</div>
+      <ul class="sent-info-list">
+        <li>アクティブファイルの断片</li>
+        <li>選択範囲</li>
+        <li>エラーや警告</li>
+        <li>最近の編集範囲</li>
+        <li>関連シンボル</li>
+      </ul>
+    </div>
+
+    <!-- S01-03: 除外される情報 -->
+    <div class="card">
+      <div class="section-title">除外される情報</div>
+      <div class="exclude-box">.env、秘密情報、生成物、大容量ファイル、ユーザー指定glob</div>
+    </div>
+
+    <!-- S01-04: 利用条件 -->
+    <div class="card requirement-card">
+      <div class="section-title">利用条件</div>
+      <ul>
+        <li>GitHub Copilotの利用権限が必要</li>
+        <li>ネットワーク接続が必要</li>
+        <li>Trusted Workspaceである必要があります</li>
+      </ul>
+    </div>
+
+    <!-- S01-05: アクションボタン群 -->
+    <div class="s01-actions">
+      <div class="connect-card">
+        <button id="connect"><span class="material-symbols-outlined">power</span> Copilotに接続</button>
+      </div>
+      <div class="sub-actions">
+        <button id="checkRange" class="btn-gray"><span class="material-symbols-outlined">search</span> 送信範囲を確認</button>
+        <button id="openSettings" class="btn-gray"><span class="material-symbols-outlined">settings</span> 設定を開く</button>
+      </div>
+    </div>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+      document.getElementById('connect')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'connect' });
+      });
+      document.getElementById('checkRange')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's04' });
+      });
+      document.getElementById('openSettings')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'navigate', screen: 's06' });
+      });
+    </script>
+  </body>
+</html>
