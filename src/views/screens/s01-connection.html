@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Pair Navigator</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
     <link rel="stylesheet" href="{{commonCssUri}}" />
     <link rel="stylesheet" href="{{screenCssUri}}" />
   </head>
@@ -54,11 +53,11 @@
     <!-- S01-05: アクションボタン群 -->
     <div class="s01-actions">
       <div class="connect-card">
-        <button id="connect"><span class="material-symbols-outlined">power</span> Copilotに接続</button>
+        <button id="connect"{{connectDisabled}}>{{connectLabel}}</button>
       </div>
       <div class="sub-actions">
-        <button id="checkRange" class="btn-gray"><span class="material-symbols-outlined">search</span> 送信範囲を確認</button>
-        <button id="openSettings" class="btn-gray"><span class="material-symbols-outlined">settings</span> 設定を開く</button>
+        <button id="checkRange" class="btn-gray">送信範囲を確認</button>
+        <button id="openSettings" class="btn-gray">設定を開く</button>
       </div>
     </div>
 
