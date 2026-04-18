@@ -11,11 +11,8 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onView:aiPairNavigator.sidebar",
-    "onCommand:aiPairNavigator.connectCopilot",
-    "onCommand:aiPairNavigator.askForGuidance"
-  ],
+  "icon": "media/icon.png",
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
