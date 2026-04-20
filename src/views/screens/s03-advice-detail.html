@@ -4,37 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Pair Navigator</title>
-    <link rel="stylesheet" href="{{cssUri}}" />
+    <link rel="stylesheet" href="{{commonCssUri}}" />
+    <link rel="stylesheet" href="{{screenCssUri}}" />
   </head>
   <body>
-    <!-- S03-01: 助言本文 -->
-    <div class="card">
-      <strong>アドバイス</strong>
-      <p>{{adviceBody}}</p>
-      <!-- S03-06: 推測表示 -->
-      <p class="muted">{{speculativeNote}}</p>
-    </div>
+    <div class="detail-stack">
+      <!-- S03-01: 助言本文 -->
+      <div class="card">
+        <strong>アドバイス</strong>
+        <div class="detail-body">{{adviceBody}}</div>
+        <!-- S03-06: 推測表示 -->
+        <p class="muted detail-meta">{{speculativeNote}}</p>
+      </div>
 
-    <!-- S03-02: 根拠一覧 -->
-    <div class="card">
-      <strong>根拠</strong>
-      <!-- S03-03: 参照ファイルリンク -->
-      <p class="muted">ファイル: {{referenceFiles}}</p>
-      <!-- S03-04: 診断情報 -->
-      <p class="muted">診断: {{diagnosticsSummary}}</p>
-      <!-- S03-05: 変更文脈 -->
-      <p class="muted">変更箇所: {{changeSummary}}</p>
-    </div>
+      <!-- S03-02: 根拠一覧 -->
+      <div class="card">
+        <strong>根拠</strong>
+        <!-- S03-03: 参照ファイルリンク -->
+        <p class="muted detail-meta">ファイル: {{referenceFiles}}</p>
+        <!-- S03-04: 診断情報 -->
+        <p class="muted">診断: {{diagnosticsSummary}}</p>
+        <!-- S03-05: 変更文脈 -->
+        <p class="muted">変更箇所: {{changeSummary}}</p>
+      </div>
 
-    <!-- S03-07: 深掘り質問 / S03-08: ナレッジ候補化 -->
-    <div class="card">
-      <button id="deepDive">深掘り質問</button>
-      <button id="saveKnowledge" class="secondary">ナレッジとして保存</button>
-    </div>
+      <!-- S03-07: 深掘り質問 / S03-08: ナレッジ候補化 -->
+      <div class="card">
+        <button id="deepDive" {{deepDiveDisabled}}>深掘り質問</button>
+        <button id="saveKnowledge" class="secondary">ナレッジとして保存</button>
+      </div>
 
-    <!-- S03-09: 戻る -->
-    <div class="card">
-      <button id="back" class="secondary">← 戻る</button>
+      <!-- S03-09: 戻る -->
+      <div class="card">
+        <button id="back" class="secondary">← 戻る</button>
+      </div>
     </div>
 
     <script>
@@ -46,7 +49,7 @@
         vscode.postMessage({ type: 'saveKnowledge' });
       });
       document.getElementById('back')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'navigate', screen: 's02' });
+        vscode.postMessage({ type: 'navigateBack' });
       });
     </script>
   </body>

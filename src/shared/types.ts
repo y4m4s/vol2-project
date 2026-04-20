@@ -8,11 +8,24 @@ export type ConnectionState =
 
 export type AdviceMode = "manual" | "always";
 
-export type NavigatorScreen = "onboarding" | "main" | "error";
+export type NavigatorScreen =
+  | "onboarding"
+  | "main"
+  | "error"
+  | "advice_detail"
+  | "context_check"
+  | "knowledge"
+  | "settings";
 
 export type RequestState = "idle" | "connecting" | "requesting_guidance";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
+
+export type GuidanceKind = "manual" | "context" | "deep_dive";
+
+export type ConversationRole = "user" | "assistant";
+
+export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -35,11 +48,66 @@ export interface GuidanceContext {
   diagnosticsSummary: DiagnosticSummary[];
 }
 
+export interface ContextTargetSettings {
+  activeFile: boolean;
+  selection: boolean;
+  diagnostics: boolean;
+  recentEdits: boolean;
+  relatedSymbols: boolean;
+}
+
+export interface NavigatorSettings {
+  defaultMode: AdviceMode;
+  alwaysModeEnabled: boolean;
+  requestIntervalMs: number;
+  idleDelayMs: number;
+  suppressDuplicate: boolean;
+  sendTargets: ContextTargetSettings;
+  excludedGlobs: string[];
+}
+
+export interface RequestPlanCategory {
+  key: ContextCategoryKey;
+  label: string;
+  description: string;
+  enabled: boolean;
+  included: boolean;
+  note?: string;
+}
+
+export interface RequestPlanFile {
+  path: string;
+  sizeText: string;
+  included: boolean;
+  excludedReason?: string;
+}
+
+export interface RequestPlanSnapshot {
+  kind: GuidanceKind;
+  categories: RequestPlanCategory[];
+  targetFiles: RequestPlanFile[];
+  excludedGlobs: string[];
+  estimatedSizeText: string;
+}
+
 export interface GuidanceCard {
+  id: string;
   requestedAt: string;
   mode: AdviceMode;
   text: string;
   basedOn: NavigatorContextPreview;
+  requestPlan: RequestPlanSnapshot;
+}
+
+export interface ConversationEntry {
+  id: string;
+  role: ConversationRole;
+  text: string;
+  createdAt: string;
+  kind: GuidanceKind;
+  basedOn?: NavigatorContextPreview;
+  mode?: AdviceMode;
+  requestPlan?: RequestPlanSnapshot;
 }
 
 export interface NavigatorStatusMessage {
@@ -47,14 +115,35 @@ export interface NavigatorStatusMessage {
   text: string;
 }
 
+export interface AdviceDetailViewData {
+  id: string;
+  adviceBody: string;
+  speculativeNote: string;
+  referenceFiles: string[];
+  diagnosticsSummary: string;
+  changeSummary: string;
+  canDeepDive: boolean;
+}
+
+export interface KnowledgeListItem {
+  id: string;
+  title: string;
+  summary: string;
+  status: "active" | "disabled";
+  updatedAt: string;
+}
+
 export interface NavigatorSessionState {
   screen: NavigatorScreen;
+  screenHistory: NavigatorScreen[];
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationHistory: ConversationEntry[];
+  selectedConversationId?: string;
 }
 
 export interface NavigatorViewModel {
@@ -68,4 +157,9 @@ export interface NavigatorViewModel {
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationHistory: ConversationEntry[];
+  selectedAdvice?: AdviceDetailViewData;
+  currentRequestPlan: RequestPlanSnapshot;
+  settings: NavigatorSettings;
+  knowledgeItems: KnowledgeListItem[];
 }

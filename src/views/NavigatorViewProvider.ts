@@ -2,7 +2,36 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
-import { NavigatorViewModel } from "../shared/types";
+import {
+  AdviceDetailViewData,
+  ContextCategoryKey,
+  ConversationEntry,
+  NavigatorScreen,
+  NavigatorViewModel,
+  RequestPlanCategory,
+  RequestPlanFile
+} from "../shared/types";
+
+interface WebviewMessage {
+  type: string;
+  screen?: string;
+  text?: string;
+  id?: string;
+  mode?: "manual" | "always";
+  query?: string;
+  filter?: string;
+  defaultMode?: "manual" | "always";
+  alwaysModeEnabled?: boolean;
+  requestIntervalSec?: number;
+  idleDelaySec?: number;
+  suppressDuplicate?: boolean;
+  ctxActiveFile?: boolean;
+  ctxSelection?: boolean;
+  ctxDiagnostics?: boolean;
+  ctxRecentEdits?: boolean;
+  ctxSymbols?: boolean;
+  excludeGlobs?: string;
+}
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "aiPairNavigator.sidebar";
@@ -36,20 +65,75 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
     this.clearViewDisposables();
     this.viewDisposables.push(
-      webviewView.webview.onDidReceiveMessage(async (message: { type: string; screen?: string; text?: string }) => {
+      webviewView.webview.onDidReceiveMessage(async (message: WebviewMessage) => {
         switch (message.type) {
           case "connect":
             await this.controller.connectCopilot();
             return;
           case "ask":
+            await this.controller.askForGuidance(message.text);
+            return;
           case "askContext":
-            await this.controller.askForGuidance();
+            await this.controller.askForGuidance(undefined, "context");
+            return;
+          case "setMode":
+            if (message.mode) {
+              this.controller.setMode(message.mode);
+            }
+            return;
+          case "navigate":
+            if (message.screen) {
+              this.controller.navigate(message.screen);
+            }
+            return;
+          case "navigateBack":
+            this.controller.navigateBack();
+            return;
+          case "openAdviceDetail":
+            if (message.id) {
+              this.controller.selectConversation(message.id);
+            }
+            return;
+          case "deepDive":
+            await this.controller.deepDiveSelectedAdvice();
+            return;
+          case "saveKnowledge":
+            this.controller.saveKnowledge();
+            return;
+          case "saveSettings":
+            if (this.isCompleteSettingsMessage(message)) {
+              await this.controller.saveSettings({
+                defaultMode: message.defaultMode,
+                alwaysModeEnabled: message.alwaysModeEnabled,
+                requestIntervalSec: message.requestIntervalSec,
+                idleDelaySec: message.idleDelaySec,
+                suppressDuplicate: message.suppressDuplicate,
+                ctxActiveFile: message.ctxActiveFile,
+                ctxSelection: message.ctxSelection,
+                ctxDiagnostics: message.ctxDiagnostics,
+                ctxRecentEdits: message.ctxRecentEdits,
+                ctxSymbols: message.ctxSymbols,
+                excludeGlobs: message.excludeGlobs
+              });
+            }
+            return;
+          case "resetSettings":
+            await this.controller.resetSettings();
+            return;
+          case "searchKnowledge":
+            this.controller.searchKnowledge(message.query ?? "");
+            return;
+          case "filterKnowledge":
+            this.controller.filterKnowledge(message.filter ?? "");
+            return;
+          case "exportKnowledge":
+            this.controller.exportKnowledge();
+            return;
+          case "resetKnowledge":
+            this.controller.resetKnowledge();
             return;
           case "refresh":
             await this.refresh();
-            return;
-          case "navigate":
-            // s04/s05/s06 は未実装のため無視
             return;
           default:
             return;
@@ -64,6 +148,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     if (!this.view) {
       return;
     }
+
     this.view.webview.html = this.render();
   }
 
@@ -76,22 +161,41 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private render(): string {
     const model = this.controller.getViewModel();
-    switch (model.screen) {
-      case "main":  return this.loadScreen("s02-main", model);
-      case "error": return this.loadScreen("s07-error", model);
-      default:      return this.loadScreen("s01-connection", model);
+    return this.loadScreen(this.resolveScreenName(model.screen), model);
+  }
+
+  private resolveScreenName(screen: NavigatorScreen): string {
+    switch (screen) {
+      case "main":
+        return "s02-main";
+      case "advice_detail":
+        return "s03-advice-detail";
+      case "context_check":
+        return "s04-context-check";
+      case "knowledge":
+        return "s05-knowledge";
+      case "settings":
+        return "s06-settings";
+      case "error":
+        return "s07-error";
+      case "onboarding":
+      default:
+        return "s01-connection";
     }
   }
 
   private loadScreen(screenName: string, model: NavigatorViewModel): string {
-    const webview = this.view!.webview;
+    if (!this.view) {
+      return "";
+    }
 
+    const webview = this.view.webview;
     const htmlPath = path.join(this.extensionUri.fsPath, "src", "views", "screens", `${screenName}.html`);
-    let html = fs.readFileSync(htmlPath, "utf-8");
+    const html = fs.readFileSync(htmlPath, "utf-8");
 
-    const commonCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", "common.css")
-    ).toString();
+    const commonCssUri = webview
+      .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", "common.css"))
+      .toString();
 
     const screenCssPath = vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", `${screenName}.css`);
     const screenCssUri = fs.existsSync(screenCssPath.fsPath)
@@ -101,7 +205,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     const vars: Record<string, string> = {
       commonCssUri,
       screenCssUri,
-      ...this.getScreenVars(screenName, model),
+      ...this.getScreenVars(screenName, model)
     };
 
     return this.applyTemplate(html, vars);
@@ -112,36 +216,51 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       case "s01-connection":
         return {
           connectDisabled: model.canConnect ? "" : " disabled",
-          connectLabel: model.isBusy ? "接続中..." : "Copilotに接続",
+          connectLabel: model.isBusy ? "接続中..." : "Copilotに接続"
         };
-
-      case "s02-main": {
-        const isConnected = model.connectionState === "connected";
-        const chatAreaHtml = model.latestGuidance
-          ? `<div style="white-space:pre-wrap;font-size:0.9em;text-align:left;padding:8px;width:100%">
-               <p style="font-size:0.85em;color:var(--vscode-descriptionForeground);margin-bottom:6px">
-                 ${this.escapeHtml(this.formatRequestedAt(model.latestGuidance.requestedAt))}
-               </p>
-               ${this.escapeHtml(model.latestGuidance.text)}
-             </div>`
-          : `<div class="empty-chat">
-               <div class="empty-title">会話を開始してください</div>
-               <div class="empty-desc">
-                 質問や確認したいことを入力するか、<br>
-                 「この箇所を相談」で現在の文脈について質問できます
-               </div>
-             </div>`;
+      case "s02-main":
         return {
-          statusDotClass: isConnected ? "" : "disconnected",
+          statusDotClass: model.connectionState === "connected" ? "" : "disconnected",
           connectionLabel: this.escapeHtml(model.connectionState),
           activeFileRef: this.escapeHtml(model.contextPreview.activeFilePath ?? "なし"),
           diagnosticsRef: `${model.contextPreview.diagnosticsSummary.length} 件`,
-          modeManualActive: "active",
-          modeAlwaysActive: "",
-          chatAreaHtml,
+          modeManualActive: model.mode === "manual" ? "active" : "",
+          modeAlwaysActive: model.mode === "always" ? "active" : "",
+          chatAreaHtml: this.renderChatHistory(model.conversationHistory),
+          sendDisabled: model.canAskForGuidance ? "" : " disabled",
+          askContextDisabled: model.canAskForGuidance ? "" : " disabled"
         };
-      }
-
+      case "s03-advice-detail":
+        return this.getAdviceDetailVars(model.selectedAdvice);
+      case "s04-context-check":
+        return {
+          categoryCards: this.renderCategoryCards(model.currentRequestPlan.categories),
+          targetFilesList: this.renderTargetFiles(model.currentRequestPlan.targetFiles),
+          excludePatterns: model.settings.excludedGlobs.map((item) => this.escapeHtml(item)).join("<br>"),
+          maxSizeLabel: "最大本文抜粋: 8000文字 / 選択範囲: 4000文字",
+          estimatedSize: this.escapeHtml(model.currentRequestPlan.estimatedSizeText)
+        };
+      case "s05-knowledge":
+        return {
+          knowledgeEmptyStyle: model.knowledgeItems.length > 0 ? "display:none;" : "display:block;",
+          knowledgeListStyle: model.knowledgeItems.length > 0 ? "display:block;" : "display:none;",
+          knowledgeList: this.renderKnowledgeList(model)
+        };
+      case "s06-settings":
+        return {
+          modeManualSelected: model.settings.defaultMode === "manual" ? "selected" : "",
+          modeAlwaysSelected: model.settings.defaultMode === "always" ? "selected" : "",
+          alwaysModeChecked: model.settings.alwaysModeEnabled ? "checked" : "",
+          requestIntervalSec: String(Math.round(model.settings.requestIntervalMs / 1000)),
+          idleDelaySec: String(Math.round(model.settings.idleDelayMs / 1000)),
+          suppressDuplicateChecked: model.settings.suppressDuplicate ? "checked" : "",
+          ctxActiveFileChecked: model.settings.sendTargets.activeFile ? "checked" : "",
+          ctxSelectionChecked: model.settings.sendTargets.selection ? "checked" : "",
+          ctxDiagnosticsChecked: model.settings.sendTargets.diagnostics ? "checked" : "",
+          ctxRecentEditsChecked: model.settings.sendTargets.recentEdits ? "checked" : "",
+          ctxSymbolsChecked: model.settings.sendTargets.relatedSymbols ? "checked" : "",
+          excludeGlobs: this.escapeHtml(model.settings.excludedGlobs.join("\n"))
+        };
       case "s07-error": {
         const { title, description } = this.getErrorCopy(model);
         return {
@@ -149,12 +268,163 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           errorDescription: this.escapeHtml(description),
           recommendedAction: this.escapeHtml(
             model.statusMessage?.text ?? "少し時間を置いてから再試行してください。"
-          ),
+          )
         };
       }
-
       default:
         return {};
+    }
+  }
+
+  private getAdviceDetailVars(detail?: AdviceDetailViewData): Record<string, string> {
+    if (!detail) {
+      return {
+        adviceBody: "まだ詳細表示できるアドバイスがありません。",
+        speculativeNote: "まずメイン画面でガイダンスを取得してください。",
+        referenceFiles: "なし",
+        diagnosticsSummary: "なし",
+        changeSummary: "なし",
+        deepDiveDisabled: " disabled"
+      };
+    }
+
+    return {
+      adviceBody: this.escapeHtml(detail.adviceBody),
+      speculativeNote: this.escapeHtml(detail.speculativeNote),
+      referenceFiles: detail.referenceFiles.length
+        ? detail.referenceFiles.map((item) => this.escapeHtml(item)).join("<br>")
+        : "なし",
+      diagnosticsSummary: this.escapeHtml(detail.diagnosticsSummary),
+      changeSummary: this.escapeHtml(detail.changeSummary),
+      deepDiveDisabled: detail.canDeepDive ? "" : " disabled"
+    };
+  }
+
+  private renderChatHistory(history: ConversationEntry[]): string {
+    if (history.length === 0) {
+      return `
+        <div class="empty-chat">
+          <div class="empty-title">会話を開始してください</div>
+          <div class="empty-desc">
+            質問や確認したいことを入力するか、<br>
+            「この箇所を相談」で現在の文脈について質問できます
+          </div>
+        </div>
+      `;
+    }
+
+    return history
+      .map((entry) => {
+        const metaLabel = entry.role === "user" ? "あなた" : "Navigator";
+        return `
+          <div class="chat-entry ${entry.role}">
+            <div class="chat-bubble">
+              <div class="chat-meta">
+                <span>${metaLabel}</span>
+                <span>${this.escapeHtml(this.formatRequestedAt(entry.createdAt))}</span>
+              </div>
+              <div class="chat-text">${this.escapeHtml(entry.text)}</div>
+              ${
+                entry.role === "assistant"
+                  ? `<div class="chat-actions">
+                       <button class="secondary" data-advice-id="${this.escapeHtml(entry.id)}">詳細を見る</button>
+                     </div>`
+                  : ""
+              }
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  private renderCategoryCards(categories: RequestPlanCategory[]): string {
+    return categories
+      .map((category) => {
+        const badgeClass = category.enabled && category.included ? "badge-green" : "badge-gray";
+        const badgeText = category.enabled ? (category.included ? "有効" : "未収集") : "無効";
+        const noteHtml = category.note
+          ? `<div class="cat-desc">${this.escapeHtml(category.note)}</div>`
+          : "";
+
+        return `
+          <div class="category-card">
+            <span class="cat-icon material-symbols-outlined">${this.iconForCategory(category.key)}</span>
+            <div class="cat-body">
+              <div class="cat-name">${this.escapeHtml(category.label)}</div>
+              <div class="cat-desc">${this.escapeHtml(category.description)}</div>
+              ${noteHtml}
+            </div>
+            <span class="cat-badge badge ${badgeClass}">${badgeText}</span>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  private renderTargetFiles(files: RequestPlanFile[]): string {
+    if (files.length === 0) {
+      return `
+        <div class="file-list-item excluded">
+          <div>
+            <div class="file-path">対象ファイルはありません</div>
+            <div class="file-excluded">アクティブファイルが開かれていない可能性があります</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return files
+      .map((file) => {
+        const excludedClass = file.included ? "" : " excluded";
+        const excludedHtml = file.excludedReason
+          ? `<div class="file-excluded">${this.escapeHtml(file.excludedReason)}</div>`
+          : "";
+
+        return `
+          <div class="file-list-item${excludedClass}">
+            <div>
+              <div class="file-path">${this.escapeHtml(file.path)}</div>
+              ${excludedHtml}
+            </div>
+            <div class="file-size">${this.escapeHtml(file.sizeText)}</div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  private renderKnowledgeList(model: NavigatorViewModel): string {
+    if (model.knowledgeItems.length === 0) {
+      return "";
+    }
+
+    return model.knowledgeItems
+      .map(
+        (item) => `
+          <div class="card">
+            <div class="section-title">${this.escapeHtml(item.title)}</div>
+            <div class="muted">${this.escapeHtml(item.summary)}</div>
+            <div class="muted">${this.escapeHtml(item.updatedAt)}</div>
+          </div>
+        `
+      )
+      .join("");
+  }
+
+  private iconForCategory(key: ContextCategoryKey): string {
+    switch (key) {
+      case "activeFile":
+        return "description";
+      case "selection":
+        return "highlight_alt";
+      case "diagnostics":
+        return "warning";
+      case "recentEdits":
+        return "edit_note";
+      case "relatedSymbols":
+      default:
+        return "code";
     }
   }
 
@@ -169,6 +439,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
         description: model.statusMessage?.text ?? "Workspace Trust や Copilot の利用状態を確認してください。"
       };
     }
+
     return {
       title: "現在は利用が制限されています",
       description: model.statusMessage?.text ?? "少し時間を置いてから再試行してください。"
@@ -178,6 +449,36 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   private formatRequestedAt(value: string): string {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ja-JP");
+  }
+
+  private isCompleteSettingsMessage(
+    message: WebviewMessage
+  ): message is WebviewMessage & {
+    defaultMode: "manual" | "always";
+    alwaysModeEnabled: boolean;
+    requestIntervalSec: number;
+    idleDelaySec: number;
+    suppressDuplicate: boolean;
+    ctxActiveFile: boolean;
+    ctxSelection: boolean;
+    ctxDiagnostics: boolean;
+    ctxRecentEdits: boolean;
+    ctxSymbols: boolean;
+    excludeGlobs: string;
+  } {
+    return (
+      typeof message.defaultMode === "string" &&
+      typeof message.alwaysModeEnabled === "boolean" &&
+      typeof message.requestIntervalSec === "number" &&
+      typeof message.idleDelaySec === "number" &&
+      typeof message.suppressDuplicate === "boolean" &&
+      typeof message.ctxActiveFile === "boolean" &&
+      typeof message.ctxSelection === "boolean" &&
+      typeof message.ctxDiagnostics === "boolean" &&
+      typeof message.ctxRecentEdits === "boolean" &&
+      typeof message.ctxSymbols === "boolean" &&
+      typeof message.excludeGlobs === "string"
+    );
   }
 
   private clearViewDisposables(): void {

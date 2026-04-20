@@ -4,6 +4,8 @@ import { ContextCollector } from "./services/ContextCollector";
 import { AdviceService } from "./services/AdviceService";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
+import { RequestPlanner } from "./services/RequestPlanner";
+import { SettingsService } from "./services/SettingsService";
 import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -12,6 +14,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new ContextCollector(),
     connectionService,
     new AdviceService(connectionService),
+    new RequestPlanner(),
+    new SettingsService(context.workspaceState),
     new KnowledgeStore()
   );
 

@@ -110,16 +110,18 @@
   min-height: 250px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   border: none;
   background: transparent;
   padding: 0;
+  gap: 8px;
 }
 
 .empty-chat {
   text-align: center;
   color: var(--vscode-descriptionForeground);
+  margin: auto 0;
 }
 
 .empty-chat .empty-title {
@@ -168,4 +170,58 @@
 /* --- この箇所を相談ボタン --- */
 .consult-btn {
   margin-top: 0;
+}
+
+.chat-entry {
+  display: flex;
+  width: 100%;
+}
+
+.chat-entry.user {
+  justify-content: flex-end;
+}
+
+.chat-entry.assistant {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.chat-entry.user .chat-bubble {
+  background: var(--vscode-button-secondaryBackground);
+}
+
+.chat-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.8em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.chat-text {
+  white-space: pre-wrap;
+  font-size: 0.9em;
+}
+
+.chat-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-actions button {
+  width: auto;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.82em;
 }

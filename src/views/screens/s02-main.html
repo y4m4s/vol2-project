@@ -45,18 +45,24 @@
 
     <!-- S02-05: 入力欄 -->
     <div class="input-row">
-      <input type="text" id="inputArea" placeholder="" />
-      <button class="send-btn" id="send">&#x27A4;</button>
+      <input type="text" id="inputArea" placeholder="質問や確認したいことを入力" />
+      <button class="send-btn" id="send"{{sendDisabled}}>&#x27A4;</button>
     </div>
 
     <!-- S02-06: この箇所を相談 -->
-    <button id="askContext" class="secondary consult-btn">&#x1F4CB; この箇所を相談</button>
+    <button id="askContext" class="secondary consult-btn"{{askContextDisabled}}>&#x1F4CB; この箇所を相談</button>
 
     <script>
       const vscode = acquireVsCodeApi();
       document.getElementById('send')?.addEventListener('click', () => {
         const text = document.getElementById('inputArea').value;
         vscode.postMessage({ type: 'ask', text });
+      });
+      document.getElementById('inputArea')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const text = document.getElementById('inputArea').value;
+          vscode.postMessage({ type: 'ask', text });
+        }
       });
       document.getElementById('askContext')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'askContext' });
@@ -75,6 +81,11 @@
       });
       document.getElementById('btnSettings')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'navigate', screen: 's06' });
+      });
+      document.querySelectorAll('[data-advice-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          vscode.postMessage({ type: 'openAdviceDetail', id: btn.getAttribute('data-advice-id') });
+        });
       });
     </script>
   </body>
