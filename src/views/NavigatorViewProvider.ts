@@ -4,9 +4,12 @@ import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
 import {
   AdviceDetailViewData,
+  AdviceTriggerReason,
+  AutoAdviceState,
   ContextCategoryKey,
   ConversationEntry,
   NavigatorScreen,
+  NavigatorStatusMessage,
   NavigatorViewModel,
   RequestPlanCategory,
   RequestPlanFile
@@ -80,6 +83,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             if (message.mode) {
               this.controller.setMode(message.mode);
             }
+            return;
+          case "toggleAutoPause":
+            this.controller.toggleAutoPause();
             return;
           case "navigate":
             if (message.screen) {
@@ -221,14 +227,22 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       case "s02-main":
         return {
           statusDotClass: model.connectionState === "connected" ? "" : "disconnected",
-          connectionLabel: this.escapeHtml(model.connectionState),
+          connectionLabel: this.escapeHtml(this.formatConnectionState(model.connectionState)),
           activeFileRef: this.escapeHtml(model.contextPreview.activeFilePath ?? "なし"),
+          selectedRef: this.escapeHtml(model.contextPreview.selectedTextPreview ?? "選択範囲なし"),
           diagnosticsRef: `${model.contextPreview.diagnosticsSummary.length} 件`,
           modeManualActive: model.mode === "manual" ? "active" : "",
           modeAlwaysActive: model.mode === "always" ? "active" : "",
+          modeNote: this.escapeHtml(this.getModeNote(model)),
           chatAreaHtml: this.renderChatHistory(model.conversationHistory),
           sendDisabled: model.canAskForGuidance ? "" : " disabled",
-          askContextDisabled: model.canAskForGuidance ? "" : " disabled"
+          askContextDisabled: model.canAskForGuidance ? "" : " disabled",
+          autoStatusText: this.escapeHtml(this.getAutoStatusText(model.autoAdvice)),
+          autoPendingReason: this.escapeHtml(this.describePendingReason(model.autoAdvice.pendingTriggerReason)),
+          autoPauseLabel: model.autoAdvice.paused ? "再開" : "一時停止",
+          autoPauseDisabled: model.autoAdvice.enabled ? "" : " disabled",
+          latestAdviceCardHtml: this.renderLatestAdviceCard(model),
+          statusNoticeHtml: this.renderStatusNotice(model.statusMessage)
         };
       case "s03-advice-detail":
         return this.getAdviceDetailVars(model.selectedAdvice);
@@ -315,7 +329,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
     return history
       .map((entry) => {
-        const metaLabel = entry.role === "user" ? "あなた" : "Navigator";
+        const metaLabel = entry.role === "user" ? "あなた" : entry.kind === "always" ? "Navigator 自動助言" : "Navigator";
         return `
           <div class="chat-entry ${entry.role}">
             <div class="chat-bubble">
@@ -412,6 +426,87 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       .join("");
   }
 
+  private renderLatestAdviceCard(model: NavigatorViewModel): string {
+    if (!model.latestGuidance) {
+      return `
+        <div class="auto-advice-card empty">
+          <div class="auto-advice-title">最新アドバイス</div>
+          <div class="auto-advice-text">まだアドバイスはありません。</div>
+        </div>
+      `;
+    }
+
+    const label = model.latestGuidance.mode === "always" ? "最新の自動アドバイス" : "最新アドバイス";
+
+    return `
+      <div class="auto-advice-card">
+        <div class="auto-advice-meta">
+          <span class="auto-advice-title">${this.escapeHtml(label)}</span>
+          <span>${this.escapeHtml(this.formatRequestedAt(model.latestGuidance.requestedAt))}</span>
+        </div>
+        <div class="auto-advice-text">${this.escapeHtml(this.truncate(model.latestGuidance.text, 180))}</div>
+        <div class="auto-advice-actions">
+          <button class="secondary" data-advice-id="${this.escapeHtml(model.latestGuidance.id)}">詳細を見る</button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderStatusNotice(message?: NavigatorStatusMessage): string {
+    if (!message) {
+      return "";
+    }
+
+    return `<div class="status-notice ${this.escapeHtml(message.kind)}">${this.escapeHtml(message.text)}</div>`;
+  }
+
+  private getModeNote(model: NavigatorViewModel): string {
+    if (!model.settings.alwaysModeEnabled) {
+      return "※ 常時モードは設定画面で有効化できます";
+    }
+
+    if (model.mode === "always") {
+      return "※ 常時モードでは編集が落ち着いたタイミングで自動助言します";
+    }
+
+    return "※ 必要時モードでは明示操作でのみ助言します";
+  }
+
+  private getAutoStatusText(autoAdvice: AutoAdviceState): string {
+    if (!autoAdvice.enabled) {
+      return "現在は必要時モードです。自動助言は動いていません。";
+    }
+
+    if (autoAdvice.paused) {
+      return "常時モードは一時停止中です。再開すると監視を続けます。";
+    }
+
+    if (autoAdvice.waitingForIdle) {
+      return `入力が落ち着くのを待っています。次の判定まで約${this.formatDurationSeconds(autoAdvice.idleRemainingMs)}秒です。`;
+    }
+
+    if (autoAdvice.cooldownRemainingMs > 0) {
+      return `次の自動助言までクールダウン中です。残り約${this.formatDurationSeconds(autoAdvice.cooldownRemainingMs)}秒です。`;
+    }
+
+    return "編集中のファイルを監視しています。変化があれば自動助言を試みます。";
+  }
+
+  private describePendingReason(reason?: AdviceTriggerReason): string {
+    switch (reason) {
+      case "text_edit":
+        return "編集を検知";
+      case "selection_change":
+        return "選択範囲の変化を検知";
+      case "editor_change":
+        return "ファイル切替を検知";
+      case "diagnostics_change":
+        return "診断変化を検知";
+      default:
+        return "待機中";
+    }
+  }
+
   private iconForCategory(key: ContextCategoryKey): string {
     switch (key) {
       case "activeFile":
@@ -446,9 +541,35 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     };
   }
 
+  private formatConnectionState(state: NavigatorViewModel["connectionState"]): string {
+    switch (state) {
+      case "connected":
+        return "接続済み";
+      case "connecting":
+        return "接続中";
+      case "consent_pending":
+        return "同意待ち";
+      case "restricted":
+        return "制限中";
+      case "unavailable":
+        return "利用不可";
+      case "disconnected":
+      default:
+        return "未接続";
+    }
+  }
+
   private formatRequestedAt(value: string): string {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ja-JP");
+  }
+
+  private formatDurationSeconds(milliseconds: number): string {
+    return String(Math.max(1, Math.ceil(milliseconds / 1000)));
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    return value.length <= maxLength ? value : `${value.slice(0, maxLength)}...`;
   }
 
   private isCompleteSettingsMessage(

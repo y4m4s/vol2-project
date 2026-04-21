@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { NavigatorController } from "./application/NavigatorController";
 import { ContextCollector } from "./services/ContextCollector";
 import { AdviceService } from "./services/AdviceService";
+import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { RequestPlanner } from "./services/RequestPlanner";
@@ -10,10 +11,12 @@ import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const connectionService = new ConnectionService();
+  const contextCollector = new ContextCollector();
   const controller = new NavigatorController(
-    new ContextCollector(),
+    contextCollector,
     connectionService,
     new AdviceService(connectionService),
+    new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
     new KnowledgeStore()

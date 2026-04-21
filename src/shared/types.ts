@@ -8,6 +8,8 @@ export type ConnectionState =
 
 export type AdviceMode = "manual" | "always";
 
+export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
+
 export type NavigatorScreen =
   | "onboarding"
   | "main"
@@ -21,7 +23,7 @@ export type RequestState = "idle" | "connecting" | "requesting_guidance";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
-export type GuidanceKind = "manual" | "context" | "deep_dive";
+export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
@@ -46,6 +48,8 @@ export interface GuidanceContext {
   activeFileExcerpt?: string;
   selectedText?: string;
   diagnosticsSummary: DiagnosticSummary[];
+  recentEditsSummary: string[];
+  relatedSymbols: string[];
 }
 
 export interface ContextTargetSettings {
@@ -115,6 +119,16 @@ export interface NavigatorStatusMessage {
   text: string;
 }
 
+export interface AutoAdviceState {
+  enabled: boolean;
+  paused: boolean;
+  waitingForIdle: boolean;
+  idleRemainingMs: number;
+  cooldownRemainingMs: number;
+  pendingTriggerReason?: AdviceTriggerReason;
+  lastAdviceAt?: string;
+}
+
 export interface AdviceDetailViewData {
   id: string;
   adviceBody: string;
@@ -139,6 +153,7 @@ export interface NavigatorSessionState {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
@@ -154,6 +169,7 @@ export interface NavigatorViewModel {
   canAskForGuidance: boolean;
   canSwitchMode: boolean;
   isBusy: boolean;
+  autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;

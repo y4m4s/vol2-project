@@ -103,6 +103,17 @@ export class AdviceService {
       }
     }
 
+    if (context.recentEditsSummary.length > 0) {
+      lines.push("", "最近の編集:");
+      for (const recentEdit of context.recentEditsSummary) {
+        lines.push(`- ${recentEdit}`);
+      }
+    }
+
+    if (context.relatedSymbols.length > 0) {
+      lines.push("", `関連シンボル候補: ${context.relatedSymbols.join(", ")}`);
+    }
+
     if (userPrompt?.trim()) {
       lines.push("", "## ユーザーからの相談", userPrompt.trim());
     }
@@ -125,6 +136,8 @@ export class AdviceService {
         return "ユーザーの質問に答える形で、現在の作業文脈を踏まえた考え方の観点や次に確認すべきポイントを提示してください。";
       case "deep_dive":
         return "直前のアドバイスを踏まえて、より具体的な観点や確認手順を段階的に提示してください。";
+      case "always":
+        return "現在の編集内容と、与えられた変更前後の差分を見て、今のタイミングで役立つ短いフィードバックを1〜3点だけ返してください。重い説明は避け、確認観点・違和感・変更で壊れやすい箇所・次に見る場所を中心に簡潔に伝えてください。";
       case "context":
       default:
         return "ユーザーが相談したいことがあります。現在の作業文脈を踏まえ、考え方の観点や次に確認すべきポイントを提示してください。";

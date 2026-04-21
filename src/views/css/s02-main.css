@@ -77,6 +77,45 @@
   margin-bottom: 10px;
 }
 
+.auto-status-panel {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--vscode-editorWidget-background);
+  margin-bottom: 10px;
+}
+
+.auto-status-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.auto-status-title {
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+.auto-status-sub {
+  font-size: 0.8em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.auto-status-text {
+  font-size: 0.88em;
+  line-height: 1.6;
+}
+
+.auto-pause-btn {
+  width: auto;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.82em;
+  white-space: nowrap;
+}
+
 /* --- 参照文脈 --- */
 .context-ref {
   margin-bottom: 10px;
@@ -116,6 +155,29 @@
   background: transparent;
   padding: 0;
   gap: 8px;
+}
+
+.status-notice {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 0.86em;
+  border: 1px solid transparent;
+}
+
+.status-notice.info {
+  background: color-mix(in srgb, var(--vscode-button-background) 18%, transparent);
+  border-color: color-mix(in srgb, var(--vscode-button-background) 40%, transparent);
+}
+
+.status-notice.warning {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+
+.status-notice.error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 .empty-chat {
@@ -220,6 +282,51 @@
 }
 
 .chat-actions button {
+  width: auto;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.82em;
+}
+
+.auto-advice-card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--vscode-button-secondaryBackground) 36%, transparent);
+}
+
+.auto-advice-card.empty {
+  background: var(--vscode-editorWidget-background);
+}
+
+.auto-advice-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.8em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.auto-advice-title {
+  color: var(--vscode-foreground);
+  font-weight: 700;
+}
+
+.auto-advice-text {
+  white-space: pre-wrap;
+  font-size: 0.88em;
+  line-height: 1.6;
+}
+
+.auto-advice-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.auto-advice-actions button {
   width: auto;
   margin: 0;
   padding: 6px 10px;
