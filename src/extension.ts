@@ -19,7 +19,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
-    new KnowledgeStore()
+    new KnowledgeStore(context.globalStorageUri)
   );
 
   await controller.initialize();

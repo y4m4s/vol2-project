@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ConnectionState, GuidanceContext, GuidanceKind } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
+import type { KnowledgeRecord } from "./KnowledgeStore";
 
 export interface GuidanceRequestSuccess {
   ok: true;
@@ -20,6 +21,7 @@ export interface GuidanceRequestInput {
   kind: GuidanceKind;
   userPrompt?: string;
   previousAssistantText?: string;
+  knowledgeItems?: KnowledgeRecord[];
 }
 
 export class AdviceService {
@@ -68,7 +70,7 @@ export class AdviceService {
   }
 
   private buildPrompt(input: GuidanceRequestInput): string {
-    const { context, kind, userPrompt, previousAssistantText } = input;
+    const { context, kind, userPrompt, previousAssistantText, knowledgeItems } = input;
     const lines: string[] = [
       "You are a pair programming navigator.",
       "Your role is to support the user's learning, not to give direct answers or write code for them.",
@@ -112,6 +114,15 @@ export class AdviceService {
 
     if (context.relatedSymbols.length > 0) {
       lines.push("", `関連シンボル候補: ${context.relatedSymbols.join(", ")}`);
+    }
+
+    if (knowledgeItems && knowledgeItems.length > 0) {
+      lines.push("", "## 再利用する個人ナレッジ");
+      for (const item of knowledgeItems) {
+        const tags = item.tags.length > 0 ? ` [${item.tags.join(", ")}]` : "";
+        lines.push(`- ${item.title}${tags}: ${item.summary}`);
+      }
+      lines.push("これらは過去の学びとして参考にし、現在の文脈に合う場合だけ控えめに活用してください。");
     }
 
     if (userPrompt?.trim()) {

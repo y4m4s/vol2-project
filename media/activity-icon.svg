@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="AI Pair Navigator">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10.6" stroke-width="1.45"/>
+    <path stroke-width="1.15" d="M12 1.9v1.7M22.1 12h-1.7M12 22.1v-1.7M1.9 12h1.7"/>
+    <path stroke-width=".75" opacity=".72" d="M19.1 4.9 18 6M19.1 19.1 18 18M4.9 19.1 6 18M4.9 4.9 6 6"/>
+
+    <path stroke-width=".8" opacity=".78" d="M6.6 10.1h2.3V7.9M17.4 10.1h-2.3V7.9M6.6 13.9h2.3v2.2M17.4 13.9h-2.3v2.2"/>
+    <circle cx="6.6" cy="10.1" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="8.9" cy="10.1" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="15.1" cy="10.1" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="17.4" cy="10.1" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="6.6" cy="13.9" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="8.9" cy="13.9" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="15.1" cy="13.9" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+    <circle cx="17.4" cy="13.9" r=".45" fill="currentColor" stroke="none" opacity=".78"/>
+  </g>
+
+  <path fill="currentColor" d="M12 5.15 10.7 10.5 12 12l1.3-1.5L12 5.15Z"/>
+  <path fill="currentColor" opacity=".42" d="M12 18.85 10.3 13.5 12 12l1.7 1.5L12 18.85Z"/>
+  <circle cx="12" cy="12" r="1.15" fill="currentColor"/>
+  <circle cx="12" cy="12" r=".45" fill="none" stroke="currentColor" stroke-width=".6" opacity=".35"/>
+</svg>

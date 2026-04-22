@@ -23,6 +23,11 @@ interface WebviewMessage {
   mode?: "manual" | "always";
   query?: string;
   filter?: string;
+  title?: string;
+  summary?: string;
+  body?: string;
+  tags?: string;
+  status?: "active" | "disabled";
   defaultMode?: "manual" | "always";
   alwaysModeEnabled?: boolean;
   requestIntervalSec?: number;
@@ -104,7 +109,34 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.deepDiveSelectedAdvice();
             return;
           case "saveKnowledge":
-            this.controller.saveKnowledge();
+            await this.controller.saveKnowledge();
+            return;
+          case "selectKnowledge":
+            if (message.id) {
+              this.controller.selectKnowledge(message.id);
+            }
+            return;
+          case "updateKnowledge":
+            if (this.isCompleteKnowledgeMessage(message)) {
+              await this.controller.updateKnowledge({
+                id: message.id,
+                title: message.title,
+                summary: message.summary,
+                body: message.body,
+                tags: message.tags,
+                status: message.status
+              });
+            }
+            return;
+          case "toggleKnowledgeStatus":
+            if (message.id) {
+              await this.controller.toggleKnowledgeStatus(message.id);
+            }
+            return;
+          case "deleteKnowledge":
+            if (message.id) {
+              await this.controller.deleteKnowledge(message.id);
+            }
             return;
           case "saveSettings":
             if (this.isCompleteSettingsMessage(message)) {
@@ -133,10 +165,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             this.controller.filterKnowledge(message.filter ?? "");
             return;
           case "exportKnowledge":
-            this.controller.exportKnowledge();
+            await this.controller.exportKnowledge();
             return;
           case "resetKnowledge":
-            this.controller.resetKnowledge();
+            await this.controller.resetKnowledge();
             return;
           case "refresh":
             await this.refresh();
@@ -256,9 +288,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
         };
       case "s05-knowledge":
         return {
+          knowledgeQuery: this.escapeHtml(model.knowledgeQuery),
+          filterAllActive: model.knowledgeStatusFilter === "all" ? "active" : "",
+          filterActiveActive: model.knowledgeStatusFilter === "active" ? "active" : "",
+          filterDisabledActive: model.knowledgeStatusFilter === "disabled" ? "active" : "",
           knowledgeEmptyStyle: model.knowledgeItems.length > 0 ? "display:none;" : "display:block;",
           knowledgeListStyle: model.knowledgeItems.length > 0 ? "display:block;" : "display:none;",
-          knowledgeList: this.renderKnowledgeList(model)
+          knowledgeList: this.renderKnowledgeList(model),
+          selectedKnowledgeDetailHtml: this.renderKnowledgeDetail(model),
+          statusNoticeHtml: this.renderStatusNotice(model.statusMessage)
         };
       case "s06-settings":
         return {
@@ -415,15 +453,77 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
     return model.knowledgeItems
       .map(
-        (item) => `
-          <div class="card">
-            <div class="section-title">${this.escapeHtml(item.title)}</div>
+        (item) => {
+          const selectedClass = model.selectedKnowledge?.id === item.id ? " selected" : "";
+          const tags = item.tags.length > 0
+            ? `<div class="knowledge-tags">${item.tags.map((tag) => `<span>${this.escapeHtml(tag)}</span>`).join("")}</div>`
+            : "";
+
+          return `
+          <div class="knowledge-card${selectedClass}" data-knowledge-id="${this.escapeHtml(item.id)}">
+            <div class="knowledge-card-head">
+              <div class="section-title">${this.escapeHtml(item.title)}</div>
+              <span class="knowledge-status ${this.escapeHtml(item.status)}">${this.escapeHtml(this.formatKnowledgeStatus(item.status))}</span>
+            </div>
             <div class="muted">${this.escapeHtml(item.summary)}</div>
-            <div class="muted">${this.escapeHtml(item.updatedAt)}</div>
+            ${tags}
+            <div class="muted">${this.escapeHtml(this.formatRequestedAt(item.updatedAt))}</div>
           </div>
-        `
+        `;
+        }
       )
       .join("");
+  }
+
+  private renderKnowledgeDetail(model: NavigatorViewModel): string {
+    const detail = model.selectedKnowledge;
+    if (!detail) {
+      return `
+        <div class="knowledge-detail empty-detail">
+          <div class="section-title">ナレッジ詳細</div>
+          <div class="muted">一覧からナレッジを選択すると、本文の確認や編集ができます。</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="knowledge-detail">
+        <div class="detail-header-row">
+          <div class="section-title">ナレッジ詳細</div>
+          <span class="knowledge-status ${this.escapeHtml(detail.status)}">${this.escapeHtml(this.formatKnowledgeStatus(detail.status))}</span>
+        </div>
+        <label class="field-label" for="knowledgeTitle">タイトル</label>
+        <input id="knowledgeTitle" type="text" value="${this.escapeHtml(detail.title)}" />
+
+        <label class="field-label" for="knowledgeSummary">要約</label>
+        <textarea id="knowledgeSummary" rows="3">${this.escapeHtml(detail.summary)}</textarea>
+
+        <label class="field-label" for="knowledgeBody">本文</label>
+        <textarea id="knowledgeBody" rows="8">${this.escapeHtml(detail.body)}</textarea>
+
+        <label class="field-label" for="knowledgeTags">タグ</label>
+        <input id="knowledgeTags" type="text" value="${this.escapeHtml(detail.tags.join(", "))}" />
+
+        <select id="knowledgeStatus" class="knowledge-status-select">
+          <option value="active"${detail.status === "active" ? " selected" : ""}>有効</option>
+          <option value="disabled"${detail.status === "disabled" ? " selected" : ""}>無効</option>
+        </select>
+
+        <div class="knowledge-meta">
+          作成: ${this.escapeHtml(this.formatRequestedAt(detail.createdAt))}<br>
+          更新: ${this.escapeHtml(this.formatRequestedAt(detail.updatedAt))}
+          ${detail.sourceAdviceId ? `<br>元アドバイス: ${this.escapeHtml(detail.sourceAdviceId)}` : ""}
+        </div>
+
+        <div class="knowledge-actions">
+          <button id="saveKnowledgeEdit" data-knowledge-id="${this.escapeHtml(detail.id)}">保存</button>
+          <button id="toggleKnowledgeStatus" class="secondary" data-knowledge-id="${this.escapeHtml(detail.id)}">
+            ${detail.status === "active" ? "無効化" : "有効化"}
+          </button>
+          <button id="deleteKnowledge" class="danger" data-knowledge-id="${this.escapeHtml(detail.id)}">削除</button>
+        </div>
+      </div>
+    `;
   }
 
   private renderLatestAdviceCard(model: NavigatorViewModel): string {
@@ -559,6 +659,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     }
   }
 
+  private formatKnowledgeStatus(status: "active" | "disabled"): string {
+    return status === "active" ? "有効" : "無効";
+  }
+
   private formatRequestedAt(value: string): string {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ja-JP");
@@ -599,6 +703,26 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       typeof message.ctxRecentEdits === "boolean" &&
       typeof message.ctxSymbols === "boolean" &&
       typeof message.excludeGlobs === "string"
+    );
+  }
+
+  private isCompleteKnowledgeMessage(
+    message: WebviewMessage
+  ): message is WebviewMessage & {
+    id: string;
+    title: string;
+    summary: string;
+    body: string;
+    tags: string;
+    status: "active" | "disabled";
+  } {
+    return (
+      typeof message.id === "string" &&
+      typeof message.title === "string" &&
+      typeof message.summary === "string" &&
+      typeof message.body === "string" &&
+      typeof message.tags === "string" &&
+      (message.status === "active" || message.status === "disabled")
     );
   }
 

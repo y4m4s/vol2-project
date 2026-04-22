@@ -17,7 +17,10 @@ import {
   GuidanceCard,
   GuidanceKind,
   GuidanceContext,
+  KnowledgeDetailViewData,
   KnowledgeListItem,
+  KnowledgeStatus,
+  KnowledgeStatusFilter,
   NavigatorScreen,
   NavigatorSessionState,
   NavigatorSettings,
@@ -58,6 +61,7 @@ export class NavigatorController implements vscode.Disposable {
     this.disposables.push(
       this.sessionStore,
       this.adviceScheduler,
+      this.knowledgeStore,
       this.didChangeStateEmitter,
       this.sessionStore.onDidChangeState(() => {
         this.didChangeStateEmitter.fire();
@@ -147,7 +151,10 @@ export class NavigatorController implements vscode.Disposable {
       selectedAdvice: this.buildSelectedAdvice(state),
       currentRequestPlan,
       settings,
-      knowledgeItems: this.buildKnowledgeItems()
+      knowledgeItems: this.buildKnowledgeItems(state),
+      selectedKnowledge: this.buildSelectedKnowledge(state),
+      knowledgeQuery: state.knowledgeQuery,
+      knowledgeStatusFilter: state.knowledgeStatusFilter
     };
   }
 
@@ -396,37 +403,132 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public searchKnowledge(_query: string): void {
-    // Phase 4 で実装。
+  public searchKnowledge(query: string): void {
+    this.patchSession({
+      knowledgeQuery: query,
+      selectedKnowledgeId: undefined
+    });
   }
 
-  public filterKnowledge(_filter: string): void {
-    // Phase 4 で実装。
+  public filterKnowledge(filter: string): void {
+    this.patchSession({
+      knowledgeStatusFilter: this.normalizeKnowledgeFilter(filter),
+      selectedKnowledgeId: undefined
+    });
   }
 
-  public exportKnowledge(): void {
+  public selectKnowledge(id: string): void {
+    this.patchSession({
+      selectedKnowledgeId: id
+    });
+  }
+
+  public async exportKnowledge(): Promise<void> {
+    const result = await this.knowledgeStore.exportToFiles();
     this.patchSession({
       statusMessage: {
         kind: "info",
-        text: "ナレッジのエクスポートは Phase 4 で実装予定です。"
+        text: `${result.count}件のナレッジを JSON と Markdown にエクスポートしました。JSON: ${result.jsonPath} / Markdown: ${result.markdownPath}`
       }
     });
   }
 
-  public resetKnowledge(): void {
+  public async resetKnowledge(): Promise<void> {
+    await this.knowledgeStore.reset();
     this.patchSession({
+      selectedKnowledgeId: undefined,
       statusMessage: {
         kind: "info",
-        text: "ナレッジのリセットは Phase 4 で実装予定です。"
+        text: "ナレッジをすべてリセットしました。"
       }
     });
   }
 
-  public saveKnowledge(): void {
+  public async saveKnowledge(): Promise<void> {
+    const selected = this.findSelectedConversation(this.sessionStore.getState()) ?? this.findLatestAssistant(this.sessionStore.getState().conversationHistory);
+    if (!selected) {
+      this.patchSession({
+        statusMessage: {
+          kind: "warning",
+          text: "保存できるアドバイスがまだありません。"
+        }
+      });
+      return;
+    }
+
+    const record = await this.knowledgeStore.create({
+      title: this.createKnowledgeTitle(selected.text),
+      summary: this.createKnowledgeSummary(selected.text),
+      body: selected.text,
+      tags: this.createKnowledgeTags(selected),
+      sourceAdviceId: selected.id
+    });
+
     this.patchSession({
+      screen: "knowledge",
+      selectedKnowledgeId: record.id,
       statusMessage: {
         kind: "info",
-        text: "ナレッジ保存は Phase 4 で実装予定です。"
+        text: "アドバイスをナレッジとして保存しました。"
+      }
+    });
+  }
+
+  public async updateKnowledge(input: {
+    id: string;
+    title: string;
+    summary: string;
+    body: string;
+    status: KnowledgeStatus;
+    tags: string;
+  }): Promise<void> {
+    const updated = await this.knowledgeStore.update(input.id, {
+      title: input.title,
+      summary: input.summary,
+      body: input.body,
+      status: input.status,
+      tags: this.parseKnowledgeTags(input.tags)
+    });
+
+    this.patchSession({
+      selectedKnowledgeId: updated?.id,
+      statusMessage: {
+        kind: updated ? "info" : "warning",
+        text: updated ? "ナレッジを保存しました。" : "更新対象のナレッジが見つかりません。"
+      }
+    });
+  }
+
+  public async toggleKnowledgeStatus(id: string): Promise<void> {
+    const record = this.knowledgeStore.get(id);
+    if (!record) {
+      this.patchSession({
+        statusMessage: {
+          kind: "warning",
+          text: "状態を切り替えるナレッジが見つかりません。"
+        }
+      });
+      return;
+    }
+
+    const nextStatus: KnowledgeStatus = record.status === "active" ? "disabled" : "active";
+    const updated = await this.knowledgeStore.setStatus(id, nextStatus);
+    this.patchSession({
+      selectedKnowledgeId: updated?.id,
+      statusMessage: {
+        kind: "info",
+        text: nextStatus === "active" ? "ナレッジを有効化しました。" : "ナレッジを無効化しました。"
+      }
+    });
+  }
+
+  public async deleteKnowledge(id: string): Promise<void> {
+    const deleted = await this.knowledgeStore.delete(id);
+    this.patchSession({
+      selectedKnowledgeId: undefined,
+      statusMessage: {
+        kind: deleted ? "info" : "warning",
+        text: deleted ? "ナレッジを削除しました。" : "削除対象のナレッジが見つかりません。"
       }
     });
   }
@@ -530,7 +632,8 @@ export class NavigatorController implements vscode.Disposable {
       context: prepared.context,
       kind: options.kind,
       userPrompt: options.userPrompt?.trim(),
-      previousAssistantText: options.previousAssistantText
+      previousAssistantText: options.previousAssistantText,
+      knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
     });
 
     const refreshedPreview = this.contextCollector.collectPreview();
@@ -819,8 +922,37 @@ export class NavigatorController implements vscode.Disposable {
     return category.included ? "参照対象に含まれています" : "現在は参照対象に含まれていません";
   }
 
-  private buildKnowledgeItems(): KnowledgeListItem[] {
-    return [];
+  private buildKnowledgeItems(state: NavigatorSessionState): KnowledgeListItem[] {
+    return this.knowledgeStore.list({
+      query: state.knowledgeQuery,
+      status: state.knowledgeStatusFilter
+    }).map((item) => ({
+      id: item.id,
+      title: item.title,
+      summary: item.summary,
+      status: item.status,
+      tags: item.tags,
+      updatedAt: item.updatedAt
+    }));
+  }
+
+  private buildSelectedKnowledge(state: NavigatorSessionState): KnowledgeDetailViewData | undefined {
+    const selected = state.selectedKnowledgeId ? this.knowledgeStore.get(state.selectedKnowledgeId) : undefined;
+    if (!selected) {
+      return undefined;
+    }
+
+    return {
+      id: selected.id,
+      title: selected.title,
+      summary: selected.summary,
+      body: selected.body,
+      status: selected.status,
+      tags: selected.tags,
+      sourceAdviceId: selected.sourceAdviceId,
+      createdAt: selected.createdAt,
+      updatedAt: selected.updatedAt
+    };
   }
 
   private findSelectedConversation(state: NavigatorSessionState): ConversationEntry | undefined {
@@ -904,8 +1036,54 @@ export class NavigatorController implements vscode.Disposable {
       contextPreview: {
         diagnosticsSummary: []
       },
-      conversationHistory: []
+      conversationHistory: [],
+      knowledgeQuery: "",
+      knowledgeStatusFilter: "all"
     };
+  }
+
+  private normalizeKnowledgeFilter(filter: string): KnowledgeStatusFilter {
+    switch (filter) {
+      case "active":
+      case "有効":
+        return "active";
+      case "disabled":
+      case "無効":
+        return "disabled";
+      case "all":
+      case "すべて":
+      default:
+        return "all";
+    }
+  }
+
+  private parseKnowledgeTags(value: string): string[] {
+    return value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+  }
+
+  private createKnowledgeTitle(text: string): string {
+    const firstLine = text.split(/\r?\n/).map((line) => line.trim()).find((line) => line.length > 0);
+    if (!firstLine) {
+      return "AIアドバイス";
+    }
+
+    return firstLine.length <= 64 ? firstLine : `${firstLine.slice(0, 64)}...`;
+  }
+
+  private createKnowledgeSummary(text: string): string {
+    const normalized = text.replace(/\s+/g, " ").trim();
+    return normalized.length <= 160 ? normalized : `${normalized.slice(0, 160)}...`;
+  }
+
+  private createKnowledgeTags(entry: ConversationEntry): string[] {
+    return [
+      entry.kind,
+      entry.mode ?? "manual",
+      ...(entry.requestPlan?.categories.filter((category) => category.included).map((category) => category.key) ?? [])
+    ];
   }
 
   private createId(): string {
