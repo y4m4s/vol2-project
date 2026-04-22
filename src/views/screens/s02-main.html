@@ -25,7 +25,7 @@
       <button id="modeManual" class="{{modeManualActive}}">&#x2692; 必要時モード</button>
       <button id="modeAlways" class="{{modeAlwaysActive}}">&#x26A1; 常時モード</button>
     </div>
-    <div class="mode-note">※ 常時モードは初回接続完了後に設定で有効化できます</div>
+    <div class="mode-note">{{modeNote}}</div>
 
     <!-- S02-03: 現在の参照文脈 -->
     <div class="context-ref">
@@ -34,29 +34,53 @@
         <span class="ref-icon">&#x1F4C4;</span>
         <span>{{activeFileRef}}</span>
       </div>
+      <div class="ref-item">
+        <span class="ref-icon">&#x270E;</span>
+        <span>{{selectedRef}}</span>
+      </div>
       <div class="ref-item ref-warning">
         <span class="ref-icon">&#x26A0;</span>
         <span>{{diagnosticsRef}}</span>
       </div>
     </div>
 
+    <div class="auto-status-panel">
+      <div class="auto-status-head">
+        <div>
+          <div class="auto-status-title">常時モードの状態</div>
+          <div class="auto-status-sub">{{autoPendingReason}}</div>
+        </div>
+        <button id="toggleAutoPause" class="secondary auto-pause-btn"{{autoPauseDisabled}}>{{autoPauseLabel}}</button>
+      </div>
+      <div class="auto-status-text">{{autoStatusText}}</div>
+    </div>
+
+    {{latestAdviceCardHtml}}
+    {{statusNoticeHtml}}
+
     <!-- S02-04: チャットエリア -->
     <div class="chat-area" id="chatHistory">{{chatAreaHtml}}</div>
 
     <!-- S02-05: 入力欄 -->
     <div class="input-row">
-      <input type="text" id="inputArea" placeholder="" />
-      <button class="send-btn" id="send">&#x27A4;</button>
+      <input type="text" id="inputArea" placeholder="質問や確認したいことを入力" />
+      <button class="send-btn" id="send"{{sendDisabled}}>&#x27A4;</button>
     </div>
 
     <!-- S02-06: この箇所を相談 -->
-    <button id="askContext" class="secondary consult-btn">&#x1F4CB; この箇所を相談</button>
+    <button id="askContext" class="secondary consult-btn"{{askContextDisabled}}>&#x1F4CB; この箇所を相談</button>
 
     <script>
       const vscode = acquireVsCodeApi();
       document.getElementById('send')?.addEventListener('click', () => {
         const text = document.getElementById('inputArea').value;
         vscode.postMessage({ type: 'ask', text });
+      });
+      document.getElementById('inputArea')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const text = document.getElementById('inputArea').value;
+          vscode.postMessage({ type: 'ask', text });
+        }
       });
       document.getElementById('askContext')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'askContext' });
@@ -67,6 +91,9 @@
       document.getElementById('modeAlways')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'setMode', mode: 'always' });
       });
+      document.getElementById('toggleAutoPause')?.addEventListener('click', () => {
+        vscode.postMessage({ type: 'toggleAutoPause' });
+      });
       document.getElementById('btnContextCheck')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'navigate', screen: 's04' });
       });
@@ -75,6 +102,11 @@
       });
       document.getElementById('btnSettings')?.addEventListener('click', () => {
         vscode.postMessage({ type: 'navigate', screen: 's06' });
+      });
+      document.querySelectorAll('[data-advice-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          vscode.postMessage({ type: 'openAdviceDetail', id: btn.getAttribute('data-advice-id') });
+        });
       });
     </script>
   </body>

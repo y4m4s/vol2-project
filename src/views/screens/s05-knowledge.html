@@ -29,13 +29,13 @@
     </div>
 
     <!-- S05-03: ナレッジ一覧（空状態） -->
-    <div class="empty-state" id="knowledgeEmpty">
+    <div class="empty-state" id="knowledgeEmpty" style="{{knowledgeEmptyStyle}}">
       <div class="empty-title">まだナレッジがありません</div>
       <div class="empty-desc">アドバイス詳細画面から保存できます</div>
     </div>
 
     <!-- S05-03b: ナレッジ一覧（データあり時） -->
-    <div id="knowledgeList" style="display:none;">
+    <div id="knowledgeList" style="{{knowledgeListStyle}}">
       {{knowledgeList}}
     </div>
 
