@@ -1,4 +1,4 @@
-import type { AdviceMode, NavigatorScreen, NavigatorViewModel } from "./types";
+import type { AdviceMode, KnowledgeStatus, NavigatorScreen, NavigatorViewModel } from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -12,6 +12,18 @@ export type WebviewToExtension =
   | { type: "openAdviceDetail"; id: string }
   | { type: "deepDive" }
   | { type: "saveKnowledge" }
+  | { type: "selectKnowledge"; id: string }
+  | {
+      type: "updateKnowledge";
+      id: string;
+      title: string;
+      summary: string;
+      body: string;
+      tags: string;
+      status: KnowledgeStatus;
+    }
+  | { type: "toggleKnowledgeStatus"; id: string }
+  | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
