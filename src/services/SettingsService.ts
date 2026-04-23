@@ -5,7 +5,7 @@ const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
-  alwaysModeEnabled: false,
+  alwaysModeEnabled: true,
   requestIntervalMs: 30000,
   idleDelayMs: 2000,
   suppressDuplicate: true,
