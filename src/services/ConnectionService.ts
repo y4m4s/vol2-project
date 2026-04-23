@@ -47,7 +47,13 @@ export class ConnectionService {
     this.connectionState = "connecting";
 
     try {
-      const models = await vscode.lm.selectChatModels({ vendor: "copilot" });
+      let models = await vscode.lm.selectChatModels({ vendor: "copilot" });
+
+      // Copilot Chat がまだ起動中の場合があるため 1.5 秒待ってリトライ
+      if (models.length === 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+        models = await vscode.lm.selectChatModels({ vendor: "copilot" });
+      }
 
       if (models.length === 0) {
         this.model = undefined;

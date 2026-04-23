@@ -1,0 +1,31 @@
+/* ========================================
+   s07-error.css
+   ======================================== */
+
+.s07-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.s07-icon {
+  font-size: 48px;
+  color: #ef4444;
+  opacity: 0.85;
+}
+
+.s07-title {
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+.s07-desc {
+  font-size: 0.88em;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.6;
+  max-width: 260px;
+}

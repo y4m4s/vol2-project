@@ -160,14 +160,23 @@ export class AdviceService {
       if (error.code === "Blocked" || error.code === "NoPermissions") {
         return "restricted";
       }
+      if (error.code === "NotFound" || error.code === "Unavailable") {
+        return "unavailable";
+      }
     }
 
-    return "restricted";
+    return "disconnected";
   }
 
   private errorMessage(error: unknown): string {
     if (error instanceof vscode.LanguageModelError) {
-      return `リクエストに失敗しました: ${error.message}`;
+      if (error.code === "Blocked") {
+        return "Copilot にブロックされました。利用上限に達したか、ポリシーで制限されています。";
+      }
+      if (error.code === "NoPermissions") {
+        return "Copilot の利用権限がありません。サブスクリプションを確認してください。";
+      }
+      return `Copilot リクエストに失敗しました: ${error.message}`;
     }
 
     return "予期しないエラーが発生しました。再試行してください。";

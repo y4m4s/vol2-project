@@ -1,334 +1,475 @@
 /* ========================================
-   s02-main.css - メイン画面
+   s02-main.css
    ======================================== */
 
-/* --- ステータスヘッダー --- */
-.status-header {
+.s02-root {
   display: flex;
-  align-items: center;
-  padding: 8px 0 10px;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
 }
 
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #22c55e;
-  margin-right: 8px;
+/* ── ヘッダー ── */
+.s02-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
   flex-shrink: 0;
 }
 
-.status-dot.disconnected {
-  background: #888;
-}
-
-.status-label {
-  font-weight: bold;
-  flex-grow: 1;
-}
-
-.header-icons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-}
-
-.header-icons button {
-  width: auto;
-  background: transparent;
-  color: var(--vscode-foreground);
-  padding: 4px;
-  margin: 0;
-  font-size: 1.1em;
-  opacity: 0.7;
-}
-
-.header-icons button:hover {
-  opacity: 1;
-}
-
-/* --- モード切替タブ --- */
-.mode-tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 6px;
-}
-
-.mode-tabs button {
-  flex: 1;
-  border-radius: 8px;
-  padding: 8px;
-  margin: 0;
-  font-size: 0.88em;
-  background: transparent;
-  color: var(--vscode-descriptionForeground);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.mode-tabs button.active {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-foreground);
-  font-weight: bold;
-}
-
-.mode-note {
-  font-size: 0.82em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 10px;
-}
-
-.auto-status-panel {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: var(--vscode-editorWidget-background);
-  margin-bottom: 10px;
-}
-
-.auto-status-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.auto-status-title {
-  font-size: 0.95em;
-  font-weight: 700;
-}
-
-.auto-status-sub {
-  font-size: 0.8em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.auto-status-text {
-  font-size: 0.88em;
-  line-height: 1.6;
-}
-
-.auto-pause-btn {
-  width: auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82em;
-  white-space: nowrap;
-}
-
-/* --- 参照文脈 --- */
-.context-ref {
-  margin-bottom: 10px;
-}
-
-.context-ref .ref-title {
-  font-size: 0.85em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 4px;
-}
-
-.context-ref .ref-item {
+.s02-status {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.9em;
-  margin-bottom: 2px;
 }
 
-.context-ref .ref-icon {
-  font-size: 0.85em;
-  opacity: 0.7;
+.s02-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
 }
 
-.ref-warning {
-  color: #facc15;
+.s02-dot.connected {
+  background: #22c55e;
 }
 
-/* --- チャットエリア --- */
-.chat-area {
-  min-height: 250px;
+.s02-status-label {
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.s02-header-actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  border: none;
-  background: transparent;
-  padding: 0;
-  gap: 8px;
+  align-items: center;
+  gap: 2px;
 }
 
-.status-notice {
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  font-size: 0.86em;
+.s02-icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--vscode-foreground);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.65;
+}
+
+.s02-icon-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.s02-icon-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* ── 常時モードバー ── */
+.s02-auto-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.82em;
+  background: color-mix(in srgb, #22c55e 10%, transparent);
+  border: 1px solid color-mix(in srgb, #22c55e 30%, transparent);
+  color: #22c55e;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.s02-auto-bar.paused {
+  background: color-mix(in srgb, var(--vscode-descriptionForeground) 8%, transparent);
+  border-color: color-mix(in srgb, var(--vscode-descriptionForeground) 20%, transparent);
+  color: var(--vscode-descriptionForeground);
+}
+
+.s02-auto-bar .material-symbols-outlined {
+  font-size: 15px;
+}
+
+/* ── 通知 ── */
+.s02-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  margin-bottom: 6px;
+  flex-shrink: 0;
   border: 1px solid transparent;
 }
 
-.status-notice.info {
-  background: color-mix(in srgb, var(--vscode-button-background) 18%, transparent);
-  border-color: color-mix(in srgb, var(--vscode-button-background) 40%, transparent);
+.s02-notice .material-symbols-outlined {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
-.status-notice.warning {
-  background: rgba(234, 179, 8, 0.12);
-  border-color: rgba(234, 179, 8, 0.35);
+.s02-notice.info {
+  background: color-mix(in srgb, var(--vscode-button-background) 12%, transparent);
+  border-color: color-mix(in srgb, var(--vscode-button-background) 30%, transparent);
 }
 
-.status-notice.error {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
+.s02-notice.warning {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #eab308;
 }
 
-.empty-chat {
+.s02-notice.error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* ── チャットエリア ── */
+.s02-chat {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0 8px;
+  min-height: 120px;
+}
+
+/* ── 空状態 ── */
+.s02-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 32px 12px;
   text-align: center;
   color: var(--vscode-descriptionForeground);
-  margin: auto 0;
+  gap: 8px;
 }
 
-.empty-chat .empty-title {
-  font-size: 1em;
-  margin-bottom: 8px;
+.s02-empty-icon {
+  font-size: 36px;
+  opacity: 0.3;
+}
+
+.s02-empty-icon-img {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+  object-fit: contain;
+}
+
+.s02-empty-title {
+  font-size: 0.95em;
   color: var(--vscode-foreground);
 }
 
-.empty-chat .empty-desc {
-  font-size: 0.85em;
+.s02-empty-desc {
+  font-size: 0.83em;
   line-height: 1.6;
 }
 
-/* --- 入力エリア --- */
-.input-row {
+/* ── アドバイスカード ── */
+.s02-advice-card {
+  background: color-mix(in srgb, var(--vscode-button-secondaryBackground) 40%, transparent);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.s02-advice-header {
   display: flex;
-  gap: 6px;
-  align-items: flex-end;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
   margin-bottom: 6px;
 }
 
-.input-row input[type="text"] {
-  flex: 1;
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.93em;
-  outline: none;
+.s02-advice-header .material-symbols-outlined {
+  font-size: 15px;
+  color: #facc15;
 }
 
-.input-row .send-btn {
-  width: 40px;
-  height: 40px;
+.s02-advice-time {
+  margin-left: auto;
+}
+
+.s02-advice-body {
+  font-size: 0.88em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+
+.s02-advice-detail-btn {
+  width: auto;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 0.8em;
+  background: transparent;
+  color: var(--vscode-textLink-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.s02-advice-detail-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── チャットバブル ── */
+.s02-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.s02-bubble-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.s02-bubble-icon {
+  font-size: 14px;
+}
+
+.s02-bubble-time {
+  margin-left: auto;
+}
+
+.s02-bubble {
+  border-radius: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.s02-bubble.user {
+  background: var(--vscode-button-secondaryBackground);
+  margin-left: 20px;
+}
+
+.s02-bubble.assistant {
+  background: var(--vscode-editorWidget-background);
+}
+
+.s02-bubble-text {
+  font-size: 0.9em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.s02-detail-btn {
+  width: auto;
+  margin: 6px 0 0;
+  padding: 3px 8px;
+  font-size: 0.78em;
+  background: transparent;
+  color: var(--vscode-textLink-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.s02-detail-btn .material-symbols-outlined {
+  font-size: 13px;
+}
+
+/* ── 入力エリア ── */
+.s02-input-area {
   flex-shrink: 0;
-  border-radius: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+/* 入力全体の枠 */
+.s02-input-wrap {
+  display: flex;
+  flex-direction: column;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.s02-input-wrap:focus-within {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* テキストエリア */
+.s02-input {
+  flex: 1;
+  background: transparent;
+  color: var(--vscode-input-foreground);
+  border: none;
+  outline: none;
+  font-size: 0.92em;
+  font-family: var(--vscode-font-family);
+  line-height: 1.5;
+  resize: none;
+  min-height: 60px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 10px 12px 6px;
+}
+
+/* フッターバー（Claude Code スタイル） */
+.s02-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 4px;
+  border-top: 1px solid var(--vscode-panel-border);
+  gap: 4px;
+}
+
+.s02-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.s02-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* フッターアイコンボタン */
+.s02-footer-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.65;
+  flex-shrink: 0;
+}
+
+.s02-footer-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.s02-footer-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.s02-footer-btn.mode-on {
+  opacity: 1;
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.5);
+  background: rgba(250, 204, 21, 0.12);
+}
+
+/* ファイル名チップ（表示のみ・クリック不可） */
+.s02-footer-file {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground);
+  min-width: 0;
+  max-width: 180px;
+  height: 22px;
+}
+
+.s02-footer-file .material-symbols-outlined {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.s02-footer-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s02-footer-diag {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  color: #facc15;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.s02-footer-diag .material-symbols-outlined {
+  font-size: 12px;
+}
+
+/* 選択コード表示 */
+.s02-footer-selection {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 25%, transparent);
+  border-radius: 4px;
+  font-size: 0.75em;
+  color: var(--vscode-textLink-foreground);
+  min-width: 0;
+  max-width: 160px;
+  height: 22px;
+}
+
+.s02-footer-selection .material-symbols-outlined {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.s02-footer-selection-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+/* 送信ボタン */
+.s02-send-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-button-border, var(--vscode-panel-border));
   padding: 0;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1em;
 }
 
-/* --- この箇所を相談ボタン --- */
-.consult-btn {
-  margin-top: 0;
-}
-
-.chat-entry {
-  display: flex;
-  width: 100%;
-}
-
-.chat-entry.user {
-  justify-content: flex-end;
-}
-
-.chat-entry.assistant {
-  justify-content: flex-start;
-}
-
-.chat-bubble {
-  width: 100%;
-  max-width: 100%;
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.chat-entry.user .chat-bubble {
-  background: var(--vscode-button-secondaryBackground);
-}
-
-.chat-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  font-size: 0.8em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.chat-text {
-  white-space: pre-wrap;
-  font-size: 0.9em;
-}
-
-.chat-actions {
-  margin-top: 8px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.chat-actions button {
-  width: auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82em;
-}
-
-.auto-advice-card {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  background: color-mix(in srgb, var(--vscode-button-secondaryBackground) 36%, transparent);
-}
-
-.auto-advice-card.empty {
-  background: var(--vscode-editorWidget-background);
-}
-
-.auto-advice-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 0.8em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.auto-advice-title {
-  color: var(--vscode-foreground);
-  font-weight: 700;
-}
-
-.auto-advice-text {
-  white-space: pre-wrap;
-  font-size: 0.88em;
-  line-height: 1.6;
-}
-
-.auto-advice-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.auto-advice-actions button {
-  width: auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82em;
+.s02-send-btn .material-symbols-outlined {
+  font-size: 16px;
 }
