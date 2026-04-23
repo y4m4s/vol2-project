@@ -11,7 +11,7 @@ export type WebviewToExtension =
   | { type: "navigateBack" }
   | { type: "openAdviceDetail"; id: string }
   | { type: "deepDive" }
-  | { type: "saveKnowledge" }
+  | { type: "saveKnowledge"; id?: string }
   | { type: "selectKnowledge"; id: string }
   | {
       type: "updateKnowledge";
@@ -33,15 +33,8 @@ export type WebviewToExtension =
 
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
-  alwaysModeEnabled: boolean;
   requestIntervalSec: number;
   idleDelaySec: number;
-  suppressDuplicate: boolean;
-  ctxActiveFile: boolean;
-  ctxSelection: boolean;
-  ctxDiagnostics: boolean;
-  ctxRecentEdits: boolean;
-  ctxSymbols: boolean;
   excludeGlobs: string;
 }
 

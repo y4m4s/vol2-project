@@ -1,7 +1,7 @@
 {
   "name": "ai-pair-navigator",
-  "displayName": "AI Pair Navigator",
-  "description": "A VS Code extension scaffold for an AI pair-programming navigator focused on learning support.",
+  "displayName": "NaviCom",
+  "description": "NaviCom is a VS Code extension for AI-assisted coding guidance and learning support.",
   "version": "0.0.1",
   "publisher": "local-dev",
   "private": true,
@@ -12,24 +12,34 @@
     "Other"
   ],
   "icon": "media/icon.png",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "aiPairNavigator.connectCopilot",
-        "title": "AI Pair Navigator: Connect Copilot"
+        "title": "NaviCom: Connect Copilot"
       },
       {
         "command": "aiPairNavigator.askForGuidance",
-        "title": "AI Pair Navigator: Ask For Guidance"
+        "title": "NaviCom: Ask For Guidance"
+      },
+      {
+        "command": "aiPairNavigator.askSelection",
+        "title": "NaviCom: この箇所を相談",
+        "icon": {
+          "light": "media/activity-icon.svg",
+          "dark": "media/activity-icon.svg"
+        }
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "aiPairNavigator",
-          "title": "AI Navigator",
+          "title": "NaviCom",
           "icon": "media/activity-icon.svg"
         }
       ]
@@ -39,12 +49,12 @@
         {
           "type": "webview",
           "id": "aiPairNavigator.sidebar",
-          "name": "Navigator"
+          "name": "NaviCom"
         }
       ]
     },
     "configuration": {
-      "title": "AI Pair Navigator",
+      "title": "NaviCom",
       "properties": {
         "aiPairNavigator.mode": {
           "type": "string",
@@ -69,16 +79,11 @@
         },
         "aiPairNavigator.excludedGlobs": {
           "type": "array",
-          "default": [
-            "**/.env",
-            "**/dist/**",
-            "**/build/**",
-            "**/node_modules/**"
-          ],
+          "default": [],
           "items": {
             "type": "string"
           },
-          "description": "Glob patterns excluded from context collection."
+          "description": "Additional glob patterns excluded from context collection. NaviCom always applies built-in protected exclusions for secrets, dependencies, build output, databases, and archives."
         }
       }
     }

@@ -43,13 +43,13 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.connectCopilot();
             return;
           case "ask":
-            await this.controller.askForGuidance(message.text);
+            await this.controller.askForGuidanceWithCurrentContext(message.text);
             return;
           case "askContext":
             await this.controller.askForGuidance(undefined, "context");
             return;
           case "setMode":
-            this.controller.setMode(message.mode);
+            await this.controller.setMode(message.mode);
             return;
           case "toggleAutoPause":
             this.controller.toggleAutoPause();
@@ -67,7 +67,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.deepDiveSelectedAdvice();
             return;
           case "saveKnowledge":
-            await this.controller.saveKnowledge();
+            await this.controller.saveKnowledge(message.id);
             return;
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
@@ -140,7 +140,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "s01-connection.css",
       "s02-main.css",
       "s03-advice-detail.css",
-      "s04-context-check.css",
       "s05-knowledge.css",
       "s06-settings.css",
       "s07-error.css"
@@ -170,7 +169,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}';" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     ${cssLinks}
-    <title>AI Pair Navigator</title>
+    <title>NaviCom</title>
   </head>
   <body>
     <div id="root"></div>
@@ -182,30 +181,16 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private isCompletePayload(payload: unknown): payload is {
     defaultMode: "manual" | "always";
-    alwaysModeEnabled: boolean;
     requestIntervalSec: number;
     idleDelaySec: number;
-    suppressDuplicate: boolean;
-    ctxActiveFile: boolean;
-    ctxSelection: boolean;
-    ctxDiagnostics: boolean;
-    ctxRecentEdits: boolean;
-    ctxSymbols: boolean;
     excludeGlobs: string;
   } {
     if (typeof payload !== "object" || payload === null) return false;
     const p = payload as Record<string, unknown>;
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
-      typeof p.alwaysModeEnabled === "boolean" &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.idleDelaySec === "number" &&
-      typeof p.suppressDuplicate === "boolean" &&
-      typeof p.ctxActiveFile === "boolean" &&
-      typeof p.ctxSelection === "boolean" &&
-      typeof p.ctxDiagnostics === "boolean" &&
-      typeof p.ctxRecentEdits === "boolean" &&
-      typeof p.ctxSymbols === "boolean" &&
       typeof p.excludeGlobs === "string"
     );
   }

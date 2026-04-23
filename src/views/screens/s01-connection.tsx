@@ -15,8 +15,8 @@ export function S01Connection() {
     <div className="s01-root">
       {/* ヒーローセクション */}
       <div className="s01-hero">
-        <img src={window.__ICON_URI__} alt="AI Pair Navigator" className="s01-icon" />
-        <div className="s01-title">AI Pair Navigator</div>
+        <img src={window.__ICON_URI__} alt="NaviCom" className="s01-icon" />
+        <div className="s01-title">NaviCom</div>
         <div className="s01-subtitle">
           GitHub Copilot と連携してコーディング中にアドバイスを提供します
         </div>
@@ -35,10 +35,10 @@ export function S01Connection() {
         </ul>
         <div
           className="s01-exclude-link"
-          onClick={() => send({ type: "navigate", screen: "context_check" })}
+          onClick={() => send({ type: "navigate", screen: "settings" })}
         >
           <span className="material-symbols-outlined">tune</span>
-          除外設定・詳細を見る
+          除外設定を確認・変更
         </div>
       </div>
 

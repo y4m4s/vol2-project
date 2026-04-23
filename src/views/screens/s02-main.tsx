@@ -6,6 +6,12 @@ declare global {
   interface Window { __ICON_URI__: string; }
 }
 
+type MarkdownBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "heading"; text: string }
+  | { type: "bullet" | "ordered"; items: string[] }
+  | { type: "code"; text: string };
+
 export function S02Main() {
   const { viewModel, send } = useApp();
   const [inputText, setInputText] = useState("");
@@ -79,10 +85,6 @@ export function S02Main() {
               </span>
             </button>
           )}
-          <button className="s02-icon-btn" title="送信範囲確認"
-            onClick={() => send({ type: "navigate", screen: "context_check" })}>
-            <span className="material-symbols-outlined">manage_search</span>
-          </button>
           <button className="s02-icon-btn" title="ナレッジ管理"
             onClick={() => send({ type: "navigate", screen: "knowledge" })}>
             <span className="material-symbols-outlined">book</span>
@@ -124,22 +126,22 @@ export function S02Main() {
               <span>{latestGuidance.mode === "always" ? "自動アドバイス" : "アドバイス"}</span>
               <span className="s02-advice-time">{formatDate(latestGuidance.requestedAt)}</span>
             </div>
-            <div className="s02-advice-body">{truncate(latestGuidance.text, 200)}</div>
-            <button className="s02-advice-detail-btn" onClick={() =>
-              send({ type: "openAdviceDetail", id: latestGuidance.id })
-            }>
-              <span className="material-symbols-outlined">open_in_full</span>
-              詳細を見る
-            </button>
+            <div className="s02-advice-body">
+              <MarkdownText text={truncate(latestGuidance.text, 200)} />
+            </div>
+            <ResponseActions
+              text={latestGuidance.text}
+              onSave={() => send({ type: "saveKnowledge", id: latestGuidance.id })}
+            />
           </div>
         )}
 
         {conversationHistory.length === 0 && !latestGuidance && (
           <div className="s02-empty">
-            <img src={window.__ICON_URI__} alt="AI Pair Navigator" className="s02-empty-icon-img" />
+            <img src={window.__ICON_URI__} alt="NaviCom" className="s02-empty-icon-img" />
             <div className="s02-empty-title">会話を開始してください</div>
             <div className="s02-empty-desc">
-              質問を入力するか「この箇所を相談」で現在のコードについて聞けます
+              質問を入力するか、コードを選択してその箇所について相談できます
             </div>
           </div>
         )}
@@ -148,7 +150,7 @@ export function S02Main() {
           <ChatBubble
             key={entry.id}
             entry={entry}
-            onDetail={(id) => send({ type: "openAdviceDetail", id })}
+            onSave={(id) => send({ type: "saveKnowledge", id })}
           />
         ))}
 
@@ -158,6 +160,14 @@ export function S02Main() {
       {/* ── 入力エリア ── */}
       <div className="s02-input-area">
         <div className="s02-input-wrap">
+          {contextPreview.selectedTextPreview && (
+            <div className="s02-selected-context" title={contextPreview.selectedTextPreview}>
+              <span className="material-symbols-outlined">keyboard_return</span>
+              <span className="s02-selected-context-text">
+                “{getSelectionLabel(contextPreview.selectedTextPreview)}”
+              </span>
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             className="s02-input"
@@ -169,14 +179,6 @@ export function S02Main() {
           />
           <div className="s02-input-footer">
             <div className="s02-footer-left">
-              <button
-                className="s02-footer-btn"
-                title="この箇所を相談"
-                disabled={!canAskForGuidance}
-                onClick={() => send({ type: "askContext" })}
-              >
-                <span className="material-symbols-outlined">content_paste</span>
-              </button>
               {activeFileName && (
                 <span className="s02-footer-file">
                   <span className="material-symbols-outlined">description</span>
@@ -189,23 +191,16 @@ export function S02Main() {
                   )}
                 </span>
               )}
-              {contextPreview.selectedTextPreview && (
-                <span className="s02-footer-selection" title={contextPreview.selectedTextPreview}>
-                  <span className="material-symbols-outlined">integration_instructions</span>
-                  <span className="s02-footer-selection-text">
-                    {getSelectionLabel(contextPreview.selectedTextPreview)}
-                  </span>
-                </span>
-              )}
             </div>
             <div className="s02-footer-right">
               <button
                 className={`s02-footer-btn ${isAlways ? "mode-on" : ""}`}
-                title={isAlways ? "常時モード ON（クリックでOFF）" : canSwitchMode ? "常時モード OFF（クリックでON）" : "常時モードは接続後に利用できます"}
+                title={isAlways ? "必要時モードに切り替え" : canSwitchMode ? "常時モードに切り替え" : "常時モードは Copilot 接続後に利用できます"}
                 disabled={!canSwitchMode && !isAlways}
                 onClick={() => send({ type: "setMode", mode: isAlways ? "manual" : "always" })}
               >
                 <span className="material-symbols-outlined">bolt</span>
+                <span className="s02-footer-btn-label">{isAlways ? "常時" : "必要時"}</span>
               </button>
               <button
                 className="s02-send-btn"
@@ -223,9 +218,11 @@ export function S02Main() {
   );
 }
 
-function ChatBubble({ entry, onDetail }: { entry: ConversationEntry; onDetail: (id: string) => void }) {
+function ChatBubble({ entry, onSave }: { entry: ConversationEntry; onSave: (id: string) => void }) {
   const isUser = entry.role === "user";
-  const label = isUser ? "あなた" : entry.kind === "always" ? "Navigator (自動)" : "Navigator";
+  const label = isUser ? "あなた" : entry.kind === "always" ? "NaviCom (自動)" : "NaviCom";
+  const selectedText = entry.basedOn?.selectedTextPreview;
+  const isSelectionRequest = isUser && entry.kind === "context" && Boolean(selectedText);
 
   return (
     <div className={`s02-bubble-wrap ${isUser ? "user" : "assistant"}`}>
@@ -237,14 +234,235 @@ function ChatBubble({ entry, onDetail }: { entry: ConversationEntry; onDetail: (
         <span className="s02-bubble-time">{formatDate(entry.createdAt)}</span>
       </div>
       <div className={`s02-bubble ${isUser ? "user" : "assistant"}`}>
-        <div className="s02-bubble-text">{entry.text}</div>
+        {isSelectionRequest ? (
+          <>
+            <SelectionReference selectedText={selectedText} />
+            {entry.text.trim() && entry.text !== "この箇所を相談" && (
+              <div className="s02-bubble-text s02-selection-question">{entry.text}</div>
+            )}
+          </>
+        ) : (
+          <div className="s02-bubble-text">
+            {isUser ? entry.text : <MarkdownText text={entry.text} />}
+          </div>
+        )}
         {!isUser && (
-          <button className="s02-detail-btn" onClick={() => onDetail(entry.id)}>
-            <span className="material-symbols-outlined">open_in_full</span>
-            詳細・根拠
-          </button>
+          <ResponseActions text={entry.text} onSave={() => onSave(entry.id)} />
         )}
       </div>
+    </div>
+  );
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const blocks = parseMarkdownBlocks(text);
+
+  return (
+    <>
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case "heading":
+            return <div key={index} className="s02-md-heading">{renderInlineMarkdown(block.text)}</div>;
+          case "bullet":
+          case "ordered":
+            const ListTag = block.type === "ordered" ? "ol" : "ul";
+            return (
+              <ListTag key={index} className="s02-md-list">
+                {block.items.map((item, itemIndex) => (
+                  <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+                ))}
+              </ListTag>
+            );
+          case "code":
+            return <pre key={index} className="s02-md-code"><code>{block.text}</code></pre>;
+          case "paragraph":
+          default:
+            return <p key={index} className="s02-md-paragraph">{renderInlineMarkdown(block.text)}</p>;
+        }
+      })}
+    </>
+  );
+}
+
+function parseMarkdownBlocks(text: string): MarkdownBlock[] {
+  const blocks: MarkdownBlock[] = [];
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  let paragraph: string[] = [];
+  let listItems: string[] = [];
+  let listType: "bullet" | "ordered" | undefined;
+  let codeLines: string[] = [];
+  let inCode = false;
+
+  function flushParagraph() {
+    if (paragraph.length === 0) {
+      return;
+    }
+    blocks.push({ type: "paragraph", text: paragraph.join(" ").trim() });
+    paragraph = [];
+  }
+
+  function flushList() {
+    if (listItems.length === 0 || !listType) {
+      return;
+    }
+    blocks.push({ type: listType, items: listItems });
+    listItems = [];
+    listType = undefined;
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      if (inCode) {
+        blocks.push({ type: "code", text: codeLines.join("\n") });
+        codeLines = [];
+        inCode = false;
+      } else {
+        flushParagraph();
+        flushList();
+        inCode = true;
+      }
+      continue;
+    }
+
+    if (inCode) {
+      codeLines.push(line);
+      continue;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const headingMatch = /^(#{1,6})\s+(.+)$/.exec(trimmed);
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "heading", text: headingMatch[2].trim() });
+      continue;
+    }
+
+    const bulletMatch = /^[-*+]\s+(.+)$/.exec(trimmed);
+    if (bulletMatch) {
+      flushParagraph();
+      if (listType && listType !== "bullet") {
+        flushList();
+      }
+      listType = "bullet";
+      listItems.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    const orderedMatch = /^\d+[.)]\s+(.+)$/.exec(trimmed);
+    if (orderedMatch) {
+      flushParagraph();
+      if (listType && listType !== "ordered") {
+        flushList();
+      }
+      listType = "ordered";
+      listItems.push(orderedMatch[1].trim());
+      continue;
+    }
+
+    flushList();
+    paragraph.push(trimmed);
+  }
+
+  if (inCode) {
+    blocks.push({ type: "code", text: codeLines.join("\n") });
+  }
+  flushParagraph();
+  flushList();
+
+  return blocks.length > 0 ? blocks : [{ type: "paragraph", text }];
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const token = match[0];
+    const key = `${match.index}-${token.length}`;
+    if (token.startsWith("`")) {
+      nodes.push(
+        <code key={key} className="s02-md-inline-code">
+          {token.slice(1, -1)}
+        </code>
+      );
+    } else {
+      nodes.push(<strong key={key}>{token.slice(2, -2)}</strong>);
+    }
+
+    lastIndex = match.index + token.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+function SelectionReference({ selectedText }: { selectedText?: string }) {
+  if (!selectedText) {
+    return null;
+  }
+
+  return (
+    <div className="s02-selection-reference" title={selectedText}>
+      <span className="s02-selection-reference-label">選択された箇所:</span>
+      <span className="s02-selection-reference-text">{getSelectionLabel(selectedText)}</span>
+    </div>
+  );
+}
+
+function ResponseActions({ text, onSave }: { text: string; onSave: () => void }) {
+  const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleSave() {
+    onSave();
+    setSaved(true);
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard?.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="s02-response-actions">
+      <button
+        className={`s02-response-action ${saved ? "active" : ""}`}
+        title={saved ? "ナレッジ化を開始しました" : "ナレッジ化して保存"}
+        aria-label={saved ? "ナレッジ化を開始しました" : "ナレッジ化して保存"}
+        onClick={handleSave}
+      >
+        <span className="material-symbols-outlined">{saved ? "bookmark_added" : "bookmark_add"}</span>
+      </button>
+      <button
+        className={`s02-response-action ${copied ? "active" : ""}`}
+        title={copied ? "コピーしました" : "回答をコピー"}
+        aria-label={copied ? "コピーしました" : "回答をコピー"}
+        onClick={() => void handleCopy()}
+      >
+        <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
+      </button>
     </div>
   );
 }
@@ -255,7 +473,7 @@ function getFileName(filePath: string): string {
 
 function getSelectionLabel(preview: string): string {
   const firstLine = preview.split('\n')[0].trim();
-  return firstLine.length > 28 ? firstLine.slice(0, 28) + '…' : firstLine;
+  return firstLine.length > 96 ? firstLine.slice(0, 96) + '…' : firstLine;
 }
 
 function formatConnectionState(state: string): string {

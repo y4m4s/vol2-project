@@ -1,5 +1,13 @@
 import * as vscode from "vscode";
-import { ConnectionState, GuidanceContext, GuidanceKind } from "../shared/types";
+import {
+  AdviceMode,
+  ConnectionState,
+  ConversationEntry,
+  GuidanceContext,
+  GuidanceKind,
+  NavigatorContextPreview,
+  RequestPlanSnapshot
+} from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 
@@ -24,10 +32,62 @@ export interface GuidanceRequestInput {
   knowledgeItems?: KnowledgeRecord[];
 }
 
+export interface KnowledgeDraft {
+  title: string;
+  summary: string;
+  body: string;
+  tags: string[];
+}
+
+export interface KnowledgeDraftSource {
+  id: string;
+  text: string;
+  kind: GuidanceKind;
+  createdAt: string;
+  mode?: AdviceMode;
+  basedOn?: NavigatorContextPreview;
+  context?: GuidanceContext;
+  requestPlan?: RequestPlanSnapshot;
+}
+
+export interface KnowledgeDraftInput {
+  source: KnowledgeDraftSource;
+  conversation: ConversationEntry[];
+}
+
+export type KnowledgeDraftResult =
+  | { ok: true; draft: KnowledgeDraft }
+  | GuidanceRequestFailure;
+
 export class AdviceService {
   public constructor(private readonly connectionService: ConnectionService) {}
 
   public async requestGuidance(input: GuidanceRequestInput): Promise<GuidanceRequestResult> {
+    return this.requestText(this.buildPrompt(input));
+  }
+
+  public async createKnowledgeDraft(input: KnowledgeDraftInput): Promise<KnowledgeDraftResult> {
+    const result = await this.requestText(this.buildKnowledgePrompt(input));
+    if (!result.ok) {
+      return result;
+    }
+
+    const draft = this.parseKnowledgeDraftResponse(result.text);
+    if (!draft) {
+      return {
+        ok: false,
+        connectionState: this.connectionService.getState(),
+        message: "Copilot の応答をナレッジ形式に変換できませんでした。もう一度保存を試してください。"
+      };
+    }
+
+    return {
+      ok: true,
+      draft
+    };
+  }
+
+  private async requestText(prompt: string): Promise<GuidanceRequestResult> {
     const model = this.connectionService.getModel();
 
     if (!model || this.connectionService.getState() !== "connected") {
@@ -40,7 +100,7 @@ export class AdviceService {
 
     try {
       const tokenSource = new vscode.CancellationTokenSource();
-      const messages = [vscode.LanguageModelChatMessage.User(this.buildPrompt(input))];
+      const messages = [vscode.LanguageModelChatMessage.User(prompt)];
       const response = await model.sendRequest(messages, {}, tokenSource.token);
 
       let text = "";
@@ -73,8 +133,11 @@ export class AdviceService {
     const { context, kind, userPrompt, previousAssistantText, knowledgeItems } = input;
     const lines: string[] = [
       "You are a pair programming navigator.",
-      "Your role is to support the user's learning, not to give direct answers or write code for them.",
-      "Focus on perspectives, next checks, debugging hints, and questions the user should ask themselves.",
+      "Your role is to support the user's learning while still being candid about clear, local causes.",
+      "If the selected code contains an obvious typo, missing import, wrong API name, syntax error, or other direct compile/runtime cause, state that cause explicitly in the first sentence.",
+      "Do not turn an obvious typo into only hints or questions. For example, say that `fmt.Prinln` is a typo of `fmt.Println`.",
+      "After naming the direct cause, briefly explain how to notice it next time and what to check.",
+      "For ambiguous issues, focus on perspectives, next checks, debugging hints, and questions the user should ask themselves.",
       "Do not perform actions. Do not output code unless it is strictly necessary for explanation.",
       "Respond in Japanese. Keep the response concise and practical.",
       "",
@@ -144,15 +207,226 @@ export class AdviceService {
   private getInstructionByKind(kind: GuidanceKind): string {
     switch (kind) {
       case "manual":
-        return "ユーザーの質問に答える形で、現在の作業文脈を踏まえた考え方の観点や次に確認すべきポイントを提示してください。";
+        return "ユーザーの質問に答える形で、現在の作業文脈を踏まえた原因・考え方・次に確認すべきポイントを提示してください。明白な誤字やAPI名の誤りは、最初に具体名を挙げて指摘してください。";
       case "deep_dive":
         return "直前のアドバイスを踏まえて、より具体的な観点や確認手順を段階的に提示してください。";
       case "always":
         return "現在の編集内容と、与えられた変更前後の差分を見て、今のタイミングで役立つ短いフィードバックを1〜3点だけ返してください。重い説明は避け、確認観点・違和感・変更で壊れやすい箇所・次に見る場所を中心に簡潔に伝えてください。";
       case "context":
       default:
-        return "ユーザーが相談したいことがあります。現在の作業文脈を踏まえ、考え方の観点や次に確認すべきポイントを提示してください。";
+        return "ユーザーが選択箇所について相談しています。選択テキスト内に明白な誤字・API名の誤り・構文ミスがある場合は、最初にその箇所を具体的に指摘してください。そのうえで、考え方の観点や次に確認すべきポイントを短く提示してください。";
     }
+  }
+
+  private buildKnowledgePrompt(input: KnowledgeDraftInput): string {
+    const { source } = input;
+    const lines: string[] = [
+      "You are a knowledge curator for a pair-programming assistant.",
+      "Create a reusable knowledge entry in Japanese from the saved assistant answer and the surrounding conversation.",
+      "Do not save the assistant answer verbatim. Reconstruct what happened, what was problematic, and what solved it.",
+      "Prefer durable lessons and decision points over one-off wording.",
+      "Return only a JSON object. Do not wrap it in Markdown fences.",
+      "",
+      "Required JSON shape:",
+      `{"title":"60文字以内","summary":"160文字以内","body":"Markdown本文","tags":["短いタグ"]}`,
+      "",
+      "The body must use these sections:",
+      "## 流れ",
+      "## 問題点",
+      "## 解決方法・要点",
+      "## 次に見るポイント",
+      "",
+      "## 保存対象の回答",
+      `kind: ${source.kind}`,
+      `mode: ${source.mode ?? "manual"}`,
+      `createdAt: ${source.createdAt}`,
+      "```markdown",
+      this.truncate(source.text, 5000),
+      "```"
+    ];
+
+    const contextLines = this.buildKnowledgeContextLines(source);
+    if (contextLines.length > 0) {
+      lines.push("", "## 参照文脈", ...contextLines);
+    }
+
+    if (input.conversation.length > 0) {
+      lines.push("", "## 前後の会話");
+      for (const entry of input.conversation) {
+        const marker = entry.id === source.id ? "保存対象" : "周辺";
+        lines.push(
+          `### ${marker}: ${entry.role} / ${entry.kind} / ${entry.createdAt}`,
+          "```markdown",
+          this.truncate(entry.text, 1800),
+          "```"
+        );
+      }
+    }
+
+    lines.push(
+      "",
+      "この情報から、後で同じ種類の問題に遭遇したときに再利用しやすいナレッジを作ってください。"
+    );
+
+    return lines.join("\n");
+  }
+
+  private buildKnowledgeContextLines(source: KnowledgeDraftSource): string[] {
+    const lines: string[] = [];
+    const context = source.context;
+    const basedOn = source.basedOn;
+
+    if (context?.activeFilePath ?? basedOn?.activeFilePath) {
+      lines.push(`- ファイル: ${context?.activeFilePath ?? basedOn?.activeFilePath}`);
+    }
+
+    if (context?.activeFileLanguage) {
+      lines.push(`- 言語: ${context.activeFileLanguage}`);
+    }
+
+    if (context?.selectedText) {
+      lines.push("- 選択された箇所:", "```", this.truncate(context.selectedText, 3000), "```");
+    } else if (basedOn?.selectedTextPreview) {
+      lines.push("- 選択された箇所:", "```", basedOn.selectedTextPreview, "```");
+    } else if (context?.activeFileExcerpt) {
+      lines.push("- アクティブファイル断片:", "```", this.truncate(context.activeFileExcerpt, 3000), "```");
+    }
+
+    const diagnostics = context?.diagnosticsSummary.length
+      ? context.diagnosticsSummary
+      : basedOn?.diagnosticsSummary ?? [];
+    if (diagnostics.length > 0) {
+      lines.push("- Diagnostics:");
+      for (const diagnostic of diagnostics) {
+        const sourceLabel = diagnostic.source ? ` (${diagnostic.source})` : "";
+        lines.push(`  - ${diagnostic.severity}${sourceLabel} L${diagnostic.line}: ${diagnostic.message}`);
+      }
+    }
+
+    if (context?.recentEditsSummary.length) {
+      lines.push("- 最近の編集:", ...context.recentEditsSummary.slice(0, 8).map((item) => `  - ${item}`));
+    }
+
+    if (context?.relatedSymbols.length) {
+      lines.push(`- 関連シンボル: ${context.relatedSymbols.slice(0, 12).join(", ")}`);
+    }
+
+    const includedCategories = source.requestPlan?.categories
+      .filter((category) => category.included)
+      .map((category) => category.label);
+    if (includedCategories?.length) {
+      lines.push(`- 参照カテゴリ: ${includedCategories.join(", ")}`);
+    }
+
+    const includedFiles = source.requestPlan?.targetFiles
+      .filter((file) => file.included)
+      .map((file) => file.path)
+      .slice(0, 6);
+    if (includedFiles?.length) {
+      lines.push("- 参照ファイル:", ...includedFiles.map((file) => `  - ${file}`));
+    }
+
+    return lines;
+  }
+
+  private parseKnowledgeDraftResponse(text: string): KnowledgeDraft | undefined {
+    for (const candidate of this.getJsonCandidates(text)) {
+      try {
+        const parsed = JSON.parse(candidate);
+        const draft = this.normalizeKnowledgeDraft(parsed);
+        if (draft) {
+          return draft;
+        }
+      } catch {
+        // Try the next candidate.
+      }
+    }
+
+    return this.createMarkdownKnowledgeDraft(text);
+  }
+
+  private getJsonCandidates(text: string): string[] {
+    const candidates = new Set<string>();
+    const trimmed = text.trim();
+    if (trimmed) {
+      candidates.add(trimmed);
+    }
+
+    const fenceMatch = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmed);
+    if (fenceMatch?.[1].trim()) {
+      candidates.add(fenceMatch[1].trim());
+    }
+
+    const firstBrace = trimmed.indexOf("{");
+    const lastBrace = trimmed.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      candidates.add(trimmed.slice(firstBrace, lastBrace + 1));
+    }
+
+    return [...candidates];
+  }
+
+  private normalizeKnowledgeDraft(value: unknown): KnowledgeDraft | undefined {
+    if (!value || typeof value !== "object") {
+      return undefined;
+    }
+
+    const record = value as Record<string, unknown>;
+    const title = this.normalizeLine(record.title, 80);
+    const summary = this.normalizeLine(record.summary, 180);
+    const body = typeof record.body === "string" ? record.body.trim() : "";
+    const tags = Array.isArray(record.tags)
+      ? record.tags
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => this.normalizeLine(item, 32))
+          .filter((item) => item.length > 0)
+      : [];
+
+    if (!title || !summary || !body) {
+      return undefined;
+    }
+
+    return {
+      title,
+      summary,
+      body,
+      tags: [...new Set(tags)].slice(0, 8)
+    };
+  }
+
+  private createMarkdownKnowledgeDraft(text: string): KnowledgeDraft | undefined {
+    const body = text.trim().replace(/^```(?:markdown)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    if (!body) {
+      return undefined;
+    }
+
+    const firstMeaningfulLine = body.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? "ナレッジ";
+    const title = this.normalizeLine(firstMeaningfulLine.replace(/^#+\s*/, ""), 80) || "ナレッジ";
+    const summarySource =
+      body
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^[-*+]\s*/, "").replace(/^#+\s*/, "").trim())
+        .find((line) => line.length > 0 && line !== firstMeaningfulLine) ?? body;
+
+    return {
+      title,
+      summary: this.normalizeLine(summarySource, 180) || title,
+      body,
+      tags: []
+    };
+  }
+
+  private normalizeLine(value: unknown, maxLength: number): string {
+    if (typeof value !== "string") {
+      return "";
+    }
+
+    const normalized = value.replace(/\s+/g, " ").trim();
+    return this.truncate(normalized, maxLength);
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    return value.length <= maxLength ? value : `${value.slice(0, maxLength)}...`;
   }
 
   private classifyGuidanceError(error: unknown): ConnectionState {

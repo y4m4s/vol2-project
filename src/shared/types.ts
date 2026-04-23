@@ -15,11 +15,10 @@ export type NavigatorScreen =
   | "main"
   | "error"
   | "advice_detail"
-  | "context_check"
   | "knowledge"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance";
+export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
@@ -56,21 +55,11 @@ export interface GuidanceContext {
   relatedSymbols: string[];
 }
 
-export interface ContextTargetSettings {
-  activeFile: boolean;
-  selection: boolean;
-  diagnostics: boolean;
-  recentEdits: boolean;
-  relatedSymbols: boolean;
-}
-
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
-  alwaysModeEnabled: boolean;
   requestIntervalMs: number;
   idleDelayMs: number;
-  suppressDuplicate: boolean;
-  sendTargets: ContextTargetSettings;
+  protectedExcludedGlobs: string[];
   excludedGlobs: string[];
 }
 

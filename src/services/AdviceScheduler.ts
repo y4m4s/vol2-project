@@ -18,8 +18,7 @@ export interface AutoAdviceTriggerEvent {
   reason: AdviceTriggerReason;
 }
 
-const DEFAULT_SETTINGS: Pick<NavigatorSettings, "alwaysModeEnabled" | "requestIntervalMs" | "idleDelayMs"> = {
-  alwaysModeEnabled: false,
+const DEFAULT_SETTINGS: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs"> = {
   requestIntervalMs: 30000,
   idleDelayMs: 2000
 };
@@ -47,7 +46,7 @@ export class AdviceScheduler implements vscode.Disposable {
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
   public configure(
-    settings: Pick<NavigatorSettings, "alwaysModeEnabled" | "requestIntervalMs" | "idleDelayMs">,
+    settings: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs">,
     runtimeState: SchedulerRuntimeState
   ): void {
     this.settings = settings;
@@ -193,7 +192,6 @@ export class AdviceScheduler implements vscode.Disposable {
 
   private isModeEnabledForUi(): boolean {
     return (
-      this.settings.alwaysModeEnabled &&
       this.runtimeState.mode === "always" &&
       this.runtimeState.connectionState === "connected"
     );

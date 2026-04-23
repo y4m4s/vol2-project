@@ -411,7 +411,7 @@ export class KnowledgeStore implements vscode.Disposable {
   }
 
   private toMarkdown(records: KnowledgeRecord[]): string {
-    const lines = ["# AI Pair Navigator Knowledge", ""];
+    const lines = ["# NaviCom Knowledge", ""];
 
     if (records.length === 0) {
       lines.push("_No knowledge entries._", "");

@@ -3,20 +3,63 @@ import { NavigatorSettings } from "../shared/types";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 
+const PROTECTED_EXCLUDED_GLOBS = [
+  "**/.git/**",
+  "**/.hg/**",
+  "**/.svn/**",
+  "**/node_modules/**",
+  "**/vendor/**",
+  "**/.venv/**",
+  "**/venv/**",
+  "**/env/**",
+  "**/__pycache__/**",
+  "**/.pytest_cache/**",
+  "**/.mypy_cache/**",
+  "**/.ruff_cache/**",
+  "**/.cache/**",
+  "**/.turbo/**",
+  "**/.next/**",
+  "**/.nuxt/**",
+  "**/.svelte-kit/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/out/**",
+  "**/coverage/**",
+  "**/target/**",
+  "**/bin/**",
+  "**/obj/**",
+  "**/.env",
+  "**/.env.*",
+  "**/.npmrc",
+  "**/.yarnrc.yml",
+  "**/.aws/**",
+  "**/.azure/**",
+  "**/.gcloud/**",
+  "**/*secret*",
+  "**/*credential*",
+  "**/*.pem",
+  "**/*.key",
+  "**/*.p12",
+  "**/*.pfx",
+  "**/id_rsa",
+  "**/id_ed25519",
+  "**/*.sqlite",
+  "**/*.sqlite3",
+  "**/*.db",
+  "**/*.zip",
+  "**/*.tar",
+  "**/*.tar.gz",
+  "**/*.tgz",
+  "**/*.7z",
+  "**/*.rar"
+];
+
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
-  alwaysModeEnabled: true,
   requestIntervalMs: 30000,
   idleDelayMs: 2000,
-  suppressDuplicate: true,
-  sendTargets: {
-    activeFile: true,
-    selection: true,
-    diagnostics: true,
-    recentEdits: true,
-    relatedSymbols: true
-  },
-  excludedGlobs: ["**/.env", "**/dist/**", "**/build/**", "**/node_modules/**"]
+  protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
+  excludedGlobs: []
 };
 
 export class SettingsService {
@@ -39,14 +82,29 @@ export class SettingsService {
   }
 
   private mergeSettings(partial?: Partial<NavigatorSettings>): NavigatorSettings {
+    const customExcludedGlobs = this.normalizeCustomExcludedGlobs(partial?.excludedGlobs ?? []);
+
     return {
-      ...DEFAULT_SETTINGS,
-      ...partial,
-      sendTargets: {
-        ...DEFAULT_SETTINGS.sendTargets,
-        ...partial?.sendTargets
-      },
-      excludedGlobs: partial?.excludedGlobs?.length ? partial.excludedGlobs : DEFAULT_SETTINGS.excludedGlobs
+      defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
+      requestIntervalMs: partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs,
+      idleDelayMs: partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs,
+      protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
+      excludedGlobs: customExcludedGlobs
     };
+  }
+
+  private normalizeCustomExcludedGlobs(patterns: string[]): string[] {
+    const protectedPatterns = new Set(PROTECTED_EXCLUDED_GLOBS);
+    const normalized: string[] = [];
+
+    for (const pattern of patterns) {
+      const value = pattern.trim();
+      if (!value || protectedPatterns.has(value) || normalized.includes(value)) {
+        continue;
+      }
+      normalized.push(value);
+    }
+
+    return normalized;
   }
 }

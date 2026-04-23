@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { BackHeader } from "../webview/components/BackHeader";
-import { ToggleSwitch } from "../webview/components/ToggleSwitch";
 import { RangeSlider } from "../webview/components/RangeSlider";
 import { useApp } from "../webview/state/AppContext";
 import type { AdviceMode } from "../../shared/types";
@@ -10,29 +9,15 @@ export function S06Settings() {
   const settings = viewModel?.settings;
 
   const [defaultMode, setDefaultMode] = useState<AdviceMode>("manual");
-  const [alwaysModeEnabled, setAlwaysModeEnabled] = useState(false);
   const [requestIntervalSec, setRequestIntervalSec] = useState(30);
   const [idleDelaySec, setIdleDelaySec] = useState(2);
-  const [suppressDuplicate, setSuppressDuplicate] = useState(true);
-  const [ctxActiveFile, setCtxActiveFile] = useState(true);
-  const [ctxSelection, setCtxSelection] = useState(true);
-  const [ctxDiagnostics, setCtxDiagnostics] = useState(true);
-  const [ctxRecentEdits, setCtxRecentEdits] = useState(true);
-  const [ctxSymbols, setCtxSymbols] = useState(true);
   const [excludeGlobs, setExcludeGlobs] = useState("");
 
   useEffect(() => {
     if (!settings) return;
     setDefaultMode(settings.defaultMode);
-    setAlwaysModeEnabled(settings.alwaysModeEnabled);
     setRequestIntervalSec(Math.round(settings.requestIntervalMs / 1000));
     setIdleDelaySec(Math.round(settings.idleDelayMs / 1000));
-    setSuppressDuplicate(settings.suppressDuplicate);
-    setCtxActiveFile(settings.sendTargets.activeFile);
-    setCtxSelection(settings.sendTargets.selection);
-    setCtxDiagnostics(settings.sendTargets.diagnostics);
-    setCtxRecentEdits(settings.sendTargets.recentEdits);
-    setCtxSymbols(settings.sendTargets.relatedSymbols);
     setExcludeGlobs(settings.excludedGlobs.join("\n"));
   }, [settings]);
 
@@ -41,16 +26,9 @@ export function S06Settings() {
       type: "saveSettings",
       payload: {
         defaultMode,
-        alwaysModeEnabled,
         requestIntervalSec,
         idleDelaySec,
-        suppressDuplicate,
-        ctxActiveFile,
-        ctxSelection,
-        ctxDiagnostics,
-        ctxRecentEdits,
-        ctxSymbols,
-        excludeGlobs,
+        excludeGlobs
       },
     });
   }
@@ -59,7 +37,7 @@ export function S06Settings() {
     <>
       <BackHeader />
       <div className="page-title">設定</div>
-      <div className="page-subtitle">拡張機能の動作を設定できます</div>
+      <div className="page-subtitle">NaviCom の動作と除外パターンを設定できます</div>
 
       {/* モード設定 */}
       <div className="settings-section">
@@ -83,18 +61,6 @@ export function S06Settings() {
             </select>
           </div>
         </div>
-      </div>
-
-      <div className="toggle-row">
-        <div className="toggle-label">
-          <div className="toggle-title">常時モードを有効化</div>
-          <div className="toggle-desc">自動的にアドバイスを受け取ります</div>
-        </div>
-        <ToggleSwitch
-          id="alwaysModeEnabled"
-          checked={alwaysModeEnabled}
-          onChange={setAlwaysModeEnabled}
-        />
       </div>
 
       {/* 頻度制御 */}
@@ -122,49 +88,30 @@ export function S06Settings() {
         onChange={setIdleDelaySec}
       />
 
-      <div className="toggle-row">
-        <div className="toggle-label">
-          <div className="toggle-title">重複抑制</div>
-          <div className="toggle-desc">類似助言の繰り返しを防ぎます</div>
-        </div>
-        <ToggleSwitch
-          id="suppressDuplicate"
-          checked={suppressDuplicate}
-          onChange={setSuppressDuplicate}
-        />
-      </div>
-
-      {/* 送信対象設定 */}
-      <div className="settings-section">
-        <span className="material-symbols-outlined">send</span> 送信対象設定
-      </div>
-
-      {[
-        { label: "アクティブファイル", id: "ctxActiveFile", value: ctxActiveFile, set: setCtxActiveFile },
-        { label: "選択範囲", id: "ctxSelection", value: ctxSelection, set: setCtxSelection },
-        { label: "診断情報", id: "ctxDiagnostics", value: ctxDiagnostics, set: setCtxDiagnostics },
-        { label: "最近の編集", id: "ctxRecentEdits", value: ctxRecentEdits, set: setCtxRecentEdits },
-        { label: "関連シンボル", id: "ctxSymbols", value: ctxSymbols, set: setCtxSymbols },
-      ].map(({ label, id, value, set }) => (
-        <div key={id} className="context-toggle-item">
-          <span>{label}</span>
-          <ToggleSwitch id={id} checked={value} onChange={set} />
-        </div>
-      ))}
-
       {/* 除外設定 */}
       <div className="settings-section">
         <span className="material-symbols-outlined">block</span> 除外設定
       </div>
 
-      <div style={{ fontSize: "0.9em", marginBottom: 4 }}>除外パターン (glob)</div>
-      <div className="exclude-textarea">
-        <textarea
-          id="excludeGlobs"
-          placeholder="例: **/.env"
-          value={excludeGlobs}
-          onChange={(e) => setExcludeGlobs(e.target.value)}
-        />
+      <div className="setting-item">
+        <div className="setting-label">固定除外パターン</div>
+        <div className="setting-desc">安全性やサイズ保護のため常に除外されます</div>
+        <div className="protected-exclude-list">
+          {settings?.protectedExcludedGlobs.join("\n") ?? ""}
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <label className="setting-label" htmlFor="excludeGlobs">追加除外パターン (glob)</label>
+        <div className="setting-desc">このワークスペースで追加したい除外だけを入力します</div>
+        <div className="exclude-textarea">
+          <textarea
+            id="excludeGlobs"
+            placeholder="例: **/tmp/**"
+            value={excludeGlobs}
+            onChange={(e) => setExcludeGlobs(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* アクションボタン */}
