@@ -29,6 +29,10 @@ export type ConversationRole = "user" | "assistant";
 
 export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
 
+export type KnowledgeStatus = "active" | "disabled";
+
+export type KnowledgeStatusFilter = "all" | KnowledgeStatus;
+
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
   message: string;
@@ -143,8 +147,15 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
-  status: "active" | "disabled";
+  status: KnowledgeStatus;
+  tags: string[];
   updatedAt: string;
+}
+
+export interface KnowledgeDetailViewData extends KnowledgeListItem {
+  body: string;
+  sourceAdviceId?: string;
+  createdAt: string;
 }
 
 export interface NavigatorSessionState {
@@ -159,6 +170,9 @@ export interface NavigatorSessionState {
   latestGuidance?: GuidanceCard;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
+  knowledgeQuery: string;
+  knowledgeStatusFilter: KnowledgeStatusFilter;
+  selectedKnowledgeId?: string;
 }
 
 export interface NavigatorViewModel {
@@ -178,4 +192,7 @@ export interface NavigatorViewModel {
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];
+  selectedKnowledge?: KnowledgeDetailViewData;
+  knowledgeQuery: string;
+  knowledgeStatusFilter: KnowledgeStatusFilter;
 }

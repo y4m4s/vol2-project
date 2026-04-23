@@ -1,5 +1,43 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
+import {
+  AdviceDetailViewData,
+  AdviceTriggerReason,
+  AutoAdviceState,
+  ContextCategoryKey,
+  ConversationEntry,
+  NavigatorScreen,
+  NavigatorStatusMessage,
+  NavigatorViewModel,
+  RequestPlanCategory,
+  RequestPlanFile
+} from "../shared/types";
+
+interface WebviewMessage {
+  type: string;
+  screen?: string;
+  text?: string;
+  id?: string;
+  mode?: "manual" | "always";
+  query?: string;
+  filter?: string;
+  title?: string;
+  summary?: string;
+  body?: string;
+  tags?: string;
+  status?: "active" | "disabled";
+  defaultMode?: "manual" | "always";
+  alwaysModeEnabled?: boolean;
+  requestIntervalSec?: number;
+  idleDelaySec?: number;
+  suppressDuplicate?: boolean;
+  ctxActiveFile?: boolean;
+  ctxSelection?: boolean;
+  ctxDiagnostics?: boolean;
+  ctxRecentEdits?: boolean;
+  ctxSymbols?: boolean;
+  excludeGlobs?: string;
+}
 import type { WebviewToExtension } from "../shared/messages";
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -71,7 +109,34 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.deepDiveSelectedAdvice();
             return;
           case "saveKnowledge":
-            this.controller.saveKnowledge();
+            await this.controller.saveKnowledge();
+            return;
+          case "selectKnowledge":
+            if (message.id) {
+              this.controller.selectKnowledge(message.id);
+            }
+            return;
+          case "updateKnowledge":
+            if (this.isCompleteKnowledgeMessage(message)) {
+              await this.controller.updateKnowledge({
+                id: message.id,
+                title: message.title,
+                summary: message.summary,
+                body: message.body,
+                tags: message.tags,
+                status: message.status
+              });
+            }
+            return;
+          case "toggleKnowledgeStatus":
+            if (message.id) {
+              await this.controller.toggleKnowledgeStatus(message.id);
+            }
+            return;
+          case "deleteKnowledge":
+            if (message.id) {
+              await this.controller.deleteKnowledge(message.id);
+            }
             return;
           case "saveSettings":
             if (message.payload && this.isCompletePayload(message.payload)) {
@@ -88,10 +153,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             this.controller.filterKnowledge(message.filter ?? "");
             return;
           case "exportKnowledge":
-            this.controller.exportKnowledge();
+            await this.controller.exportKnowledge();
             return;
           case "resetKnowledge":
-            this.controller.resetKnowledge();
+            await this.controller.resetKnowledge();
             return;
           default:
             return;
@@ -118,6 +183,99 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   private buildShell(webview: vscode.Webview): string {
     const nonce = getNonce();
 
+    return this.applyTemplate(html, vars);
+  }
+
+  private getScreenVars(screenName: string, model: NavigatorViewModel): Record<string, string> {
+    switch (screenName) {
+      case "s01-connection":
+        return {
+          connectDisabled: model.canConnect ? "" : " disabled",
+          connectLabel: model.isBusy ? "接続中..." : "Copilotに接続"
+        };
+      case "s02-main":
+        return {
+          statusDotClass: model.connectionState === "connected" ? "" : "disconnected",
+          connectionLabel: this.escapeHtml(this.formatConnectionState(model.connectionState)),
+          activeFileRef: this.escapeHtml(model.contextPreview.activeFilePath ?? "なし"),
+          selectedRef: this.escapeHtml(model.contextPreview.selectedTextPreview ?? "選択範囲なし"),
+          diagnosticsRef: `${model.contextPreview.diagnosticsSummary.length} 件`,
+          modeManualActive: model.mode === "manual" ? "active" : "",
+          modeAlwaysActive: model.mode === "always" ? "active" : "",
+          modeNote: this.escapeHtml(this.getModeNote(model)),
+          chatAreaHtml: this.renderChatHistory(model.conversationHistory),
+          sendDisabled: model.canAskForGuidance ? "" : " disabled",
+          askContextDisabled: model.canAskForGuidance ? "" : " disabled",
+          autoStatusText: this.escapeHtml(this.getAutoStatusText(model.autoAdvice)),
+          autoPendingReason: this.escapeHtml(this.describePendingReason(model.autoAdvice.pendingTriggerReason)),
+          autoPauseLabel: model.autoAdvice.paused ? "再開" : "一時停止",
+          autoPauseDisabled: model.autoAdvice.enabled ? "" : " disabled",
+          latestAdviceCardHtml: this.renderLatestAdviceCard(model),
+          statusNoticeHtml: this.renderStatusNotice(model.statusMessage)
+        };
+      case "s03-advice-detail":
+        return this.getAdviceDetailVars(model.selectedAdvice);
+      case "s04-context-check":
+        return {
+          categoryCards: this.renderCategoryCards(model.currentRequestPlan.categories),
+          targetFilesList: this.renderTargetFiles(model.currentRequestPlan.targetFiles),
+          excludePatterns: model.settings.excludedGlobs.map((item) => this.escapeHtml(item)).join("<br>"),
+          maxSizeLabel: "最大本文抜粋: 8000文字 / 選択範囲: 4000文字",
+          estimatedSize: this.escapeHtml(model.currentRequestPlan.estimatedSizeText)
+        };
+      case "s05-knowledge":
+        return {
+          knowledgeQuery: this.escapeHtml(model.knowledgeQuery),
+          filterAllActive: model.knowledgeStatusFilter === "all" ? "active" : "",
+          filterActiveActive: model.knowledgeStatusFilter === "active" ? "active" : "",
+          filterDisabledActive: model.knowledgeStatusFilter === "disabled" ? "active" : "",
+          knowledgeEmptyStyle: model.knowledgeItems.length > 0 ? "display:none;" : "display:block;",
+          knowledgeListStyle: model.knowledgeItems.length > 0 ? "display:block;" : "display:none;",
+          knowledgeList: this.renderKnowledgeList(model),
+          selectedKnowledgeDetailHtml: this.renderKnowledgeDetail(model),
+          statusNoticeHtml: this.renderStatusNotice(model.statusMessage)
+        };
+      case "s06-settings":
+        return {
+          modeManualSelected: model.settings.defaultMode === "manual" ? "selected" : "",
+          modeAlwaysSelected: model.settings.defaultMode === "always" ? "selected" : "",
+          alwaysModeChecked: model.settings.alwaysModeEnabled ? "checked" : "",
+          requestIntervalSec: String(Math.round(model.settings.requestIntervalMs / 1000)),
+          idleDelaySec: String(Math.round(model.settings.idleDelayMs / 1000)),
+          suppressDuplicateChecked: model.settings.suppressDuplicate ? "checked" : "",
+          ctxActiveFileChecked: model.settings.sendTargets.activeFile ? "checked" : "",
+          ctxSelectionChecked: model.settings.sendTargets.selection ? "checked" : "",
+          ctxDiagnosticsChecked: model.settings.sendTargets.diagnostics ? "checked" : "",
+          ctxRecentEditsChecked: model.settings.sendTargets.recentEdits ? "checked" : "",
+          ctxSymbolsChecked: model.settings.sendTargets.relatedSymbols ? "checked" : "",
+          excludeGlobs: this.escapeHtml(model.settings.excludedGlobs.join("\n"))
+        };
+      case "s07-error": {
+        const { title, description } = this.getErrorCopy(model);
+        return {
+          errorTitle: this.escapeHtml(title),
+          errorDescription: this.escapeHtml(description),
+          recommendedAction: this.escapeHtml(
+            model.statusMessage?.text ?? "少し時間を置いてから再試行してください。"
+          )
+        };
+      }
+      default:
+        return {};
+    }
+  }
+
+  private getAdviceDetailVars(detail?: AdviceDetailViewData): Record<string, string> {
+    if (!detail) {
+      return {
+        adviceBody: "まだ詳細表示できるアドバイスがありません。",
+        speculativeNote: "まずメイン画面でガイダンスを取得してください。",
+        referenceFiles: "なし",
+        diagnosticsSummary: "なし",
+        changeSummary: "なし",
+        deepDiveDisabled: " disabled"
+      };
+    }
     const cssFiles = [
       "common.css",
       "s01-connection.css",
@@ -190,6 +348,26 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       typeof p.ctxRecentEdits === "boolean" &&
       typeof p.ctxSymbols === "boolean" &&
       typeof p.excludeGlobs === "string"
+    );
+  }
+
+  private isCompleteKnowledgeMessage(
+    message: WebviewMessage
+  ): message is WebviewMessage & {
+    id: string;
+    title: string;
+    summary: string;
+    body: string;
+    tags: string;
+    status: "active" | "disabled";
+  } {
+    return (
+      typeof message.id === "string" &&
+      typeof message.title === "string" &&
+      typeof message.summary === "string" &&
+      typeof message.body === "string" &&
+      typeof message.tags === "string" &&
+      (message.status === "active" || message.status === "disabled")
     );
   }
 
