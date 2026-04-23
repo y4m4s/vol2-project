@@ -1,16 +1,24 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
-import { AdviceMode } from "../shared/types";
+import type { WebviewToExtension } from "../shared/messages";
 
-export class NavigatorViewProvider implements vscode.WebviewViewProvider {
+export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "aiPairNavigator.sidebar";
 
   private view?: vscode.WebviewView;
+  private readonly disposables: vscode.Disposable[] = [];
+  private readonly viewDisposables: vscode.Disposable[] = [];
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly controller: NavigatorController
-  ) {}
+  ) {
+    this.disposables.push(
+      this.controller.onDidChangeState(() => {
+        void this.postViewModel();
+      })
+    );
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -18,124 +26,185 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider {
     _token: vscode.CancellationToken
   ): void {
     this.view = webviewView;
+
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [this.extensionUri]
     };
-    webviewView.webview.html = this.render("manual");
 
-    webviewView.webview.onDidReceiveMessage(async (message: { type: string }) => {
-      switch (message.type) {
-        case "connect":
-          await this.controller.connectCopilot();
-          await this.refresh("manual");
-          return;
-        case "ask":
-          const guidance = await this.controller.askForGuidance();
-          void vscode.window.showInformationMessage(guidance);
-          return;
-        default:
-          return;
-      }
-    });
+    this.clearViewDisposables();
+    this.viewDisposables.push(
+      webviewView.webview.onDidReceiveMessage(async (message: WebviewToExtension) => {
+        switch (message.type) {
+          case "ready":
+            await this.postViewModel();
+            return;
+          case "connect":
+            await this.controller.connectCopilot();
+            return;
+          case "ask":
+            await this.controller.askForGuidance(message.text);
+            return;
+          case "askContext":
+            await this.controller.askForGuidance(undefined, "context");
+            return;
+          case "setMode":
+            if (message.mode) {
+              this.controller.setMode(message.mode);
+            }
+            return;
+          case "toggleAutoPause":
+            this.controller.toggleAutoPause();
+            return;
+          case "navigate":
+            this.controller.navigate(message.screen);
+            return;
+          case "navigateBack":
+            this.controller.navigateBack();
+            return;
+          case "openAdviceDetail":
+            if (message.id) {
+              this.controller.selectConversation(message.id);
+            }
+            return;
+          case "deepDive":
+            await this.controller.deepDiveSelectedAdvice();
+            return;
+          case "saveKnowledge":
+            this.controller.saveKnowledge();
+            return;
+          case "saveSettings":
+            if (message.payload && this.isCompletePayload(message.payload)) {
+              await this.controller.saveSettings(message.payload);
+            }
+            return;
+          case "resetSettings":
+            await this.controller.resetSettings();
+            return;
+          case "searchKnowledge":
+            this.controller.searchKnowledge(message.query ?? "");
+            return;
+          case "filterKnowledge":
+            this.controller.filterKnowledge(message.filter ?? "");
+            return;
+          case "exportKnowledge":
+            this.controller.exportKnowledge();
+            return;
+          case "resetKnowledge":
+            this.controller.resetKnowledge();
+            return;
+          default:
+            return;
+        }
+      })
+    );
+
+    webviewView.webview.html = this.buildShell(webviewView.webview);
   }
 
-  public async refresh(mode: AdviceMode = "manual"): Promise<void> {
-    if (!this.view) {
-      return;
+  private async postViewModel(): Promise<void> {
+    if (!this.view) return;
+    const payload = this.controller.getViewModel();
+    await this.view.webview.postMessage({ type: "updateViewModel", payload });
+  }
+
+  public dispose(): void {
+    this.clearViewDisposables();
+    for (const disposable of this.disposables) {
+      disposable.dispose();
     }
-
-    this.view.webview.html = this.render(mode);
   }
 
-  private render(mode: AdviceMode): string {
-    const state = this.controller.getViewState(mode);
-    const contextSummary = [
-      state.contextPreview.activeFilePath ? `Active file: ${state.contextPreview.activeFilePath}` : "Active file: none",
-      state.contextPreview.selectedText ? `Selection: ${this.escapeHtml(state.contextPreview.selectedText)}` : "Selection: none",
-      `Diagnostics: ${state.contextPreview.diagnosticsSummary.length}`
-    ].join("<br/>");
+  private buildShell(webview: vscode.Webview): string {
+    const nonce = getNonce();
+
+    const cssFiles = [
+      "common.css",
+      "s01-connection.css",
+      "s02-main.css",
+      "s03-advice-detail.css",
+      "s04-context-check.css",
+      "s05-knowledge.css",
+      "s06-settings.css",
+      "s07-error.css",
+    ];
+
+    const cssLinks = cssFiles
+      .map((file) => {
+        const uri = webview.asWebviewUri(
+          vscode.Uri.joinPath(this.extensionUri, "src", "views", "css", file)
+        );
+        return `<link rel="stylesheet" href="${uri}" />`;
+      })
+      .join("\n    ");
+
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "out", "webview", "main.js")
+    );
+    const iconUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "icon.png")
+    );
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}';" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    ${cssLinks}
     <title>AI Pair Navigator</title>
-    <style>
-      body {
-        font-family: var(--vscode-font-family);
-        color: var(--vscode-foreground);
-        background: var(--vscode-sideBar-background);
-        padding: 16px;
-      }
-      .card {
-        border: 1px solid var(--vscode-panel-border);
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 12px;
-        background: var(--vscode-editorWidget-background);
-      }
-      .muted {
-        color: var(--vscode-descriptionForeground);
-      }
-      button {
-        width: 100%;
-        border: 0;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-top: 8px;
-        cursor: pointer;
-        color: var(--vscode-button-foreground);
-        background: var(--vscode-button-background);
-      }
-      button.secondary {
-        color: var(--vscode-button-secondaryForeground);
-        background: var(--vscode-button-secondaryBackground);
-      }
-      code {
-        white-space: pre-wrap;
-      }
-    </style>
   </head>
   <body>
-    <div class="card">
-      <strong>AI Pair Navigator</strong>
-      <p class="muted">Minimum scaffold for a learning-focused pair-programming navigator.</p>
-    </div>
-    <div class="card">
-      <strong>Connection</strong>
-      <p>Status: <code>${state.connectionState}</code></p>
-      <p class="muted">${this.escapeHtml(state.statusMessage)}</p>
-      <button id="connect">Connect Copilot</button>
-    </div>
-    <div class="card">
-      <strong>Mode</strong>
-      <p><code>${mode}</code></p>
-      <p class="muted">The real mode switching logic can be added next.</p>
-    </div>
-    <div class="card">
-      <strong>Context preview</strong>
-      <p class="muted">${contextSummary}</p>
-      <button id="ask" class="secondary">Ask For Guidance</button>
-    </div>
-    <script>
-      const vscode = acquireVsCodeApi();
-      document.getElementById('connect')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'connect' });
-      });
-      document.getElementById('ask')?.addEventListener('click', () => {
-        vscode.postMessage({ type: 'ask' });
-      });
-    </script>
+    <div id="root"></div>
+    <script nonce="${nonce}">window.__ICON_URI__ = "${iconUri}";</script>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>`;
   }
 
-  private escapeHtml(value: string): string {
-    return value
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
+  private isCompletePayload(payload: unknown): payload is {
+    defaultMode: "manual" | "always";
+    alwaysModeEnabled: boolean;
+    requestIntervalSec: number;
+    idleDelaySec: number;
+    suppressDuplicate: boolean;
+    ctxActiveFile: boolean;
+    ctxSelection: boolean;
+    ctxDiagnostics: boolean;
+    ctxRecentEdits: boolean;
+    ctxSymbols: boolean;
+    excludeGlobs: string;
+  } {
+    if (typeof payload !== "object" || payload === null) return false;
+    const p = payload as Record<string, unknown>;
+    return (
+      typeof p.defaultMode === "string" &&
+      typeof p.alwaysModeEnabled === "boolean" &&
+      typeof p.requestIntervalSec === "number" &&
+      typeof p.idleDelaySec === "number" &&
+      typeof p.suppressDuplicate === "boolean" &&
+      typeof p.ctxActiveFile === "boolean" &&
+      typeof p.ctxSelection === "boolean" &&
+      typeof p.ctxDiagnostics === "boolean" &&
+      typeof p.ctxRecentEdits === "boolean" &&
+      typeof p.ctxSymbols === "boolean" &&
+      typeof p.excludeGlobs === "string"
+    );
   }
+
+  private clearViewDisposables(): void {
+    while (this.viewDisposables.length > 0) {
+      this.viewDisposables.pop()?.dispose();
+    }
+  }
+}
+
+function getNonce(): string {
+  let text = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 }
