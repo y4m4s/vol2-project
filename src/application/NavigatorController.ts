@@ -235,22 +235,18 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public navigate(screen: string): void {
+  public navigate(screen: NavigatorScreen): void {
     switch (screen) {
-      case "s01":
+      case "onboarding":
         this.patchSession({ screen: "onboarding" });
         return;
-      case "s02":
+      case "main":
         this.patchSession({ screen: this.resolveHomeScreen(this.sessionStore.getState().connectionState) });
         return;
-      case "s04":
-        this.pushScreen("context_check");
-        return;
-      case "s05":
-        this.pushScreen("knowledge");
-        return;
-      case "s06":
-        this.pushScreen("settings");
+      case "context_check":
+      case "knowledge":
+      case "settings":
+        this.pushScreen(screen);
         return;
       default:
         return;
@@ -696,7 +692,7 @@ export class NavigatorController implements vscode.Disposable {
         return {
           kind: "error",
           text: vscode.workspace.isTrusted
-            ? "Copilot を利用できません。Copilot の利用状態とネットワーク、VS Code Desktop 環境を確認してください。"
+            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、または月間利用上限（Free: 50回）に達していないか確認してください。"
             : "Workspace Trust が無効です。ワークスペースを信頼してから再試行してください。"
         };
       case "restricted":

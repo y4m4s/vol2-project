@@ -84,13 +84,21 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "npm run compile:ext && npm run build:webview",
+    "compile:ext": "tsc -p ./",
+    "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020",
     "watch": "tsc -watch -p ./",
+    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --watch",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.99.0",
+    "esbuild": "^0.28.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "typescript": "^5.8.3"
   }
 }

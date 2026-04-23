@@ -1,154 +1,119 @@
 /* ========================================
-   s01-connection.css - 接続画面
+   s01-connection.css
    ======================================== */
 
-/* --- インフォボックス（学習支援が目的です） --- */
-.info-box {
+.s01-root {
   display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ヒーロー */
+.s01-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px 16px;
+  text-align: center;
+}
+
+.s01-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.s01-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.s01-subtitle {
+  font-size: 0.88em;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+}
+
+/* 情報カード共通 */
+.s01-info-card,
+.s01-req-card {
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.s01-info-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.92em;
   margin-bottom: 10px;
 }
 
-.info-box .info-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid var(--vscode-descriptionForeground);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75em;
-  color: var(--vscode-descriptionForeground);
-  margin-top: 2px;
+.s01-info-title .material-symbols-outlined {
+  font-size: 18px;
+  opacity: 0.7;
 }
 
-.info-box .info-title {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.info-box ul {
+.s01-info-list {
   list-style: none;
   padding: 0;
-  margin: 4px 0 0;
+  margin: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.info-box ul li {
-  color: var(--vscode-descriptionForeground);
+.s01-info-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.9em;
-  padding-left: 16px;
-  position: relative;
-  margin-bottom: 2px;
+  color: var(--vscode-descriptionForeground);
 }
 
-.info-box ul li::before {
-  content: "・";
-  position: absolute;
-  left: 0;
+.s01-info-list .material-symbols-outlined {
+  font-size: 16px;
+  opacity: 0.65;
+  flex-shrink: 0;
 }
 
-/* --- 送信される情報リスト --- */
-.sent-info-list {
-  list-style: disc;
-  padding-left: 22px;
-  margin: 8px 0;
-}
-
-.sent-info-list li {
-  margin-bottom: 4px;
-  font-size: 0.93em;
-}
-
-/* --- 除外される情報ボックス --- */
-.exclude-box {
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 6px;
-  padding: 10px 12px;
+.s01-exclude-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
   margin-top: 8px;
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9em;
+  padding-top: 8px;
+  border-top: 1px solid var(--vscode-panel-border);
 }
 
-/* --- 利用条件カード --- */
-.requirement-card {
-  background: var(--vscode-editorWidget-background);
+.s01-exclude-link:hover {
+  opacity: 0.8;
 }
 
-.requirement-card ul {
-  list-style: disc;
-  padding-left: 20px;
-  margin: 6px 0 0;
+.s01-exclude-link .material-symbols-outlined {
+  font-size: 15px;
 }
 
-.requirement-card li {
-  font-size: 0.9em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 2px;
-}
-
-/* --- ボタン群（下部固定風） --- */
+/* アクション */
 .s01-actions {
-  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .s01-actions button {
-  margin-top: 6px;
+  margin: 0;
 }
 
-/* --- Material Icons をボタン内で揃える --- */
-.s01-actions .material-symbols-outlined {
-  font-size: 18px;
-  vertical-align: middle;
-  margin-right: 4px;
-}
-
-/* --- 接続ボタンの白背景カード --- */
-.connect-card {
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
+.s01-actions button.secondary {
   border: 1px solid var(--vscode-panel-border);
-}
-
-.connect-card button {
-  margin-top: 0;
-}
-
-/* --- サブアクション（白背景の囲み） --- */
-.sub-actions {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.sub-actions button {
-  margin-top: 6px;
-}
-
-.sub-actions button:first-child {
-  margin-top: 0;
-}
-
-/* --- グレーボタン + ホバーエフェクト --- */
-.btn-gray {
-  width: 100%;
-  border: 0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  color: var(--vscode-foreground);
-  background: var(--vscode-input-background);
-  transition: background 0.2s;
-}
-
-.btn-gray:hover {
-  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
 }
