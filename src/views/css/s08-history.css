@@ -1,11 +1,8 @@
-/* ========================================
-   s08-history.css
-   ======================================== */
-
 .s08-root {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 .s08-head {
@@ -13,6 +10,10 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.s08-head > div {
+  min-width: 0;
 }
 
 .s08-create-btn {
@@ -33,7 +34,7 @@
   align-items: center;
   gap: 8px;
   padding: 28px 14px;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px dashed color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
   color: var(--vscode-descriptionForeground);
   text-align: center;
@@ -60,14 +61,18 @@
 }
 
 .s08-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  margin-top: 0;
-  padding: 12px;
-  border-radius: 14px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
   background: var(--vscode-editorWidget-background);
   color: var(--vscode-foreground);
-  text-align: left;
 }
 
 .s08-item.current {
@@ -75,45 +80,87 @@
   background: color-mix(in srgb, var(--vscode-button-background) 8%, var(--vscode-editorWidget-background));
 }
 
-.s08-item:hover:not(:disabled) {
-  opacity: 1;
+.s08-item:hover {
   border-color: color-mix(in srgb, var(--vscode-button-background) 46%, var(--vscode-panel-border));
 }
 
-.s08-item-top {
-  display: flex;
+.s08-item-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  text-align: left;
+}
+
+.s08-item-main:hover:not(:disabled) {
+  opacity: 1;
+  background: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 64%, transparent);
 }
 
 .s08-item-title {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.92em;
+  font-size: 0.94em;
   font-weight: 700;
+  line-height: 1.35;
 }
 
-.s08-item-time,
-.s08-item-meta {
+.s08-item-time {
+  color: var(--vscode-descriptionForeground);
   font-size: 0.78em;
-  color: var(--vscode-descriptionForeground);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.s08-item-preview {
-  margin-top: 6px;
-  font-size: 0.85em;
-  line-height: 1.55;
+.s08-delete-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
   color: var(--vscode-descriptionForeground);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  background: transparent;
 }
 
-.s08-item-meta {
-  margin-top: 8px;
+.s08-delete-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.s08-delete-btn:hover:not(:disabled) {
+  opacity: 1;
+  color: #f87171;
+  background: color-mix(in srgb, #f87171 14%, transparent);
+}
+
+@media (max-width: 420px) {
+  .s08-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .s08-create-btn {
+    width: 100%;
+  }
+
+  .s08-item {
+    grid-template-columns: minmax(0, 1fr) 32px;
+  }
+
+  .s08-item-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
 }

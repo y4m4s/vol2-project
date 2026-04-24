@@ -47,6 +47,7 @@ export function S04Conversation() {
     canAskForGuidance,
     canSwitchMode,
     isBusy,
+    requestState,
     autoAdvice,
     contextPreview,
     conversationStreams,
@@ -56,9 +57,6 @@ export function S04Conversation() {
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
-  const activeFileName = contextPreview.activeFilePath
-    ? getFileName(contextPreview.activeFilePath)
-    : undefined;
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
 
@@ -154,23 +152,7 @@ export function S04Conversation() {
         </div>
       </div>
 
-      {isAlways && (
-        <div className={`s04-auto-bar ${isPaused ? "paused" : ""}`}>
-          <span className="material-symbols-outlined">
-            {isPaused ? "pause_circle" : "radio_button_checked"}
-          </span>
-          <span>{getAutoStatusText(autoAdvice)}</span>
-          <button
-            className="s04-auto-toggle"
-            disabled={!autoAdvice.enabled}
-            onClick={() => send({ type: "toggleAutoPause" })}
-          >
-            {isPaused ? "再開" : "一時停止"}
-          </button>
-        </div>
-      )}
-
-      {statusMessage && (
+      {statusMessage && !isKnowledgeSaveStatus(statusMessage.text, requestState) && (
         <div className={`s04-notice ${statusMessage.kind}`}>
           <span className="material-symbols-outlined">
             {statusMessage.kind === "error"
@@ -198,7 +180,6 @@ export function S04Conversation() {
           <ChatBubble
             key={entry.id}
             entry={entry}
-            onOpenDetail={(id) => send({ type: "openAdviceDetail", id })}
             onSave={(id) => send({ type: "saveKnowledge", id })}
           />
         ))}
@@ -228,22 +209,26 @@ export function S04Conversation() {
           />
 
           <div className="s04-input-footer">
-            <div className="s04-footer-left">
-              {activeFileName && (
-                <span className="s04-file-pill">
-                  <span className="material-symbols-outlined">description</span>
-                  <span className="s04-file-pill-text">{activeFileName}</span>
-                  {contextPreview.diagnosticsSummary.length > 0 && (
-                    <span className="s04-file-pill-diag">
-                      <span className="material-symbols-outlined">warning</span>
-                      {contextPreview.diagnosticsSummary.length}
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-
             <div className="s04-footer-right">
+              {isAlways && (
+                <div className={`s04-auto-inline ${isPaused ? "paused" : ""}`}>
+                  <span className="material-symbols-outlined">
+                    {isPaused ? "pause_circle" : "radio_button_checked"}
+                  </span>
+                  <span className="s04-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
+                  <button
+                    className="s04-auto-inline-toggle"
+                    title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
+                    disabled={!autoAdvice.enabled}
+                    onClick={() => send({ type: "toggleAutoPause" })}
+                  >
+                    <span className="material-symbols-outlined">
+                      {isPaused ? "play_arrow" : "pause"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
               <button
                 className={`s04-mode-btn ${isAlways ? "always" : ""}`}
                 title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
@@ -272,11 +257,9 @@ export function S04Conversation() {
 function ChatBubble(
   {
     entry,
-    onOpenDetail,
     onSave
   }: {
     entry: ConversationEntry;
-    onOpenDetail: (id: string) => void;
     onSave: (id: string) => void;
   }
 ) {
@@ -312,7 +295,6 @@ function ChatBubble(
         {!isUser && (
           <ResponseActions
             text={entry.text}
-            onOpenDetail={() => onOpenDetail(entry.id)}
             onSave={() => onSave(entry.id)}
           />
         )}
@@ -512,11 +494,9 @@ function SelectionReference({ selectedText }: { selectedText?: string }) {
 function ResponseActions(
   {
     text,
-    onOpenDetail,
     onSave
   }: {
     text: string;
-    onOpenDetail: () => void;
     onSave: () => void;
   }
 ) {
@@ -541,14 +521,6 @@ function ResponseActions(
   return (
     <div className="s04-response-actions">
       <button
-        className="s04-response-action"
-        title="詳細を見る"
-        onClick={onOpenDetail}
-      >
-        <span className="material-symbols-outlined">open_in_new</span>
-      </button>
-
-      <button
         className={`s04-response-action ${saved ? "active" : ""}`}
         title={saved ? "ナレッジに保存しました" : "ナレッジとして保存"}
         onClick={handleSave}
@@ -567,10 +539,6 @@ function ResponseActions(
       </button>
     </div>
   );
-}
-
-function getFileName(filePath: string): string {
-  return filePath.split(/[/\\]/).pop() ?? filePath;
 }
 
 function getSelectionLabel(preview: string): string {
@@ -593,6 +561,14 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
+}
+
+function isKnowledgeSaveStatus(text: string, requestState: string): boolean {
+  return (
+    requestState === "saving_knowledge" ||
+    text === "Copilot でアドバイスをナレッジ用に整理しています..." ||
+    text === "アドバイスを整理してナレッジとして保存しました。"
+  );
 }
 
 function getAutoStatusText(autoAdvice: AutoAdviceState): string {

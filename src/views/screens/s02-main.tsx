@@ -32,15 +32,12 @@ export function S02Main() {
     canAskForGuidance,
     canSwitchMode,
     isBusy,
+    requestState,
     autoAdvice,
     contextPreview,
     statusMessage
   } = viewModel;
 
-  const activeFileName = contextPreview.activeFilePath
-    ? getFileName(contextPreview.activeFilePath)
-    : undefined;
-  const diagnosticsCount = contextPreview.diagnosticsSummary.length;
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
 
@@ -118,23 +115,7 @@ export function S02Main() {
         </div>
       </div>
 
-      {isAlways && (
-        <div className={`s02-auto-bar ${isPaused ? "paused" : ""}`}>
-          <span className="material-symbols-outlined">
-            {isPaused ? "pause_circle" : "radio_button_checked"}
-          </span>
-          <span>{getAutoStatusText(autoAdvice)}</span>
-          <button
-            className="s02-auto-toggle"
-            disabled={!autoAdvice.enabled}
-            onClick={() => send({ type: "toggleAutoPause" })}
-          >
-            {isPaused ? "再開" : "一時停止"}
-          </button>
-        </div>
-      )}
-
-      {statusMessage && (
+      {statusMessage && !isKnowledgeSaveStatus(statusMessage.text, requestState) && (
         <div className={`s02-notice ${statusMessage.kind}`}>
           <span className="material-symbols-outlined">
             {statusMessage.kind === "error"
@@ -197,21 +178,8 @@ export function S02Main() {
           />
 
           <div className="s02-input-footer">
-            <div className="s02-footer-left">
-              {activeFileName && (
-                <span className="s02-file-pill">
-                  <span className="material-symbols-outlined">description</span>
-                  <span className="s02-file-pill-text">{activeFileName}</span>
-                  {diagnosticsCount > 0 && (
-                    <span className="s02-file-pill-diag">
-                      <span className="material-symbols-outlined">warning</span>
-                      {diagnosticsCount}
-                    </span>
-                  )}
-                </span>
-              )}
-
-              {contextPreview.selectedTextPreview && (
+            {contextPreview.selectedTextPreview && (
+              <div className="s02-footer-left">
                 <button
                   className="s02-context-btn"
                   disabled={!canAskForGuidance}
@@ -220,10 +188,29 @@ export function S02Main() {
                   <span className="material-symbols-outlined">ink_selection</span>
                   選択範囲を相談
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="s02-footer-right">
+              {isAlways && (
+                <div className={`s02-auto-inline ${isPaused ? "paused" : ""}`}>
+                  <span className="material-symbols-outlined">
+                    {isPaused ? "pause_circle" : "radio_button_checked"}
+                  </span>
+                  <span className="s02-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
+                  <button
+                    className="s02-auto-inline-toggle"
+                    title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
+                    disabled={!autoAdvice.enabled}
+                    onClick={() => send({ type: "toggleAutoPause" })}
+                  >
+                    <span className="material-symbols-outlined">
+                      {isPaused ? "play_arrow" : "pause"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
               <button
                 className={`s02-mode-btn ${isAlways ? "always" : ""}`}
                 title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
@@ -250,10 +237,6 @@ export function S02Main() {
   );
 }
 
-function getFileName(filePath: string): string {
-  return filePath.split(/[/\\]/).pop() ?? filePath;
-}
-
 function getSelectionLabel(preview: string): string {
   const firstLine = preview.split("\n")[0].trim();
   return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
@@ -274,6 +257,14 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
+}
+
+function isKnowledgeSaveStatus(text: string, requestState: string): boolean {
+  return (
+    requestState === "saving_knowledge" ||
+    text === "Copilot でアドバイスをナレッジ用に整理しています..." ||
+    text === "アドバイスを整理してナレッジとして保存しました。"
+  );
 }
 
 function getAutoStatusText(autoAdvice: AutoAdviceState): string {

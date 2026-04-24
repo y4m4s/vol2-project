@@ -48,6 +48,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "selectConversationStream":
             await this.controller.selectConversationStream(message.id);
             return;
+          case "deleteConversationStream":
+            await this.controller.deleteConversationStream(message.id);
+            return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text);
             return;
@@ -65,12 +68,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "navigateBack":
             this.controller.navigateBack();
-            return;
-          case "openAdviceDetail":
-            this.controller.selectConversation(message.id);
-            return;
-          case "deepDive":
-            await this.controller.deepDiveSelectedAdvice();
             return;
           case "saveKnowledge":
             await this.controller.saveKnowledge(message.id);

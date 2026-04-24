@@ -5,14 +5,13 @@ export type WebviewToExtension =
   | { type: "connect" }
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
+  | { type: "deleteConversationStream"; id: string }
   | { type: "ask"; text: string }
   | { type: "askContext" }
   | { type: "setMode"; mode: AdviceMode }
   | { type: "toggleAutoPause" }
   | { type: "navigate"; screen: NavigatorScreen }
   | { type: "navigateBack" }
-  | { type: "openAdviceDetail"; id: string }
-  | { type: "deepDive" }
   | { type: "saveKnowledge"; id?: string }
   | { type: "selectKnowledge"; id: string }
   | {

@@ -9,8 +9,8 @@ export function S06Settings() {
   const settings = viewModel?.settings;
 
   const savedDefaultMode = settings?.defaultMode ?? "manual";
-  const savedRequestIntervalSec = settings ? Math.round(settings.requestIntervalMs / 1000) : 30;
-  const savedIdleDelaySec = settings ? Math.round(settings.idleDelayMs / 1000) : 2;
+  const savedRequestIntervalSec = settings ? normalizeScheduleSec(settings.requestIntervalMs / 1000) : 30;
+  const savedIdleDelaySec = settings ? normalizeScheduleSec(settings.idleDelayMs / 1000) : 10;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
   const settingsStatusMessage =
     viewModel?.statusMessage && viewModel.statusMessage.text.includes("設定")
@@ -105,7 +105,8 @@ export function S06Settings() {
         label="リクエスト間隔"
         value={requestIntervalSec}
         min={10}
-        max={120}
+        max={30}
+        step={10}
         unit="秒"
         onChange={setRequestIntervalSec}
       />
@@ -114,8 +115,9 @@ export function S06Settings() {
         id="idleDelay"
         label="アイドル判定"
         value={idleDelaySec}
-        min={1}
-        max={60}
+        min={10}
+        max={30}
+        step={10}
         unit="秒"
         onChange={setIdleDelaySec}
       />
@@ -185,4 +187,9 @@ function normalizeExcludeGlobs(value: string): string {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .join("\n");
+}
+
+function normalizeScheduleSec(value: number): number {
+  const rounded = Math.round(value / 10) * 10;
+  return Math.min(30, Math.max(10, rounded));
 }

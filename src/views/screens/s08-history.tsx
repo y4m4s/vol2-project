@@ -17,13 +17,13 @@ export function S08History() {
 
   return (
     <div className="s08-root">
-      <BackHeader label="ホームへ戻る" />
+      <BackHeader label="ホームに戻る" />
 
       <div className="s08-head">
         <div>
-          <div className="page-title">会話履歴</div>
+          <div className="page-title">相談履歴</div>
           <div className="page-subtitle">
-            履歴を開くと、その会話の続きから質問できます
+            過去の相談を開いて、続きから質問できます。
           </div>
         </div>
 
@@ -42,7 +42,7 @@ export function S08History() {
           <span className="material-symbols-outlined">history</span>
           <div className="s08-empty-title">履歴はまだありません</div>
           <div className="s08-empty-desc">
-            ホームから相談を始めると、ここに会話の履歴が並びます
+            相談が始まると、ここに履歴が並びます。
           </div>
         </div>
       ) : (
@@ -50,26 +50,32 @@ export function S08History() {
           {conversationStreams.map((stream) => {
             const isCurrent = stream.id === activeConversationStreamId;
             return (
-              <button
+              <div
                 key={stream.id}
                 className={`s08-item ${isCurrent ? "current" : ""}`}
-                disabled={isBusy}
-                onClick={() => send({ type: "selectConversationStream", id: stream.id })}
               >
-                <div className="s08-item-top">
+                <button
+                  className="s08-item-main"
+                  disabled={isBusy}
+                  onClick={() => send({ type: "selectConversationStream", id: stream.id })}
+                >
                   <span className="s08-item-title">{stream.title}</span>
-                  <span className="s08-item-time">{formatStreamDate(stream.updatedAt)}</span>
-                </div>
+                  <span className="s08-item-time">{formatRelativeTime(stream.updatedAt)}</span>
+                </button>
 
-                <div className="s08-item-preview">
-                  {stream.lastMessagePreview ?? "メッセージはまだありません"}
-                </div>
-
-                <div className="s08-item-meta">
-                  {stream.messageCount > 0 ? `${stream.messageCount}件のメッセージ` : "下書き"}
-                  {isCurrent ? " · 現在の会話" : ""}
-                </div>
-              </button>
+                <button
+                  className="s08-delete-btn"
+                  title="履歴を削除"
+                  aria-label="履歴を削除"
+                  disabled={isBusy}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    send({ type: "deleteConversationStream", id: stream.id });
+                  }}
+                >
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
+              </div>
             );
           })}
         </div>
@@ -78,19 +84,29 @@ export function S08History() {
   );
 }
 
-function formatStreamDate(value: string): string {
+function formatRelativeTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  const now = new Date();
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) {
+    return "まもなく";
+  }
 
-  return sameDay
-    ? date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
-    : date.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+
+  if (diffMs < minute) return "たった今";
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)}分前`;
+  if (diffMs < day) return `${Math.floor(diffMs / hour)}時間前`;
+  if (diffMs < week) return `${Math.floor(diffMs / day)}日前`;
+  if (diffMs < month) return `${Math.floor(diffMs / week)}週間前`;
+  if (diffMs < year) return `${Math.floor(diffMs / month)}か月前`;
+  return `${Math.floor(diffMs / year)}年前`;
 }

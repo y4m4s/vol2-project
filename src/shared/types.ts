@@ -180,6 +180,7 @@ export interface NavigatorSessionState {
 export interface NavigatorViewModel {
   screen: NavigatorScreen;
   connectionState: ConnectionState;
+  requestState: RequestState;
   mode: AdviceMode;
   canConnect: boolean;
   canAskForGuidance: boolean;

@@ -68,13 +68,15 @@
         "aiPairNavigator.requestIntervalMs": {
           "type": "number",
           "default": 30000,
-          "minimum": 5000,
+          "minimum": 10000,
+          "maximum": 30000,
           "description": "Minimum interval between automatic AI requests."
         },
         "aiPairNavigator.idleDelayMs": {
           "type": "number",
-          "default": 2000,
-          "minimum": 500,
+          "default": 10000,
+          "minimum": 10000,
+          "maximum": 30000,
           "description": "Idle time before automatic feedback can be triggered."
         },
         "aiPairNavigator.excludedGlobs": {

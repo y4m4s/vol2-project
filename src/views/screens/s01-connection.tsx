@@ -11,6 +11,7 @@ export function S01Connection() {
   const canConnect = viewModel?.canConnect ?? false;
   const isBusy = viewModel?.isBusy ?? false;
   const statusMessage = viewModel?.statusMessage;
+  const showStatusMessage = isBusy ? undefined : statusMessage;
 
   return (
     <div className="s01-root">
@@ -21,7 +22,7 @@ export function S01Connection() {
           <div className="s01-copy">
             <div className="s01-title">NaviCom</div>
             <div className="s01-subtitle">
-              GitHub Copilot と連携して、いま見ているコードをもとに相談を進められるコーディングアシスタントです。
+              GitHub Copilotと連携した学習支援コーディングアシスタントです。
             </div>
           </div>
         </div>
@@ -68,23 +69,29 @@ export function S01Connection() {
           </div>
         </div>
 
-        {statusMessage && (
-          <div className={`s01-notice ${statusMessage.kind}`}>
+        {showStatusMessage && (
+          <div className={`s01-notice ${showStatusMessage.kind}`}>
             <span className="material-symbols-outlined">
-              {statusMessage.kind === "error"
+              {showStatusMessage.kind === "error"
                 ? "error"
-                : statusMessage.kind === "warning"
+                : showStatusMessage.kind === "warning"
                   ? "warning"
                   : "info"}
             </span>
-            <span>{statusMessage.text}</span>
+            <span>{showStatusMessage.text}</span>
           </div>
         )}
 
         <div className="s01-actions">
-          <button className="s01-connect-btn" disabled={!canConnect} onClick={() => send({ type: "connect" })}>
-            <span className="material-symbols-outlined">power</span>
-            {isBusy ? "接続中..." : "Copilot に接続"}
+          <button
+            className={`s01-connect-btn${isBusy ? " busy" : ""}`}
+            disabled={!canConnect}
+            onClick={() => send({ type: "connect" })}
+          >
+            <span className={`material-symbols-outlined${isBusy ? " s01-spin" : ""}`}>
+              {isBusy ? "sync" : "power"}
+            </span>
+            {isBusy ? "接続を確認しています..." : "Copilot に接続"}
           </button>
         </div>
       </div>

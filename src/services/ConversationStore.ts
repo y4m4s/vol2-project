@@ -66,14 +66,20 @@ export class ConversationStore implements vscode.Disposable {
     const existingBytes = await this.readExistingDatabase();
     this.db = existingBytes ? new SQL.Database(existingBytes) : new SQL.Database();
     this.migrate();
+    this.deleteEmptyStreamsInMemory();
     await this.persist();
   }
 
   public list(): ConversationStreamListItem[] {
     return this.selectStreamSummaries(
-      `SELECT id, title, created_at, updated_at, message_count, last_message_preview
-         FROM conversation_streams
-        ORDER BY updated_at DESC`
+      `SELECT streams.id, streams.title, streams.created_at, streams.updated_at, streams.message_count, streams.last_message_preview
+         FROM conversation_streams AS streams
+        WHERE EXISTS (
+          SELECT 1
+            FROM conversation_entries AS entries
+           WHERE entries.stream_id = streams.id
+        )
+        ORDER BY streams.updated_at DESC`
     );
   }
 
@@ -163,6 +169,20 @@ export class ConversationStore implements vscode.Disposable {
     return nextRecord;
   }
 
+  public async deleteStream(id: string): Promise<boolean> {
+    const existed = Boolean(this.get(id));
+    this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [id]);
+    this.getDb().run("DELETE FROM conversation_streams WHERE id = ?", [id]);
+    this.getDb().run("DELETE FROM conversation_metadata WHERE key = ? AND value = ?", [ACTIVE_STREAM_KEY, id]);
+    await this.persist();
+    return existed;
+  }
+
+  public async deleteEmptyStreams(): Promise<void> {
+    this.deleteEmptyStreamsInMemory();
+    await this.persist();
+  }
+
   public getActiveStreamId(): string | undefined {
     const stmt = this.getDb().prepare("SELECT value FROM conversation_metadata WHERE key = ? LIMIT 1");
 
@@ -230,6 +250,26 @@ export class ConversationStore implements vscode.Disposable {
         value TEXT
       );
     `);
+  }
+
+  private deleteEmptyStreamsInMemory(): void {
+    this.getDb().run(
+      `DELETE FROM conversation_streams
+        WHERE NOT EXISTS (
+          SELECT 1
+            FROM conversation_entries
+           WHERE conversation_entries.stream_id = conversation_streams.id
+        )`
+    );
+    this.getDb().run(
+      `DELETE FROM conversation_metadata
+        WHERE key = ?
+          AND value NOT IN (
+            SELECT id
+              FROM conversation_streams
+          )`,
+      [ACTIVE_STREAM_KEY]
+    );
   }
 
   private selectStreamSummaries(sql: string, params: SqlValue[] = []): ConversationStreamListItem[] {

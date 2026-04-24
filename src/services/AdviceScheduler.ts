@@ -20,7 +20,7 @@ export interface AutoAdviceTriggerEvent {
 
 const DEFAULT_SETTINGS: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs"> = {
   requestIntervalMs: 30000,
-  idleDelayMs: 2000
+  idleDelayMs: 10000
 };
 
 export class AdviceScheduler implements vscode.Disposable {

@@ -51,6 +51,7 @@ export class NavigatorController implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   private readonly didChangeStateEmitter = new vscode.EventEmitter<void>();
   private readonly guidanceContextByConversationId = new Map<string, GuidanceContext>();
+  private readonly summarizedConversationTitleStreamIds = new Set<string>();
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
@@ -153,6 +154,7 @@ export class NavigatorController implements vscode.Disposable {
     return {
       screen: state.screen,
       connectionState: state.connectionState,
+      requestState: state.requestState,
       mode: state.mode,
       canConnect: state.requestState === "idle",
       canAskForGuidance: state.connectionState === "connected" && state.requestState === "idle",
@@ -200,13 +202,7 @@ export class NavigatorController implements vscode.Disposable {
         requestState: "idle",
         screen: "main",
         mode: nextMode,
-        statusMessage: {
-          kind: "info",
-          text:
-            nextMode === "always"
-              ? "Copilot に接続しました。常時モードで編集中の内容を見ながら自動助言します。"
-              : "Copilot に接続しました。現在の文脈で手動ガイダンスを利用できます。"
-        },
+        statusMessage: undefined,
         contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
       });
       return;
@@ -226,6 +222,7 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
+    await this.discardActiveConversationIfEmpty();
     const record = await this.conversationStore.createStream();
     await this.conversationStore.setActiveStream(record.id);
     this.lastAutomaticContextFingerprint = undefined;
@@ -246,6 +243,40 @@ export class NavigatorController implements vscode.Disposable {
     await this.conversationStore.setActiveStream(record.id);
     this.lastAutomaticContextFingerprint = undefined;
     this.hydrateConversationStream(record, { screen: "conversation", resetNavigation: true, clearStatusMessage: true });
+  }
+
+  public async deleteConversationStream(streamId: string): Promise<void> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return;
+    }
+
+    const deletingActiveStream = state.activeConversationStreamId === streamId;
+    const deleted = await this.conversationStore.deleteStream(streamId);
+    if (!deleted) {
+      this.patchSession({
+        conversationStreams: this.conversationStore.list()
+      });
+      return;
+    }
+
+    this.summarizedConversationTitleStreamIds.delete(streamId);
+    if (deletingActiveStream) {
+      this.guidanceContextByConversationId.clear();
+    }
+    this.patchSession({
+      conversationStreams: this.conversationStore.list(),
+      statusMessage: undefined,
+      ...(deletingActiveStream
+        ? {
+            activeConversationStreamId: undefined,
+            latestGuidance: undefined,
+            conversationHistory: [],
+            selectedConversationId: undefined,
+            screen: state.screen === "conversation" ? this.resolveHomeScreen(state.connectionState) : state.screen
+          }
+        : {})
+    });
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind): Promise<void> {
@@ -385,10 +416,7 @@ export class NavigatorController implements vscode.Disposable {
     if (mode === "manual") {
       this.patchSession({
         mode,
-        statusMessage: {
-          kind: "info",
-          text: "必要時モードに切り替えました。"
-        }
+        statusMessage: undefined
       });
       return;
     }
@@ -406,10 +434,7 @@ export class NavigatorController implements vscode.Disposable {
     this.adviceScheduler.resetPause();
     this.patchSession({
       mode,
-      statusMessage: {
-        kind: "info",
-        text: "常時モードを開始しました。編集中の内容にあわせて自動助言します。"
-      }
+      statusMessage: undefined
     });
   }
 
@@ -426,12 +451,8 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     this.adviceScheduler.togglePaused();
-    const paused = this.adviceScheduler.getState().paused;
     this.patchSession({
-      statusMessage: {
-        kind: "info",
-        text: paused ? "常時モードを一時停止しました。" : "常時モードを再開しました。"
-      }
+      statusMessage: undefined
     });
   }
 
@@ -865,15 +886,15 @@ export class NavigatorController implements vscode.Disposable {
     kind: GuidanceKind
   ): Promise<NavigatorSessionState> {
     if (kind === "always") {
+      if (state.screen === "main") {
+        return this.createNewActiveConversationStream();
+      }
+
       return this.ensureActiveConversationStream();
     }
 
     if (kind !== "deep_dive" && state.screen === "main") {
-      const record = await this.conversationStore.createStream();
-      await this.conversationStore.setActiveStream(record.id);
-      this.lastAutomaticContextFingerprint = undefined;
-      this.hydrateConversationStream(record);
-      return this.sessionStore.getState();
+      return this.createNewActiveConversationStream();
     }
 
     if (state.activeConversationStreamId) {
@@ -881,6 +902,15 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     return this.ensureActiveConversationStream();
+  }
+
+  private async createNewActiveConversationStream(): Promise<NavigatorSessionState> {
+    await this.discardActiveConversationIfEmpty();
+    const record = await this.conversationStore.createStream();
+    await this.conversationStore.setActiveStream(record.id);
+    this.lastAutomaticContextFingerprint = undefined;
+    this.hydrateConversationStream(record);
+    return this.sessionStore.getState();
   }
 
   private async ensureActiveConversationStream(): Promise<NavigatorSessionState> {
@@ -933,11 +963,82 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    const saved = await this.conversationStore.saveStream(record);
+    if (record.entries.length === 0) {
+      await this.conversationStore.deleteStream(record.id);
+      this.patchSession({
+        activeConversationStreamId: undefined,
+        conversationStreams: this.conversationStore.list(),
+        latestGuidance: undefined,
+        conversationHistory: [],
+        selectedConversationId: undefined
+      });
+      return;
+    }
+
+    const recordToSave = await this.withSummarizedConversationTitle(record);
+    const saved = await this.conversationStore.saveStream(recordToSave);
     this.patchSession({
       activeConversationStreamId: saved.id,
       conversationStreams: this.conversationStore.list()
     });
+  }
+
+  private async discardActiveConversationIfEmpty(): Promise<void> {
+    const state = this.sessionStore.getState();
+    const streamId = state.activeConversationStreamId ?? this.conversationStore.getActiveStreamId();
+    if (!streamId) {
+      return;
+    }
+
+    const existing = this.conversationStore.get(streamId);
+    if (!existing || existing.entries.length > 0) {
+      return;
+    }
+
+    if (state.activeConversationStreamId === streamId && state.conversationHistory.length > 0) {
+      return;
+    }
+
+    await this.conversationStore.deleteStream(streamId);
+    if (state.activeConversationStreamId === streamId) {
+      this.patchSession({
+        activeConversationStreamId: undefined,
+        conversationStreams: this.conversationStore.list(),
+        latestGuidance: undefined,
+        conversationHistory: [],
+        selectedConversationId: undefined
+      });
+    }
+  }
+
+  private async withSummarizedConversationTitle(record: ConversationStreamRecord): Promise<ConversationStreamRecord> {
+    if (
+      this.summarizedConversationTitleStreamIds.has(record.id) ||
+      this.connectionService.getState() !== "connected"
+    ) {
+      return record;
+    }
+
+    const fallbackTitle = this.resolveConversationStreamTitle(undefined, record.entries);
+    const shouldSummarize =
+      !record.title ||
+      record.title === DEFAULT_CONVERSATION_STREAM_TITLE ||
+      record.title === fallbackTitle;
+
+    if (!shouldSummarize) {
+      return record;
+    }
+
+    const title = await this.adviceService.createConversationTitle({ entries: record.entries });
+    if (!title) {
+      return record;
+    }
+
+    this.summarizedConversationTitleStreamIds.add(record.id);
+    return {
+      ...record,
+      title
+    };
   }
 
   private buildActiveConversationRecord(): ConversationStreamRecord | undefined {
@@ -1119,11 +1220,11 @@ export class NavigatorController implements vscode.Disposable {
 
   private resolveScreenAfterSuccess(kind: GuidanceKind, currentScreen: NavigatorScreen): NavigatorScreen {
     if (kind === "deep_dive") {
-      return "advice_detail";
+      return "conversation";
     }
 
     if (kind === "always") {
-      return currentScreen;
+      return currentScreen === "main" ? "conversation" : currentScreen;
     }
 
     if (this.shouldKeepUtilityScreen(currentScreen)) {
@@ -1189,7 +1290,7 @@ export class NavigatorController implements vscode.Disposable {
         return {
           kind: "error",
           text: vscode.workspace.isTrusted
-            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、または月間利用上限（Free: 50回）に達していないか確認してください。"
+            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、included model（GPT-4.1 / GPT-5 mini / GPT-4o）が利用可能か確認してください。"
             : "Workspace Trust が無効です。ワークスペースを信頼してから再試行してください。"
         };
       case "restricted":

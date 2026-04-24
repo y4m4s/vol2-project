@@ -1,8 +1,5 @@
-/* ========================================
-   s01-connection.css
-   ======================================== */
-
 .s01-root {
+  width: 100%;
   padding-top: 18px;
 }
 
@@ -54,6 +51,7 @@
   font-size: 0.92em;
   line-height: 1.6;
   color: var(--vscode-foreground);
+  overflow-wrap: anywhere;
 }
 
 .s01-feature-list {
@@ -63,7 +61,7 @@
 
 .s01-feature {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   padding: 12px;
   border-radius: 14px;
@@ -93,12 +91,14 @@
   font-size: 0.8em;
   line-height: 1.55;
   color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .s01-notice {
   width: 100%;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -145,7 +145,23 @@
   border-radius: 999px;
 }
 
-@media (max-width: 640px) {
+.s01-connect-btn.busy:disabled {
+  opacity: 0.82;
+}
+
+.s01-connect-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+@keyframes s01-spin {
+  to { transform: rotate(360deg); }
+}
+
+.s01-spin {
+  animation: s01-spin 0.9s linear infinite;
+}
+
+@media (max-width: 520px) {
   .s01-panel {
     padding: 24px 16px;
   }

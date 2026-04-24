@@ -1,8 +1,5 @@
-/* ========================================
-   s04-conversation.css
-   ======================================== */
-
 .s04-root {
+  width: 100%;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 24px);
@@ -23,7 +20,7 @@
 .s04-back-btn,
 .s04-connect-btn,
 .s04-icon-btn,
-.s04-auto-toggle,
+.s04-auto-inline-toggle,
 .s04-mode-btn,
 .s04-send-btn,
 .s04-response-action {
@@ -106,6 +103,8 @@
 .s04-header-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
   flex-shrink: 0;
 }
@@ -118,7 +117,6 @@
   border-radius: 999px;
 }
 
-.s04-auto-bar,
 .s04-notice {
   display: flex;
   align-items: flex-start;
@@ -130,36 +128,18 @@
   flex-shrink: 0;
 }
 
-.s04-auto-bar {
-  align-items: center;
-  color: #22c55e;
-  background: color-mix(in srgb, #22c55e 10%, transparent);
-  border-color: color-mix(in srgb, #22c55e 28%, var(--vscode-panel-border));
-}
-
-.s04-auto-bar.paused {
-  color: var(--vscode-descriptionForeground);
-  background: color-mix(in srgb, var(--vscode-descriptionForeground) 10%, transparent);
-  border-color: color-mix(in srgb, var(--vscode-descriptionForeground) 24%, var(--vscode-panel-border));
-}
-
-.s04-auto-bar .material-symbols-outlined,
 .s04-notice .material-symbols-outlined {
   font-size: 17px;
   flex-shrink: 0;
 }
 
-.s04-auto-toggle {
-  margin-left: auto;
-  padding: 5px 10px;
-  border-radius: 999px;
-  color: inherit;
-  background: transparent;
-  border: 1px solid currentColor;
-}
-
 .s04-notice {
   font-size: 0.85em;
+}
+
+.s04-notice > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .s04-notice.info {
@@ -262,6 +242,7 @@
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid var(--vscode-panel-border);
+  overflow-wrap: anywhere;
 }
 
 .s04-bubble.user {
@@ -397,6 +378,7 @@
 }
 
 .s04-input-wrap {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-radius: 16px;
@@ -453,62 +435,79 @@
 .s04-input-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   padding: 6px;
   border-top: 1px solid var(--vscode-panel-border);
 }
 
-.s04-footer-left {
+.s04-footer-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
   min-width: 0;
-  flex: 1;
+  max-width: 100%;
 }
 
-.s04-file-pill {
+.s04-auto-inline {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-width: 0;
-  max-width: 210px;
-  padding: 5px 9px;
+  flex: 1 1 180px;
+  gap: 6px;
+  min-width: 144px;
+  max-width: 220px;
+  height: 32px;
+  padding: 0 6px 0 9px;
   border-radius: 999px;
-  border: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
   color: var(--vscode-descriptionForeground);
-  font-size: 0.8em;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 82%, transparent);
+  font-size: 0.77em;
 }
 
-.s04-file-pill .material-symbols-outlined {
-  font-size: 14px;
+.s04-auto-inline > .material-symbols-outlined {
   flex-shrink: 0;
+  font-size: 15px;
+  color: var(--vscode-textLink-foreground);
+  opacity: 0.75;
 }
 
-.s04-file-pill-text {
+.s04-auto-inline.paused > .material-symbols-outlined {
+  color: var(--vscode-descriptionForeground);
+}
+
+.s04-auto-inline-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.s04-file-pill-diag {
+.s04-auto-inline-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  color: #facc15;
+  justify-content: center;
   flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-radius: 7px;
+  border: 0;
+  color: inherit;
+  background: transparent;
 }
 
-.s04-file-pill-diag .material-symbols-outlined {
-  font-size: 13px;
+.s04-auto-inline-toggle:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
 }
 
-.s04-footer-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+.s04-auto-inline-toggle .material-symbols-outlined {
+  font-size: 15px;
 }
 
 .s04-mode-btn {
@@ -548,4 +547,33 @@
 
 .s04-send-btn .material-symbols-outlined {
   font-size: 17px;
+}
+
+@media (max-width: 520px) {
+  .s04-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .s04-header-actions {
+    grid-column: 1 / -1;
+  }
+
+  .s04-bubble.user {
+    max-width: 94%;
+  }
+
+  .s04-input-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .s04-footer-right {
+    width: 100%;
+  }
+
+  .s04-auto-inline {
+    max-width: 100%;
+  }
 }

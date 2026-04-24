@@ -57,7 +57,7 @@ const PROTECTED_EXCLUDED_GLOBS = [
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
   requestIntervalMs: 30000,
-  idleDelayMs: 2000,
+  idleDelayMs: 10000,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
@@ -86,11 +86,16 @@ export class SettingsService {
 
     return {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
-      requestIntervalMs: partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs,
-      idleDelayMs: partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs,
+      requestIntervalMs: this.normalizeScheduleMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
+      idleDelayMs: this.normalizeScheduleMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };
+  }
+
+  private normalizeScheduleMs(value: number): number {
+    const rounded = Math.round(value / 10000) * 10000;
+    return Math.min(30000, Math.max(10000, rounded));
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

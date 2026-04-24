@@ -59,6 +59,10 @@ export type KnowledgeDraftResult =
   | { ok: true; draft: KnowledgeDraft }
   | GuidanceRequestFailure;
 
+export interface ConversationTitleInput {
+  entries: ConversationEntry[];
+}
+
 export class AdviceService {
   public constructor(private readonly connectionService: ConnectionService) {}
 
@@ -85,6 +89,19 @@ export class AdviceService {
       ok: true,
       draft
     };
+  }
+
+  public async createConversationTitle(input: ConversationTitleInput): Promise<string | undefined> {
+    if (input.entries.every((entry) => entry.text.trim().length === 0)) {
+      return undefined;
+    }
+
+    const result = await this.requestText(this.buildConversationTitlePrompt(input));
+    if (!result.ok) {
+      return undefined;
+    }
+
+    return this.normalizeConversationTitle(result.text);
   }
 
   private async requestText(prompt: string): Promise<GuidanceRequestResult> {
@@ -216,6 +233,58 @@ export class AdviceService {
       default:
         return "ユーザーが選択箇所について相談しています。選択テキスト内に明白な誤字・API名の誤り・構文ミスがある場合は、最初にその箇所を具体的に指摘してください。そのうえで、考え方の観点や次に確認すべきポイントを短く提示してください。";
     }
+  }
+
+  private buildConversationTitlePrompt(input: ConversationTitleInput): string {
+    const entries = input.entries
+      .filter((entry) => entry.text.trim().length > 0)
+      .slice(-10);
+    const lines: string[] = [
+      "You are naming a pair-programming consultation history.",
+      "Summarize the conversation into one short Japanese title.",
+      "Return only the title. Do not use quotes, labels, bullets, markdown, or punctuation.",
+      "Keep it within 30 Japanese characters when possible.",
+      "",
+      "## Conversation"
+    ];
+
+    entries.forEach((entry, index) => {
+      lines.push(
+        `### ${index + 1}. ${entry.role} / ${entry.kind} / ${entry.createdAt}`,
+        "```markdown",
+        this.truncate(entry.text, 1200),
+        "```"
+      );
+    });
+
+    return lines.join("\n");
+  }
+
+  private normalizeConversationTitle(text: string): string | undefined {
+    const firstLine = text
+      .trim()
+      .replace(/^```(?:text|markdown)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .split(/\r?\n/)
+      .map((line) =>
+        line
+          .replace(/^#{1,6}\s+/, "")
+          .replace(/^[-*+]\s+/, "")
+          .replace(/^(title|タイトル)\s*[:：]\s*/i, "")
+          .trim()
+      )
+      .find((line) => line.length > 0);
+
+    if (!firstLine) {
+      return undefined;
+    }
+
+    const title = firstLine
+      .replace(/^["'「『“”]+/, "")
+      .replace(/["'」』“”]+$/, "")
+      .replace(/[。.]$/, "");
+
+    return this.normalizeLine(title, 40) || undefined;
   }
 
   private buildKnowledgePrompt(input: KnowledgeDraftInput): string {

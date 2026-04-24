@@ -1,9 +1,6 @@
-/* ========================================
-   s06-settings.css - 設定画面
-   ======================================== */
-
 .s06-root {
   position: relative;
+  width: 100%;
 }
 
 .s06-root.with-savebar {
@@ -43,6 +40,10 @@
   gap: 12px;
 }
 
+.setting-row > div:first-child {
+  min-width: 0;
+}
+
 .setting-label {
   font-weight: bold;
   font-size: 0.93em;
@@ -52,6 +53,7 @@
   font-size: 0.82em;
   color: var(--vscode-descriptionForeground);
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 .s06-notice {
@@ -176,6 +178,7 @@
 .protected-exclude-list {
   max-height: 160px;
   overflow-y: auto;
+  overflow-x: auto;
   padding: 8px 10px;
   margin-top: 8px;
   background: var(--vscode-input-background);
@@ -186,6 +189,7 @@
   font-size: 0.8em;
   line-height: 1.6;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .exclude-textarea {
@@ -216,7 +220,7 @@
   bottom: 12px;
   transform: translateX(-50%);
   z-index: 30;
-  width: min(calc(100vw - 24px), 640px);
+  width: min(calc(100vw - 24px), var(--navicom-content-max-width));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -235,6 +239,10 @@
   min-width: 0;
 }
 
+.s06-savebar-copy > div {
+  min-width: 0;
+}
+
 .s06-savebar-copy .material-symbols-outlined {
   font-size: 18px;
   color: var(--vscode-textLink-foreground);
@@ -249,6 +257,7 @@
 .s06-savebar-desc {
   font-size: 0.8em;
   color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
 }
 
 .s06-savebar-actions {
@@ -271,7 +280,7 @@
   min-width: 112px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 520px) {
   .setting-row {
     flex-direction: column;
     align-items: stretch;
