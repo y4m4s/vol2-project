@@ -1,6 +1,18 @@
 import * as vscode from "vscode";
 import { ConnectionState } from "../shared/types";
 
+const INCLUDED_COPILOT_MODEL_PRIORITY = [
+  {
+    keys: ["gpt41"]
+  },
+  {
+    keys: ["gpt5mini"]
+  },
+  {
+    keys: ["gpt4o"]
+  }
+];
+
 export class ConnectionService {
   private connectionState: ConnectionState = "disconnected";
   private model: vscode.LanguageModelChat | undefined;
@@ -55,13 +67,15 @@ export class ConnectionService {
         models = await vscode.lm.selectChatModels({ vendor: "copilot" });
       }
 
-      if (models.length === 0) {
+      const includedModel = this.selectIncludedCopilotModel(models);
+
+      if (!includedModel) {
         this.model = undefined;
         this.connectionState = "unavailable";
         return this.connectionState;
       }
 
-      this.model = models[0];
+      this.model = includedModel;
       this.connectionState = "consent_pending";
 
       await this.runProbe(this.model);
@@ -73,6 +87,25 @@ export class ConnectionService {
     }
 
     return this.connectionState;
+  }
+
+  private selectIncludedCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
+    for (const preference of INCLUDED_COPILOT_MODEL_PRIORITY) {
+      const match = models.find((model) => this.matchesModelKeys(model, preference.keys));
+      if (match) {
+        return match;
+      }
+    }
+
+    return undefined;
+  }
+
+  private matchesModelKeys(model: vscode.LanguageModelChat, keys: string[]): boolean {
+    const searchable = normalizeModelIdentifier(
+      `${model.id} ${model.name} ${model.family} ${model.version}`
+    );
+
+    return keys.some((key) => searchable.includes(key));
   }
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {
@@ -92,4 +125,8 @@ export class ConnectionService {
 
     return "unavailable";
   }
+}
+
+function normalizeModelIdentifier(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }

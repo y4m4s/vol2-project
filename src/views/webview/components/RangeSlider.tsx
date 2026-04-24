@@ -6,11 +6,12 @@ interface RangeSliderProps {
   value: number;
   min: number;
   max: number;
+  step?: number;
   unit?: string;
   onChange: (value: number) => void;
 }
 
-export function RangeSlider({ id, label, value, min, max, unit = "", onChange }: RangeSliderProps) {
+export function RangeSlider({ id, label, value, min, max, step = 1, unit = "", onChange }: RangeSliderProps) {
   return (
     <div className="range-group">
       <div className="range-header">
@@ -22,6 +23,7 @@ export function RangeSlider({ id, label, value, min, max, unit = "", onChange }:
         id={id}
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />

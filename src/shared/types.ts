@@ -13,13 +13,14 @@ export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_cha
 export type NavigatorScreen =
   | "onboarding"
   | "main"
+  | "history"
+  | "conversation"
   | "error"
   | "advice_detail"
-  | "context_check"
   | "knowledge"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance";
+export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
@@ -28,6 +29,10 @@ export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
 export type ConversationRole = "user" | "assistant";
 
 export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
+
+export type KnowledgeStatus = "active" | "disabled";
+
+export type KnowledgeStatusFilter = "all" | KnowledgeStatus;
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -52,21 +57,11 @@ export interface GuidanceContext {
   relatedSymbols: string[];
 }
 
-export interface ContextTargetSettings {
-  activeFile: boolean;
-  selection: boolean;
-  diagnostics: boolean;
-  recentEdits: boolean;
-  relatedSymbols: boolean;
-}
-
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
-  alwaysModeEnabled: boolean;
   requestIntervalMs: number;
   idleDelayMs: number;
-  suppressDuplicate: boolean;
-  sendTargets: ContextTargetSettings;
+  protectedExcludedGlobs: string[];
   excludedGlobs: string[];
 }
 
@@ -114,6 +109,15 @@ export interface ConversationEntry {
   requestPlan?: RequestPlanSnapshot;
 }
 
+export interface ConversationStreamListItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessagePreview?: string;
+}
+
 export interface NavigatorStatusMessage {
   kind: "info" | "warning" | "error";
   text: string;
@@ -143,8 +147,15 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
-  status: "active" | "disabled";
+  status: KnowledgeStatus;
+  tags: string[];
   updatedAt: string;
+}
+
+export interface KnowledgeDetailViewData extends KnowledgeListItem {
+  body: string;
+  sourceAdviceId?: string;
+  createdAt: string;
 }
 
 export interface NavigatorSessionState {
@@ -157,13 +168,19 @@ export interface NavigatorSessionState {
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
+  knowledgeQuery: string;
+  knowledgeStatusFilter: KnowledgeStatusFilter;
+  selectedKnowledgeId?: string;
 }
 
 export interface NavigatorViewModel {
   screen: NavigatorScreen;
   connectionState: ConnectionState;
+  requestState: RequestState;
   mode: AdviceMode;
   canConnect: boolean;
   canAskForGuidance: boolean;
@@ -173,9 +190,14 @@ export interface NavigatorViewModel {
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedAdvice?: AdviceDetailViewData;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];
+  selectedKnowledge?: KnowledgeDetailViewData;
+  knowledgeQuery: string;
+  knowledgeStatusFilter: KnowledgeStatusFilter;
 }

@@ -1,67 +1,79 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BackHeader } from "../webview/components/BackHeader";
-import { ToggleSwitch } from "../webview/components/ToggleSwitch";
-import { RangeSlider } from "../webview/components/RangeSlider";
 import { useApp } from "../webview/state/AppContext";
 import type { AdviceMode } from "../../shared/types";
+
+const SCHEDULE_OPTIONS = [10, 20, 30];
 
 export function S06Settings() {
   const { viewModel, send } = useApp();
   const settings = viewModel?.settings;
 
-  const [defaultMode, setDefaultMode] = useState<AdviceMode>("manual");
-  const [alwaysModeEnabled, setAlwaysModeEnabled] = useState(false);
-  const [requestIntervalSec, setRequestIntervalSec] = useState(30);
-  const [idleDelaySec, setIdleDelaySec] = useState(2);
-  const [suppressDuplicate, setSuppressDuplicate] = useState(true);
-  const [ctxActiveFile, setCtxActiveFile] = useState(true);
-  const [ctxSelection, setCtxSelection] = useState(true);
-  const [ctxDiagnostics, setCtxDiagnostics] = useState(true);
-  const [ctxRecentEdits, setCtxRecentEdits] = useState(true);
-  const [ctxSymbols, setCtxSymbols] = useState(true);
-  const [excludeGlobs, setExcludeGlobs] = useState("");
+  const savedDefaultMode = settings?.defaultMode ?? "manual";
+  const savedRequestIntervalSec = settings ? normalizeScheduleSec(settings.requestIntervalMs / 1000) : 30;
+  const savedIdleDelaySec = settings ? normalizeScheduleSec(settings.idleDelayMs / 1000) : 10;
+  const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
+  const settingsStatusMessage =
+    viewModel?.statusMessage && viewModel.statusMessage.text.includes("設定")
+      ? viewModel.statusMessage
+      : undefined;
+
+  const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
+  const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
+  const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
+  const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
 
   useEffect(() => {
-    if (!settings) return;
-    setDefaultMode(settings.defaultMode);
-    setAlwaysModeEnabled(settings.alwaysModeEnabled);
-    setRequestIntervalSec(Math.round(settings.requestIntervalMs / 1000));
-    setIdleDelaySec(Math.round(settings.idleDelayMs / 1000));
-    setSuppressDuplicate(settings.suppressDuplicate);
-    setCtxActiveFile(settings.sendTargets.activeFile);
-    setCtxSelection(settings.sendTargets.selection);
-    setCtxDiagnostics(settings.sendTargets.diagnostics);
-    setCtxRecentEdits(settings.sendTargets.recentEdits);
-    setCtxSymbols(settings.sendTargets.relatedSymbols);
-    setExcludeGlobs(settings.excludedGlobs.join("\n"));
-  }, [settings]);
+    setDefaultMode(savedDefaultMode);
+    setRequestIntervalSec(savedRequestIntervalSec);
+    setIdleDelaySec(savedIdleDelaySec);
+    setExcludeGlobs(savedExcludeGlobs);
+  }, [savedDefaultMode, savedRequestIntervalSec, savedIdleDelaySec, savedExcludeGlobs]);
+
+  const hasPendingChanges =
+    defaultMode !== savedDefaultMode ||
+    requestIntervalSec !== savedRequestIntervalSec ||
+    idleDelaySec !== savedIdleDelaySec ||
+    normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
 
   function handleSave() {
     send({
       type: "saveSettings",
       payload: {
         defaultMode,
-        alwaysModeEnabled,
         requestIntervalSec,
         idleDelaySec,
-        suppressDuplicate,
-        ctxActiveFile,
-        ctxSelection,
-        ctxDiagnostics,
-        ctxRecentEdits,
-        ctxSymbols,
-        excludeGlobs,
-      },
+        excludeGlobs
+      }
     });
   }
 
+  function handleRevertDraft() {
+    setDefaultMode(savedDefaultMode);
+    setRequestIntervalSec(savedRequestIntervalSec);
+    setIdleDelaySec(savedIdleDelaySec);
+    setExcludeGlobs(savedExcludeGlobs);
+  }
+
   return (
-    <>
+    <div className={`s06-root ${hasPendingChanges ? "with-savebar" : ""}`}>
       <BackHeader />
       <div className="page-title">設定</div>
-      <div className="page-subtitle">拡張機能の動作を設定できます</div>
+      <div className="page-subtitle">NaviCom の動作と除外パターンを設定できます</div>
 
-      {/* モード設定 */}
+      {settingsStatusMessage && (
+        <div className={`s06-notice ${settingsStatusMessage.kind}`}>
+          <span className="material-symbols-outlined">
+            {settingsStatusMessage.kind === "error"
+              ? "error"
+              : settingsStatusMessage.kind === "warning"
+                ? "warning"
+                : "info"}
+          </span>
+          <span>{settingsStatusMessage.text}</span>
+        </div>
+      )}
+
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span> モード設定
       </div>
@@ -70,13 +82,13 @@ export function S06Settings() {
         <div className="setting-row">
           <div>
             <div className="setting-label">初期モード</div>
-            <div className="setting-desc">起動時に使用するモード</div>
+            <div className="setting-desc">相談開始時に使用するモードです</div>
           </div>
           <div className="dropdown-wrap">
             <select
               id="defaultMode"
               value={defaultMode}
-              onChange={(e) => setDefaultMode(e.target.value as AdviceMode)}
+              onChange={(event) => setDefaultMode(event.target.value as AdviceMode)}
             >
               <option value="manual">必要時</option>
               <option value="always">常時</option>
@@ -85,97 +97,129 @@ export function S06Settings() {
         </div>
       </div>
 
-      <div className="toggle-row">
-        <div className="toggle-label">
-          <div className="toggle-title">常時モードを有効化</div>
-          <div className="toggle-desc">自動的にアドバイスを受け取ります</div>
-        </div>
-        <ToggleSwitch
-          id="alwaysModeEnabled"
-          checked={alwaysModeEnabled}
-          onChange={setAlwaysModeEnabled}
-        />
-      </div>
-
-      {/* 頻度制御 */}
       <div className="settings-section">
-        <span className="material-symbols-outlined">speed</span> 頻度制御
+        <span className="material-symbols-outlined">speed</span> 助言の頻度
       </div>
 
-      <RangeSlider
+      <ScheduleButtonGroup
         id="requestInterval"
         label="リクエスト間隔"
         value={requestIntervalSec}
-        min={10}
-        max={120}
-        unit="秒"
         onChange={setRequestIntervalSec}
       />
 
-      <RangeSlider
+      <ScheduleButtonGroup
         id="idleDelay"
-        label="アイドル時間"
+        label="アイドル判定"
         value={idleDelaySec}
-        min={1}
-        max={60}
-        unit="秒"
         onChange={setIdleDelaySec}
       />
 
-      <div className="toggle-row">
-        <div className="toggle-label">
-          <div className="toggle-title">重複抑制</div>
-          <div className="toggle-desc">類似助言の繰り返しを防ぎます</div>
-        </div>
-        <ToggleSwitch
-          id="suppressDuplicate"
-          checked={suppressDuplicate}
-          onChange={setSuppressDuplicate}
-        />
-      </div>
-
-      {/* 送信対象設定 */}
-      <div className="settings-section">
-        <span className="material-symbols-outlined">send</span> 送信対象設定
-      </div>
-
-      {[
-        { label: "アクティブファイル", id: "ctxActiveFile", value: ctxActiveFile, set: setCtxActiveFile },
-        { label: "選択範囲", id: "ctxSelection", value: ctxSelection, set: setCtxSelection },
-        { label: "診断情報", id: "ctxDiagnostics", value: ctxDiagnostics, set: setCtxDiagnostics },
-        { label: "最近の編集", id: "ctxRecentEdits", value: ctxRecentEdits, set: setCtxRecentEdits },
-        { label: "関連シンボル", id: "ctxSymbols", value: ctxSymbols, set: setCtxSymbols },
-      ].map(({ label, id, value, set }) => (
-        <div key={id} className="context-toggle-item">
-          <span>{label}</span>
-          <ToggleSwitch id={id} checked={value} onChange={set} />
-        </div>
-      ))}
-
-      {/* 除外設定 */}
       <div className="settings-section">
         <span className="material-symbols-outlined">block</span> 除外設定
       </div>
 
-      <div style={{ fontSize: "0.9em", marginBottom: 4 }}>除外パターン (glob)</div>
-      <div className="exclude-textarea">
-        <textarea
-          id="excludeGlobs"
-          placeholder="例: **/.env"
-          value={excludeGlobs}
-          onChange={(e) => setExcludeGlobs(e.target.value)}
-        />
+      <div className="setting-item">
+        <div className="setting-label">保護済みパターン</div>
+        <div className="setting-desc">機密性やサイズの観点から常に除外されるパターンです</div>
+        <div className="protected-exclude-list">
+          {settings?.protectedExcludedGlobs.join("\n") ?? ""}
+        </div>
       </div>
 
-      {/* アクションボタン */}
+      <div className="setting-item">
+        <label className="setting-label" htmlFor="excludeGlobs">追加除外パターン (glob)</label>
+        <div className="setting-desc">ワークスペースで追加除外したいパターンを1行ずつ入力します</div>
+        <div className="exclude-textarea">
+          <textarea
+            id="excludeGlobs"
+            placeholder="例: **/tmp/**"
+            value={excludeGlobs}
+            onChange={(event) => setExcludeGlobs(event.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="s06-actions">
-        <button onClick={handleSave}>
-          <span className="material-symbols-outlined">save</span> 保存
-        </button>
+        <div className="setting-label">初期化</div>
+        <div className="setting-desc">保存済みの設定を初期値に戻します</div>
         <button className="btn-gray" onClick={() => send({ type: "resetSettings" })}>
-          <span className="material-symbols-outlined">restart_alt</span> 初期値に戻す
+          <span className="material-symbols-outlined">restart_alt</span>
+          初期値に戻す
         </button>
       </div>
-    </>
+
+      {hasPendingChanges && (
+        <div className="s06-savebar">
+          <div className="s06-savebar-copy">
+            <span className="material-symbols-outlined">edit</span>
+            <div>
+              <div className="s06-savebar-title">変更があります</div>
+              <div className="s06-savebar-desc">保存するとこの画面の設定に反映されます</div>
+            </div>
+          </div>
+
+          <div className="s06-savebar-actions">
+            <button className="btn-gray s06-revert-btn" onClick={handleRevertDraft}>
+              元に戻す
+            </button>
+            <button className="s06-save-btn" onClick={handleSave}>
+              <span className="material-symbols-outlined">save</span>
+              保存
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function normalizeExcludeGlobs(value: string): string {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join("\n");
+}
+
+function normalizeScheduleSec(value: number): number {
+  const rounded = Math.round(value / 10) * 10;
+  return Math.min(30, Math.max(10, rounded));
+}
+
+function ScheduleButtonGroup({
+  id,
+  label,
+  value,
+  onChange
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="schedule-group" role="group" aria-labelledby={`${id}-label`}>
+      <div className="schedule-header">
+        <span id={`${id}-label`} className="schedule-label">{label}</span>
+      </div>
+
+      <div className="schedule-options">
+        {SCHEDULE_OPTIONS.map((option) => {
+          const selected = option === value;
+          return (
+            <button
+              key={option}
+              type="button"
+              className={`schedule-option ${selected ? "selected" : ""}`}
+              aria-pressed={selected}
+              onClick={() => onChange(option)}
+            >
+              {option}秒
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

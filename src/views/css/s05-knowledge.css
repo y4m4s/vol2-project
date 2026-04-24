@@ -1,7 +1,3 @@
-/* ========================================
-   s05-knowledge.css - ナレッジ管理画面
-   ======================================== */
-
 /* --- 検索バー --- */
 .search-bar {
   position: relative;
@@ -34,12 +30,14 @@
 /* --- フィルタタブ --- */
 .filter-tabs {
   display: flex;
+  min-width: 0;
   gap: 6px;
   margin-bottom: 14px;
 }
 
 .filter-tabs button {
   flex: 1;
+  min-width: 0;
   padding: 6px 8px;
   margin: 0;
   border-radius: 8px;
@@ -86,16 +84,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 6px;
+}
+
+.knowledge-item-head .section-title {
+  min-width: 0;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
 }
 
 .knowledge-item-date {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 4px;
   margin-top: 6px;
   font-size: 0.82em;
+  overflow-wrap: anywhere;
 }
 
 .knowledge-item-date .material-symbols-outlined {
@@ -110,4 +117,10 @@
 
 .bottom-actions button {
   flex: 1;
+}
+
+@media (max-width: 420px) {
+  .bottom-actions {
+    flex-direction: column;
+  }
 }

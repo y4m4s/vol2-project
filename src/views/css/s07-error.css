@@ -1,31 +1,129 @@
-/* ========================================
-   s07-error.css
-   ======================================== */
-
 .s07-root {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 24px);
+  padding: 24px 0;
+}
+
+.s07-panel {
+  width: min(100%, 560px);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 48px 16px 24px;
+  gap: 14px;
+  padding: 28px 18px 20px;
+  border: 1px solid color-mix(in srgb, #ef4444 28%, var(--vscode-panel-border));
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #ef4444 8%, transparent),
+      color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent)
+    );
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
   text-align: center;
-  gap: 12px;
+}
+
+.s07-panel.restricted {
+  border-color: color-mix(in srgb, #eab308 30%, var(--vscode-panel-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #eab308 9%, transparent),
+      color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent)
+    );
+}
+
+.s07-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  color: #ef4444;
+  border: 1px solid color-mix(in srgb, currentColor 48%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.s07-panel.restricted .s07-icon-wrap {
+  color: #eab308;
 }
 
 .s07-icon {
-  font-size: 48px;
-  color: #ef4444;
-  opacity: 0.85;
+  font-size: 34px;
+}
+
+.s07-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .s07-title {
-  font-size: 1.05em;
+  font-size: 1.12em;
   font-weight: 700;
 }
 
 .s07-desc {
-  font-size: 0.88em;
+  font-size: 0.86em;
   color: var(--vscode-descriptionForeground);
   line-height: 1.6;
-  max-width: 260px;
+}
+
+.s07-cause-list {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 0;
+}
+
+.s07-cause-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent);
+  color: var(--vscode-descriptionForeground);
+  text-align: left;
+  font-size: 0.85em;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.s07-cause-item .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--vscode-textLink-foreground);
+}
+
+.s07-retry-btn {
+  margin-top: 2px;
+  min-height: 42px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.s07-retry-btn .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.s07-retry-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@keyframes s07-spin {
+  to { transform: rotate(360deg); }
+}
+
+.s07-spin {
+  animation: s07-spin 0.8s linear infinite;
 }

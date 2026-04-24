@@ -42,16 +42,23 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "connect":
             await this.controller.connectCopilot();
             return;
+          case "createConversationStream":
+            await this.controller.createConversationStream();
+            return;
+          case "selectConversationStream":
+            await this.controller.selectConversationStream(message.id);
+            return;
+          case "deleteConversationStream":
+            await this.controller.deleteConversationStream(message.id);
+            return;
           case "ask":
-            await this.controller.askForGuidance(message.text);
+            await this.controller.askForGuidanceWithCurrentContext(message.text);
             return;
           case "askContext":
             await this.controller.askForGuidance(undefined, "context");
             return;
           case "setMode":
-            if (message.mode) {
-              this.controller.setMode(message.mode);
-            }
+            await this.controller.setMode(message.mode);
             return;
           case "toggleAutoPause":
             this.controller.toggleAutoPause();
@@ -62,19 +69,32 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "navigateBack":
             this.controller.navigateBack();
             return;
-          case "openAdviceDetail":
-            if (message.id) {
-              this.controller.selectConversation(message.id);
+          case "saveKnowledge":
+            await this.controller.saveKnowledge(message.id);
+            return;
+          case "selectKnowledge":
+            this.controller.selectKnowledge(message.id);
+            return;
+          case "updateKnowledge":
+            if (this.isCompleteKnowledgeMessage(message)) {
+              await this.controller.updateKnowledge({
+                id: message.id,
+                title: message.title,
+                summary: message.summary,
+                body: message.body,
+                tags: message.tags,
+                status: message.status
+              });
             }
             return;
-          case "deepDive":
-            await this.controller.deepDiveSelectedAdvice();
+          case "toggleKnowledgeStatus":
+            await this.controller.toggleKnowledgeStatus(message.id);
             return;
-          case "saveKnowledge":
-            this.controller.saveKnowledge();
+          case "deleteKnowledge":
+            await this.controller.deleteKnowledge(message.id);
             return;
           case "saveSettings":
-            if (message.payload && this.isCompletePayload(message.payload)) {
+            if (this.isCompletePayload(message.payload)) {
               await this.controller.saveSettings(message.payload);
             }
             return;
@@ -82,16 +102,16 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.resetSettings();
             return;
           case "searchKnowledge":
-            this.controller.searchKnowledge(message.query ?? "");
+            this.controller.searchKnowledge(message.query);
             return;
           case "filterKnowledge":
-            this.controller.filterKnowledge(message.filter ?? "");
+            this.controller.filterKnowledge(message.filter);
             return;
           case "exportKnowledge":
-            this.controller.exportKnowledge();
+            await this.controller.exportKnowledge();
             return;
           case "resetKnowledge":
-            this.controller.resetKnowledge();
+            await this.controller.resetKnowledge();
             return;
           default:
             return;
@@ -123,10 +143,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "s01-connection.css",
       "s02-main.css",
       "s03-advice-detail.css",
-      "s04-context-check.css",
+      "s04-conversation.css",
       "s05-knowledge.css",
       "s06-settings.css",
-      "s07-error.css",
+      "s08-history.css",
+      "s07-error.css"
     ];
 
     const cssLinks = cssFiles
@@ -153,7 +174,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}';" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     ${cssLinks}
-    <title>AI Pair Navigator</title>
+    <title>NaviCom</title>
   </head>
   <body>
     <div id="root"></div>
@@ -165,31 +186,33 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private isCompletePayload(payload: unknown): payload is {
     defaultMode: "manual" | "always";
-    alwaysModeEnabled: boolean;
     requestIntervalSec: number;
     idleDelaySec: number;
-    suppressDuplicate: boolean;
-    ctxActiveFile: boolean;
-    ctxSelection: boolean;
-    ctxDiagnostics: boolean;
-    ctxRecentEdits: boolean;
-    ctxSymbols: boolean;
     excludeGlobs: string;
   } {
     if (typeof payload !== "object" || payload === null) return false;
     const p = payload as Record<string, unknown>;
     return (
-      typeof p.defaultMode === "string" &&
-      typeof p.alwaysModeEnabled === "boolean" &&
+      (p.defaultMode === "manual" || p.defaultMode === "always") &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.idleDelaySec === "number" &&
-      typeof p.suppressDuplicate === "boolean" &&
-      typeof p.ctxActiveFile === "boolean" &&
-      typeof p.ctxSelection === "boolean" &&
-      typeof p.ctxDiagnostics === "boolean" &&
-      typeof p.ctxRecentEdits === "boolean" &&
-      typeof p.ctxSymbols === "boolean" &&
       typeof p.excludeGlobs === "string"
+    );
+  }
+
+  private isCompleteKnowledgeMessage(
+    message: unknown
+  ): message is Extract<WebviewToExtension, { type: "updateKnowledge" }> {
+    if (typeof message !== "object" || message === null) return false;
+    const p = message as Record<string, unknown>;
+    return (
+      p.type === "updateKnowledge" &&
+      typeof p.id === "string" &&
+      typeof p.title === "string" &&
+      typeof p.summary === "string" &&
+      typeof p.body === "string" &&
+      typeof p.tags === "string" &&
+      (p.status === "active" || p.status === "disabled")
     );
   }
 

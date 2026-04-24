@@ -21,24 +21,25 @@ export class RequestPlanner {
     settings: NavigatorSettings,
     kind: GuidanceKind
   ): PreparedGuidanceRequest {
-    const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, settings.excludedGlobs) : false;
+    const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
+    const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
-      activeFileExcerpt: !fileExcluded && settings.sendTargets.activeFile ? context.activeFileExcerpt : undefined,
-      selectedText: !fileExcluded && settings.sendTargets.selection ? context.selectedText : undefined,
-      diagnosticsSummary: !fileExcluded && settings.sendTargets.diagnostics ? context.diagnosticsSummary : [],
-      recentEditsSummary: !fileExcluded && settings.sendTargets.recentEdits ? context.recentEditsSummary : [],
-      relatedSymbols: !fileExcluded && settings.sendTargets.relatedSymbols ? context.relatedSymbols : []
+      activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
+      selectedText: !fileExcluded ? context.selectedText : undefined,
+      diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
+      recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
+      relatedSymbols: !fileExcluded ? context.relatedSymbols : []
     };
 
     return {
       context: filteredContext,
       requestPlan: {
         kind,
-        categories: this.buildCategories(context, filteredContext, settings, fileExcluded),
-        targetFiles: this.buildTargetFiles(context, filteredContext, settings, fileExcluded),
-        excludedGlobs: settings.excludedGlobs,
+        categories: this.buildCategories(context, filteredContext, fileExcluded),
+        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded),
+        excludedGlobs,
         estimatedSizeText: this.estimateSizeText(filteredContext, preview)
       }
     };
@@ -47,7 +48,6 @@ export class RequestPlanner {
   private buildCategories(
     rawContext: GuidanceContext,
     context: GuidanceContext,
-    settings: NavigatorSettings,
     fileExcluded: boolean
   ): RequestPlanCategory[] {
     return [
@@ -55,7 +55,7 @@ export class RequestPlanner {
         "activeFile",
         "アクティブファイル断片",
         "現在編集中のファイルの内容",
-        settings.sendTargets.activeFile,
+        true,
         Boolean(context.activeFileExcerpt),
         this.describeFileCategoryNote(fileExcluded, rawContext.activeFilePath, context.activeFileExcerpt)
       ),
@@ -63,7 +63,7 @@ export class RequestPlanner {
         "selection",
         "選択範囲",
         "エディタで選択している範囲",
-        settings.sendTargets.selection,
+        true,
         Boolean(context.selectedText),
         this.describeSelectionCategoryNote(fileExcluded, rawContext.selectedText, context.selectedText)
       ),
@@ -71,7 +71,7 @@ export class RequestPlanner {
         "diagnostics",
         "診断情報",
         "エラーや警告の情報",
-        settings.sendTargets.diagnostics,
+        true,
         context.diagnosticsSummary.length > 0,
         this.describeDiagnosticsCategoryNote(fileExcluded, rawContext.diagnosticsSummary, context.diagnosticsSummary)
       ),
@@ -79,7 +79,7 @@ export class RequestPlanner {
         "recentEdits",
         "最近の編集範囲",
         "直近で編集した箇所",
-        settings.sendTargets.recentEdits,
+        true,
         context.recentEditsSummary.length > 0,
         this.describeCollectionNote(fileExcluded, rawContext.recentEditsSummary.length, context.recentEditsSummary, "最近の編集はまだ記録されていません")
       ),
@@ -87,7 +87,7 @@ export class RequestPlanner {
         "relatedSymbols",
         "関連シンボル",
         "現在位置から推定した関数や変数の候補",
-        settings.sendTargets.relatedSymbols,
+        true,
         context.relatedSymbols.length > 0,
         this.describeCollectionNote(fileExcluded, rawContext.relatedSymbols.length, context.relatedSymbols, "関連シンボル候補はまだありません")
       )
@@ -97,7 +97,6 @@ export class RequestPlanner {
   private buildTargetFiles(
     rawContext: GuidanceContext,
     filteredContext: GuidanceContext,
-    settings: NavigatorSettings,
     fileExcluded: boolean
   ): RequestPlanFile[] {
     if (!rawContext.activeFilePath) {
@@ -110,11 +109,11 @@ export class RequestPlanner {
 
     const included = Boolean(
       !fileExcluded &&
-        ((settings.sendTargets.activeFile && filteredContext.activeFileExcerpt) ||
-          (settings.sendTargets.selection && filteredContext.selectedText) ||
-          (settings.sendTargets.diagnostics && filteredContext.diagnosticsSummary.length > 0) ||
-          (settings.sendTargets.recentEdits && filteredContext.recentEditsSummary.length > 0) ||
-          (settings.sendTargets.relatedSymbols && filteredContext.relatedSymbols.length > 0))
+        (filteredContext.activeFileExcerpt ||
+          filteredContext.selectedText ||
+          filteredContext.diagnosticsSummary.length > 0 ||
+          filteredContext.recentEditsSummary.length > 0 ||
+          filteredContext.relatedSymbols.length > 0)
     );
 
     return [
@@ -126,7 +125,7 @@ export class RequestPlanner {
           ? undefined
           : fileExcluded
             ? "除外 glob に一致したため送信しません"
-            : "現在の設定では送信対象が含まれていません"
+            : "送信できる文脈がまだありません"
       }
     ];
   }
@@ -190,10 +189,6 @@ export class RequestPlanner {
       return "選択範囲がないため送信しません";
     }
 
-    if (!selection) {
-      return "設定により選択範囲は送信しません";
-    }
-
     return "現在の選択範囲を優先して送信します";
   }
 
@@ -208,10 +203,6 @@ export class RequestPlanner {
 
     if (rawDiagnostics.length === 0) {
       return "現在のファイルに診断情報はありません";
-    }
-
-    if (diagnostics.length === 0) {
-      return "設定により診断情報は送信しません";
     }
 
     return `${diagnostics.length}件の診断情報を送信します`;
@@ -231,16 +222,16 @@ export class RequestPlanner {
       return emptyMessage;
     }
 
-    if (values.length === 0) {
-      return "設定により送信しません";
-    }
-
     return values.join(" / ");
   }
 
   private isPathExcluded(filePath: string, patterns: string[]): boolean {
     const normalizedPath = filePath.replaceAll("\\", "/");
     return patterns.some((pattern) => this.globToRegExp(pattern).test(normalizedPath));
+  }
+
+  private getEffectiveExcludedGlobs(settings: NavigatorSettings): string[] {
+    return [...new Set([...settings.protectedExcludedGlobs, ...settings.excludedGlobs])];
   }
 
   private globToRegExp(pattern: string): RegExp {

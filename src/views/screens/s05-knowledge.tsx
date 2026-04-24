@@ -63,7 +63,7 @@ export function S05Knowledge() {
         <div className="empty-state">
           <span className="material-symbols-outlined empty-state-icon">auto_stories</span>
           <div className="empty-title">まだナレッジがありません</div>
-          <div className="empty-desc">アドバイス詳細画面から保存できます</div>
+          <div className="empty-desc">回答下の保存ボタンから追加できます</div>
         </div>
       ) : (
         <div id="knowledgeList">

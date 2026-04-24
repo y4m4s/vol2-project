@@ -45,10 +45,6 @@ export function S03AdviceDetail() {
         </div>
 
         <div className="card">
-          <button disabled={!detail?.canDeepDive} onClick={() => send({ type: "deepDive" })}>
-            <span className="material-symbols-outlined">travel_explore</span>
-            深掘り質問
-          </button>
           <button className="secondary" onClick={() => send({ type: "saveKnowledge" })}>
             <span className="material-symbols-outlined">bookmark_add</span>
             ナレッジとして保存
