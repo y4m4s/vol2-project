@@ -418,9 +418,9 @@
 
 .s04-input {
   width: 100%;
-  min-height: 68px;
+  min-height: 48px;
   max-height: 220px;
-  padding: 12px 14px 8px;
+  padding: 12px 14px;
   background: transparent;
   border: none;
   outline: none;

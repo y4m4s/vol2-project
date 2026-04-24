@@ -178,19 +178,6 @@ export function S02Main() {
           />
 
           <div className="s02-input-footer">
-            {contextPreview.selectedTextPreview && (
-              <div className="s02-footer-left">
-                <button
-                  className="s02-context-btn"
-                  disabled={!canAskForGuidance}
-                  onClick={() => send({ type: "askContext" })}
-                >
-                  <span className="material-symbols-outlined">ink_selection</span>
-                  選択範囲を相談
-                </button>
-              </div>
-            )}
-
             <div className="s02-footer-right">
               {isAlways && (
                 <div className={`s02-auto-inline ${isPaused ? "paused" : ""}`}>
@@ -227,7 +214,6 @@ export function S02Main() {
                 onClick={handleSend}
               >
                 <span className="material-symbols-outlined">arrow_upward</span>
-                <span className="s02-send-label">送信</span>
               </button>
             </div>
           </div>

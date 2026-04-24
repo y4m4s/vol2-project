@@ -20,7 +20,6 @@
 .s02-connect-btn,
 .s02-icon-btn,
 .s02-auto-inline-toggle,
-.s02-context-btn,
 .s02-mode-btn,
 .s02-send-btn {
   width: auto;
@@ -278,14 +277,14 @@
 
 .s02-input {
   width: 100%;
-  min-height: 88px;
+  min-height: 48px;
   max-height: 220px;
-  padding: 14px 14px 10px;
+  padding: 12px 14px;
   background: transparent;
   border: none;
   outline: none;
   color: var(--vscode-input-foreground);
-  font-size: 0.95em;
+  font-size: 0.94em;
   font-family: var(--vscode-font-family);
   line-height: 1.6;
   resize: none;
@@ -295,28 +294,19 @@
 .s02-input-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
-  padding: 0 12px 12px;
+  padding: 6px;
+  border-top: 1px solid var(--vscode-panel-border);
 }
 
-.s02-footer-left,
 .s02-footer-right {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-}
-
-.s02-footer-left {
-  flex: 1 1 auto;
-}
-
-.s02-footer-right {
+  justify-content: flex-end;
   flex: 1 1 auto;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  gap: 6px;
   min-width: 0;
   max-width: 100%;
 }
@@ -379,50 +369,44 @@
   font-size: 15px;
 }
 
-.s02-context-btn,
-.s02-mode-btn,
-.s02-send-btn {
+.s02-mode-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 68px;
+  padding: 0 10px;
+  height: 32px;
   border-radius: 999px;
-}
-
-.s02-context-btn {
-  padding: 6px 10px;
-  color: var(--vscode-foreground);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--vscode-button-background) 42%, var(--vscode-panel-border));
-}
-
-.s02-context-btn .material-symbols-outlined,
-.s02-mode-btn .material-symbols-outlined,
-.s02-send-btn .material-symbols-outlined {
-  font-size: 15px;
-}
-
-.s02-mode-btn {
-  flex-shrink: 0;
-  padding: 7px 12px;
-  color: var(--vscode-descriptionForeground);
-  background: transparent;
   border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 0.77em;
+  font-weight: 700;
+}
+
+.s02-mode-btn .material-symbols-outlined {
+  font-size: 16px;
 }
 
 .s02-mode-btn.always {
   color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.42);
+  border-color: rgba(245, 158, 11, 0.5);
   background: rgba(245, 158, 11, 0.12);
 }
 
 .s02-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
-  padding: 8px 14px;
+  padding: 0;
+  border-radius: 10px;
 }
 
-.s02-send-label {
-  font-size: 0.9em;
-  font-weight: 600;
+.s02-send-btn .material-symbols-outlined {
+  font-size: 17px;
 }
 
 @media (max-width: 520px) {
@@ -437,7 +421,6 @@
     justify-content: flex-end;
   }
 
-  .s02-context-btn,
   .s02-auto-inline {
     max-width: 100%;
   }

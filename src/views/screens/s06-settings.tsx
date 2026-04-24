@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { BackHeader } from "../webview/components/BackHeader";
-import { RangeSlider } from "../webview/components/RangeSlider";
 import { useApp } from "../webview/state/AppContext";
 import type { AdviceMode } from "../../shared/types";
+
+const SCHEDULE_OPTIONS = [10, 20, 30];
 
 export function S06Settings() {
   const { viewModel, send } = useApp();
@@ -100,25 +101,17 @@ export function S06Settings() {
         <span className="material-symbols-outlined">speed</span> 助言の頻度
       </div>
 
-      <RangeSlider
+      <ScheduleButtonGroup
         id="requestInterval"
         label="リクエスト間隔"
         value={requestIntervalSec}
-        min={10}
-        max={30}
-        step={10}
-        unit="秒"
         onChange={setRequestIntervalSec}
       />
 
-      <RangeSlider
+      <ScheduleButtonGroup
         id="idleDelay"
         label="アイドル判定"
         value={idleDelaySec}
-        min={10}
-        max={30}
-        step={10}
-        unit="秒"
         onChange={setIdleDelaySec}
       />
 
@@ -192,4 +185,41 @@ function normalizeExcludeGlobs(value: string): string {
 function normalizeScheduleSec(value: number): number {
   const rounded = Math.round(value / 10) * 10;
   return Math.min(30, Math.max(10, rounded));
+}
+
+function ScheduleButtonGroup({
+  id,
+  label,
+  value,
+  onChange
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="schedule-group" role="group" aria-labelledby={`${id}-label`}>
+      <div className="schedule-header">
+        <span id={`${id}-label`} className="schedule-label">{label}</span>
+      </div>
+
+      <div className="schedule-options">
+        {SCHEDULE_OPTIONS.map((option) => {
+          const selected = option === value;
+          return (
+            <button
+              key={option}
+              type="button"
+              className={`schedule-option ${selected ? "selected" : ""}`}
+              aria-pressed={selected}
+              onClick={() => onChange(option)}
+            >
+              {option}秒
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
