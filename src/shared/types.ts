@@ -13,6 +13,8 @@ export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_cha
 export type NavigatorScreen =
   | "onboarding"
   | "main"
+  | "history"
+  | "conversation"
   | "error"
   | "advice_detail"
   | "knowledge"
@@ -107,6 +109,15 @@ export interface ConversationEntry {
   requestPlan?: RequestPlanSnapshot;
 }
 
+export interface ConversationStreamListItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessagePreview?: string;
+}
+
 export interface NavigatorStatusMessage {
   kind: "info" | "warning" | "error";
   text: string;
@@ -157,6 +168,8 @@ export interface NavigatorSessionState {
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
   knowledgeQuery: string;
@@ -176,6 +189,8 @@ export interface NavigatorViewModel {
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedAdvice?: AdviceDetailViewData;
   currentRequestPlan: RequestPlanSnapshot;

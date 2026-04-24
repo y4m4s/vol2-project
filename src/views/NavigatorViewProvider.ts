@@ -42,6 +42,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "connect":
             await this.controller.connectCopilot();
             return;
+          case "createConversationStream":
+            await this.controller.createConversationStream();
+            return;
+          case "selectConversationStream":
+            await this.controller.selectConversationStream(message.id);
+            return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text);
             return;
@@ -140,8 +146,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "s01-connection.css",
       "s02-main.css",
       "s03-advice-detail.css",
+      "s04-conversation.css",
       "s05-knowledge.css",
       "s06-settings.css",
+      "s08-history.css",
       "s07-error.css"
     ];
 

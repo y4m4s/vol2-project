@@ -3,6 +3,7 @@ import { NavigatorController } from "./application/NavigatorController";
 import { ContextCollector } from "./services/ContextCollector";
 import { AdviceService } from "./services/AdviceService";
 import { AdviceScheduler } from "./services/AdviceScheduler";
+import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { RequestPlanner } from "./services/RequestPlanner";
@@ -14,6 +15,7 @@ import {
 import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
   const connectionService = new ConnectionService();
   const contextCollector = new ContextCollector();
   const controller = new NavigatorController(
@@ -23,6 +25,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
+    new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri)
   );
 

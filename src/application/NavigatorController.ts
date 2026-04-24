@@ -3,6 +3,12 @@ import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
 import { AdviceService } from "../services/AdviceService";
 import { AdviceScheduler } from "../services/AdviceScheduler";
+import {
+  ConversationStore,
+  ConversationStreamRecord,
+  DEFAULT_CONVERSATION_STREAM_TITLE,
+  StoredConversationEntry
+} from "../services/ConversationStore";
 import { ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
@@ -58,6 +64,7 @@ export class NavigatorController implements vscode.Disposable {
     private readonly adviceScheduler: AdviceScheduler,
     private readonly requestPlanner: RequestPlanner,
     private readonly settingsService: SettingsService,
+    private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
@@ -65,6 +72,7 @@ export class NavigatorController implements vscode.Disposable {
     this.disposables.push(
       this.sessionStore,
       this.adviceScheduler,
+      this.conversationStore,
       this.knowledgeStore,
       this.didChangeStateEmitter,
       this.sessionStore.onDidChangeState(() => {
@@ -80,7 +88,9 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async initialize(): Promise<void> {
+    await this.conversationStore.initialize();
     await this.knowledgeStore.initialize();
+    await this.restoreConversationState();
 
     const settings = this.settingsService.getSettings();
     this.contextCollector.primeDocuments(vscode.workspace.textDocuments);
@@ -124,6 +134,7 @@ export class NavigatorController implements vscode.Disposable {
     );
 
     this.patchSession({
+      screen: this.resolveHomeScreen(this.connectionService.getState()),
       mode: settings.defaultMode
     });
     this.refreshContextPreview();
@@ -151,6 +162,8 @@ export class NavigatorController implements vscode.Disposable {
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       latestGuidance: state.latestGuidance,
+      conversationStreams: state.conversationStreams,
+      activeConversationStreamId: state.activeConversationStreamId,
       conversationHistory: state.conversationHistory,
       selectedAdvice: this.buildSelectedAdvice(state),
       currentRequestPlan,
@@ -207,6 +220,34 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
+  public async createConversationStream(): Promise<void> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return;
+    }
+
+    const record = await this.conversationStore.createStream();
+    await this.conversationStore.setActiveStream(record.id);
+    this.lastAutomaticContextFingerprint = undefined;
+    this.hydrateConversationStream(record, { screen: "conversation", resetNavigation: true, clearStatusMessage: true });
+  }
+
+  public async selectConversationStream(streamId: string): Promise<void> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle" || (state.activeConversationStreamId === streamId && state.screen === "conversation")) {
+      return;
+    }
+
+    const record = this.conversationStore.get(streamId);
+    if (!record) {
+      return;
+    }
+
+    await this.conversationStore.setActiveStream(record.id);
+    this.lastAutomaticContextFingerprint = undefined;
+    this.hydrateConversationStream(record, { screen: "conversation", resetNavigation: true, clearStatusMessage: true });
+  }
+
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind): Promise<void> {
     const guidanceKind = kind ?? (userPrompt?.trim() ? "manual" : "context");
     if (guidanceKind === "context") {
@@ -256,12 +297,25 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public navigate(screen: NavigatorScreen): void {
+    const state = this.sessionStore.getState();
+
     switch (screen) {
       case "onboarding":
         this.patchSession({ screen: "onboarding" });
         return;
       case "main":
-        this.patchSession({ screen: this.resolveHomeScreen(this.sessionStore.getState().connectionState) });
+        this.patchSession({
+          screen: this.resolveHomeScreen(state.connectionState),
+          selectedConversationId: undefined
+        });
+        return;
+      case "history":
+        this.pushScreen("history");
+        return;
+      case "conversation":
+        this.patchSession({
+          screen: state.activeConversationStreamId ? "conversation" : this.resolveHomeScreen(state.connectionState)
+        });
         return;
       case "knowledge":
       case "settings":
@@ -431,20 +485,7 @@ export class NavigatorController implements vscode.Disposable {
     const selected = conversationId
       ? state.conversationHistory.find((item) => item.id === conversationId && item.role === "assistant")
       : this.findSelectedConversation(state) ?? this.findLatestAssistant(state.conversationHistory);
-    const latestGuidanceSource =
-      conversationId && state.latestGuidance?.id === conversationId
-        ? {
-            id: state.latestGuidance.id,
-            role: "assistant" as const,
-            text: state.latestGuidance.text,
-            createdAt: state.latestGuidance.requestedAt,
-            kind: state.latestGuidance.requestPlan.kind,
-            basedOn: state.latestGuidance.basedOn,
-            mode: state.latestGuidance.mode,
-            requestPlan: state.latestGuidance.requestPlan
-          }
-        : undefined;
-    const source = selected ?? latestGuidanceSource;
+    const source = selected;
 
     if (!source) {
       this.patchSession({
@@ -659,7 +700,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private async executeGuidanceRequest(options: GuidanceExecutionOptions): Promise<{ ok: boolean }> {
-    const state = this.sessionStore.getState();
+    let state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
       return { ok: false };
     }
@@ -676,6 +717,8 @@ export class NavigatorController implements vscode.Disposable {
       }
       return { ok: false };
     }
+
+    state = await this.prepareConversationForGuidance(state, options.kind);
 
     const settings = this.settingsService.getSettings();
     const preview = options.preview ?? this.rememberSelectionContext(this.contextCollector.collectPreview());
@@ -702,7 +745,10 @@ export class NavigatorController implements vscode.Disposable {
     this.patchSession({
       requestState: "requesting_guidance",
       connectionState: this.connectionService.getState(),
-      screen: options.kind === "always" ? state.screen : "main",
+      screen:
+        options.kind === "always" || options.kind === "deep_dive"
+          ? state.screen
+          : "conversation",
       contextPreview: contextPreviewAfterCapture,
       conversationHistory: nextHistory,
       statusMessage: {
@@ -724,6 +770,7 @@ export class NavigatorController implements vscode.Disposable {
       options.kind === "context" && prepared.context.selectedText
         ? this.clearSelectionPreview(rawRefreshedPreview)
         : this.rememberSelectionContext(rawRefreshedPreview);
+    const latestState = this.sessionStore.getState();
 
     if (result.ok) {
       const assistantEntry = this.createConversationEntry(
@@ -740,23 +787,29 @@ export class NavigatorController implements vscode.Disposable {
       this.patchSession({
         connectionState: this.connectionService.getState(),
         requestState: "idle",
-        screen: this.resolveScreenAfterSuccess(options.kind, state.screen),
+        screen: this.resolveScreenAfterSuccess(options.kind, latestState.screen),
         contextPreview: refreshedPreview,
         latestGuidance: this.createGuidanceCard(assistantEntry),
         conversationHistory: updatedHistory,
-        selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, state, assistantEntry.id),
+        selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
         statusMessage: undefined
       });
+      await this.persistActiveConversationState();
       return { ok: true };
     }
 
     const nextConnectionState = result.connectionState;
-    const nextMode = options.kind === "always" ? "manual" : state.mode;
+    const nextMode = options.kind === "always" ? "manual" : latestState.mode;
 
     this.patchSession({
       connectionState: nextConnectionState,
       requestState: "idle",
-      screen: this.resolveScreenAfterFailure(options.kind, state.screen, nextConnectionState, Boolean(state.latestGuidance)),
+      screen: this.resolveScreenAfterFailure(
+        options.kind,
+        latestState.screen,
+        nextConnectionState,
+        Boolean(latestState.latestGuidance)
+      ),
       mode: nextMode,
       contextPreview: refreshedPreview,
       conversationHistory: nextHistory,
@@ -768,6 +821,7 @@ export class NavigatorController implements vscode.Disposable {
             : result.message
       }
     });
+    await this.persistActiveConversationState();
     return { ok: false };
   }
 
@@ -775,6 +829,206 @@ export class NavigatorController implements vscode.Disposable {
     this.patchSession({
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
     });
+  }
+
+  private async restoreConversationState(): Promise<void> {
+    const existingStream = this.resolveInitialConversationStream();
+    if (!existingStream) {
+      this.patchSession({
+        conversationStreams: this.conversationStore.list(),
+        activeConversationStreamId: undefined,
+        latestGuidance: undefined,
+        conversationHistory: [],
+        selectedConversationId: undefined
+      });
+      return;
+    }
+
+    this.hydrateConversationStream(existingStream);
+  }
+
+  private resolveInitialConversationStream(): ConversationStreamRecord | undefined {
+    const activeStreamId = this.conversationStore.getActiveStreamId();
+    if (activeStreamId) {
+      const activeStream = this.conversationStore.get(activeStreamId);
+      if (activeStream) {
+        return activeStream;
+      }
+    }
+
+    const latestStream = this.conversationStore.list()[0];
+    return latestStream ? this.conversationStore.get(latestStream.id) : undefined;
+  }
+
+  private async prepareConversationForGuidance(
+    state: NavigatorSessionState,
+    kind: GuidanceKind
+  ): Promise<NavigatorSessionState> {
+    if (kind === "always") {
+      return this.ensureActiveConversationStream();
+    }
+
+    if (kind !== "deep_dive" && state.screen === "main") {
+      const record = await this.conversationStore.createStream();
+      await this.conversationStore.setActiveStream(record.id);
+      this.lastAutomaticContextFingerprint = undefined;
+      this.hydrateConversationStream(record);
+      return this.sessionStore.getState();
+    }
+
+    if (state.activeConversationStreamId) {
+      return state;
+    }
+
+    return this.ensureActiveConversationStream();
+  }
+
+  private async ensureActiveConversationStream(): Promise<NavigatorSessionState> {
+    const state = this.sessionStore.getState();
+    if (state.activeConversationStreamId) {
+      return state;
+    }
+
+    const existingStream = this.resolveInitialConversationStream();
+    if (existingStream) {
+      await this.conversationStore.setActiveStream(existingStream.id);
+      this.hydrateConversationStream(existingStream);
+      return this.sessionStore.getState();
+    }
+
+    const record = await this.conversationStore.createStream();
+    await this.conversationStore.setActiveStream(record.id);
+    this.lastAutomaticContextFingerprint = undefined;
+    this.hydrateConversationStream(record);
+    return this.sessionStore.getState();
+  }
+
+  private hydrateConversationStream(
+    record: ConversationStreamRecord,
+    options: {
+      screen?: NavigatorScreen;
+      resetNavigation?: boolean;
+      clearStatusMessage?: boolean;
+    } = {}
+  ): void {
+    this.guidanceContextByConversationId.clear();
+    const conversationHistory = this.toConversationHistory(record.entries);
+    const latestAssistant = this.findLatestAssistant(conversationHistory);
+
+    this.patchSession({
+      conversationStreams: this.conversationStore.list(),
+      activeConversationStreamId: record.id,
+      latestGuidance: latestAssistant ? this.createGuidanceCard(latestAssistant) : undefined,
+      conversationHistory,
+      selectedConversationId: undefined,
+      ...(options.screen ? { screen: options.screen } : {}),
+      ...(options.resetNavigation ? { screenHistory: [] } : {}),
+      ...(options.clearStatusMessage ? { statusMessage: undefined } : {})
+    });
+  }
+
+  private async persistActiveConversationState(): Promise<void> {
+    const record = this.buildActiveConversationRecord();
+    if (!record) {
+      return;
+    }
+
+    const saved = await this.conversationStore.saveStream(record);
+    this.patchSession({
+      activeConversationStreamId: saved.id,
+      conversationStreams: this.conversationStore.list()
+    });
+  }
+
+  private buildActiveConversationRecord(): ConversationStreamRecord | undefined {
+    const state = this.sessionStore.getState();
+    const streamId = state.activeConversationStreamId;
+    if (!streamId) {
+      return undefined;
+    }
+
+    const existing = this.conversationStore.get(streamId);
+    const now = new Date().toISOString();
+    const entries = this.toStoredConversationEntries(state.conversationHistory);
+
+    return {
+      id: streamId,
+      title: this.resolveConversationStreamTitle(existing?.title, state.conversationHistory),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: existing?.updatedAt ?? now,
+      entries
+    };
+  }
+
+  private toConversationHistory(entries: StoredConversationEntry[]): ConversationEntry[] {
+    return entries.map((entry) => {
+      if (entry.guidanceContext) {
+        this.guidanceContextByConversationId.set(entry.id, entry.guidanceContext);
+      }
+
+      const { guidanceContext, ...conversationEntry } = entry;
+      return conversationEntry;
+    });
+  }
+
+  private toStoredConversationEntries(entries: ConversationEntry[]): StoredConversationEntry[] {
+    return entries.map((entry) => ({
+      ...entry,
+      guidanceContext: this.guidanceContextByConversationId.get(entry.id)
+    }));
+  }
+
+  private resolveConversationStreamTitle(currentTitle: string | undefined, history: ConversationEntry[]): string {
+    if (currentTitle && currentTitle !== DEFAULT_CONVERSATION_STREAM_TITLE) {
+      return currentTitle;
+    }
+
+    for (const entry of history) {
+      const candidate = this.buildConversationStreamTitleCandidate(entry);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return currentTitle ?? DEFAULT_CONVERSATION_STREAM_TITLE;
+  }
+
+  private buildConversationStreamTitleCandidate(entry: ConversationEntry): string | undefined {
+    if (entry.role === "user") {
+      if (entry.kind === "manual") {
+        return this.normalizeConversationStreamTitle(entry.text);
+      }
+
+      if (entry.kind === "context") {
+        return this.normalizeConversationStreamTitle(entry.basedOn?.selectedTextPreview);
+      }
+    }
+
+    if (entry.role === "assistant") {
+      return this.normalizeConversationStreamTitle(entry.text);
+    }
+
+    return undefined;
+  }
+
+  private normalizeConversationStreamTitle(value: string | undefined): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const firstMeaningfulLine = value
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .map((line) => line.replace(/^#{1,6}\s+/, "").replace(/^[-*+]\s+/, "").trim())
+      .find((line) => line.length > 0);
+
+    if (!firstMeaningfulLine) {
+      return undefined;
+    }
+
+    return firstMeaningfulLine.length <= 60
+      ? firstMeaningfulLine
+      : `${firstMeaningfulLine.slice(0, 60)}...`;
   }
 
   private patchSession(partial: Partial<NavigatorSessionState>): void {
@@ -853,7 +1107,6 @@ export class NavigatorController implements vscode.Disposable {
       case "connected":
         return "main";
       case "restricted":
-        return this.sessionStore.getState().latestGuidance ? "main" : "error";
       case "unavailable":
         return "error";
       case "connecting":
@@ -873,7 +1126,11 @@ export class NavigatorController implements vscode.Disposable {
       return currentScreen;
     }
 
-    return "main";
+    if (this.shouldKeepUtilityScreen(currentScreen)) {
+      return currentScreen;
+    }
+
+    return "conversation";
   }
 
   private resolveSelectedConversationIdAfterSuccess(
@@ -898,11 +1155,27 @@ export class NavigatorController implements vscode.Disposable {
       return currentScreen;
     }
 
-    if (connectionState === "restricted" && hasLatestGuidance) {
+    if (kind === "deep_dive") {
+      return currentScreen;
+    }
+
+    if (kind === "always" && connectionState === "restricted" && hasLatestGuidance) {
       return "main";
     }
 
+    if (kind !== "always") {
+      if (this.shouldKeepUtilityScreen(currentScreen)) {
+        return currentScreen;
+      }
+
+      return "conversation";
+    }
+
     return this.resolveHomeScreen(connectionState);
+  }
+
+  private shouldKeepUtilityScreen(screen: NavigatorScreen): boolean {
+    return screen === "history" || screen === "knowledge" || screen === "settings";
   }
 
   private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
@@ -1151,10 +1424,12 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private createInitialState(): NavigatorSessionState {
+    const connectionState = this.connectionService.getState();
+
     return {
-      screen: "onboarding",
+      screen: this.resolveHomeScreen(connectionState),
       screenHistory: [],
-      connectionState: this.connectionService.getState(),
+      connectionState,
       requestState: "idle",
       mode: "manual",
       autoAdvice: {
@@ -1167,6 +1442,7 @@ export class NavigatorController implements vscode.Disposable {
       contextPreview: {
         diagnosticsSummary: []
       },
+      conversationStreams: [],
       conversationHistory: [],
       knowledgeQuery: "",
       knowledgeStatusFilter: "all"

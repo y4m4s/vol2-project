@@ -1,0 +1,119 @@
+/* ========================================
+   s08-history.css
+   ======================================== */
+
+.s08-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.s08-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.s08-create-btn {
+  width: auto;
+  margin-top: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.s08-create-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.s08-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 14px;
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.s08-empty .material-symbols-outlined {
+  font-size: 28px;
+}
+
+.s08-empty-title {
+  color: var(--vscode-foreground);
+  font-weight: 700;
+}
+
+.s08-empty-desc {
+  font-size: 0.84em;
+  line-height: 1.6;
+}
+
+.s08-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.s08-item {
+  width: 100%;
+  margin-top: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-foreground);
+  text-align: left;
+}
+
+.s08-item.current {
+  border-color: color-mix(in srgb, var(--vscode-button-background) 52%, var(--vscode-panel-border));
+  background: color-mix(in srgb, var(--vscode-button-background) 8%, var(--vscode-editorWidget-background));
+}
+
+.s08-item:hover:not(:disabled) {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--vscode-button-background) 46%, var(--vscode-panel-border));
+}
+
+.s08-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.s08-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92em;
+  font-weight: 700;
+}
+
+.s08-item-time,
+.s08-item-meta {
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.s08-item-preview {
+  margin-top: 6px;
+  font-size: 0.85em;
+  line-height: 1.55;
+  color: var(--vscode-descriptionForeground);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.s08-item-meta {
+  margin-top: 8px;
+}

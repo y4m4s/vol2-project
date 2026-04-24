@@ -2,7 +2,14 @@
    s06-settings.css - 設定画面
    ======================================== */
 
-/* --- セクション見出し --- */
+.s06-root {
+  position: relative;
+}
+
+.s06-root.with-savebar {
+  padding-bottom: 96px;
+}
+
 .settings-section {
   display: flex;
   align-items: center;
@@ -21,7 +28,6 @@
   margin-top: 4px;
 }
 
-/* --- 設定項目（ラベル+コントロール横並び） --- */
 .setting-item {
   padding: 12px;
   border: 1px solid var(--vscode-panel-border);
@@ -48,7 +54,38 @@
   margin-top: 2px;
 }
 
-/* --- ドロップダウン --- */
+.s06-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  font-size: 0.85em;
+}
+
+.s06-notice .material-symbols-outlined {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.s06-notice.info {
+  background: color-mix(in srgb, var(--vscode-button-background) 10%, transparent);
+}
+
+.s06-notice.warning {
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.28);
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.s06-notice.error {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.1);
+}
+
 .dropdown-wrap select {
   padding: 8px 12px;
   background: var(--vscode-input-background);
@@ -60,7 +97,6 @@
   appearance: auto;
 }
 
-/* --- アクションボタン --- */
 .s06-actions {
   margin-top: 14px;
   padding: 12px;
@@ -70,18 +106,13 @@
 }
 
 .s06-actions button {
-  margin-top: 6px;
-}
-
-.s06-actions button:first-child {
-  margin-top: 0;
+  margin-top: 10px;
 }
 
 .s06-actions .material-symbols-outlined {
   font-size: 18px;
 }
 
-/* --- グレーボタン（初期値に戻す） --- */
 .btn-gray {
   width: 100%;
   border: 0;
@@ -102,80 +133,6 @@
   background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
 }
 
-/* --- トグルスイッチ --- */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
-  margin-bottom: 8px;
-}
-
-.toggle-row .toggle-label {
-  flex: 1;
-}
-
-.toggle-row .toggle-label .toggle-title {
-  font-weight: bold;
-  font-size: 0.93em;
-}
-
-.toggle-row .toggle-label .toggle-desc {
-  font-size: 0.82em;
-  color: var(--vscode-descriptionForeground);
-  margin-top: 2px;
-}
-
-/* CSS-only toggle switch */
-.switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch .slider {
-  position: absolute;
-  inset: 0;
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.switch .slider::before {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 2px;
-  bottom: 2px;
-  background: var(--vscode-foreground);
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-
-.switch input:checked + .slider {
-  background: var(--vscode-button-background);
-  border-color: var(--vscode-button-background);
-}
-
-.switch input:checked + .slider::before {
-  transform: translateX(20px);
-  background: var(--vscode-button-foreground);
-}
-
-/* --- スライダー（range） --- */
 .range-group {
   margin-bottom: 14px;
 }
@@ -216,7 +173,6 @@
   cursor: pointer;
 }
 
-/* --- 除外パターン --- */
 .protected-exclude-list {
   max-height: 160px;
   overflow-y: auto;
@@ -252,4 +208,89 @@
 
 .exclude-textarea textarea:focus {
   border-color: var(--vscode-focusBorder);
+}
+
+.s06-savebar {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(calc(100vw - 24px), 640px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--vscode-button-background) 34%, var(--vscode-panel-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 96%, var(--vscode-sideBar-background));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.s06-savebar-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.s06-savebar-copy .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--vscode-textLink-foreground);
+  flex-shrink: 0;
+}
+
+.s06-savebar-title {
+  font-size: 0.9em;
+  font-weight: 700;
+}
+
+.s06-savebar-desc {
+  font-size: 0.8em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.s06-savebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.s06-savebar button {
+  width: auto;
+  margin-top: 0;
+}
+
+.s06-revert-btn {
+  min-width: 96px;
+}
+
+.s06-save-btn {
+  min-width: 112px;
+}
+
+@media (max-width: 640px) {
+  .setting-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dropdown-wrap select {
+    width: 100%;
+  }
+
+  .s06-savebar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .s06-savebar-actions {
+    justify-content: stretch;
+  }
+
+  .s06-savebar-actions button {
+    flex: 1;
+  }
 }

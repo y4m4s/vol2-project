@@ -3,6 +3,8 @@ import type { AdviceMode, KnowledgeStatus, NavigatorScreen, NavigatorViewModel }
 export type WebviewToExtension =
   | { type: "ready" }
   | { type: "connect" }
+  | { type: "createConversationStream" }
+  | { type: "selectConversationStream"; id: string }
   | { type: "ask"; text: string }
   | { type: "askContext" }
   | { type: "setMode"; mode: AdviceMode }
