@@ -19,7 +19,7 @@ export interface AutoAdviceTriggerEvent {
 }
 
 const DEFAULT_SETTINGS: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs"> = {
-  requestIntervalMs: 30000,
+  requestIntervalMs: 20000,
   idleDelayMs: 10000
 };
 

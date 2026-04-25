@@ -1,5 +1,5 @@
 import React from "react";
-import { BackHeader } from "../webview/components/BackHeader";
+import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 
 export function S08History() {
@@ -17,25 +17,20 @@ export function S08History() {
 
   return (
     <div className="s08-root">
-      <BackHeader label="ホームに戻る" />
-
-      <div className="s08-head">
-        <div>
-          <div className="page-title">相談履歴</div>
-          <div className="page-subtitle">
-            過去の相談を開いて、続きから質問できます。
-          </div>
-        </div>
-
-        <button
-          className="s08-create-btn"
-          disabled={isBusy}
-          onClick={() => send({ type: "createConversationStream" })}
-        >
-          <span className="material-symbols-outlined">add</span>
-          新規
-        </button>
-      </div>
+      <PageHeader
+        title="相談履歴"
+        subtitle="過去の相談を開いて、続きから質問できます。"
+        actions={(
+          <button
+            className="s08-create-btn"
+            disabled={isBusy}
+            onClick={() => send({ type: "createConversationStream" })}
+          >
+            <span className="material-symbols-outlined">add</span>
+            新規
+          </button>
+        )}
+      />
 
       {conversationStreams.length === 0 ? (
         <div className="s08-empty">

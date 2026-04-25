@@ -27,32 +27,6 @@
   outline: none;
 }
 
-/* --- フィルタタブ --- */
-.filter-tabs {
-  display: flex;
-  min-width: 0;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.filter-tabs button {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 8px;
-  margin: 0;
-  border-radius: 8px;
-  font-size: 0.85em;
-  background: transparent;
-  color: var(--vscode-descriptionForeground);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.filter-tabs button.active {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-foreground);
-  font-weight: bold;
-}
-
 /* --- 空状態 --- */
 .empty-state {
   display: flex;
@@ -79,20 +53,79 @@
   font-size: 0.85em;
 }
 
-/* --- ナレッジカード --- */
-.knowledge-item-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 6px;
+/* --- ナレッジ一覧 --- */
+.knowledge-root,
+.knowledge-detail-root {
+  width: 100%;
 }
 
-.knowledge-item-head .section-title {
+.knowledge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.knowledge-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   min-width: 0;
-  margin-bottom: 0;
+  min-height: 72px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
+  background: var(--vscode-editorWidget-background);
+}
+
+.knowledge-list-item:hover {
+  border-color: color-mix(in srgb, var(--vscode-button-background) 46%, var(--vscode-panel-border));
+}
+
+.knowledge-item-main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  margin: 0;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  text-align: left;
+}
+
+.knowledge-item-main:hover:not(:disabled) {
+  opacity: 1;
+  background: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 64%, transparent);
+}
+
+.knowledge-item-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95em;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.knowledge-item-preview {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.84em;
+  line-height: 1.45;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .knowledge-item-date {
@@ -100,27 +133,106 @@
   align-items: center;
   min-width: 0;
   gap: 4px;
-  margin-top: 6px;
-  font-size: 0.82em;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .knowledge-item-date .material-symbols-outlined {
+  flex-shrink: 0;
   font-size: 14px;
 }
 
-/* --- 下部ボタン横並び --- */
-.bottom-actions {
-  display: flex;
-  gap: 8px;
+.knowledge-delete-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border-radius: 7px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
 }
 
-.bottom-actions button {
-  flex: 1;
+.knowledge-delete-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.knowledge-delete-btn:hover:not(:disabled) {
+  opacity: 1;
+  color: #f87171;
+  background: color-mix(in srgb, #f87171 14%, transparent);
+}
+
+/* --- ナレッジ詳細 --- */
+.knowledge-detail-delete-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border-radius: 7px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+}
+
+.knowledge-detail-delete-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.knowledge-detail-delete-btn:hover:not(:disabled) {
+  opacity: 1;
+  color: #f87171;
+  background: color-mix(in srgb, #f87171 14%, transparent);
+}
+.knowledge-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.knowledge-detail-title-wrap {
+  min-width: 0;
+}
+
+.knowledge-detail-section {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+}
+
+.knowledge-panel-title {
+  min-width: 0;
+  font-size: 0.92em;
+  font-weight: 700;
+}
+
+.knowledge-summary-text,
+.knowledge-body-text {
+  margin-top: 8px;
+  font-size: 0.91em;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.knowledge-summary-text {
+  color: var(--vscode-descriptionForeground);
+}
+
+.knowledge-body-text {
+  white-space: pre-wrap;
 }
 
 @media (max-width: 420px) {
-  .bottom-actions {
+  .knowledge-detail-head {
     flex-direction: column;
+    align-items: stretch;
   }
 }

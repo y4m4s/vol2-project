@@ -56,11 +56,13 @@ const PROTECTED_EXCLUDED_GLOBS = [
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
-  requestIntervalMs: 30000,
+  requestIntervalMs: 20000,
   idleDelayMs: 10000,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
+
+const IDLE_DELAY_OPTIONS_MS = [5000, 10000, 15000] as const;
 
 export class SettingsService {
   public constructor(private readonly storage: vscode.Memento) {}
@@ -86,16 +88,17 @@ export class SettingsService {
 
     return {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
-      requestIntervalMs: this.normalizeScheduleMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
-      idleDelayMs: this.normalizeScheduleMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
+      requestIntervalMs: DEFAULT_SETTINGS.requestIntervalMs,
+      idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };
   }
 
-  private normalizeScheduleMs(value: number): number {
-    const rounded = Math.round(value / 10000) * 10000;
-    return Math.min(30000, Math.max(10000, rounded));
+  private normalizeIdleDelayMs(value: number): number {
+    return IDLE_DELAY_OPTIONS_MS.reduce((nearest, option) =>
+      Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
+    );
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

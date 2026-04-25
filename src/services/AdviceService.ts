@@ -36,7 +36,6 @@ export interface KnowledgeDraft {
   title: string;
   summary: string;
   body: string;
-  tags: string[];
 }
 
 export interface KnowledgeDraftSource {
@@ -199,8 +198,7 @@ export class AdviceService {
     if (knowledgeItems && knowledgeItems.length > 0) {
       lines.push("", "## 再利用する個人ナレッジ");
       for (const item of knowledgeItems) {
-        const tags = item.tags.length > 0 ? ` [${item.tags.join(", ")}]` : "";
-        lines.push(`- ${item.title}${tags}: ${item.summary}`);
+        lines.push(`- ${item.title}: ${item.summary}`);
       }
       lines.push("これらは過去の学びとして参考にし、現在の文脈に合う場合だけ控えめに活用してください。");
     }
@@ -297,7 +295,7 @@ export class AdviceService {
       "Return only a JSON object. Do not wrap it in Markdown fences.",
       "",
       "Required JSON shape:",
-      `{"title":"60文字以内","summary":"160文字以内","body":"Markdown本文","tags":["短いタグ"]}`,
+      `{"title":"60文字以内","summary":"160文字以内","body":"Markdown本文"}`,
       "",
       "The body must use these sections:",
       "## 流れ",
@@ -444,12 +442,6 @@ export class AdviceService {
     const title = this.normalizeLine(record.title, 80);
     const summary = this.normalizeLine(record.summary, 180);
     const body = typeof record.body === "string" ? record.body.trim() : "";
-    const tags = Array.isArray(record.tags)
-      ? record.tags
-          .filter((item): item is string => typeof item === "string")
-          .map((item) => this.normalizeLine(item, 32))
-          .filter((item) => item.length > 0)
-      : [];
 
     if (!title || !summary || !body) {
       return undefined;
@@ -458,8 +450,7 @@ export class AdviceService {
     return {
       title,
       summary,
-      body,
-      tags: [...new Set(tags)].slice(0, 8)
+      body
     };
   }
 
@@ -480,8 +471,7 @@ export class AdviceService {
     return {
       title,
       summary: this.normalizeLine(summarySource, 180) || title,
-      body,
-      tags: []
+      body
     };
   }
 

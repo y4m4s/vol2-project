@@ -126,23 +126,62 @@ button.danger {
   border: 1px solid #f8717144;
 }
 
-/* --- 戻るヘッダー --- */
-.back-header {
+/* --- ページヘッダー / 戻るボタン --- */
+.page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.page-header-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-header .page-title {
+  margin-bottom: 4px;
+}
+
+.page-header .page-subtitle {
+  margin-bottom: 0;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-shrink: 0;
   gap: 6px;
-  padding: 4px 0 12px;
-  cursor: pointer;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--vscode-panel-border);
   color: var(--vscode-foreground);
-  font-size: 0.9em;
-  width: fit-content;
-  max-width: 100%;
+  background: transparent;
 }
 
-.back-header:hover {
-  opacity: 0.7;
+.back-button:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
 }
 
+.back-button .material-symbols-outlined {
+  font-size: 18px;
+}
 /* --- バッジ --- */
 .badge {
   display: inline-block;
@@ -175,45 +214,77 @@ ul.bullet-list li {
   font-size: 0.92em;
 }
 
-.knowledge-save-toast {
+.floating-toast {
   position: fixed;
   left: 50%;
   bottom: 14px;
-  z-index: 80;
+  z-index: 90;
   width: min(calc(100vw - 24px), var(--navicom-content-max-width));
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--vscode-button-background) 34%, var(--vscode-panel-border));
+  border: 1px solid color-mix(in srgb, var(--vscode-button-background) 28%, var(--vscode-panel-border));
   background: color-mix(in srgb, var(--vscode-editorWidget-background) 96%, var(--vscode-sideBar-background));
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
-  transform: translateX(-50%);
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.42s ease, transform 0.42s ease;
+  animation: floating-toast-in 0.18s ease-out;
 }
 
-.knowledge-save-toast > .material-symbols-outlined {
+.floating-toast.leaving {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+
+.floating-toast-icon {
   flex-shrink: 0;
   margin-top: 1px;
   font-size: 19px;
   color: var(--vscode-textLink-foreground);
 }
 
-.knowledge-save-toast.done > .material-symbols-outlined {
+.floating-toast.success .floating-toast-icon {
   color: #22c55e;
 }
 
-.knowledge-save-toast-body {
+.floating-toast.warning {
+  border-color: rgba(234, 179, 8, 0.34);
+}
+
+.floating-toast.warning .floating-toast-icon {
+  color: #eab308;
+}
+
+.floating-toast.error {
+  border-color: rgba(239, 68, 68, 0.34);
+}
+
+.floating-toast.error .floating-toast-icon {
+  color: #ef4444;
+}
+
+.floating-toast-body {
   min-width: 0;
   flex: 1;
 }
 
-.knowledge-save-toast-title {
+.floating-toast-title {
   font-size: 0.9em;
   font-weight: 700;
 }
 
-.knowledge-save-toast-desc {
+.floating-toast-message {
+  color: var(--vscode-foreground);
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.floating-toast-desc {
   margin-top: 2px;
   color: var(--vscode-descriptionForeground);
   font-size: 0.8em;
@@ -221,7 +292,7 @@ ul.bullet-list li {
   overflow-wrap: anywhere;
 }
 
-.knowledge-save-progress {
+.floating-toast-progress {
   position: relative;
   height: 3px;
   margin-top: 9px;
@@ -230,24 +301,24 @@ ul.bullet-list li {
   background: color-mix(in srgb, var(--vscode-panel-border) 80%, transparent);
 }
 
-.knowledge-save-progress > span {
+.floating-toast-progress > span {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: inherit;
   background: var(--vscode-button-background);
 }
 
-.knowledge-save-toast.saving .knowledge-save-progress > span {
+.floating-toast.progress-running .floating-toast-progress > span {
   width: 38%;
-  animation: knowledge-save-progress 1.1s ease-in-out infinite;
+  animation: floating-toast-progress 1.1s ease-in-out infinite;
 }
 
-.knowledge-save-toast.done .knowledge-save-progress > span {
+.floating-toast.progress-done .floating-toast-progress > span {
   width: 100%;
   background: #22c55e;
 }
 
-@keyframes knowledge-save-progress {
+@keyframes floating-toast-progress {
   0% {
     transform: translateX(-110%);
   }
@@ -258,5 +329,17 @@ ul.bullet-list li {
 
   100% {
     transform: translateX(280%);
+  }
+}
+
+@keyframes floating-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }

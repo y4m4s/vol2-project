@@ -1,5 +1,5 @@
 import React from "react";
-import { BackHeader } from "../webview/components/BackHeader";
+import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 
 export function S03AdviceDetail() {
@@ -8,8 +8,7 @@ export function S03AdviceDetail() {
 
   return (
     <>
-      <BackHeader />
-      <div className="page-title">アドバイス詳細</div>
+      <PageHeader title="アドバイス詳細" />
 
       <div className="detail-stack">
         <div className="card">

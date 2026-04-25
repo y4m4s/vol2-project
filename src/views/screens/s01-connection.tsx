@@ -10,8 +10,6 @@ export function S01Connection() {
 
   const canConnect = viewModel?.canConnect ?? false;
   const isBusy = viewModel?.isBusy ?? false;
-  const statusMessage = viewModel?.statusMessage;
-  const showStatusMessage = isBusy ? undefined : statusMessage;
 
   return (
     <div className="s01-root">
@@ -68,19 +66,6 @@ export function S01Connection() {
             </div>
           </div>
         </div>
-
-        {showStatusMessage && (
-          <div className={`s01-notice ${showStatusMessage.kind}`}>
-            <span className="material-symbols-outlined">
-              {showStatusMessage.kind === "error"
-                ? "error"
-                : showStatusMessage.kind === "warning"
-                  ? "warning"
-                  : "info"}
-            </span>
-            <span>{showStatusMessage.text}</span>
-          </div>
-        )}
 
         <div className="s01-actions">
           <button

@@ -1,38 +1,45 @@
-import React, { useEffect, useState } from "react";
-import { BackHeader } from "../webview/components/BackHeader";
+import React, { useEffect, useRef, useState } from "react";
+import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import type { AdviceMode } from "../../shared/types";
 
-const SCHEDULE_OPTIONS = [10, 20, 30];
+const IDLE_DELAY_OPTIONS = [5, 10, 15];
+const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
+  { value: "manual", label: "必要時" },
+  { value: "always", label: "常時" }
+];
 
 export function S06Settings() {
   const { viewModel, send } = useApp();
   const settings = viewModel?.settings;
 
   const savedDefaultMode = settings?.defaultMode ?? "manual";
-  const savedRequestIntervalSec = settings ? normalizeScheduleSec(settings.requestIntervalMs / 1000) : 30;
-  const savedIdleDelaySec = settings ? normalizeScheduleSec(settings.idleDelayMs / 1000) : 10;
+  const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
-  const settingsStatusMessage =
-    viewModel?.statusMessage && viewModel.statusMessage.text.includes("設定")
-      ? viewModel.statusMessage
-      : undefined;
 
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
-  const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
+  const excludeTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setDefaultMode(savedDefaultMode);
-    setRequestIntervalSec(savedRequestIntervalSec);
     setIdleDelaySec(savedIdleDelaySec);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedDefaultMode, savedRequestIntervalSec, savedIdleDelaySec, savedExcludeGlobs]);
+  }, [savedDefaultMode, savedIdleDelaySec, savedExcludeGlobs]);
+
+  useEffect(() => {
+    const el = excludeTextareaRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [excludeGlobs]);
 
   const hasPendingChanges =
     defaultMode !== savedDefaultMode ||
-    requestIntervalSec !== savedRequestIntervalSec ||
     idleDelaySec !== savedIdleDelaySec ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
 
@@ -41,7 +48,6 @@ export function S06Settings() {
       type: "saveSettings",
       payload: {
         defaultMode,
-        requestIntervalSec,
         idleDelaySec,
         excludeGlobs
       }
@@ -50,51 +56,22 @@ export function S06Settings() {
 
   function handleRevertDraft() {
     setDefaultMode(savedDefaultMode);
-    setRequestIntervalSec(savedRequestIntervalSec);
     setIdleDelaySec(savedIdleDelaySec);
     setExcludeGlobs(savedExcludeGlobs);
   }
 
   return (
     <div className={`s06-root ${hasPendingChanges ? "with-savebar" : ""}`}>
-      <BackHeader />
-      <div className="page-title">設定</div>
-      <div className="page-subtitle">NaviCom の動作と除外パターンを設定できます</div>
-
-      {settingsStatusMessage && (
-        <div className={`s06-notice ${settingsStatusMessage.kind}`}>
-          <span className="material-symbols-outlined">
-            {settingsStatusMessage.kind === "error"
-              ? "error"
-              : settingsStatusMessage.kind === "warning"
-                ? "warning"
-                : "info"}
-          </span>
-          <span>{settingsStatusMessage.text}</span>
-        </div>
-      )}
+      <PageHeader title="設定" subtitle="NaviCom の動作と除外パターンを設定できます" />
 
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span> モード設定
       </div>
 
       <div className="setting-item">
-        <div className="setting-row">
-          <div>
-            <div className="setting-label">初期モード</div>
-            <div className="setting-desc">相談開始時に使用するモードです</div>
-          </div>
-          <div className="dropdown-wrap">
-            <select
-              id="defaultMode"
-              value={defaultMode}
-              onChange={(event) => setDefaultMode(event.target.value as AdviceMode)}
-            >
-              <option value="manual">必要時</option>
-              <option value="always">常時</option>
-            </select>
-          </div>
-        </div>
+        <div className="setting-label">初期モード</div>
+        <div className="setting-desc">相談開始時に使用するモードです</div>
+        <ModeButtonGroup value={defaultMode} onChange={setDefaultMode} />
       </div>
 
       <div className="settings-section">
@@ -102,15 +79,9 @@ export function S06Settings() {
       </div>
 
       <ScheduleButtonGroup
-        id="requestInterval"
-        label="リクエスト間隔"
-        value={requestIntervalSec}
-        onChange={setRequestIntervalSec}
-      />
-
-      <ScheduleButtonGroup
         id="idleDelay"
-        label="アイドル判定"
+        label="待ち時間"
+        description="操作停止後、自動助言を出すまでの待ち時間です"
         value={idleDelaySec}
         onChange={setIdleDelaySec}
       />
@@ -132,8 +103,10 @@ export function S06Settings() {
         <div className="setting-desc">ワークスペースで追加除外したいパターンを1行ずつ入力します</div>
         <div className="exclude-textarea">
           <textarea
+            ref={excludeTextareaRef}
             id="excludeGlobs"
             placeholder="例: **/tmp/**"
+            rows={3}
             value={excludeGlobs}
             onChange={(event) => setExcludeGlobs(event.target.value)}
           />
@@ -182,36 +155,69 @@ function normalizeExcludeGlobs(value: string): string {
     .join("\n");
 }
 
-function normalizeScheduleSec(value: number): number {
-  const rounded = Math.round(value / 10) * 10;
-  return Math.min(30, Math.max(10, rounded));
+function normalizeIdleDelaySec(value: number): number {
+  return IDLE_DELAY_OPTIONS.reduce((nearest, option) =>
+    Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
+  );
+}
+
+function ModeButtonGroup({
+  value,
+  onChange
+}: {
+  value: AdviceMode;
+  onChange: (value: AdviceMode) => void;
+}) {
+  return (
+    <div className="choice-options mode-options" role="group" aria-label="初期モード">
+      {MODE_OPTIONS.map((option) => {
+        const selected = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={`choice-option ${selected ? "selected" : ""}`}
+            aria-pressed={selected}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function ScheduleButtonGroup({
   id,
   label,
+  description,
   value,
   onChange
 }: {
   id: string;
   label: string;
+  description: string;
   value: number;
   onChange: (value: number) => void;
 }) {
   return (
     <div className="schedule-group" role="group" aria-labelledby={`${id}-label`}>
       <div className="schedule-header">
-        <span id={`${id}-label`} className="schedule-label">{label}</span>
+        <div>
+          <div id={`${id}-label`} className="setting-label">{label}</div>
+          <div className="setting-desc">{description}</div>
+        </div>
       </div>
 
-      <div className="schedule-options">
-        {SCHEDULE_OPTIONS.map((option) => {
+      <div className="choice-options schedule-options">
+        {IDLE_DELAY_OPTIONS.map((option) => {
           const selected = option === value;
           return (
             <button
               key={option}
               type="button"
-              className={`schedule-option ${selected ? "selected" : ""}`}
+              className={`choice-option ${selected ? "selected" : ""}`}
               aria-pressed={selected}
               onClick={() => onChange(option)}
             >

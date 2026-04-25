@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { BackButton } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import type { AutoAdviceState, ConversationEntry } from "../../shared/types";
 
@@ -53,7 +54,7 @@ export function S04Conversation() {
     conversationStreams,
     activeConversationStreamId,
     conversationHistory,
-    statusMessage
+    savedKnowledgeSourceIds
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
@@ -80,13 +81,12 @@ export function S04Conversation() {
   return (
     <div className="s04-root">
       <div className="s04-header">
-        <button
+        <BackButton
           className="s04-back-btn"
           title="相談ホームへ戻る"
+          ariaLabel="相談ホームへ戻る"
           onClick={() => send({ type: "navigate", screen: "main" })}
-        >
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
+        />
 
         <div className="s04-header-copy">
           <div className="s04-title-row">
@@ -152,19 +152,6 @@ export function S04Conversation() {
         </div>
       </div>
 
-      {statusMessage && !isKnowledgeSaveStatus(statusMessage.text, requestState) && (
-        <div className={`s04-notice ${statusMessage.kind}`}>
-          <span className="material-symbols-outlined">
-            {statusMessage.kind === "error"
-              ? "error"
-              : statusMessage.kind === "warning"
-                ? "warning"
-                : "info"}
-          </span>
-          <span>{statusMessage.text}</span>
-        </div>
-      )}
-
       <div className="s04-chat">
         {conversationHistory.length === 0 && (
           <div className="s04-empty">
@@ -180,6 +167,8 @@ export function S04Conversation() {
           <ChatBubble
             key={entry.id}
             entry={entry}
+            alreadySaved={savedKnowledgeSourceIds.includes(entry.id)}
+            isSavingKnowledge={requestState === "saving_knowledge"}
             onSave={(id) => send({ type: "saveKnowledge", id })}
           />
         ))}
@@ -257,9 +246,13 @@ export function S04Conversation() {
 function ChatBubble(
   {
     entry,
+    alreadySaved,
+    isSavingKnowledge,
     onSave
   }: {
     entry: ConversationEntry;
+    alreadySaved: boolean;
+    isSavingKnowledge: boolean;
     onSave: (id: string) => void;
   }
 ) {
@@ -295,6 +288,8 @@ function ChatBubble(
         {!isUser && (
           <ResponseActions
             text={entry.text}
+            alreadySaved={alreadySaved}
+            isSavingKnowledge={isSavingKnowledge}
             onSave={() => onSave(entry.id)}
           />
         )}
@@ -494,18 +489,33 @@ function SelectionReference({ selectedText }: { selectedText?: string }) {
 function ResponseActions(
   {
     text,
+    alreadySaved,
+    isSavingKnowledge,
     onSave
   }: {
     text: string;
+    alreadySaved: boolean;
+    isSavingKnowledge: boolean;
     onSave: () => void;
   }
 ) {
-  const [saved, setSaved] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
   const [copied, setCopied] = useState(false);
+  const saveDisabled = alreadySaved || pendingSave || isSavingKnowledge;
+
+  useEffect(() => {
+    if (!isSavingKnowledge && !alreadySaved) {
+      setPendingSave(false);
+    }
+  }, [alreadySaved, isSavingKnowledge]);
 
   function handleSave() {
+    if (saveDisabled) {
+      return;
+    }
+
+    setPendingSave(true);
     onSave();
-    setSaved(true);
   }
 
   async function handleCopy() {
@@ -521,12 +531,19 @@ function ResponseActions(
   return (
     <div className="s04-response-actions">
       <button
-        className={`s04-response-action ${saved ? "active" : ""}`}
-        title={saved ? "ナレッジに保存しました" : "ナレッジとして保存"}
+        className={`s04-response-action ${alreadySaved ? "active" : ""}`}
+        title={
+          alreadySaved
+            ? "ナレッジに保存しました"
+            : pendingSave || isSavingKnowledge
+              ? "ナレッジに整理しています"
+              : "ナレッジとして保存"
+        }
+        disabled={saveDisabled}
         onClick={handleSave}
       >
         <span className="material-symbols-outlined">
-          {saved ? "bookmark_added" : "bookmark_add"}
+          {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
         </span>
       </button>
 
@@ -561,14 +578,6 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
-}
-
-function isKnowledgeSaveStatus(text: string, requestState: string): boolean {
-  return (
-    requestState === "saving_knowledge" ||
-    text === "Copilot でアドバイスをナレッジ用に整理しています..." ||
-    text === "アドバイスを整理してナレッジとして保存しました。"
-  );
 }
 
 function getAutoStatusText(autoAdvice: AutoAdviceState): string {

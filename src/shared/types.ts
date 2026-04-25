@@ -18,6 +18,7 @@ export type NavigatorScreen =
   | "error"
   | "advice_detail"
   | "knowledge"
+  | "knowledge_detail"
   | "settings";
 
 export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
@@ -29,10 +30,6 @@ export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
 export type ConversationRole = "user" | "assistant";
 
 export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
-
-export type KnowledgeStatus = "active" | "disabled";
-
-export type KnowledgeStatusFilter = "all" | KnowledgeStatus;
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -147,14 +144,11 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
-  status: KnowledgeStatus;
-  tags: string[];
   updatedAt: string;
 }
 
 export interface KnowledgeDetailViewData extends KnowledgeListItem {
   body: string;
-  sourceAdviceId?: string;
   createdAt: string;
 }
 
@@ -173,7 +167,6 @@ export interface NavigatorSessionState {
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
   knowledgeQuery: string;
-  knowledgeStatusFilter: KnowledgeStatusFilter;
   selectedKnowledgeId?: string;
 }
 
@@ -198,6 +191,6 @@ export interface NavigatorViewModel {
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];
   selectedKnowledge?: KnowledgeDetailViewData;
+  savedKnowledgeSourceIds: string[];
   knowledgeQuery: string;
-  knowledgeStatusFilter: KnowledgeStatusFilter;
 }

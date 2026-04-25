@@ -32,10 +32,8 @@ export function S02Main() {
     canAskForGuidance,
     canSwitchMode,
     isBusy,
-    requestState,
     autoAdvice,
-    contextPreview,
-    statusMessage
+    contextPreview
   } = viewModel;
 
   const isAlways = mode === "always";
@@ -114,19 +112,6 @@ export function S02Main() {
           </button>
         </div>
       </div>
-
-      {statusMessage && !isKnowledgeSaveStatus(statusMessage.text, requestState) && (
-        <div className={`s02-notice ${statusMessage.kind}`}>
-          <span className="material-symbols-outlined">
-            {statusMessage.kind === "error"
-              ? "error"
-              : statusMessage.kind === "warning"
-                ? "warning"
-                : "info"}
-          </span>
-          <span>{statusMessage.text}</span>
-        </div>
-      )}
 
       <div className="s02-stage">
         <div className="s02-empty">
@@ -243,14 +228,6 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
-}
-
-function isKnowledgeSaveStatus(text: string, requestState: string): boolean {
-  return (
-    requestState === "saving_knowledge" ||
-    text === "Copilot でアドバイスをナレッジ用に整理しています..." ||
-    text === "アドバイスを整理してナレッジとして保存しました。"
-  );
 }
 
 function getAutoStatusText(autoAdvice: AutoAdviceState): string {
