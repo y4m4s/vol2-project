@@ -6,7 +6,7 @@ export type WebviewToExtension =
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
-  | { type: "ask"; text: string }
+  | { type: "ask"; text: string; additionalContext?: string }
   | { type: "askContext" }
   | { type: "setMode"; mode: AdviceMode }
   | { type: "toggleAutoPause" }

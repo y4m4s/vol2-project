@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BackButton } from "../webview/components/BackHeader";
+import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
-import type { AutoAdviceState, ConversationEntry } from "../../shared/types";
+import type { ConversationEntry } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -15,27 +16,11 @@ type MarkdownBlock =
 
 export function S04Conversation() {
   const { viewModel, send } = useApp();
-  const [inputText, setInputText] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [viewModel?.conversationHistory, viewModel?.isBusy]);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [inputText]);
-
-  useEffect(() => {
-    setInputText("");
-  }, [viewModel?.activeConversationStreamId]);
 
   if (!viewModel) {
     return null;
@@ -43,14 +28,8 @@ export function S04Conversation() {
 
   const {
     connectionState,
-    mode,
     canConnect,
-    canAskForGuidance,
-    canSwitchMode,
-    isBusy,
     requestState,
-    autoAdvice,
-    contextPreview,
     conversationStreams,
     activeConversationStreamId,
     conversationHistory,
@@ -58,25 +37,7 @@ export function S04Conversation() {
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
-  const isAlways = mode === "always";
-  const isPaused = autoAdvice.paused;
-
-  function handleSend() {
-    const text = inputText.trim();
-    if (!text) {
-      return;
-    }
-
-    send({ type: "ask", text });
-    setInputText("");
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  }
+  const additionalContext = activeStream?.additionalContext;
 
   return (
     <div className="s04-root">
@@ -104,6 +65,17 @@ export function S04Conversation() {
               ? `${conversationHistory.length}件のメッセージ`
               : "この会話専用の画面です"}
           </div>
+
+          {additionalContext && (
+            <details className="s04-context-details">
+              <summary title={additionalContext}>
+                <span className="material-symbols-outlined">description</span>
+                <span className="s04-context-label">追加コンテキスト</span>
+                <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
+              </summary>
+              <div className="s04-context-body">{additionalContext}</div>
+            </details>
+          )}
         </div>
 
         <div className="s04-header-actions">
@@ -176,73 +148,10 @@ export function S04Conversation() {
         <div ref={chatBottomRef} />
       </div>
 
-      <div className="s04-input-area">
-        <div className="s04-input-wrap">
-          {contextPreview.selectedTextPreview && (
-            <div className="s04-selected-context" title={contextPreview.selectedTextPreview}>
-              <span className="material-symbols-outlined">code</span>
-              <span className="s04-selected-context-text">
-                {getSelectionLabel(contextPreview.selectedTextPreview)}
-              </span>
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            className="s04-input"
-            placeholder="質問を入力... (Shift+Enter で改行)"
-            rows={1}
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-
-          <div className="s04-input-footer">
-            <div className="s04-footer-right">
-              {isAlways && (
-                <div className={`s04-auto-inline ${isPaused ? "paused" : ""}`}>
-                  <span className="material-symbols-outlined">
-                    {isPaused ? "pause_circle" : "radio_button_checked"}
-                  </span>
-                  <span className="s04-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
-                  <button
-                    className="s04-auto-inline-toggle"
-                    title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
-                    disabled={!autoAdvice.enabled}
-                    onClick={() => send({ type: "toggleAutoPause" })}
-                  >
-                    <span className="material-symbols-outlined">
-                      {isPaused ? "play_arrow" : "pause"}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              <button
-                className={`s04-mode-btn ${isAlways ? "always" : ""}`}
-                title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
-                disabled={!canSwitchMode && !isAlways}
-                onClick={() => send({ type: "setMode", mode: isAlways ? "manual" : "always" })}
-              >
-                <span className="material-symbols-outlined">bolt</span>
-                {isAlways ? "常時" : "必要時"}
-              </button>
-
-              <button
-                className="s04-send-btn"
-                disabled={!canAskForGuidance || !inputText.trim() || isBusy}
-                onClick={handleSend}
-              >
-                <span className="material-symbols-outlined">arrow_upward</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChatInputComposer resetKey={activeConversationStreamId} />
     </div>
   );
 }
-
 function ChatBubble(
   {
     entry,
@@ -563,6 +472,11 @@ function getSelectionLabel(preview: string): string {
   return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
 }
 
+function getContextPreview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 80 ? `${normalized.slice(0, 80)}...` : normalized;
+}
+
 function formatConnectionState(state: string): string {
   switch (state) {
     case "connected":
@@ -578,24 +492,6 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
-}
-
-function getAutoStatusText(autoAdvice: AutoAdviceState): string {
-  if (autoAdvice.paused) {
-    return "常時モードは一時停止中です";
-  }
-
-  if (autoAdvice.waitingForIdle) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.idleRemainingMs / 1000));
-    return `入力待ちです... ${seconds}秒`;
-  }
-
-  if (autoAdvice.cooldownRemainingMs > 0) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.cooldownRemainingMs / 1000));
-    return `次の自動助言まで ${seconds}秒`;
-  }
-
-  return "常時モードは待機中です";
 }
 
 function formatTime(value: string): string {

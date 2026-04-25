@@ -54,7 +54,15 @@ export function S08History() {
                   disabled={isBusy}
                   onClick={() => send({ type: "selectConversationStream", id: stream.id })}
                 >
-                  <span className="s08-item-title">{stream.title}</span>
+                  <span className="s08-item-copy">
+                    <span className="s08-item-title">{stream.title}</span>
+                    {stream.additionalContext && (
+                      <span className="s08-context-preview" title={stream.additionalContext}>
+                        <span className="material-symbols-outlined">description</span>
+                        {getContextPreview(stream.additionalContext)}
+                      </span>
+                    )}
+                  </span>
                   <span className="s08-item-time">{formatRelativeTime(stream.updatedAt)}</span>
                 </button>
 
@@ -77,6 +85,11 @@ export function S08History() {
       )}
     </div>
   );
+}
+
+function getContextPreview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
 }
 
 function formatRelativeTime(value: string): string {

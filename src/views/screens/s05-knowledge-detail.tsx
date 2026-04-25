@@ -19,6 +19,8 @@ export function S05KnowledgeDetail() {
     );
   }
 
+  const sourceConversation = detail.sourceConversation;
+
   return (
     <div className="knowledge-detail-root">
       <PageHeader
@@ -46,8 +48,39 @@ export function S05KnowledgeDetail() {
         <div className="knowledge-panel-title">本文</div>
         <div className="knowledge-body-text">{detail.body}</div>
       </div>
+
+      {sourceConversation && (
+        <div className="knowledge-detail-section knowledge-source-section">
+          <div className="knowledge-panel-title">元の会話</div>
+          <button
+            type="button"
+            className="knowledge-source-conversation"
+            disabled={viewModel?.isBusy}
+            onClick={() => send({ type: "selectConversationStream", id: sourceConversation.id })}
+          >
+            <span className="knowledge-source-copy">
+              <span className="knowledge-source-title">{sourceConversation.title}</span>
+              {sourceConversation.additionalContext && (
+                <span className="knowledge-source-context" title={sourceConversation.additionalContext}>
+                  <span className="material-symbols-outlined">description</span>
+                  {getContextPreview(sourceConversation.additionalContext)}
+                </span>
+              )}
+            </span>
+            <span className="knowledge-source-meta">
+              <span className="knowledge-source-time">{formatRelativeTime(sourceConversation.updatedAt)}</span>
+              <span className="material-symbols-outlined knowledge-source-open-icon">chevron_right</span>
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
+}
+
+function getContextPreview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
 }
 
 function formatDateTime(value: string): string {
@@ -61,4 +94,31 @@ function formatDateTime(value: string): string {
         hour: "2-digit",
         minute: "2-digit"
       });
+}
+
+function formatRelativeTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) {
+    return "まもなく";
+  }
+
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+
+  if (diffMs < minute) return "たった今";
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)}分前`;
+  if (diffMs < day) return `${Math.floor(diffMs / hour)}時間前`;
+  if (diffMs < week) return `${Math.floor(diffMs / day)}日前`;
+  if (diffMs < month) return `${Math.floor(diffMs / week)}週間前`;
+  if (diffMs < year) return `${Math.floor(diffMs / month)}か月前`;
+  return `${Math.floor(diffMs / year)}年前`;
 }

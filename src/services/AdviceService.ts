@@ -195,6 +195,10 @@ export class AdviceService {
       lines.push("", `関連シンボル候補: ${context.relatedSymbols.join(", ")}`);
     }
 
+    if (context.additionalContext) {
+      lines.push("", "追加コンテキスト:", "```", this.truncate(context.additionalContext, 4000), "```");
+    }
+
     if (knowledgeItems && knowledgeItems.length > 0) {
       lines.push("", "## 再利用する個人ナレッジ");
       for (const item of knowledgeItems) {
@@ -376,6 +380,10 @@ export class AdviceService {
 
     if (context?.relatedSymbols.length) {
       lines.push(`- 関連シンボル: ${context.relatedSymbols.slice(0, 12).join(", ")}`);
+    }
+
+    if (context?.additionalContext) {
+      lines.push("- 追加コンテキスト:", "```", this.truncate(context.additionalContext, 3000), "```");
     }
 
     const includedCategories = source.requestPlan?.categories

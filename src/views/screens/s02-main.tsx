@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
+import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
-import type { AutoAdviceState } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -8,18 +8,6 @@ declare global {
 
 export function S02Main() {
   const { viewModel, send } = useApp();
-  const [inputText, setInputText] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [inputText]);
 
   if (!viewModel) {
     return null;
@@ -27,34 +15,8 @@ export function S02Main() {
 
   const {
     connectionState,
-    mode,
-    canConnect,
-    canAskForGuidance,
-    canSwitchMode,
-    isBusy,
-    autoAdvice,
-    contextPreview
+    canConnect
   } = viewModel;
-
-  const isAlways = mode === "always";
-  const isPaused = autoAdvice.paused;
-
-  function handleSend() {
-    const text = inputText.trim();
-    if (!text) {
-      return;
-    }
-
-    send({ type: "ask", text });
-    setInputText("");
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  }
 
   return (
     <div className="s02-root">
@@ -141,76 +103,9 @@ export function S02Main() {
         </div>
       </div>
 
-      <div className="s02-input-area">
-        <div className="s02-input-wrap">
-          {contextPreview.selectedTextPreview && (
-            <div className="s02-selected-context" title={contextPreview.selectedTextPreview}>
-              <span className="material-symbols-outlined">code</span>
-              <span className="s02-selected-context-text">
-                {getSelectionLabel(contextPreview.selectedTextPreview)}
-              </span>
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            className="s02-input"
-            placeholder="質問を入力... (Shift+Enter で改行)"
-            rows={1}
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-
-          <div className="s02-input-footer">
-            <div className="s02-footer-right">
-              {isAlways && (
-                <div className={`s02-auto-inline ${isPaused ? "paused" : ""}`}>
-                  <span className="material-symbols-outlined">
-                    {isPaused ? "pause_circle" : "radio_button_checked"}
-                  </span>
-                  <span className="s02-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
-                  <button
-                    className="s02-auto-inline-toggle"
-                    title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
-                    disabled={!autoAdvice.enabled}
-                    onClick={() => send({ type: "toggleAutoPause" })}
-                  >
-                    <span className="material-symbols-outlined">
-                      {isPaused ? "play_arrow" : "pause"}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              <button
-                className={`s02-mode-btn ${isAlways ? "always" : ""}`}
-                title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
-                disabled={!canSwitchMode && !isAlways}
-                onClick={() => send({ type: "setMode", mode: isAlways ? "manual" : "always" })}
-              >
-                <span className="material-symbols-outlined">bolt</span>
-                {isAlways ? "常時" : "必要時"}
-              </button>
-
-              <button
-                className="s02-send-btn"
-                disabled={!canAskForGuidance || !inputText.trim() || isBusy}
-                onClick={handleSend}
-              >
-                <span className="material-symbols-outlined">arrow_upward</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChatInputComposer />
     </div>
   );
-}
-
-function getSelectionLabel(preview: string): string {
-  const firstLine = preview.split("\n")[0].trim();
-  return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
 }
 
 function formatConnectionState(state: string): string {
@@ -228,22 +123,4 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
-}
-
-function getAutoStatusText(autoAdvice: AutoAdviceState): string {
-  if (autoAdvice.paused) {
-    return "常時モードは一時停止中です";
-  }
-
-  if (autoAdvice.waitingForIdle) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.idleRemainingMs / 1000));
-    return `入力待ちです... ${seconds}秒`;
-  }
-
-  if (autoAdvice.cooldownRemainingMs > 0) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.cooldownRemainingMs / 1000));
-    return `次の自動助言まで ${seconds}秒`;
-  }
-
-  return "常時モードは待機中です";
 }

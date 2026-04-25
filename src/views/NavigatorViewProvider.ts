@@ -52,7 +52,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.deleteConversationStream(message.id);
             return;
           case "ask":
-            await this.controller.askForGuidanceWithCurrentContext(message.text);
+            await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
             return;
           case "askContext":
             await this.controller.askForGuidance(undefined, "context");

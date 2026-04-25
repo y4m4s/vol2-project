@@ -41,12 +41,17 @@ export interface StoredConversationEntry extends ConversationEntry {
   guidanceContext?: GuidanceContext;
 }
 
+interface ConversationStreamSummary extends ConversationStreamListItem {
+  additionalContext?: string;
+}
+
 export interface ConversationStreamRecord {
   id: string;
   title: string;
   createdAt: string;
   updatedAt: string;
   entries: StoredConversationEntry[];
+  additionalContext?: string;
 }
 
 export class ConversationStore implements vscode.Disposable {
@@ -72,7 +77,7 @@ export class ConversationStore implements vscode.Disposable {
 
   public list(): ConversationStreamListItem[] {
     return this.selectStreamSummaries(
-      `SELECT streams.id, streams.title, streams.created_at, streams.updated_at, streams.message_count, streams.last_message_preview
+      `SELECT streams.id, streams.title, streams.created_at, streams.updated_at, streams.message_count, streams.last_message_preview, streams.additional_context
          FROM conversation_streams AS streams
         WHERE EXISTS (
           SELECT 1
@@ -85,7 +90,7 @@ export class ConversationStore implements vscode.Disposable {
 
   public get(id: string): ConversationStreamRecord | undefined {
     const summary = this.selectStreamSummaries(
-      `SELECT id, title, created_at, updated_at, message_count, last_message_preview
+      `SELECT id, title, created_at, updated_at, message_count, last_message_preview, additional_context
          FROM conversation_streams
         WHERE id = ?
         LIMIT 1`,
@@ -101,8 +106,20 @@ export class ConversationStore implements vscode.Disposable {
       title: summary.title,
       createdAt: summary.createdAt,
       updatedAt: summary.updatedAt,
-      entries: this.selectEntries(id)
+      entries: this.selectEntries(id),
+      additionalContext: summary.additionalContext
     };
+  }
+
+  public findStreamByEntryId(entryId: string): ConversationStreamListItem | undefined {
+    return this.selectStreamSummaries(
+      `SELECT streams.id, streams.title, streams.created_at, streams.updated_at, streams.message_count, streams.last_message_preview, streams.additional_context
+         FROM conversation_streams AS streams
+         JOIN conversation_entries AS entries ON entries.stream_id = streams.id
+        WHERE entries.id = ?
+        LIMIT 1`,
+      [entryId]
+    )[0];
   }
 
   public async createStream(title = DEFAULT_CONVERSATION_STREAM_TITLE): Promise<ConversationStreamRecord> {
@@ -112,14 +129,15 @@ export class ConversationStore implements vscode.Disposable {
       title: this.normalizeTitle(title),
       createdAt: now,
       updatedAt: now,
-      entries: []
+      entries: [],
+      additionalContext: undefined
     };
 
     this.getDb().run(
       `INSERT INTO conversation_streams
-        (id, title, created_at, updated_at, message_count, last_message_preview)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [record.id, record.title, record.createdAt, record.updatedAt, 0, null]
+        (id, title, created_at, updated_at, message_count, last_message_preview, additional_context)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [record.id, record.title, record.createdAt, record.updatedAt, 0, null, null]
     );
     await this.persist();
     return record;
@@ -131,27 +149,30 @@ export class ConversationStore implements vscode.Disposable {
       ...record,
       title: this.normalizeTitle(record.title),
       updatedAt: this.resolveUpdatedAt(record.updatedAt, normalizedEntries),
-      entries: normalizedEntries
+      entries: normalizedEntries,
+      additionalContext: this.normalizeOptionalText(record.additionalContext)
     };
     const lastMessagePreview = this.buildLastMessagePreview(normalizedEntries);
 
     this.getDb().run(
       `INSERT INTO conversation_streams
-        (id, title, created_at, updated_at, message_count, last_message_preview)
-       VALUES (?, ?, ?, ?, ?, ?)
+        (id, title, created_at, updated_at, message_count, last_message_preview, additional_context)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          title = excluded.title,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
          message_count = excluded.message_count,
-         last_message_preview = excluded.last_message_preview`,
+         last_message_preview = excluded.last_message_preview,
+         additional_context = excluded.additional_context`,
       [
         nextRecord.id,
         nextRecord.title,
         nextRecord.createdAt,
         nextRecord.updatedAt,
         nextRecord.entries.length,
-        lastMessagePreview ?? null
+        lastMessagePreview ?? null,
+        nextRecord.additionalContext ?? null
       ]
     );
 
@@ -222,7 +243,8 @@ export class ConversationStore implements vscode.Disposable {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         message_count INTEGER NOT NULL DEFAULT 0,
-        last_message_preview TEXT
+        last_message_preview TEXT,
+        additional_context TEXT
       );
 
       CREATE TABLE IF NOT EXISTS conversation_entries (
@@ -250,6 +272,8 @@ export class ConversationStore implements vscode.Disposable {
         value TEXT
       );
     `);
+
+    this.ensureColumn("conversation_streams", "additional_context", "TEXT");
   }
 
   private deleteEmptyStreamsInMemory(): void {
@@ -272,9 +296,9 @@ export class ConversationStore implements vscode.Disposable {
     );
   }
 
-  private selectStreamSummaries(sql: string, params: SqlValue[] = []): ConversationStreamListItem[] {
+  private selectStreamSummaries(sql: string, params: SqlValue[] = []): ConversationStreamSummary[] {
     const stmt = this.getDb().prepare(sql);
-    const records: ConversationStreamListItem[] = [];
+    const records: ConversationStreamSummary[] = [];
 
     try {
       stmt.bind(params);
@@ -309,14 +333,15 @@ export class ConversationStore implements vscode.Disposable {
     return entries;
   }
 
-  private summaryFromRow(row: Record<string, unknown>): ConversationStreamListItem {
+  private summaryFromRow(row: Record<string, unknown>): ConversationStreamSummary {
     return {
       id: String(row.id),
       title: String(row.title),
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
       messageCount: Number(row.message_count ?? 0),
-      lastMessagePreview: row.last_message_preview ? String(row.last_message_preview) : undefined
+      lastMessagePreview: row.last_message_preview ? String(row.last_message_preview) : undefined,
+      additionalContext: this.normalizeOptionalText(row.additional_context)
     };
   }
 
@@ -348,6 +373,30 @@ export class ConversationStore implements vscode.Disposable {
       entry.requestPlan ? JSON.stringify(entry.requestPlan) : null,
       entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null
     ];
+  }
+
+  private ensureColumn(tableName: string, columnName: string, definition: string): void {
+    if (this.hasColumn(tableName, columnName)) {
+      return;
+    }
+
+    this.getDb().run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+
+  private hasColumn(tableName: string, columnName: string): boolean {
+    const stmt = this.getDb().prepare(`PRAGMA table_info(${tableName})`);
+
+    try {
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        if (String(row.name) === columnName) {
+          return true;
+        }
+      }
+      return false;
+    } finally {
+      stmt.free();
+    }
   }
 
   private parseRole(value: unknown): "user" | "assistant" {
@@ -402,6 +451,15 @@ export class ConversationStore implements vscode.Disposable {
     }
 
     return normalized.length <= 60 ? normalized : `${normalized.slice(0, 60)}...`;
+  }
+
+  private normalizeOptionalText(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalized = value.replace(/\r\n/g, "\n").trim();
+    return normalized.length > 0 ? normalized : undefined;
   }
 
   private async readExistingDatabase(): Promise<Uint8Array | undefined> {

@@ -29,7 +29,7 @@ export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
-export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
+export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols" | "additionalContext";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -52,6 +52,7 @@ export interface GuidanceContext {
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
+  additionalContext?: string;
 }
 
 export interface NavigatorSettings {
@@ -113,6 +114,7 @@ export interface ConversationStreamListItem {
   updatedAt: string;
   messageCount: number;
   lastMessagePreview?: string;
+  additionalContext?: string;
 }
 
 export interface NavigatorStatusMessage {
@@ -150,6 +152,7 @@ export interface KnowledgeListItem {
 export interface KnowledgeDetailViewData extends KnowledgeListItem {
   body: string;
   createdAt: string;
+  sourceConversation?: ConversationStreamListItem;
 }
 
 export interface NavigatorSessionState {
@@ -168,6 +171,7 @@ export interface NavigatorSessionState {
   selectedConversationId?: string;
   knowledgeQuery: string;
   selectedKnowledgeId?: string;
+  activeAdditionalContext?: string;
 }
 
 export interface NavigatorViewModel {

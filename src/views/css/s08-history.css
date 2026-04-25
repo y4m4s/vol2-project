@@ -106,6 +106,33 @@
   background: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 64%, transparent);
 }
 
+.s08-item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.s08-context-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s08-context-preview .material-symbols-outlined {
+  flex-shrink: 0;
+  color: var(--vscode-textLink-foreground);
+  font-size: 14px;
+}
+
 .s08-item-title {
   min-width: 0;
   overflow: hidden;
