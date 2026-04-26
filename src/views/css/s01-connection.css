@@ -95,39 +95,6 @@
   white-space: pre-wrap;
 }
 
-.s01-notice {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--vscode-panel-border);
-  font-size: 0.85em;
-  text-align: left;
-}
-
-.s01-notice .material-symbols-outlined {
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.s01-notice.info {
-  background: color-mix(in srgb, var(--vscode-button-background) 10%, transparent);
-}
-
-.s01-notice.warning {
-  color: #eab308;
-  border-color: rgba(234, 179, 8, 0.28);
-  background: rgba(234, 179, 8, 0.1);
-}
-
-.s01-notice.error {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.28);
-  background: rgba(239, 68, 68, 0.1);
-}
-
 .s01-actions {
   width: 100%;
   display: flex;

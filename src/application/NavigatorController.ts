@@ -25,8 +25,6 @@ import {
   GuidanceContext,
   KnowledgeDetailViewData,
   KnowledgeListItem,
-  KnowledgeStatus,
-  KnowledgeStatusFilter,
   NavigatorScreen,
   NavigatorSessionState,
   NavigatorSettings,
@@ -44,6 +42,7 @@ interface GuidanceExecutionOptions {
   prepared?: PreparedGuidanceRequest;
   preview?: NavigatorSessionState["contextPreview"];
   triggerReason?: AdviceTriggerReason;
+  additionalContext?: string;
 }
 
 export class NavigatorController implements vscode.Disposable {
@@ -145,7 +144,7 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const currentRequestPlan = this.requestPlanner.prepareGuidanceRequest(
-      this.contextCollector.collectGuidanceContext(),
+      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
       state.contextPreview,
       settings,
       state.mode === "always" ? "always" : "context"
@@ -172,8 +171,8 @@ export class NavigatorController implements vscode.Disposable {
       settings,
       knowledgeItems: this.buildKnowledgeItems(state),
       selectedKnowledge: this.buildSelectedKnowledge(state),
-      knowledgeQuery: state.knowledgeQuery,
-      knowledgeStatusFilter: state.knowledgeStatusFilter
+      savedKnowledgeSourceIds: this.knowledgeStore.listSourceAdviceIds(),
+      knowledgeQuery: state.knowledgeQuery
     };
   }
 
@@ -270,6 +269,7 @@ export class NavigatorController implements vscode.Disposable {
       ...(deletingActiveStream
         ? {
             activeConversationStreamId: undefined,
+            activeAdditionalContext: undefined,
             latestGuidance: undefined,
             conversationHistory: [],
             selectedConversationId: undefined,
@@ -279,22 +279,24 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public async askForGuidance(userPrompt?: string, kind?: GuidanceKind): Promise<void> {
+  public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
     const guidanceKind = kind ?? (userPrompt?.trim() ? "manual" : "context");
     if (guidanceKind === "context") {
-      await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt?.trim(), true));
+      await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt?.trim(), true, additionalContext));
       return;
     }
 
     await this.executeGuidanceRequest({
       kind: guidanceKind,
-      userPrompt: userPrompt?.trim()
+      userPrompt: userPrompt?.trim(),
+      additionalContext: this.resolveAdditionalContext(additionalContext, this.getStreamAdditionalContext(this.sessionStore.getState()))
     });
   }
 
-  public async askForGuidanceWithCurrentContext(userPrompt: string): Promise<void> {
-    await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false));
+  public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
+    await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
   }
+
 
   public async deepDiveSelectedAdvice(): Promise<void> {
     const selected = this.findSelectedConversation(this.sessionStore.getState());
@@ -349,6 +351,11 @@ export class NavigatorController implements vscode.Disposable {
         });
         return;
       case "knowledge":
+        this.pushScreen("knowledge");
+        this.patchSession({
+          selectedKnowledgeId: undefined
+        });
+        return;
       case "settings":
         this.pushScreen(screen);
         return;
@@ -376,14 +383,12 @@ export class NavigatorController implements vscode.Disposable {
 
   public async saveSettings(input: {
     defaultMode: AdviceMode;
-    requestIntervalSec: number;
     idleDelaySec: number;
     excludeGlobs: string;
   }): Promise<void> {
     const nextSettings: NavigatorSettings = {
       ...this.settingsService.getSettings(),
       defaultMode: input.defaultMode,
-      requestIntervalMs: input.requestIntervalSec * 1000,
       idleDelayMs: input.idleDelaySec * 1000,
       excludedGlobs: input.excludeGlobs
         .split(/\r?\n/)
@@ -463,37 +468,25 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public filterKnowledge(filter: string): void {
-    this.patchSession({
-      knowledgeStatusFilter: this.normalizeKnowledgeFilter(filter),
-      selectedKnowledgeId: undefined
-    });
-  }
-
   public selectKnowledge(id: string): void {
-    this.patchSession({
-      selectedKnowledgeId: id
-    });
-  }
+    const record = this.knowledgeStore.get(id);
+    if (!record) {
+      this.patchSession({
+        selectedKnowledgeId: undefined,
+        statusMessage: {
+          kind: "warning",
+          text: "表示するナレッジが見つかりません。"
+        }
+      });
+      return;
+    }
 
-  public async exportKnowledge(): Promise<void> {
-    const result = await this.knowledgeStore.exportToFiles();
+    const state = this.sessionStore.getState();
     this.patchSession({
-      statusMessage: {
-        kind: "info",
-        text: `${result.count}件のナレッジを JSON と Markdown にエクスポートしました。JSON: ${result.jsonPath} / Markdown: ${result.markdownPath}`
-      }
-    });
-  }
-
-  public async resetKnowledge(): Promise<void> {
-    await this.knowledgeStore.reset();
-    this.patchSession({
-      selectedKnowledgeId: undefined,
-      statusMessage: {
-        kind: "info",
-        text: "ナレッジをすべてリセットしました。"
-      }
+      screen: "knowledge_detail",
+      screenHistory: state.screen === "knowledge_detail" ? state.screenHistory : [...state.screenHistory, state.screen],
+      selectedKnowledgeId: id,
+      statusMessage: undefined
     });
   }
 
@@ -513,6 +506,18 @@ export class NavigatorController implements vscode.Disposable {
         statusMessage: {
           kind: "warning",
           text: "保存できるアドバイスがまだありません。"
+        }
+      });
+      return;
+    }
+
+    const existingKnowledge = this.knowledgeStore.getBySourceAdviceId(source.id);
+    if (existingKnowledge) {
+      this.patchSession({
+        selectedKnowledgeId: existingKnowledge.id,
+        statusMessage: {
+          kind: "info",
+          text: "このアドバイスはすでにナレッジ化されています。"
         }
       });
       return;
@@ -550,7 +555,6 @@ export class NavigatorController implements vscode.Disposable {
       title: draftResult.draft.title,
       summary: draftResult.draft.summary,
       body: draftResult.draft.body,
-      tags: [...draftResult.draft.tags, ...this.createKnowledgeTags(source)],
       sourceAdviceId: source.id
     });
 
@@ -570,15 +574,11 @@ export class NavigatorController implements vscode.Disposable {
     title: string;
     summary: string;
     body: string;
-    status: KnowledgeStatus;
-    tags: string;
   }): Promise<void> {
     const updated = await this.knowledgeStore.update(input.id, {
       title: input.title,
       summary: input.summary,
-      body: input.body,
-      status: input.status,
-      tags: this.parseKnowledgeTags(input.tags)
+      body: input.body
     });
 
     this.patchSession({
@@ -590,33 +590,12 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public async toggleKnowledgeStatus(id: string): Promise<void> {
-    const record = this.knowledgeStore.get(id);
-    if (!record) {
-      this.patchSession({
-        statusMessage: {
-          kind: "warning",
-          text: "状態を切り替えるナレッジが見つかりません。"
-        }
-      });
-      return;
-    }
-
-    const nextStatus: KnowledgeStatus = record.status === "active" ? "disabled" : "active";
-    const updated = await this.knowledgeStore.setStatus(id, nextStatus);
-    this.patchSession({
-      selectedKnowledgeId: updated?.id,
-      statusMessage: {
-        kind: "info",
-        text: nextStatus === "active" ? "ナレッジを有効化しました。" : "ナレッジを無効化しました。"
-      }
-    });
-  }
-
   public async deleteKnowledge(id: string): Promise<void> {
+    const state = this.sessionStore.getState();
     const deleted = await this.knowledgeStore.delete(id);
     this.patchSession({
-      selectedKnowledgeId: undefined,
+      selectedKnowledgeId: state.selectedKnowledgeId === id ? undefined : state.selectedKnowledgeId,
+      ...(state.screen === "knowledge_detail" && state.selectedKnowledgeId === id ? { screen: "knowledge" as const } : {}),
       statusMessage: {
         kind: deleted ? "info" : "warning",
         text: deleted ? "ナレッジを削除しました。" : "削除対象のナレッジが見つかりません。"
@@ -631,10 +610,11 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private async handleAutomaticGuidance(reason: AdviceTriggerReason): Promise<void> {
+    const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.contextCollector.collectGuidanceContext(),
+      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
       preview,
       settings,
       "always"
@@ -673,9 +653,11 @@ export class NavigatorController implements vscode.Disposable {
 
   private buildCurrentContextGuidanceOptions(
     userPrompt: string | undefined,
-    requireContext: boolean
+    requireContext: boolean,
+    additionalContext?: string
   ): GuidanceExecutionOptions {
     const state = this.sessionStore.getState();
+    const effectiveAdditionalContext = this.resolveAdditionalContext(additionalContext, this.getStreamAdditionalContext(state));
     const livePreview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const liveContext = this.contextCollector.collectGuidanceContext();
     const stickySelectionAvailable = Boolean(
@@ -690,7 +672,8 @@ export class NavigatorController implements vscode.Disposable {
       return {
         kind,
         userPrompt,
-        preview: livePreview
+        preview: livePreview,
+        additionalContext: effectiveAdditionalContext
       };
     }
 
@@ -706,7 +689,7 @@ export class NavigatorController implements vscode.Disposable {
         : liveContext;
     const settings = this.settingsService.getSettings();
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      rawContext,
+      this.withAdditionalContext(rawContext, effectiveAdditionalContext),
       preview,
       settings,
       kind
@@ -716,7 +699,8 @@ export class NavigatorController implements vscode.Disposable {
       kind,
       userPrompt,
       preview,
-      prepared
+      prepared,
+      additionalContext: effectiveAdditionalContext
     };
   }
 
@@ -741,12 +725,24 @@ export class NavigatorController implements vscode.Disposable {
 
     state = await this.prepareConversationForGuidance(state, options.kind);
 
+    const incomingAdditionalContext = this.normalizeAdditionalContext(options.additionalContext);
+    const effectiveAdditionalContext = this.resolveAdditionalContext(incomingAdditionalContext, this.getStreamAdditionalContext(state));
+    if (incomingAdditionalContext && incomingAdditionalContext !== state.activeAdditionalContext) {
+      state = {
+        ...state,
+        activeAdditionalContext: incomingAdditionalContext
+      };
+    }
+
     const settings = this.settingsService.getSettings();
     const preview = options.preview ?? this.rememberSelectionContext(this.contextCollector.collectPreview());
     const prepared =
       options.prepared ??
       this.requestPlanner.prepareGuidanceRequest(
-        this.contextCollector.collectGuidanceContext(),
+        this.withAdditionalContext(
+          this.contextCollector.collectGuidanceContext(),
+          effectiveAdditionalContext
+        ),
         preview,
         settings,
         options.kind
@@ -772,6 +768,7 @@ export class NavigatorController implements vscode.Disposable {
           : "conversation",
       contextPreview: contextPreviewAfterCapture,
       conversationHistory: nextHistory,
+      ...(incomingAdditionalContext ? { activeAdditionalContext: incomingAdditionalContext } : {}),
       statusMessage: {
         kind: "info",
         text: this.buildPendingGuidanceMessage(options.kind, options.triggerReason)
@@ -834,6 +831,7 @@ export class NavigatorController implements vscode.Disposable {
       mode: nextMode,
       contextPreview: refreshedPreview,
       conversationHistory: nextHistory,
+      ...(incomingAdditionalContext ? { activeAdditionalContext: incomingAdditionalContext } : {}),
       statusMessage: {
         kind: "error",
         text:
@@ -948,6 +946,7 @@ export class NavigatorController implements vscode.Disposable {
     this.patchSession({
       conversationStreams: this.conversationStore.list(),
       activeConversationStreamId: record.id,
+      activeAdditionalContext: record.additionalContext,
       latestGuidance: latestAssistant ? this.createGuidanceCard(latestAssistant) : undefined,
       conversationHistory,
       selectedConversationId: undefined,
@@ -967,6 +966,7 @@ export class NavigatorController implements vscode.Disposable {
       await this.conversationStore.deleteStream(record.id);
       this.patchSession({
         activeConversationStreamId: undefined,
+        activeAdditionalContext: undefined,
         conversationStreams: this.conversationStore.list(),
         latestGuidance: undefined,
         conversationHistory: [],
@@ -979,6 +979,7 @@ export class NavigatorController implements vscode.Disposable {
     const saved = await this.conversationStore.saveStream(recordToSave);
     this.patchSession({
       activeConversationStreamId: saved.id,
+      activeAdditionalContext: saved.additionalContext,
       conversationStreams: this.conversationStore.list()
     });
   }
@@ -1003,6 +1004,7 @@ export class NavigatorController implements vscode.Disposable {
     if (state.activeConversationStreamId === streamId) {
       this.patchSession({
         activeConversationStreamId: undefined,
+        activeAdditionalContext: undefined,
         conversationStreams: this.conversationStore.list(),
         latestGuidance: undefined,
         conversationHistory: [],
@@ -1057,7 +1059,8 @@ export class NavigatorController implements vscode.Disposable {
       title: this.resolveConversationStreamTitle(existing?.title, state.conversationHistory),
       createdAt: existing?.createdAt ?? now,
       updatedAt: existing?.updatedAt ?? now,
-      entries
+      entries,
+      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext ?? existing?.additionalContext)
     };
   }
 
@@ -1276,7 +1279,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private shouldKeepUtilityScreen(screen: NavigatorScreen): boolean {
-    return screen === "history" || screen === "knowledge" || screen === "settings";
+    return screen === "history" || screen === "knowledge" || screen === "knowledge_detail" || screen === "settings";
   }
 
   private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
@@ -1415,14 +1418,11 @@ export class NavigatorController implements vscode.Disposable {
 
   private buildKnowledgeItems(state: NavigatorSessionState): KnowledgeListItem[] {
     return this.knowledgeStore.list({
-      query: state.knowledgeQuery,
-      status: state.knowledgeStatusFilter
+      query: state.knowledgeQuery
     }).map((item) => ({
       id: item.id,
       title: item.title,
       summary: item.summary,
-      status: item.status,
-      tags: item.tags,
       updatedAt: item.updatedAt
     }));
   }
@@ -1433,16 +1433,18 @@ export class NavigatorController implements vscode.Disposable {
       return undefined;
     }
 
+    const sourceConversation = selected.sourceAdviceId
+      ? this.conversationStore.findStreamByEntryId(selected.sourceAdviceId)
+      : undefined;
+
     return {
       id: selected.id,
       title: selected.title,
       summary: selected.summary,
       body: selected.body,
-      status: selected.status,
-      tags: selected.tags,
-      sourceAdviceId: selected.sourceAdviceId,
       createdAt: selected.createdAt,
-      updatedAt: selected.updatedAt
+      updatedAt: selected.updatedAt,
+      sourceConversation
     };
   }
 
@@ -1495,8 +1497,31 @@ export class NavigatorController implements vscode.Disposable {
         context.selectedText ||
         context.diagnosticsSummary.length > 0 ||
         context.recentEditsSummary.length > 0 ||
-        context.relatedSymbols.length > 0
+        context.relatedSymbols.length > 0 ||
+        context.additionalContext
     );
+  }
+
+  private withAdditionalContext(context: GuidanceContext, additionalContext?: string): GuidanceContext {
+    const normalized = this.normalizeAdditionalContext(additionalContext);
+    return normalized ? { ...context, additionalContext: normalized } : context;
+  }
+
+  private getStreamAdditionalContext(state: NavigatorSessionState): string | undefined {
+    return state.screen === "main" ? undefined : state.activeAdditionalContext;
+  }
+
+  private resolveAdditionalContext(additionalContext: string | undefined, fallback?: string): string | undefined {
+    return this.normalizeAdditionalContext(additionalContext ?? fallback);
+  }
+
+  private normalizeAdditionalContext(value?: string): string | undefined {
+    const normalized = value?.replace(/\r\n/g, "\n").trim();
+    if (!normalized) {
+      return undefined;
+    }
+
+    return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
   }
 
   private createAutomaticFingerprint(context: GuidanceContext): string {
@@ -1506,7 +1531,8 @@ export class NavigatorController implements vscode.Disposable {
       selection: context.selectedText,
       diagnostics: context.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`),
       recentEdits: context.recentEditsSummary,
-      relatedSymbols: context.relatedSymbols
+      relatedSymbols: context.relatedSymbols,
+      additionalContext: context.additionalContext
     });
   }
 
@@ -1546,30 +1572,8 @@ export class NavigatorController implements vscode.Disposable {
       conversationStreams: [],
       conversationHistory: [],
       knowledgeQuery: "",
-      knowledgeStatusFilter: "all"
+      activeAdditionalContext: undefined
     };
-  }
-
-  private normalizeKnowledgeFilter(filter: string): KnowledgeStatusFilter {
-    switch (filter) {
-      case "active":
-      case "有効":
-        return "active";
-      case "disabled":
-      case "無効":
-        return "disabled";
-      case "all":
-      case "すべて":
-      default:
-        return "all";
-    }
-  }
-
-  private parseKnowledgeTags(value: string): string[] {
-    return value
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
   }
 
   private createKnowledgeTitle(text: string): string {
@@ -1584,16 +1588,6 @@ export class NavigatorController implements vscode.Disposable {
   private createKnowledgeSummary(text: string): string {
     const normalized = text.replace(/\s+/g, " ").trim();
     return normalized.length <= 160 ? normalized : `${normalized.slice(0, 160)}...`;
-  }
-
-  private createKnowledgeTags(
-    entry: Pick<ConversationEntry, "kind" | "mode" | "requestPlan">
-  ): string[] {
-    return [
-      entry.kind,
-      entry.mode ?? "manual",
-      ...(entry.requestPlan?.categories.filter((category) => category.included).map((category) => category.key) ?? [])
-    ];
   }
 
   private createId(): string {

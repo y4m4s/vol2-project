@@ -8,105 +8,15 @@
   overflow: hidden;
 }
 
-.s04-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 4px 0 12px;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  flex-shrink: 0;
-}
-
-.s04-back-btn,
-.s04-connect-btn,
-.s04-icon-btn,
-.s04-auto-inline-toggle,
-.s04-mode-btn,
-.s04-send-btn,
 .s04-response-action {
   width: auto;
   margin-top: 0;
 }
 
-.s04-back-btn,
-.s04-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 10px;
-  color: var(--vscode-foreground);
-  background: transparent;
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.s04-back-btn .material-symbols-outlined,
-.s04-icon-btn .material-symbols-outlined {
-  font-size: 18px;
-}
-
-.s04-header-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.s04-title-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.s04-title {
-  min-width: 0;
-  font-size: 1.02em;
-  font-weight: 700;
+.s04-root .page-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.s04-subtitle {
-  margin-top: 4px;
-  font-size: 0.83em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.s04-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--vscode-panel-border);
-  font-size: 0.77em;
-  font-weight: 600;
-  color: var(--vscode-descriptionForeground);
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
-}
-
-.s04-status-pill.connected {
-  color: #22c55e;
-  border-color: color-mix(in srgb, #22c55e 40%, var(--vscode-panel-border));
-}
-
-.s04-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.s04-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 .s04-connect-btn {
@@ -117,45 +27,63 @@
   border-radius: 999px;
 }
 
-.s04-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  margin-top: 10px;
-  border-radius: 12px;
-  border: 1px solid var(--vscode-panel-border);
-  flex-shrink: 0;
+.s04-context-details {
+  max-width: 100%;
+  margin-top: 8px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent);
 }
 
-.s04-notice .material-symbols-outlined {
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.s04-notice {
-  font-size: 0.85em;
-}
-
-.s04-notice > span:last-child {
+.s04-context-details summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+  padding: 7px 9px;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.8em;
+  list-style: none;
+}
+
+.s04-context-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.s04-context-details summary:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.s04-context-details .material-symbols-outlined {
+  font-size: 15px;
+  color: var(--vscode-textLink-foreground);
+}
+
+.s04-context-label {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--vscode-foreground);
+}
+
+.s04-context-preview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s04-context-body {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 76%, transparent);
+  color: var(--vscode-foreground);
+  font-size: 0.82em;
+  line-height: 1.55;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.s04-notice.info {
-  background: color-mix(in srgb, var(--vscode-button-background) 10%, transparent);
-}
-
-.s04-notice.warning {
-  color: #eab308;
-  border-color: rgba(234, 179, 8, 0.28);
-  background: rgba(234, 179, 8, 0.1);
-}
-
-.s04-notice.error {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.28);
-  background: rgba(239, 68, 68, 0.1);
 }
 
 .s04-chat {
@@ -370,210 +298,9 @@
   font-size: 16px;
 }
 
-.s04-input-area {
-  flex-shrink: 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-sideBar-background);
-}
-
-.s04-input-wrap {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  background: var(--vscode-input-background);
-  overflow: hidden;
-}
-
-.s04-input-wrap:focus-within {
-  border-color: var(--vscode-focusBorder);
-}
-
-.s04-selected-context {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  background: color-mix(in srgb, var(--vscode-input-background) 84%, var(--vscode-editorWidget-background));
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.84em;
-}
-
-.s04-selected-context .material-symbols-outlined {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.s04-selected-context-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--vscode-editor-font-family, monospace);
-}
-
-.s04-input {
-  width: 100%;
-  min-height: 48px;
-  max-height: 220px;
-  padding: 12px 14px;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--vscode-input-foreground);
-  font-size: 0.94em;
-  font-family: var(--vscode-font-family);
-  line-height: 1.6;
-  resize: none;
-  overflow-y: auto;
-}
-
-.s04-input-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 6px;
-  border-top: 1px solid var(--vscode-panel-border);
-}
-
-.s04-footer-right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 1 1 auto;
-  flex-wrap: nowrap;
-  gap: 6px;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.s04-auto-inline {
-  display: inline-flex;
-  align-items: center;
-  flex: 1 1 180px;
-  gap: 6px;
-  min-width: 144px;
-  max-width: 220px;
-  height: 32px;
-  padding: 0 6px 0 9px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
-  color: var(--vscode-descriptionForeground);
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 82%, transparent);
-  font-size: 0.77em;
-}
-
-.s04-auto-inline > .material-symbols-outlined {
-  flex-shrink: 0;
-  font-size: 15px;
-  color: var(--vscode-textLink-foreground);
-  opacity: 0.75;
-}
-
-.s04-auto-inline.paused > .material-symbols-outlined {
-  color: var(--vscode-descriptionForeground);
-}
-
-.s04-auto-inline-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.s04-auto-inline-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0;
-  border-radius: 7px;
-  border: 0;
-  color: inherit;
-  background: transparent;
-}
-
-.s04-auto-inline-toggle:hover:not(:disabled) {
-  opacity: 1;
-  background: var(--vscode-toolbar-hoverBackground);
-}
-
-.s04-auto-inline-toggle .material-symbols-outlined {
-  font-size: 15px;
-}
-
-.s04-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 68px;
-  padding: 0 10px;
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid var(--vscode-panel-border);
-  background: transparent;
-  color: var(--vscode-foreground);
-  font-size: 0.77em;
-  font-weight: 700;
-}
-
-.s04-mode-btn .material-symbols-outlined {
-  font-size: 16px;
-}
-
-.s04-mode-btn.always {
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.5);
-  background: rgba(245, 158, 11, 0.12);
-}
-
-.s04-send-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 10px;
-}
-
-.s04-send-btn .material-symbols-outlined {
-  font-size: 17px;
-}
 
 @media (max-width: 520px) {
-  .s04-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .s04-header-actions {
-    grid-column: 1 / -1;
-  }
-
   .s04-bubble.user {
     max-width: 94%;
-  }
-
-  .s04-input-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .s04-footer-right {
-    width: 100%;
-  }
-
-  .s04-auto-inline {
-    max-width: 100%;
   }
 }

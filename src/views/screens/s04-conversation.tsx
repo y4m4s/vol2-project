@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { PageHeader } from "../webview/components/BackHeader";
+import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
-import type { AutoAdviceState, ConversationEntry } from "../../shared/types";
+import type { ConversationEntry } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -14,27 +16,11 @@ type MarkdownBlock =
 
 export function S04Conversation() {
   const { viewModel, send } = useApp();
-  const [inputText, setInputText] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [viewModel?.conversationHistory, viewModel?.isBusy]);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [inputText]);
-
-  useEffect(() => {
-    setInputText("");
-  }, [viewModel?.activeConversationStreamId]);
 
   if (!viewModel) {
     return null;
@@ -42,128 +28,59 @@ export function S04Conversation() {
 
   const {
     connectionState,
-    mode,
     canConnect,
-    canAskForGuidance,
-    canSwitchMode,
-    isBusy,
     requestState,
-    autoAdvice,
-    contextPreview,
     conversationStreams,
     activeConversationStreamId,
     conversationHistory,
-    statusMessage
+    savedKnowledgeSourceIds
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
-  const isAlways = mode === "always";
-  const isPaused = autoAdvice.paused;
-
-  function handleSend() {
-    const text = inputText.trim();
-    if (!text) {
-      return;
-    }
-
-    send({ type: "ask", text });
-    setInputText("");
-  }
-
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  }
+  const additionalContext = activeStream?.additionalContext;
 
   return (
     <div className="s04-root">
-      <div className="s04-header">
-        <button
-          className="s04-back-btn"
-          title="相談ホームへ戻る"
-          onClick={() => send({ type: "navigate", screen: "main" })}
-        >
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
-
-        <div className="s04-header-copy">
-          <div className="s04-title-row">
-            <div className="s04-title">{activeStream?.title ?? "新しい相談"}</div>
-            {connectionState !== "connected" && (
-              <span className="s04-status-pill">
-                <span className="s04-status-dot" />
-                {formatConnectionState(connectionState)}
-              </span>
-            )}
-          </div>
-
-          <div className="s04-subtitle">
-            {conversationHistory.length > 0
-              ? `${conversationHistory.length}件のメッセージ`
-              : "この会話専用の画面です"}
-          </div>
-        </div>
-
-        <div className="s04-header-actions">
-          {connectionState !== "connected" && (
-            <button
-              className="s04-connect-btn"
-              disabled={!canConnect}
-              onClick={() => send({ type: "connect" })}
-            >
-              <span className="material-symbols-outlined">power</span>
-              接続
-            </button>
-          )}
-
-          <button
-            className="s04-icon-btn"
-            title="新しい相談"
-            onClick={() => send({ type: "createConversationStream" })}
-          >
-            <span className="material-symbols-outlined">add_comment</span>
-          </button>
-
-          <button
-            className="s04-icon-btn"
-            title="会話履歴"
-            onClick={() => send({ type: "navigate", screen: "history" })}
-          >
-            <span className="material-symbols-outlined">history</span>
-          </button>
-
-          <button
-            className="s04-icon-btn"
-            title="ナレッジ"
-            onClick={() => send({ type: "navigate", screen: "knowledge" })}
-          >
-            <span className="material-symbols-outlined">book</span>
-          </button>
-
-          <button
-            className="s04-icon-btn"
-            title="設定"
-            onClick={() => send({ type: "navigate", screen: "settings" })}
-          >
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </div>
-      </div>
-
-      {statusMessage && !isKnowledgeSaveStatus(statusMessage.text, requestState) && (
-        <div className={`s04-notice ${statusMessage.kind}`}>
-          <span className="material-symbols-outlined">
-            {statusMessage.kind === "error"
-              ? "error"
-              : statusMessage.kind === "warning"
-                ? "warning"
-                : "info"}
+      <PageHeader
+        title={activeStream?.title ?? "新しい相談"}
+        subtitle={conversationHistory.length > 0
+          ? `${conversationHistory.length}件のメッセージ`
+          : "この会話専用の画面です"}
+        back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
+        status={connectionState !== "connected" ? (
+          <span className="status-pill">
+            <span className="status-dot" />
+            {formatConnectionState(connectionState)}
           </span>
-          <span>{statusMessage.text}</span>
-        </div>
-      )}
+        ) : null}
+        extraContent={additionalContext ? (
+          <details className="s04-context-details">
+            <summary title={additionalContext}>
+              <span className="material-symbols-outlined">description</span>
+              <span className="s04-context-label">追加コンテキスト</span>
+              <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
+            </summary>
+            <div className="s04-context-body">{additionalContext}</div>
+          </details>
+        ) : null}
+        actions={connectionState !== "connected" ? (
+          <button
+            className="s04-connect-btn"
+            disabled={!canConnect}
+            onClick={() => send({ type: "connect" })}
+          >
+            <span className="material-symbols-outlined">power</span>
+            接続
+          </button>
+        ) : null}
+        navIcons={[
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "createConversationStream" }) },
+          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
+      />
 
       <div className="s04-chat">
         {conversationHistory.length === 0 && (
@@ -180,6 +97,8 @@ export function S04Conversation() {
           <ChatBubble
             key={entry.id}
             entry={entry}
+            alreadySaved={savedKnowledgeSourceIds.includes(entry.id)}
+            isSavingKnowledge={requestState === "saving_knowledge"}
             onSave={(id) => send({ type: "saveKnowledge", id })}
           />
         ))}
@@ -187,79 +106,20 @@ export function S04Conversation() {
         <div ref={chatBottomRef} />
       </div>
 
-      <div className="s04-input-area">
-        <div className="s04-input-wrap">
-          {contextPreview.selectedTextPreview && (
-            <div className="s04-selected-context" title={contextPreview.selectedTextPreview}>
-              <span className="material-symbols-outlined">code</span>
-              <span className="s04-selected-context-text">
-                {getSelectionLabel(contextPreview.selectedTextPreview)}
-              </span>
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            className="s04-input"
-            placeholder="質問を入力... (Shift+Enter で改行)"
-            rows={1}
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-
-          <div className="s04-input-footer">
-            <div className="s04-footer-right">
-              {isAlways && (
-                <div className={`s04-auto-inline ${isPaused ? "paused" : ""}`}>
-                  <span className="material-symbols-outlined">
-                    {isPaused ? "pause_circle" : "radio_button_checked"}
-                  </span>
-                  <span className="s04-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
-                  <button
-                    className="s04-auto-inline-toggle"
-                    title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
-                    disabled={!autoAdvice.enabled}
-                    onClick={() => send({ type: "toggleAutoPause" })}
-                  >
-                    <span className="material-symbols-outlined">
-                      {isPaused ? "play_arrow" : "pause"}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              <button
-                className={`s04-mode-btn ${isAlways ? "always" : ""}`}
-                title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
-                disabled={!canSwitchMode && !isAlways}
-                onClick={() => send({ type: "setMode", mode: isAlways ? "manual" : "always" })}
-              >
-                <span className="material-symbols-outlined">bolt</span>
-                {isAlways ? "常時" : "必要時"}
-              </button>
-
-              <button
-                className="s04-send-btn"
-                disabled={!canAskForGuidance || !inputText.trim() || isBusy}
-                onClick={handleSend}
-              >
-                <span className="material-symbols-outlined">arrow_upward</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChatInputComposer resetKey={activeConversationStreamId} />
     </div>
   );
 }
-
 function ChatBubble(
   {
     entry,
+    alreadySaved,
+    isSavingKnowledge,
     onSave
   }: {
     entry: ConversationEntry;
+    alreadySaved: boolean;
+    isSavingKnowledge: boolean;
     onSave: (id: string) => void;
   }
 ) {
@@ -295,6 +155,8 @@ function ChatBubble(
         {!isUser && (
           <ResponseActions
             text={entry.text}
+            alreadySaved={alreadySaved}
+            isSavingKnowledge={isSavingKnowledge}
             onSave={() => onSave(entry.id)}
           />
         )}
@@ -494,18 +356,33 @@ function SelectionReference({ selectedText }: { selectedText?: string }) {
 function ResponseActions(
   {
     text,
+    alreadySaved,
+    isSavingKnowledge,
     onSave
   }: {
     text: string;
+    alreadySaved: boolean;
+    isSavingKnowledge: boolean;
     onSave: () => void;
   }
 ) {
-  const [saved, setSaved] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
   const [copied, setCopied] = useState(false);
+  const saveDisabled = alreadySaved || pendingSave || isSavingKnowledge;
+
+  useEffect(() => {
+    if (!isSavingKnowledge && !alreadySaved) {
+      setPendingSave(false);
+    }
+  }, [alreadySaved, isSavingKnowledge]);
 
   function handleSave() {
+    if (saveDisabled) {
+      return;
+    }
+
+    setPendingSave(true);
     onSave();
-    setSaved(true);
   }
 
   async function handleCopy() {
@@ -521,12 +398,19 @@ function ResponseActions(
   return (
     <div className="s04-response-actions">
       <button
-        className={`s04-response-action ${saved ? "active" : ""}`}
-        title={saved ? "ナレッジに保存しました" : "ナレッジとして保存"}
+        className={`s04-response-action ${alreadySaved ? "active" : ""}`}
+        title={
+          alreadySaved
+            ? "ナレッジに保存しました"
+            : pendingSave || isSavingKnowledge
+              ? "ナレッジに整理しています"
+              : "ナレッジとして保存"
+        }
+        disabled={saveDisabled}
         onClick={handleSave}
       >
         <span className="material-symbols-outlined">
-          {saved ? "bookmark_added" : "bookmark_add"}
+          {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
         </span>
       </button>
 
@@ -546,6 +430,11 @@ function getSelectionLabel(preview: string): string {
   return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
 }
 
+function getContextPreview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 80 ? `${normalized.slice(0, 80)}...` : normalized;
+}
+
 function formatConnectionState(state: string): string {
   switch (state) {
     case "connected":
@@ -561,32 +450,6 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
-}
-
-function isKnowledgeSaveStatus(text: string, requestState: string): boolean {
-  return (
-    requestState === "saving_knowledge" ||
-    text === "Copilot でアドバイスをナレッジ用に整理しています..." ||
-    text === "アドバイスを整理してナレッジとして保存しました。"
-  );
-}
-
-function getAutoStatusText(autoAdvice: AutoAdviceState): string {
-  if (autoAdvice.paused) {
-    return "常時モードは一時停止中です";
-  }
-
-  if (autoAdvice.waitingForIdle) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.idleRemainingMs / 1000));
-    return `入力待ちです... ${seconds}秒`;
-  }
-
-  if (autoAdvice.cooldownRemainingMs > 0) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.cooldownRemainingMs / 1000));
-    return `次の自動助言まで ${seconds}秒`;
-  }
-
-  return "常時モードは待機中です";
 }
 
 function formatTime(value: string): string {

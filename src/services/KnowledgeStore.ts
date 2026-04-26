@@ -1,9 +1,10 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import { GuidanceContext, KnowledgeStatus } from "../shared/types";
+import { GuidanceContext } from "../shared/types";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
+type KnowledgeStatus = "active" | "disabled";
 
 interface SqlJsStatement {
   bind(values?: SqlParams): boolean;
@@ -33,7 +34,6 @@ export interface KnowledgeRecord {
   summary: string;
   body: string;
   status: KnowledgeStatus;
-  tags: string[];
   sourceAdviceId?: string;
   createdAt: string;
   updatedAt: string;
@@ -43,7 +43,6 @@ export interface KnowledgeCreateInput {
   title: string;
   summary: string;
   body: string;
-  tags?: string[];
   sourceAdviceId?: string;
 }
 
@@ -51,13 +50,10 @@ export interface KnowledgeUpdateInput {
   title: string;
   summary: string;
   body: string;
-  status: KnowledgeStatus;
-  tags: string[];
 }
 
 export interface KnowledgeSearchInput {
   query: string;
-  status: "all" | KnowledgeStatus;
 }
 
 export class KnowledgeStore implements vscode.Disposable {
@@ -82,12 +78,7 @@ export class KnowledgeStore implements vscode.Disposable {
 
   public list(input: KnowledgeSearchInput): KnowledgeRecord[] {
     const normalizedQuery = input.query.trim().toLowerCase();
-    const rows = this.selectRecords(
-      input.status === "all"
-        ? "SELECT * FROM knowledge ORDER BY updated_at DESC"
-        : "SELECT * FROM knowledge WHERE status = ? ORDER BY updated_at DESC",
-      input.status === "all" ? [] : [input.status]
-    );
+    const rows = this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
 
     if (!normalizedQuery) {
       return rows;
@@ -97,9 +88,7 @@ export class KnowledgeStore implements vscode.Disposable {
       const haystack = [
         item.title,
         item.summary,
-        item.body,
-        item.status,
-        item.tags.join(" ")
+        item.body
       ].join("\n").toLowerCase();
       return haystack.includes(normalizedQuery);
     });
@@ -107,6 +96,24 @@ export class KnowledgeStore implements vscode.Disposable {
 
   public get(id: string): KnowledgeRecord | undefined {
     return this.selectRecords("SELECT * FROM knowledge WHERE id = ? LIMIT 1", [id])[0];
+  }
+
+  public getBySourceAdviceId(sourceAdviceId: string): KnowledgeRecord | undefined {
+    return this.selectRecords(
+      "SELECT * FROM knowledge WHERE source_advice_id = ? ORDER BY updated_at DESC LIMIT 1",
+      [sourceAdviceId]
+    )[0];
+  }
+
+  public listSourceAdviceIds(): string[] {
+    const sourceAdviceIds = this.selectRecords(
+      "SELECT * FROM knowledge WHERE source_advice_id IS NOT NULL ORDER BY updated_at DESC",
+      []
+    )
+      .map((record) => record.sourceAdviceId)
+      .filter((sourceAdviceId): sourceAdviceId is string => Boolean(sourceAdviceId));
+
+    return [...new Set(sourceAdviceIds)];
   }
 
   public async create(input: KnowledgeCreateInput): Promise<KnowledgeRecord> {
@@ -117,7 +124,6 @@ export class KnowledgeStore implements vscode.Disposable {
       summary: this.normalizeSummary(input.summary, input.body),
       body: input.body.trim(),
       status: "active",
-      tags: this.normalizeTags(input.tags ?? []),
       sourceAdviceId: input.sourceAdviceId,
       createdAt: now,
       updatedAt: now
@@ -125,8 +131,8 @@ export class KnowledgeStore implements vscode.Disposable {
 
     this.getDb().run(
       `INSERT INTO knowledge
-        (id, title, summary, body, status, tags, source_advice_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, title, summary, body, status, source_advice_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       this.toSqlParams(record)
     );
     await this.persist();
@@ -144,39 +150,25 @@ export class KnowledgeStore implements vscode.Disposable {
       title: this.normalizeTitle(input.title),
       summary: this.normalizeSummary(input.summary, input.body),
       body: input.body.trim(),
-      status: input.status,
-      tags: this.normalizeTags(input.tags),
+      status: existing.status,
       updatedAt: new Date().toISOString()
     };
 
     this.getDb().run(
       `UPDATE knowledge
-       SET title = ?, summary = ?, body = ?, status = ?, tags = ?, updated_at = ?
+       SET title = ?, summary = ?, body = ?, status = ?, updated_at = ?
        WHERE id = ?`,
       [
         updated.title,
         updated.summary,
         updated.body,
         updated.status,
-        JSON.stringify(updated.tags),
         updated.updatedAt,
         id
       ]
     );
     await this.persist();
     return updated;
-  }
-
-  public async setStatus(id: string, status: KnowledgeStatus): Promise<KnowledgeRecord | undefined> {
-    const existing = this.get(id);
-    if (!existing) {
-      return undefined;
-    }
-
-    const updatedAt = new Date().toISOString();
-    this.getDb().run("UPDATE knowledge SET status = ?, updated_at = ? WHERE id = ?", [status, updatedAt, id]);
-    await this.persist();
-    return this.get(id);
   }
 
   public async delete(id: string): Promise<boolean> {
@@ -190,48 +182,14 @@ export class KnowledgeStore implements vscode.Disposable {
     return true;
   }
 
-  public async reset(): Promise<void> {
-    this.getDb().run("DELETE FROM knowledge");
-    await this.persist();
-  }
-
-  public exportRecords(): KnowledgeRecord[] {
-    return this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
-  }
-
-  public async exportToFiles(): Promise<{ count: number; jsonPath: string; markdownPath: string }> {
-    const records = this.exportRecords();
-    const exportDir = vscode.Uri.joinPath(this.storageUri, "exports");
-    await vscode.workspace.fs.createDirectory(exportDir);
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const jsonUri = vscode.Uri.joinPath(exportDir, `knowledge-${timestamp}.json`);
-    const markdownUri = vscode.Uri.joinPath(exportDir, `knowledge-${timestamp}.md`);
-
-    await vscode.workspace.fs.writeFile(
-      jsonUri,
-      Buffer.from(JSON.stringify(records, null, 2), "utf8")
-    );
-    await vscode.workspace.fs.writeFile(
-      markdownUri,
-      Buffer.from(this.toMarkdown(records), "utf8")
-    );
-
-    return {
-      count: records.length,
-      jsonPath: jsonUri.fsPath,
-      markdownPath: markdownUri.fsPath
-    };
-  }
-
   public findReusable(context: GuidanceContext, limit = 3): KnowledgeRecord[] {
-    const activeRecords = this.selectRecords("SELECT * FROM knowledge WHERE status = ? ORDER BY updated_at DESC", ["active"]);
+    const records = this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
     const keywords = this.extractContextKeywords(context);
     if (keywords.length === 0) {
-      return activeRecords.slice(0, limit);
+      return records.slice(0, limit);
     }
 
-    return activeRecords
+    return records
       .map((record) => ({
         record,
         score: this.scoreRecord(record, keywords)
@@ -255,7 +213,6 @@ export class KnowledgeStore implements vscode.Disposable {
         summary TEXT NOT NULL,
         body TEXT NOT NULL,
         status TEXT NOT NULL CHECK (status IN ('active', 'disabled')),
-        tags TEXT NOT NULL DEFAULT '[]',
         source_advice_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -263,6 +220,9 @@ export class KnowledgeStore implements vscode.Disposable {
 
       CREATE INDEX IF NOT EXISTS idx_knowledge_status_updated
         ON knowledge(status, updated_at);
+
+      CREATE INDEX IF NOT EXISTS idx_knowledge_source_advice
+        ON knowledge(source_advice_id);
     `);
   }
 
@@ -289,7 +249,6 @@ export class KnowledgeStore implements vscode.Disposable {
       summary: String(row.summary),
       body: String(row.body),
       status: row.status === "disabled" ? "disabled" : "active",
-      tags: this.parseTags(row.tags),
       sourceAdviceId: row.source_advice_id ? String(row.source_advice_id) : undefined,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at)
@@ -303,7 +262,6 @@ export class KnowledgeStore implements vscode.Disposable {
       record.summary,
       record.body,
       record.status,
-      JSON.stringify(record.tags),
       record.sourceAdviceId ?? null,
       record.createdAt,
       record.updatedAt
@@ -351,29 +309,13 @@ export class KnowledgeStore implements vscode.Disposable {
     return this.truncate(normalized, 180);
   }
 
-  private normalizeTags(tags: string[]): string[] {
-    return [...new Set(tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0))].slice(0, 12);
-  }
-
-  private parseTags(value: unknown): string[] {
-    if (typeof value !== "string" || value.length === 0) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-    } catch {
-      return [];
-    }
-  }
-
   private extractContextKeywords(context: GuidanceContext): string[] {
     const rawValues = [
       context.activeFilePath ? path.basename(context.activeFilePath) : undefined,
       context.activeFileLanguage,
       context.selectedText,
       context.activeFileExcerpt,
+      context.additionalContext,
       ...context.relatedSymbols,
       ...context.diagnosticsSummary.map((item) => item.message)
     ];
@@ -399,8 +341,7 @@ export class KnowledgeStore implements vscode.Disposable {
     const haystack = [
       record.title,
       record.summary,
-      record.body,
-      record.tags.join(" ")
+      record.body
     ].join("\n").toLowerCase();
 
     return keywords.reduce((score, keyword) => score + (haystack.includes(keyword) ? 1 : 0), 0);
@@ -408,30 +349,6 @@ export class KnowledgeStore implements vscode.Disposable {
 
   private truncate(value: string, maxLength: number): string {
     return value.length <= maxLength ? value : `${value.slice(0, maxLength)}...`;
-  }
-
-  private toMarkdown(records: KnowledgeRecord[]): string {
-    const lines = ["# NaviCom Knowledge", ""];
-
-    if (records.length === 0) {
-      lines.push("_No knowledge entries._", "");
-      return lines.join("\n");
-    }
-
-    for (const record of records) {
-      lines.push(`## ${record.title}`, "");
-      lines.push(`- Status: ${record.status}`);
-      lines.push(`- Updated: ${record.updatedAt}`);
-      if (record.tags.length > 0) {
-        lines.push(`- Tags: ${record.tags.join(", ")}`);
-      }
-      if (record.sourceAdviceId) {
-        lines.push(`- Source Advice: ${record.sourceAdviceId}`);
-      }
-      lines.push("", record.summary, "", record.body, "");
-    }
-
-    return lines.join("\n");
   }
 
   private createId(): string {

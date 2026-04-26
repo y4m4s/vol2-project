@@ -1,4 +1,4 @@
-import type { AdviceMode, KnowledgeStatus, NavigatorScreen, NavigatorViewModel } from "./types";
+import type { AdviceMode, NavigatorScreen, NavigatorViewModel } from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -6,7 +6,7 @@ export type WebviewToExtension =
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
-  | { type: "ask"; text: string }
+  | { type: "ask"; text: string; additionalContext?: string }
   | { type: "askContext" }
   | { type: "setMode"; mode: AdviceMode }
   | { type: "toggleAutoPause" }
@@ -20,21 +20,14 @@ export type WebviewToExtension =
       title: string;
       summary: string;
       body: string;
-      tags: string;
-      status: KnowledgeStatus;
     }
-  | { type: "toggleKnowledgeStatus"; id: string }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
   | { type: "resetSettings" }
-  | { type: "searchKnowledge"; query: string }
-  | { type: "filterKnowledge"; filter: string }
-  | { type: "exportKnowledge" }
-  | { type: "resetKnowledge" };
+  | { type: "searchKnowledge"; query: string };
 
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
-  requestIntervalSec: number;
   idleDelaySec: number;
   excludeGlobs: string;
 }

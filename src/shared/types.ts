@@ -18,6 +18,7 @@ export type NavigatorScreen =
   | "error"
   | "advice_detail"
   | "knowledge"
+  | "knowledge_detail"
   | "settings";
 
 export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
@@ -28,11 +29,7 @@ export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
-export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
-
-export type KnowledgeStatus = "active" | "disabled";
-
-export type KnowledgeStatusFilter = "all" | KnowledgeStatus;
+export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols" | "additionalContext";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -55,6 +52,7 @@ export interface GuidanceContext {
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
+  additionalContext?: string;
 }
 
 export interface NavigatorSettings {
@@ -116,6 +114,7 @@ export interface ConversationStreamListItem {
   updatedAt: string;
   messageCount: number;
   lastMessagePreview?: string;
+  additionalContext?: string;
 }
 
 export interface NavigatorStatusMessage {
@@ -147,15 +146,13 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
-  status: KnowledgeStatus;
-  tags: string[];
   updatedAt: string;
 }
 
 export interface KnowledgeDetailViewData extends KnowledgeListItem {
   body: string;
-  sourceAdviceId?: string;
   createdAt: string;
+  sourceConversation?: ConversationStreamListItem;
 }
 
 export interface NavigatorSessionState {
@@ -173,8 +170,8 @@ export interface NavigatorSessionState {
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
   knowledgeQuery: string;
-  knowledgeStatusFilter: KnowledgeStatusFilter;
   selectedKnowledgeId?: string;
+  activeAdditionalContext?: string;
 }
 
 export interface NavigatorViewModel {
@@ -198,6 +195,6 @@ export interface NavigatorViewModel {
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];
   selectedKnowledge?: KnowledgeDetailViewData;
+  savedKnowledgeSourceIds: string[];
   knowledgeQuery: string;
-  knowledgeStatusFilter: KnowledgeStatusFilter;
 }

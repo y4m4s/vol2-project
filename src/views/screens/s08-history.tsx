@@ -1,5 +1,5 @@
 import React from "react";
-import { BackHeader } from "../webview/components/BackHeader";
+import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 
 export function S08History() {
@@ -17,25 +17,25 @@ export function S08History() {
 
   return (
     <div className="s08-root">
-      <BackHeader label="ホームに戻る" />
-
-      <div className="s08-head">
-        <div>
-          <div className="page-title">相談履歴</div>
-          <div className="page-subtitle">
-            過去の相談を開いて、続きから質問できます。
-          </div>
-        </div>
-
-        <button
-          className="s08-create-btn"
-          disabled={isBusy}
-          onClick={() => send({ type: "createConversationStream" })}
-        >
-          <span className="material-symbols-outlined">add</span>
-          新規
-        </button>
-      </div>
+      <PageHeader
+        title="相談履歴"
+        subtitle="過去の相談を開いて、続きから質問できます。"
+        actions={(
+          <button
+            className="s08-create-btn"
+            disabled={isBusy}
+            onClick={() => send({ type: "createConversationStream" })}
+          >
+            <span className="material-symbols-outlined">add</span>
+            新規
+          </button>
+        )}
+        navIcons={[
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
+      />
 
       {conversationStreams.length === 0 ? (
         <div className="s08-empty">
@@ -59,7 +59,15 @@ export function S08History() {
                   disabled={isBusy}
                   onClick={() => send({ type: "selectConversationStream", id: stream.id })}
                 >
-                  <span className="s08-item-title">{stream.title}</span>
+                  <span className="s08-item-copy">
+                    <span className="s08-item-title">{stream.title}</span>
+                    {stream.additionalContext && (
+                      <span className="s08-context-preview" title={stream.additionalContext}>
+                        <span className="material-symbols-outlined">description</span>
+                        {getContextPreview(stream.additionalContext)}
+                      </span>
+                    )}
+                  </span>
                   <span className="s08-item-time">{formatRelativeTime(stream.updatedAt)}</span>
                 </button>
 
@@ -82,6 +90,11 @@ export function S08History() {
       )}
     </div>
   );
+}
+
+function getContextPreview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
 }
 
 function formatRelativeTime(value: string): string {

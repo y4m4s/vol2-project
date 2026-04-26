@@ -56,49 +56,6 @@
   overflow-wrap: anywhere;
 }
 
-.s06-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--vscode-panel-border);
-  font-size: 0.85em;
-}
-
-.s06-notice .material-symbols-outlined {
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.s06-notice.info {
-  background: color-mix(in srgb, var(--vscode-button-background) 10%, transparent);
-}
-
-.s06-notice.warning {
-  color: #eab308;
-  border-color: rgba(234, 179, 8, 0.28);
-  background: rgba(234, 179, 8, 0.1);
-}
-
-.s06-notice.error {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.28);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.dropdown-wrap select {
-  padding: 8px 12px;
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 8px;
-  font-size: 0.9em;
-  outline: none;
-  appearance: auto;
-}
-
 .s06-actions {
   margin-top: 14px;
   padding: 12px;
@@ -151,19 +108,25 @@
   margin-bottom: 8px;
 }
 
-.schedule-label {
+.schedule-header > div {
   min-width: 0;
-  font-size: 0.9em;
-  font-weight: 700;
 }
 
-.schedule-options {
+.choice-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
-.schedule-option {
+.mode-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.schedule-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.choice-option {
   width: 100%;
   min-height: 34px;
   margin: 0;
@@ -176,13 +139,13 @@
   font-weight: 700;
 }
 
-.schedule-option:hover {
+.choice-option:hover {
   opacity: 1;
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground);
 }
 
-.schedule-option.selected {
+.choice-option.selected {
   color: var(--vscode-textLink-foreground);
   border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 68%, var(--vscode-panel-border));
   background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, var(--vscode-editorWidget-background));
@@ -212,6 +175,7 @@
 .exclude-textarea textarea {
   width: 100%;
   min-height: 86px;
+  max-height: 220px;
   padding: 10px 12px;
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
@@ -219,7 +183,8 @@
   border-radius: 8px;
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 0.88em;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
   outline: none;
 }
 
@@ -297,10 +262,6 @@
   .setting-row {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .dropdown-wrap select {
-    width: 100%;
   }
 
   .s06-savebar {

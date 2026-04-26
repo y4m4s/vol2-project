@@ -1,0 +1,80 @@
+import React, { useEffect, useRef } from "react";
+
+interface AdditionalContextButtonProps {
+  open: boolean;
+  hasValue: boolean;
+  onClick: () => void;
+}
+
+interface AdditionalContextPanelProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function AdditionalContextButton({ open, hasValue, onClick }: AdditionalContextButtonProps) {
+  const label = hasValue ? "追加コンテキストを編集" : "追加コンテキストを追加";
+
+  return (
+    <button
+      type="button"
+      className={`additional-context-toggle ${open ? "open" : ""} ${hasValue ? "active" : ""}`}
+      title={label}
+      aria-label={label}
+      aria-expanded={open}
+      onClick={onClick}
+    >
+      <span className="material-symbols-outlined">description</span>
+    </button>
+  );
+}
+
+export function AdditionalContextPanel({ id, value, onChange }: AdditionalContextPanelProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  function handleClear() {
+    onChange("");
+    textareaRef.current?.focus();
+  }
+
+  return (
+    <div className="additional-context-panel">
+      <div className="additional-context-head">
+        <div className="additional-context-title">
+          <span className="material-symbols-outlined">description</span>
+          追加コンテキスト
+        </div>
+        <button
+          type="button"
+          className="additional-context-clear"
+          title="追加コンテキストを消去"
+          aria-label="追加コンテキストを消去"
+          disabled={!value.trim()}
+          onClick={handleClear}
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <textarea
+        ref={textareaRef}
+        id={id}
+        className="additional-context-input"
+        placeholder="課題文、プロダクト方針、実装で守りたい前提など"
+        rows={2}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
+  );
+}

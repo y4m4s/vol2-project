@@ -30,7 +30,8 @@ export class RequestPlanner {
       selectedText: !fileExcluded ? context.selectedText : undefined,
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
-      relatedSymbols: !fileExcluded ? context.relatedSymbols : []
+      relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
+      additionalContext: context.additionalContext
     };
 
     return {
@@ -90,6 +91,14 @@ export class RequestPlanner {
         true,
         context.relatedSymbols.length > 0,
         this.describeCollectionNote(fileExcluded, rawContext.relatedSymbols.length, context.relatedSymbols, "関連シンボル候補はまだありません")
+      ),
+      this.createCategory(
+        "additionalContext",
+        "追加コンテキスト",
+        "ユーザーが入力した補足文脈",
+        true,
+        Boolean(context.additionalContext),
+        context.additionalContext ? "入力された補足文脈を送信します" : "追加コンテキストは入力されていません"
       )
     ];
   }
@@ -132,7 +141,7 @@ export class RequestPlanner {
 
   private estimateSizeText(context: GuidanceContext, _preview: NavigatorContextPreview): string {
     const byteLength = this.byteLength(
-      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}`
+      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${context.additionalContext ?? ""}`
     );
 
     const categories = [
@@ -140,7 +149,8 @@ export class RequestPlanner {
       context.selectedText ? "選択範囲" : undefined,
       context.diagnosticsSummary.length > 0 ? "diagnostics" : undefined,
       context.recentEditsSummary.length > 0 ? "recentEdits" : undefined,
-      context.relatedSymbols.length > 0 ? "symbols" : undefined
+      context.relatedSymbols.length > 0 ? "symbols" : undefined,
+      context.additionalContext ? "追加" : undefined
     ].filter((value): value is string => Boolean(value));
 
     return `${this.toReadableSize(byteLength)} / ${categories.length}カテゴリ`;

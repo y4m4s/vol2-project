@@ -52,7 +52,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.deleteConversationStream(message.id);
             return;
           case "ask":
-            await this.controller.askForGuidanceWithCurrentContext(message.text);
+            await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
             return;
           case "askContext":
             await this.controller.askForGuidance(undefined, "context");
@@ -81,14 +81,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
                 id: message.id,
                 title: message.title,
                 summary: message.summary,
-                body: message.body,
-                tags: message.tags,
-                status: message.status
+                body: message.body
               });
             }
-            return;
-          case "toggleKnowledgeStatus":
-            await this.controller.toggleKnowledgeStatus(message.id);
             return;
           case "deleteKnowledge":
             await this.controller.deleteKnowledge(message.id);
@@ -103,15 +98,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "searchKnowledge":
             this.controller.searchKnowledge(message.query);
-            return;
-          case "filterKnowledge":
-            this.controller.filterKnowledge(message.filter);
-            return;
-          case "exportKnowledge":
-            await this.controller.exportKnowledge();
-            return;
-          case "resetKnowledge":
-            await this.controller.resetKnowledge();
             return;
           default:
             return;
@@ -186,7 +172,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private isCompletePayload(payload: unknown): payload is {
     defaultMode: "manual" | "always";
-    requestIntervalSec: number;
     idleDelaySec: number;
     excludeGlobs: string;
   } {
@@ -194,7 +179,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     const p = payload as Record<string, unknown>;
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
-      typeof p.requestIntervalSec === "number" &&
       typeof p.idleDelaySec === "number" &&
       typeof p.excludeGlobs === "string"
     );
@@ -210,9 +194,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       typeof p.id === "string" &&
       typeof p.title === "string" &&
       typeof p.summary === "string" &&
-      typeof p.body === "string" &&
-      typeof p.tags === "string" &&
-      (p.status === "active" || p.status === "disabled")
+      typeof p.body === "string"
     );
   }
 

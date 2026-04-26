@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useReducer } from "react";
+import React, { createContext, useContext, useEffect, useReducer, useState } from "react";
 import type { ExtensionToWebview, WebviewToExtension } from "../../../shared/messages";
 import type { NavigatorScreen, NavigatorViewModel } from "../../../shared/types";
 import { postMessage } from "./vscodeApi";
@@ -8,12 +8,15 @@ interface AppContextValue {
   viewModel: NavigatorViewModel | null;
   currentScreen: NavigatorScreen | null;
   send: (msg: WebviewToExtension) => void;
+  additionalContextDraft: string;
+  setAdditionalContextDraft: (value: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [additionalContextDraft, setAdditionalContextDraft] = useState("");
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -30,7 +33,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const currentScreen = state.viewModel?.screen ?? null;
 
   return (
-    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage }}>
+    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage, additionalContextDraft, setAdditionalContextDraft }}>
       {children}
     </AppContext.Provider>
   );
