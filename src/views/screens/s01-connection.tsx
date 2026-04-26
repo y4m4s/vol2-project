@@ -27,11 +27,21 @@ export function S01Connection() {
 
         <div className="s01-feature-list">
           <div className="s01-feature">
-            <span className="material-symbols-outlined">description</span>
+            <span className="material-symbols-outlined">code</span>
             <div className="s01-feature-copy">
               <div className="s01-feature-title">開いているコードを踏まえて相談</div>
               <div className="s01-feature-desc">
-                編集中のファイルや選択範囲を文脈に含めて、そのまま質問できます。
+                編集中のファイル・選択範囲・診断情報を文脈に含めて質問できます。
+              </div>
+            </div>
+          </div>
+
+          <div className="s01-feature">
+            <span className="material-symbols-outlined">description</span>
+            <div className="s01-feature-copy">
+              <div className="s01-feature-title">追加コンテキストを付与して相談</div>
+              <div className="s01-feature-desc">
+                入力欄の添付ボタンから自由な補足情報を加えて質問できます。
               </div>
             </div>
           </div>
@@ -59,9 +69,9 @@ export function S01Connection() {
           <div className="s01-feature">
             <span className="material-symbols-outlined">book</span>
             <div className="s01-feature-copy">
-              <div className="s01-feature-title">役立つ回答はナレッジとして残せる</div>
+              <div className="s01-feature-title">役立つ回答をナレッジとして保存</div>
               <div className="s01-feature-desc">
-                繰り返し使いたい知見はナレッジ化して、あとから見返せます。
+                会話画面の保存ボタンから有用な回答を蓄積し、あとから見返せます。
               </div>
             </div>
           </div>

@@ -8,102 +8,15 @@
   overflow: hidden;
 }
 
-.s04-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 4px 0 12px;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  flex-shrink: 0;
-}
-
-.s04-back-btn,
-.s04-connect-btn,
-.s04-icon-btn,
 .s04-response-action {
   width: auto;
   margin-top: 0;
 }
 
-.s04-back-btn,
-.s04-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 10px;
-  color: var(--vscode-foreground);
-  background: transparent;
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.s04-back-btn .material-symbols-outlined,
-.s04-icon-btn .material-symbols-outlined {
-  font-size: 18px;
-}
-
-.s04-header-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.s04-title-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.s04-title {
-  min-width: 0;
-  font-size: 1.02em;
-  font-weight: 700;
+.s04-root .page-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.s04-subtitle {
-  margin-top: 4px;
-  font-size: 0.83em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.s04-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--vscode-panel-border);
-  font-size: 0.77em;
-  font-weight: 600;
-  color: var(--vscode-descriptionForeground);
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
-}
-
-.s04-status-pill.connected {
-  color: #22c55e;
-  border-color: color-mix(in srgb, #22c55e 40%, var(--vscode-panel-border));
-}
-
-.s04-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.s04-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 .s04-connect-btn {
@@ -387,18 +300,7 @@
 
 
 @media (max-width: 520px) {
-  .s04-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .s04-header-actions {
-    grid-column: 1 / -1;
-  }
-
   .s04-bubble.user {
     max-width: 94%;
   }
-
 }

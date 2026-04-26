@@ -1,4 +1,5 @@
 import React from "react";
+import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
 
@@ -20,60 +21,32 @@ export function S02Main() {
 
   return (
     <div className="s02-root">
-      <div className="s02-header">
-        <div className="s02-header-copy">
-          <div className="s02-title-row">
-            <div className="s02-title">新しい相談</div>
-            {connectionState !== "connected" && (
-              <span className="s02-status-pill">
-                <span className="s02-status-dot" />
-                {formatConnectionState(connectionState)}
-              </span>
-            )}
-          </div>
-
-          <div className="s02-subtitle">
-            最初の質問を送ると会話画面へ移動し、そのまま続けて相談できます
-          </div>
-        </div>
-
-        <div className="s02-header-actions">
-          {connectionState !== "connected" && (
-            <button
-              className="s02-connect-btn"
-              disabled={!canConnect}
-              onClick={() => send({ type: "connect" })}
-            >
-              <span className="material-symbols-outlined">power</span>
-              接続
-            </button>
-          )}
-
+      <PageHeader
+        title="新しい相談"
+        subtitle="最初の質問を送ると会話画面へ移動し、そのまま続けて相談できます"
+        back={false}
+        status={connectionState !== "connected" ? (
+          <span className="status-pill">
+            <span className="status-dot" />
+            {formatConnectionState(connectionState)}
+          </span>
+        ) : null}
+        actions={connectionState !== "connected" ? (
           <button
-            className="s02-icon-btn"
-            title="会話履歴"
-            onClick={() => send({ type: "navigate", screen: "history" })}
+            className="s02-connect-btn"
+            disabled={!canConnect}
+            onClick={() => send({ type: "connect" })}
           >
-            <span className="material-symbols-outlined">history</span>
+            <span className="material-symbols-outlined">power</span>
+            接続
           </button>
-
-          <button
-            className="s02-icon-btn"
-            title="ナレッジ"
-            onClick={() => send({ type: "navigate", screen: "knowledge" })}
-          >
-            <span className="material-symbols-outlined">book</span>
-          </button>
-
-          <button
-            className="s02-icon-btn"
-            title="設定"
-            onClick={() => send({ type: "navigate", screen: "settings" })}
-          >
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </div>
-      </div>
+        ) : null}
+        navIcons={[
+          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+        ]}
+      />
 
       <div className="s02-stage">
         <div className="s02-empty">
@@ -93,10 +66,26 @@ export function S02Main() {
             </div>
 
             <div className="s02-empty-point">
-              <span className="material-symbols-outlined">description</span>
+              <span className="material-symbols-outlined">file_open</span>
               <div className="s02-empty-point-copy">
                 <div className="s02-empty-point-title">開いているファイルを文脈に反映</div>
                 <div className="s02-empty-point-desc">選択範囲や診断情報を付けてそのまま相談できます</div>
+              </div>
+            </div>
+
+            <div className="s02-empty-point">
+              <span className="material-symbols-outlined">book</span>
+              <div className="s02-empty-point-copy">
+                <div className="s02-empty-point-title">回答をナレッジとして保存</div>
+                <div className="s02-empty-point-desc">会話画面の保存ボタンから有用な回答を蓄積できます</div>
+              </div>
+            </div>
+
+            <div className="s02-empty-point">
+              <span className="material-symbols-outlined">description</span>
+              <div className="s02-empty-point-copy">
+                <div className="s02-empty-point-title">追加コンテキストを付与して相談</div>
+                <div className="s02-empty-point-desc">入力欄の添付ボタンから自由な補足情報を加えられます</div>
               </div>
             </div>
           </div>

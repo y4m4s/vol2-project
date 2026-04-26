@@ -133,7 +133,10 @@ button.danger {
   gap: 8px;
   width: 100%;
   min-width: 0;
-  margin-bottom: 12px;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .page-header-copy {
@@ -141,7 +144,11 @@ button.danger {
   flex: 1;
 }
 
-.page-header .page-title {
+.page-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 4px;
 }
 
@@ -151,10 +158,63 @@ button.danger {
 
 .page-header-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-header-actions button {
+  width: auto;
+  margin-top: 0;
+}
+
+.page-header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 10px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: none;
+}
+
+.page-header-icon-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.page-header-icon-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border);
+  font-size: 0.77em;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 86%, transparent);
+  width: auto;
+  margin-top: 0;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .back-button {
@@ -162,14 +222,13 @@ button.danger {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
+  width: 38px;
+  height: 38px;
+  aspect-ratio: 1 / 1;
   margin-top: 0;
   padding: 0;
-  border-radius: 8px;
-  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  border: none;
   color: var(--vscode-foreground);
   background: transparent;
 }
@@ -180,7 +239,18 @@ button.danger {
 }
 
 .back-button .material-symbols-outlined {
-  font-size: 18px;
+  font-size: 20px;
+}
+
+@media (max-width: 520px) {
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .page-header-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
 }
 
 

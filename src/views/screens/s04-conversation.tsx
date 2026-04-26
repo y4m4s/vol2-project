@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { BackButton } from "../webview/components/BackHeader";
+import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
 import type { ConversationEntry } from "../../shared/types";
@@ -41,88 +41,46 @@ export function S04Conversation() {
 
   return (
     <div className="s04-root">
-      <div className="s04-header">
-        <BackButton
-          className="s04-back-btn"
-          title="相談ホームへ戻る"
-          ariaLabel="相談ホームへ戻る"
-          onClick={() => send({ type: "navigate", screen: "main" })}
-        />
-
-        <div className="s04-header-copy">
-          <div className="s04-title-row">
-            <div className="s04-title">{activeStream?.title ?? "新しい相談"}</div>
-            {connectionState !== "connected" && (
-              <span className="s04-status-pill">
-                <span className="s04-status-dot" />
-                {formatConnectionState(connectionState)}
-              </span>
-            )}
-          </div>
-
-          <div className="s04-subtitle">
-            {conversationHistory.length > 0
-              ? `${conversationHistory.length}件のメッセージ`
-              : "この会話専用の画面です"}
-          </div>
-
-          {additionalContext && (
-            <details className="s04-context-details">
-              <summary title={additionalContext}>
-                <span className="material-symbols-outlined">description</span>
-                <span className="s04-context-label">追加コンテキスト</span>
-                <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
-              </summary>
-              <div className="s04-context-body">{additionalContext}</div>
-            </details>
-          )}
-        </div>
-
-        <div className="s04-header-actions">
-          {connectionState !== "connected" && (
-            <button
-              className="s04-connect-btn"
-              disabled={!canConnect}
-              onClick={() => send({ type: "connect" })}
-            >
-              <span className="material-symbols-outlined">power</span>
-              接続
-            </button>
-          )}
-
+      <PageHeader
+        title={activeStream?.title ?? "新しい相談"}
+        subtitle={conversationHistory.length > 0
+          ? `${conversationHistory.length}件のメッセージ`
+          : "この会話専用の画面です"}
+        back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
+        status={connectionState !== "connected" ? (
+          <span className="status-pill">
+            <span className="status-dot" />
+            {formatConnectionState(connectionState)}
+          </span>
+        ) : null}
+        extraContent={additionalContext ? (
+          <details className="s04-context-details">
+            <summary title={additionalContext}>
+              <span className="material-symbols-outlined">description</span>
+              <span className="s04-context-label">追加コンテキスト</span>
+              <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
+            </summary>
+            <div className="s04-context-body">{additionalContext}</div>
+          </details>
+        ) : null}
+        actions={connectionState !== "connected" ? (
           <button
-            className="s04-icon-btn"
-            title="新しい相談"
-            onClick={() => send({ type: "createConversationStream" })}
+            className="s04-connect-btn"
+            disabled={!canConnect}
+            onClick={() => send({ type: "connect" })}
           >
-            <span className="material-symbols-outlined">add_comment</span>
+            <span className="material-symbols-outlined">power</span>
+            接続
           </button>
-
-          <button
-            className="s04-icon-btn"
-            title="会話履歴"
-            onClick={() => send({ type: "navigate", screen: "history" })}
-          >
-            <span className="material-symbols-outlined">history</span>
-          </button>
-
-          <button
-            className="s04-icon-btn"
-            title="ナレッジ"
-            onClick={() => send({ type: "navigate", screen: "knowledge" })}
-          >
-            <span className="material-symbols-outlined">book</span>
-          </button>
-
-          <button
-            className="s04-icon-btn"
-            title="設定"
-            onClick={() => send({ type: "navigate", screen: "settings" })}
-          >
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </div>
-      </div>
+        ) : null}
+        navIcons={[
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "createConversationStream" }) },
+          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
+      />
 
       <div className="s04-chat">
         {conversationHistory.length === 0 && (
