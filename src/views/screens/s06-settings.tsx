@@ -62,7 +62,15 @@ export function S06Settings() {
 
   return (
     <div className={`s06-root ${hasPendingChanges ? "with-savebar" : ""}`}>
-      <PageHeader title="設定" subtitle="NaviCom の動作と除外パターンを設定できます" />
+      <PageHeader
+        title="設定"
+        subtitle="NaviCom の動作と除外パターンを設定できます"
+        navIcons={[
+          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
+      />
 
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span> モード設定

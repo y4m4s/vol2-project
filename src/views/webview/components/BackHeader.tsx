@@ -8,10 +8,20 @@ type BackButtonProps = {
   onClick?: () => void;
 };
 
+export type NavIconDef = {
+  icon: string;
+  title: string;
+  onClick: () => void;
+};
+
 type PageHeaderProps = {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  back?: false | BackButtonProps;
+  status?: React.ReactNode;
+  extraContent?: React.ReactNode;
   actions?: React.ReactNode;
+  navIcons?: NavIconDef[];
   className?: string;
 };
 
@@ -37,17 +47,46 @@ export function BackButton({
   );
 }
 
-export function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  subtitle,
+  back,
+  status,
+  extraContent,
+  actions,
+  navIcons,
+  className
+}: PageHeaderProps) {
   const classes = ["page-header", className].filter(Boolean).join(" ");
+  const hasActions = actions != null || (navIcons && navIcons.length > 0);
 
   return (
     <div className={classes}>
-      <BackButton />
+      {back !== false && <BackButton {...(back === undefined ? {} : back)} />}
       <div className="page-header-copy">
-        <div className="page-title">{title}</div>
+        <div className="page-title-row">
+          <div className="page-title">{title}</div>
+          {status}
+        </div>
         {subtitle && <div className="page-subtitle">{subtitle}</div>}
+        {extraContent}
       </div>
-      {actions && <div className="page-header-actions">{actions}</div>}
+      {hasActions && (
+        <div className="page-header-actions">
+          {actions}
+          {navIcons?.map((item) => (
+            <button
+              key={item.icon}
+              type="button"
+              className="page-header-icon-btn"
+              title={item.title}
+              onClick={item.onClick}
+            >
+              <span className="material-symbols-outlined">{item.icon}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

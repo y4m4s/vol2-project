@@ -30,6 +30,11 @@ export function S08History() {
             新規
           </button>
         )}
+        navIcons={[
+          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
       />
 
       {conversationStreams.length === 0 ? (

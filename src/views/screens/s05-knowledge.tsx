@@ -16,6 +16,11 @@ export function S05Knowledge() {
       <PageHeader
         title="ナレッジ管理"
         subtitle="保存したナレッジを開いて、内容を確認できます。"
+        navIcons={[
+          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+        ]}
       />
 
       <div className="search-bar">
