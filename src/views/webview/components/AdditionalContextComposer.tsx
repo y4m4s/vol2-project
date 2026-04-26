@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 interface AdditionalContextButtonProps {
   open: boolean;
   hasValue: boolean;
+  readOnly?: boolean;
   onClick: () => void;
 }
 
@@ -12,8 +13,17 @@ interface AdditionalContextPanelProps {
   onChange: (value: string) => void;
 }
 
-export function AdditionalContextButton({ open, hasValue, onClick }: AdditionalContextButtonProps) {
-  const label = hasValue ? "追加コンテキストを編集" : "追加コンテキストを追加";
+interface AdditionalContextReadonlyPanelProps {
+  id: string;
+  value: string;
+}
+
+export function AdditionalContextButton({ open, hasValue, readOnly = false, onClick }: AdditionalContextButtonProps) {
+  const label = readOnly
+    ? "追加コンテキストを表示"
+    : hasValue
+      ? "追加コンテキストを編集"
+      : "追加コンテキストを追加";
 
   return (
     <button
@@ -75,6 +85,21 @@ export function AdditionalContextPanel({ id, value, onChange }: AdditionalContex
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
+    </div>
+  );
+}
+
+export function AdditionalContextReadonlyPanel({ id, value }: AdditionalContextReadonlyPanelProps) {
+  return (
+    <div className="additional-context-panel readonly" id={id}>
+      <div className="additional-context-head">
+        <div className="additional-context-title">
+          <span className="material-symbols-outlined">description</span>
+          追加コンテキスト
+        </div>
+      </div>
+
+      <div className="additional-context-readonly">{value}</div>
     </div>
   );
 }

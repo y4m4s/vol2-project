@@ -37,7 +37,6 @@ export function S04Conversation() {
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
-  const additionalContext = activeStream?.additionalContext;
 
   return (
     <div className="s04-root">
@@ -52,16 +51,6 @@ export function S04Conversation() {
             <span className="status-dot" />
             {formatConnectionState(connectionState)}
           </span>
-        ) : null}
-        extraContent={additionalContext ? (
-          <details className="s04-context-details">
-            <summary title={additionalContext}>
-              <span className="material-symbols-outlined">description</span>
-              <span className="s04-context-label">追加コンテキスト</span>
-              <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
-            </summary>
-            <div className="s04-context-body">{additionalContext}</div>
-          </details>
         ) : null}
         actions={connectionState !== "connected" ? (
           <button
@@ -428,11 +417,6 @@ function ResponseActions(
 function getSelectionLabel(preview: string): string {
   const firstLine = preview.split("\n")[0].trim();
   return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
-}
-
-function getContextPreview(value: string): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > 80 ? `${normalized.slice(0, 80)}...` : normalized;
 }
 
 function formatConnectionState(state: string): string {

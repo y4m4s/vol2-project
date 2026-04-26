@@ -75,13 +75,9 @@
   color: var(--vscode-foreground);
 }
 
-.s08-item.current {
-  border-color: color-mix(in srgb, var(--vscode-button-background) 52%, var(--vscode-panel-border));
-  background: color-mix(in srgb, var(--vscode-button-background) 8%, var(--vscode-editorWidget-background));
-}
-
 .s08-item:hover {
   border-color: color-mix(in srgb, var(--vscode-button-background) 46%, var(--vscode-panel-border));
+  background: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 64%, var(--vscode-editorWidget-background));
 }
 
 .s08-item-main {
@@ -103,7 +99,6 @@
 
 .s08-item-main:hover:not(:disabled) {
   opacity: 1;
-  background: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 64%, transparent);
 }
 
 .s08-item-copy {
@@ -114,7 +109,7 @@
 }
 
 .s08-context-preview {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
@@ -122,6 +117,12 @@
   color: var(--vscode-descriptionForeground);
   font-size: 0.78em;
   line-height: 1.35;
+  overflow: hidden;
+}
+
+.s08-context-text {
+  flex: 1 1 0;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

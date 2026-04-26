@@ -11,7 +11,6 @@ export function S08History() {
 
   const {
     conversationStreams,
-    activeConversationStreamId,
     isBusy
   } = viewModel;
 
@@ -47,12 +46,10 @@ export function S08History() {
         </div>
       ) : (
         <div className="s08-list">
-          {conversationStreams.map((stream) => {
-            const isCurrent = stream.id === activeConversationStreamId;
-            return (
+          {conversationStreams.map((stream) => (
               <div
                 key={stream.id}
-                className={`s08-item ${isCurrent ? "current" : ""}`}
+                className="s08-item"
               >
                 <button
                   className="s08-item-main"
@@ -64,7 +61,7 @@ export function S08History() {
                     {stream.additionalContext && (
                       <span className="s08-context-preview" title={stream.additionalContext}>
                         <span className="material-symbols-outlined">description</span>
-                        {getContextPreview(stream.additionalContext)}
+                        <span className="s08-context-text">{stream.additionalContext}</span>
                       </span>
                     )}
                   </span>
@@ -84,18 +81,13 @@ export function S08History() {
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function getContextPreview(value: string): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
-}
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);

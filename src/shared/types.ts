@@ -25,7 +25,7 @@ export type RequestState = "idle" | "connecting" | "requesting_guidance" | "savi
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
-export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
+export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
@@ -172,6 +172,7 @@ export interface NavigatorSessionState {
   knowledgeQuery: string;
   selectedKnowledgeId?: string;
   activeAdditionalContext?: string;
+  pendingAdditionalContext?: string;
 }
 
 export interface NavigatorViewModel {
@@ -189,6 +190,7 @@ export interface NavigatorViewModel {
   latestGuidance?: GuidanceCard;
   conversationStreams: ConversationStreamListItem[];
   activeConversationStreamId?: string;
+  activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
   selectedAdvice?: AdviceDetailViewData;
   currentRequestPlan: RequestPlanSnapshot;

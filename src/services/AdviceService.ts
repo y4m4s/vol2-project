@@ -28,7 +28,6 @@ export interface GuidanceRequestInput {
   context: GuidanceContext;
   kind: GuidanceKind;
   userPrompt?: string;
-  previousAssistantText?: string;
   knowledgeItems?: KnowledgeRecord[];
 }
 
@@ -146,16 +145,19 @@ export class AdviceService {
   }
 
   private buildPrompt(input: GuidanceRequestInput): string {
-    const { context, kind, userPrompt, previousAssistantText, knowledgeItems } = input;
+    const { context, kind, userPrompt, knowledgeItems } = input;
     const lines: string[] = [
       "You are a pair programming navigator.",
-      "Your goal is to help the user think and move forward on their own. Never give the answer or fix directly.",
+      "Your default goal is to help the user think and move forward on their own.",
       "",
       "Rules:",
-      "- Do not state solutions, corrections, or direct answers. Guide the user to discover them.",
+      "- For implementation or debugging requests, do not state complete solutions or fixes. Guide the user to discover them.",
+      "- If the user asks about the contents, requirements, constraints, input/output, or meaning of the additional context, answer directly from the additional context.",
+      "- If the additional context looks like a coding test or problem statement, treat questions about 'the problem' as questions about that additional context.",
+      "- Do not drift into active-file code advice when the user's question is about the additional context itself.",
       "- Ignore noise from in-progress editing: unclosed braces, incomplete expressions, half-typed lines. These are not issues.",
       "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
-      "- Do not output code.",
+      "- Do not output code unless the user explicitly asks for code.",
       "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
       "- Write in a way that naturally leads the user to their next action — without prescribing exact wording or phrasing patterns.",
       "- Respond in Japanese. Be concise. Use 2–4 short points.",
@@ -214,10 +216,6 @@ export class AdviceService {
       lines.push("", "## ユーザーからの相談", userPrompt.trim());
     }
 
-    if (kind === "deep_dive" && previousAssistantText) {
-      lines.push("", "## 直前のアドバイス", previousAssistantText);
-    }
-
     lines.push(
       "",
       this.getInstructionByKind(kind)
@@ -229,9 +227,7 @@ export class AdviceService {
   private getInstructionByKind(kind: GuidanceKind): string {
     switch (kind) {
       case "manual":
-        return "ユーザーが質問しています。答えを直接伝えるのではなく、着目すべき場所・処理・関係性を示して、ユーザー自身が手を動かして確かめられるよう誘導してください。";
-      case "deep_dive":
-        return "前回の観点をさらに掘り下げます。より具体的な箇所・条件・データの流れに絞り込んで、ユーザーが自分で検証できる視点を順に示してください。";
+        return "ユーザーが質問しています。追加コンテキストの問題文・要件・制約・入出力・意味について尋ねている場合は、追加コンテキストを最優先にして直接説明してください。実装やデバッグの相談では、着目すべき場所・処理・関係性を示して、ユーザー自身が手を動かして確かめられるよう誘導してください。";
       case "always":
         return "今の編集の流れを見て、見落としやすい設計上の懸念・壊れやすい境界・次に影響が出そうな箇所があれば、それだけを短く指し示してください。書きかけのコードや構文の不完全さには触れないでください。何も気になる点がなければ何も返さないでください。";
       case "context":
