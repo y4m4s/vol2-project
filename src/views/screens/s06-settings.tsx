@@ -68,7 +68,7 @@ export function S06Settings() {
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
-          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
         ]}
       />
 

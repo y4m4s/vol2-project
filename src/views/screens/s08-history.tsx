@@ -19,20 +19,10 @@ export function S08History() {
       <PageHeader
         title="相談履歴"
         subtitle="過去の相談を開いて、続きから質問できます。"
-        actions={(
-          <button
-            className="s08-create-btn"
-            disabled={isBusy}
-            onClick={() => send({ type: "createConversationStream" })}
-          >
-            <span className="material-symbols-outlined">add</span>
-            新規
-          </button>
-        )}
         navIcons={[
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
           { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
         ]}
       />
 
