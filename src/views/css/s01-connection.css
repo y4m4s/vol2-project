@@ -1,6 +1,9 @@
 .s01-root {
   width: 100%;
-  padding-top: 18px;
+  min-height: calc(100vh - 24px);
+  display: flex;
+  align-items: center;
+  padding: 24px 0;
 }
 
 .s01-panel {
@@ -26,25 +29,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-align: center;
 }
 
-.s01-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 14px;
+.s01-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.s01-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.s01-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
 }
 
 .s01-title {
-  font-size: 1.24em;
-  font-weight: 700;
+  font-size: 1.6em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .s01-subtitle {

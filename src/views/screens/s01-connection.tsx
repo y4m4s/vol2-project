@@ -15,13 +15,12 @@ export function S01Connection() {
     <div className="s01-root">
       <div className="s01-panel">
         <div className="s01-hero">
-          <img src={window.__ICON_URI__} alt="NaviCom" className="s01-icon" />
-
-          <div className="s01-copy">
+          <div className="s01-brand">
+            <img src={window.__ICON_URI__} alt="NaviCom" className="s01-icon" />
             <div className="s01-title">NaviCom</div>
-            <div className="s01-subtitle">
-              GitHub Copilotと連携した学習支援コーディングアシスタントです。
-            </div>
+          </div>
+          <div className="s01-subtitle">
+            GitHub Copilotと連携した学習支援コーディングアシスタントです。
           </div>
         </div>
 

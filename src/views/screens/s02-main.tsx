@@ -50,10 +50,9 @@ export function S02Main() {
 
       <div className="s02-stage">
         <div className="s02-empty">
-          <img src={window.__ICON_URI__} alt="NaviCom" className="s02-empty-icon" />
-          <div className="s02-empty-title">ここから新しい会話を始めます</div>
-          <div className="s02-empty-desc">
-            最初の質問を送ると専用の会話画面に切り替わり、そのまま続けてやり取りできます。
+          <div className="s02-empty-brand">
+            <img src={window.__ICON_URI__} alt="NaviCom" className="s02-empty-icon" />
+            <div className="s02-empty-title">NaviCom</div>
           </div>
 
           <div className="s02-empty-points">

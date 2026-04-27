@@ -270,6 +270,7 @@ export class NavigatorController implements vscode.Disposable {
             latestGuidance: undefined,
             conversationHistory: [],
             selectedConversationId: undefined,
+            screenHistory: state.screenHistory.filter(s => s !== "conversation" && s !== "advice_detail"),
             screen: state.screen === "conversation" ? this.resolveHomeScreen(state.connectionState) : state.screen
           }
         : {})
@@ -801,11 +802,7 @@ export class NavigatorController implements vscode.Disposable {
           : "conversation",
       contextPreview: contextPreviewAfterCapture,
       conversationHistory: nextHistory,
-      activeAdditionalContext: nextActiveAdditionalContext,
-      statusMessage: {
-        kind: "info",
-        text: this.buildPendingGuidanceMessage(options.kind)
-      }
+      activeAdditionalContext: nextActiveAdditionalContext
     });
 
     const result = await this.adviceService.requestGuidance({
@@ -897,7 +894,7 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    this.hydrateConversationStream(existingStream);
+    this.hydrateConversationStream({ ...existingStream, additionalContext: undefined });
   }
 
   private resolveInitialConversationStream(): ConversationStreamRecord | undefined {
@@ -1341,18 +1338,6 @@ export class NavigatorController implements vscode.Disposable {
           kind: "info",
           text: "Copilot に接続しました。"
         };
-    }
-  }
-
-  private buildPendingGuidanceMessage(kind: GuidanceKind): string {
-    switch (kind) {
-      case "always":
-        return "現在の作業文脈をもとに自動フィードバックを生成しています...";
-      case "context":
-        return "現在の作業文脈をもとにガイダンスを生成しています...";
-      case "manual":
-      default:
-        return "質問内容と現在の作業文脈をもとにガイダンスを生成しています...";
     }
   }
 
