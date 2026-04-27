@@ -322,7 +322,9 @@ export class NavigatorController implements vscode.Disposable {
       case "main":
         this.patchSession({
           screen: this.resolveHomeScreen(state.connectionState),
-          selectedConversationId: undefined
+          selectedConversationId: undefined,
+          activeAdditionalContext: undefined,
+          pendingAdditionalContext: undefined
         });
         return;
       case "history":
@@ -447,6 +449,10 @@ export class NavigatorController implements vscode.Disposable {
         : {}),
       statusMessage: undefined
     });
+  }
+
+  public setComposerActive(active: boolean): void {
+    this.adviceScheduler.setComposerActive(active);
   }
 
   public toggleAutoPause(): void {
