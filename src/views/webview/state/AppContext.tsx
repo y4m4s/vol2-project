@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useReducer, useState } from "react";
+import { createContext, useContext, useEffect, useReducer, useState } from "react";
+import type { ReactNode } from "react";
 import type { ExtensionToWebview, WebviewToExtension } from "../../../shared/messages";
 import type { NavigatorScreen, NavigatorViewModel } from "../../../shared/types";
 import { postMessage } from "./vscodeApi";
@@ -14,7 +15,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [additionalContextDraft, setAdditionalContextDraft] = useState("");
 

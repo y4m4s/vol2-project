@@ -1,4 +1,3 @@
-import React from "react";
 import { useApp } from "../webview/state/AppContext";
 
 declare global {

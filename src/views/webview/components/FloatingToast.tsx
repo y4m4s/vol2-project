@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { NavigatorStatusMessage } from "../../../shared/types";
 
 type FloatingToastKind = NavigatorStatusMessage["kind"] | "success";
@@ -29,7 +29,7 @@ export function FloatingToast({
   progress
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
-  const dismissedSignatureRef = useRef<string>();
+  const dismissedSignatureRef = useRef<string | undefined>(undefined);
 
   const signature = useMemo(
     () => [kind, icon ?? "", title ?? "", message, progress ?? "", persist ? "persist" : "auto"].join("\n"),

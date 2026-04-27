@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { useApp } from "../state/AppContext";
 
 type BackButtonProps = {
@@ -15,12 +15,12 @@ export type NavIconDef = {
 };
 
 type PageHeaderProps = {
-  title: React.ReactNode;
-  subtitle?: React.ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
   back?: false | BackButtonProps;
-  status?: React.ReactNode;
-  extraContent?: React.ReactNode;
-  actions?: React.ReactNode;
+  status?: ReactNode;
+  extraContent?: ReactNode;
+  actions?: ReactNode;
   navIcons?: NavIconDef[];
   className?: string;
 };

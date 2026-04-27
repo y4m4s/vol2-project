@@ -1,7 +1,7 @@
-import React from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
+import { formatConnectionState } from "../webview/utils/formatState";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -94,21 +94,4 @@ export function S02Main() {
       <ChatInputComposer />
     </div>
   );
-}
-
-function formatConnectionState(state: string): string {
-  switch (state) {
-    case "connected":
-      return "接続済み";
-    case "connecting":
-      return "接続中...";
-    case "consent_pending":
-      return "同意待ち";
-    case "restricted":
-      return "制限中";
-    case "unavailable":
-      return "利用不可";
-    default:
-      return "未接続";
-  }
 }

@@ -1,6 +1,7 @@
-import React from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
+import { formatDateTime } from "../webview/utils/formatTime";
+import { SearchBar } from "../webview/components/SearchBar";
 
 export function S05Knowledge() {
   const { viewModel, send } = useApp();
@@ -24,15 +25,7 @@ export function S05Knowledge() {
           ]}
         />
 
-        <div className="search-bar">
-          <span className="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            placeholder="検索..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </div>
+        <SearchBar value={searchQuery} onChange={handleSearch} />
       </div>
 
       {items.length === 0 ? (
@@ -73,17 +66,4 @@ export function S05Knowledge() {
       )}
     </div>
   );
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
 }

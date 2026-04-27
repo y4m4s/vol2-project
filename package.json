@@ -86,9 +86,9 @@
   "scripts": {
     "compile": "npm run compile:ext && npm run build:webview",
     "compile:ext": "tsc -p ./",
-    "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020",
+    "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
     "watch": "tsc -watch -p ./",
-    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --watch",
+    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {

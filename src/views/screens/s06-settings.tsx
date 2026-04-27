@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
+import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import type { AdviceMode } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
@@ -20,23 +21,13 @@ export function S06Settings() {
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
-  const excludeTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
 
   useEffect(() => {
     setDefaultMode(savedDefaultMode);
     setIdleDelaySec(savedIdleDelaySec);
     setExcludeGlobs(savedExcludeGlobs);
   }, [savedDefaultMode, savedIdleDelaySec, savedExcludeGlobs]);
-
-  useEffect(() => {
-    const el = excludeTextareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [excludeGlobs]);
 
   const hasPendingChanges =
     defaultMode !== savedDefaultMode ||

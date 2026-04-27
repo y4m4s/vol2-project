@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { useApp } from "../webview/state/AppContext";
 
 export function S07Error() {

@@ -181,11 +181,7 @@ export class NavigatorController implements vscode.Disposable {
 
     this.patchSession({
       requestState: "connecting",
-      connectionState: "connecting",
-      statusMessage: {
-        kind: "info",
-        text: "Copilot への接続を確認しています..."
-      }
+      connectionState: "connecting"
     });
 
     const connectionState = await this.connectionService.connect();
@@ -297,18 +293,6 @@ export class NavigatorController implements vscode.Disposable {
     await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
   }
 
-
-  public selectConversation(conversationId: string): void {
-    const entry = this.sessionStore.getState().conversationHistory.find((item) => item.id === conversationId && item.role === "assistant");
-    if (!entry) {
-      return;
-    }
-
-    this.pushScreen("advice_detail");
-    this.patchSession({
-      selectedConversationId: conversationId
-    });
-  }
 
   public navigate(screen: NavigatorScreen): void {
     const state = this.sessionStore.getState();

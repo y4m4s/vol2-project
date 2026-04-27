@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
+import { formatRelativeTime } from "../webview/utils/formatTime";
+import { SearchBar } from "../webview/components/SearchBar";
 
 export function S08History() {
   const { viewModel, send } = useApp();
@@ -31,15 +33,7 @@ export function S08History() {
           ]}
         />
 
-        <div className="search-bar">
-          <span className="material-symbols-outlined search-icon">search</span>
-          <input
-            type="text"
-            placeholder="履歴を検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="履歴を検索..." />
       </div>
 
       {conversationStreams.length === 0 ? (
@@ -95,31 +89,4 @@ export function S08History() {
         )}
     </div>
   );
-}
-
-function formatRelativeTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  const diffMs = Date.now() - date.getTime();
-  if (diffMs < 0) {
-    return "まもなく";
-  }
-
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  const week = 7 * day;
-  const month = 30 * day;
-  const year = 365 * day;
-
-  if (diffMs < minute) return "たった今";
-  if (diffMs < hour) return `${Math.floor(diffMs / minute)}分前`;
-  if (diffMs < day) return `${Math.floor(diffMs / hour)}時間前`;
-  if (diffMs < week) return `${Math.floor(diffMs / day)}日前`;
-  if (diffMs < month) return `${Math.floor(diffMs / week)}週間前`;
-  if (diffMs < year) return `${Math.floor(diffMs / month)}か月前`;
-  return `${Math.floor(diffMs / year)}年前`;
 }

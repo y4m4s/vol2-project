@@ -201,7 +201,7 @@ export class AdviceService {
     }
 
     if (context.additionalContext) {
-      lines.push("", "追加コンテキスト:", "```", this.truncate(context.additionalContext, 4000), "```");
+      lines.push("", "追加コンテキスト:", "```", context.additionalContext, "```");
     }
 
     if (knowledgeItems && knowledgeItems.length > 0) {

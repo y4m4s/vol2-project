@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { AutoAdviceState } from "../../../shared/types";
 import { useApp } from "../state/AppContext";
 import {
@@ -6,6 +7,8 @@ import {
   AdditionalContextPanel,
   AdditionalContextReadonlyPanel
 } from "./AdditionalContextComposer";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
+import { getSelectionLabel } from "../utils/labelUtils";
 
 interface ChatInputComposerProps {
   resetKey?: string;
@@ -15,23 +18,13 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const { viewModel, send, additionalContextDraft, setAdditionalContextDraft } = useApp();
   const [inputText, setInputText] = useState("");
   const [isAdditionalContextOpen, setAdditionalContextOpen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useAutoResizeTextarea(inputText);
   const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
   const isConversationComposer = viewModel?.screen === "conversation" || viewModel?.screen === "advice_detail";
   const isAdditionalContextReadonly = isConversationComposer && activeAdditionalContext.trim().length > 0;
   const hasAdditionalContext = (
     isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft
   ).trim().length > 0;
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [inputText]);
 
   useEffect(() => {
     setInputText("");
@@ -45,11 +38,11 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
   useEffect(() => {
     send({ type: "setAdditionalContext", additionalContext: additionalContextDraft });
-  }, [additionalContextDraft]);
+  }, [additionalContextDraft, send]);
 
   useEffect(() => {
     send({ type: "setComposerActive", active: Boolean(inputText.trim()) });
-  }, [inputText]);
+  }, [inputText, send]);
 
   if (!viewModel) {
     return null;
@@ -81,7 +74,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setInputText("");
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -185,10 +178,6 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   );
 }
 
-function getSelectionLabel(preview: string): string {
-  const firstLine = preview.split("\n")[0].trim();
-  return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
-}
 
 function getAutoStatusText(autoAdvice: AutoAdviceState): string {
   if (autoAdvice.paused) {

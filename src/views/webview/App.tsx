@@ -1,4 +1,3 @@
-import React from "react";
 import { useApp } from "./state/AppContext";
 import { S01Connection } from "../screens/s01-connection";
 import { S02Main } from "../screens/s02-main";
@@ -28,6 +27,7 @@ export function App() {
       {renderScreen(screen)}
       <StatusMessageToast />
       <KnowledgeSaveToast />
+      <AlwaysModeRequestingToast />
     </>
   );
 }
@@ -98,6 +98,25 @@ function StatusMessageToast() {
       open={!shouldSuppress}
       kind={statusMessage?.kind}
       message={statusMessage?.text ?? ""}
+    />
+  );
+}
+
+function AlwaysModeRequestingToast() {
+  const { viewModel } = useApp();
+  const open =
+    viewModel?.screen === "main" &&
+    viewModel?.requestState === "requesting_guidance";
+
+  return (
+    <FloatingToast
+      open={open}
+      kind="info"
+      icon="auto_awesome"
+      title="回答を生成しています"
+      message="現在の作業文脈をもとに自動でフィードバックを生成しています。"
+      persist
+      progress="running"
     />
   );
 }

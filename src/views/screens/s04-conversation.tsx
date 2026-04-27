@@ -1,7 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
+import { formatTime } from "../webview/utils/formatTime";
+import { formatConnectionState } from "../webview/utils/formatState";
+import { getSelectionLabel } from "../webview/utils/labelUtils";
 import type { ConversationEntry } from "../../shared/types";
 
 declare global {
@@ -299,8 +303,8 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   return blocks.length > 0 ? blocks : [{ type: "paragraph", text }];
 }
 
-function renderInlineMarkdown(text: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
+function renderInlineMarkdown(text: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
   const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -417,27 +421,6 @@ function ResponseActions(
   );
 }
 
-function getSelectionLabel(preview: string): string {
-  const firstLine = preview.split("\n")[0].trim();
-  return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
-}
-
-function formatConnectionState(state: string): string {
-  switch (state) {
-    case "connected":
-      return "接続済み";
-    case "connecting":
-      return "接続中...";
-    case "consent_pending":
-      return "同意待ち";
-    case "restricted":
-      return "制限中";
-    case "unavailable":
-      return "利用不可";
-    default:
-      return "未接続";
-  }
-}
 
 function ThinkingIndicator() {
   return (
@@ -455,11 +438,4 @@ function ThinkingIndicator() {
       </div>
     </div>
   );
-}
-
-function formatTime(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
 }

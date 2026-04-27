@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 
 interface AdditionalContextButtonProps {
   open: boolean;
@@ -40,17 +40,7 @@ export function AdditionalContextButton({ open, hasValue, readOnly = false, onCl
 }
 
 export function AdditionalContextPanel({ id, value, onChange }: AdditionalContextPanelProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [value]);
+  const textareaRef = useAutoResizeTextarea(value);
 
   function handleClear() {
     onChange("");

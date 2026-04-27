@@ -54,9 +54,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
             return;
-          case "askContext":
-            await this.controller.askForGuidance(undefined, "context");
-            return;
           case "setMode":
             await this.controller.setMode(message.mode, message.additionalContext);
             return;
