@@ -37,11 +37,19 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setInputText("");
     setAdditionalContextDraft(activeAdditionalContext);
     setAdditionalContextOpen(false);
-  }, [resetKey, activeAdditionalContext, setAdditionalContextDraft]);
+    // activeAdditionalContext を deps に含めない:
+    // main 画面で追加コンテキストを入力するたびにラウンドトリップで変化するため、
+    // 入力中にメイン入力欄がクリアされたりパネルが閉じるのを防ぐ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
 
   useEffect(() => {
     send({ type: "setAdditionalContext", additionalContext: additionalContextDraft });
   }, [additionalContextDraft]);
+
+  useEffect(() => {
+    send({ type: "setComposerActive", active: Boolean(inputText.trim()) });
+  }, [inputText]);
 
   if (!viewModel) {
     return null;
@@ -71,7 +79,6 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       additionalContext: additionalContextDraft
     });
     setInputText("");
-    setAdditionalContextOpen(Boolean(additionalContextDraft.trim()));
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {

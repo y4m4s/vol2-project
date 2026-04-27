@@ -25,7 +25,8 @@ export type WebviewToExtension =
   | { type: "saveSettings"; payload: SaveSettingsPayload }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
-  | { type: "setAdditionalContext"; additionalContext: string };
+  | { type: "setAdditionalContext"; additionalContext: string }
+  | { type: "setComposerActive"; active: boolean };
 
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;

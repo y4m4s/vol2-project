@@ -36,6 +36,8 @@ export function S04Conversation() {
     savedKnowledgeSourceIds
   } = viewModel;
 
+  const isThinking = requestState === "requesting_guidance";
+
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
 
   return (
@@ -90,6 +92,8 @@ export function S04Conversation() {
             onSave={(id) => send({ type: "saveKnowledge", id })}
           />
         ))}
+
+        {isThinking && <ThinkingIndicator />}
 
         <div ref={chatBottomRef} />
       </div>
@@ -433,6 +437,24 @@ function formatConnectionState(state: string): string {
     default:
       return "未接続";
   }
+}
+
+function ThinkingIndicator() {
+  return (
+    <div className="s04-bubble-wrap assistant">
+      <div className="s04-bubble-meta">
+        <span className="material-symbols-outlined s04-bubble-icon">smart_toy</span>
+        <span className="s04-bubble-role">NaviCom</span>
+      </div>
+      <div className="s04-bubble assistant">
+        <div className="s04-thinking">
+          <span className="s04-thinking-dot" />
+          <span className="s04-thinking-dot" />
+          <span className="s04-thinking-dot" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function formatTime(value: string): string {
