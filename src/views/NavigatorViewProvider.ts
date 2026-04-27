@@ -63,6 +63,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "toggleAutoPause":
             this.controller.toggleAutoPause();
             return;
+          case "setComposerActive":
+            this.controller.setComposerActive(message.active);
+            return;
           case "navigate":
             this.controller.navigate(message.screen);
             return;

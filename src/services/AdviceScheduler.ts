@@ -35,6 +35,7 @@ export class AdviceScheduler implements vscode.Disposable {
   };
 
   private paused = false;
+  private composerActive = false;
   private pendingTriggerReason?: AdviceTriggerReason;
   private lastActivityAt?: number;
   private lastAdviceAt?: number;
@@ -63,6 +64,9 @@ export class AdviceScheduler implements vscode.Disposable {
   }
 
   public handleActivity(reason: AdviceTriggerReason): void {
+    // エディタ操作が来たら入力一時停止を解除
+    this.composerActive = false;
+
     if (!this.isModeEnabledForUi()) {
       this.pendingTriggerReason = undefined;
       this.lastActivityAt = undefined;
@@ -76,6 +80,27 @@ export class AdviceScheduler implements vscode.Disposable {
 
     if (this.isModeActive()) {
       this.ensureScheduled();
+    }
+
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
+  }
+
+  public setComposerActive(active: boolean): void {
+    if (this.composerActive === active) {
+      return;
+    }
+    this.composerActive = active;
+
+    if (active) {
+      // 入力開始: タイマーだけ止め、ペンディングトリガーは保持
+      this.clearTimers();
+    } else {
+      // 入力終了: アイドルタイマーをリセットして再開
+      this.lastActivityAt = Date.now();
+      if (this.pendingTriggerReason) {
+        this.ensureScheduled();
+      }
     }
 
     this.syncTicker();
@@ -126,6 +151,12 @@ export class AdviceScheduler implements vscode.Disposable {
 
   private ensureScheduled(): void {
     if (!this.isModeActive() || !this.pendingTriggerReason) {
+      this.clearTimers();
+      return;
+    }
+
+    // 入力中はタイマーを止めてペンディングを保持
+    if (this.composerActive) {
       this.clearTimers();
       return;
     }
