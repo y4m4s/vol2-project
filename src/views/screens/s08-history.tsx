@@ -11,7 +11,6 @@ export function S08History() {
 
   const {
     conversationStreams,
-    activeConversationStreamId,
     isBusy
   } = viewModel;
 
@@ -20,20 +19,10 @@ export function S08History() {
       <PageHeader
         title="相談履歴"
         subtitle="過去の相談を開いて、続きから質問できます。"
-        actions={(
-          <button
-            className="s08-create-btn"
-            disabled={isBusy}
-            onClick={() => send({ type: "createConversationStream" })}
-          >
-            <span className="material-symbols-outlined">add</span>
-            新規
-          </button>
-        )}
         navIcons={[
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
           { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
         ]}
       />
 
@@ -47,12 +36,10 @@ export function S08History() {
         </div>
       ) : (
         <div className="s08-list">
-          {conversationStreams.map((stream) => {
-            const isCurrent = stream.id === activeConversationStreamId;
-            return (
+          {conversationStreams.map((stream) => (
               <div
                 key={stream.id}
-                className={`s08-item ${isCurrent ? "current" : ""}`}
+                className="s08-item"
               >
                 <button
                   className="s08-item-main"
@@ -64,7 +51,7 @@ export function S08History() {
                     {stream.additionalContext && (
                       <span className="s08-context-preview" title={stream.additionalContext}>
                         <span className="material-symbols-outlined">description</span>
-                        {getContextPreview(stream.additionalContext)}
+                        <span className="s08-context-text">{stream.additionalContext}</span>
                       </span>
                     )}
                   </span>
@@ -84,18 +71,13 @@ export function S08History() {
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function getContextPreview(value: string): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
-}
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);

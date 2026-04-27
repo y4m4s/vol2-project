@@ -37,7 +37,6 @@ export function S04Conversation() {
   } = viewModel;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
-  const additionalContext = activeStream?.additionalContext;
 
   return (
     <div className="s04-root">
@@ -53,16 +52,6 @@ export function S04Conversation() {
             {formatConnectionState(connectionState)}
           </span>
         ) : null}
-        extraContent={additionalContext ? (
-          <details className="s04-context-details">
-            <summary title={additionalContext}>
-              <span className="material-symbols-outlined">description</span>
-              <span className="s04-context-label">追加コンテキスト</span>
-              <span className="s04-context-preview">{getContextPreview(additionalContext)}</span>
-            </summary>
-            <div className="s04-context-body">{additionalContext}</div>
-          </details>
-        ) : null}
         actions={connectionState !== "connected" ? (
           <button
             className="s04-connect-btn"
@@ -74,11 +63,10 @@ export function S04Conversation() {
           </button>
         ) : null}
         navIcons={[
-          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "createConversationStream" }) },
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
           { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
         ]}
       />
 
@@ -428,11 +416,6 @@ function ResponseActions(
 function getSelectionLabel(preview: string): string {
   const firstLine = preview.split("\n")[0].trim();
   return firstLine.length > 96 ? `${firstLine.slice(0, 96)}...` : firstLine;
-}
-
-function getContextPreview(value: string): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > 80 ? `${normalized.slice(0, 80)}...` : normalized;
 }
 
 function formatConnectionState(state: string): string {

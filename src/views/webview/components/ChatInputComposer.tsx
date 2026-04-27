@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { AutoAdviceState } from "../../../shared/types";
 import { useApp } from "../state/AppContext";
-import { AdditionalContextButton, AdditionalContextPanel } from "./AdditionalContextComposer";
+import {
+  AdditionalContextButton,
+  AdditionalContextPanel,
+  AdditionalContextReadonlyPanel
+} from "./AdditionalContextComposer";
 
 interface ChatInputComposerProps {
   resetKey?: string;
@@ -12,6 +16,12 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const [inputText, setInputText] = useState("");
   const [isAdditionalContextOpen, setAdditionalContextOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
+  const isConversationComposer = viewModel?.screen === "conversation" || viewModel?.screen === "advice_detail";
+  const isAdditionalContextReadonly = isConversationComposer && activeAdditionalContext.trim().length > 0;
+  const hasAdditionalContext = (
+    isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft
+  ).trim().length > 0;
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -25,9 +35,13 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
   useEffect(() => {
     setInputText("");
-    setAdditionalContextDraft("");
+    setAdditionalContextDraft(activeAdditionalContext);
     setAdditionalContextOpen(false);
-  }, [resetKey, setAdditionalContextDraft]);
+  }, [resetKey, activeAdditionalContext, setAdditionalContextDraft]);
+
+  useEffect(() => {
+    send({ type: "setAdditionalContext", additionalContext: additionalContextDraft });
+  }, [additionalContextDraft]);
 
   if (!viewModel) {
     return null;
@@ -44,7 +58,6 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
-  const hasAdditionalContext = additionalContextDraft.trim().length > 0;
 
   function handleSend() {
     const text = inputText.trim();
@@ -58,8 +71,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       additionalContext: additionalContextDraft
     });
     setInputText("");
-    setAdditionalContextDraft("");
-    setAdditionalContextOpen(false);
+    setAdditionalContextOpen(Boolean(additionalContextDraft.trim()));
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -82,11 +94,18 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
         )}
 
         {isAdditionalContextOpen && (
-          <AdditionalContextPanel
-            id="chat-additional-context"
-            value={additionalContextDraft}
-            onChange={setAdditionalContextDraft}
-          />
+          isAdditionalContextReadonly ? (
+            <AdditionalContextReadonlyPanel
+              id="chat-additional-context"
+              value={activeAdditionalContext}
+            />
+          ) : (
+            <AdditionalContextPanel
+              id="chat-additional-context"
+              value={additionalContextDraft}
+              onChange={setAdditionalContextDraft}
+            />
+          )
         )}
 
         <textarea
@@ -101,11 +120,14 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
         <div className="chat-input-footer">
           <div className="chat-input-footer-left">
-            <AdditionalContextButton
-              open={isAdditionalContextOpen}
-              hasValue={hasAdditionalContext}
-              onClick={() => setAdditionalContextOpen((open) => !open)}
-            />
+            {(!isConversationComposer || hasAdditionalContext) && (
+              <AdditionalContextButton
+                open={isAdditionalContextOpen}
+                hasValue={hasAdditionalContext}
+                readOnly={isAdditionalContextReadonly}
+                onClick={() => setAdditionalContextOpen((open) => !open)}
+              />
+            )}
           </div>
 
           <div className="chat-input-footer-right">
@@ -132,7 +154,11 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
               className={`chat-mode-btn ${isAlways ? "always" : ""}`}
               title={isAlways ? "必要時モードへ切り替え" : "常時モードへ切り替え"}
               disabled={!canSwitchMode && !isAlways}
-              onClick={() => send({ type: "setMode", mode: isAlways ? "manual" : "always" })}
+              onClick={() => send({
+                type: "setMode",
+                mode: isAlways ? "manual" : "always",
+                additionalContext: isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft
+              })}
             >
               <span className="material-symbols-outlined">bolt</span>
               {isAlways ? "常時" : "必要時"}

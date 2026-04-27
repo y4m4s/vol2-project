@@ -38,7 +38,6 @@ const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 interface GuidanceExecutionOptions {
   kind: GuidanceKind;
   userPrompt?: string;
-  previousAssistantText?: string;
   prepared?: PreparedGuidanceRequest;
   preview?: NavigatorSessionState["contextPreview"];
   triggerReason?: AdviceTriggerReason;
@@ -165,6 +164,7 @@ export class NavigatorController implements vscode.Disposable {
       latestGuidance: state.latestGuidance,
       conversationStreams: state.conversationStreams,
       activeConversationStreamId: state.activeConversationStreamId,
+      activeAdditionalContext: this.getVisibleAdditionalContext(state),
       conversationHistory: state.conversationHistory,
       selectedAdvice: this.buildSelectedAdvice(state),
       currentRequestPlan,
@@ -289,7 +289,9 @@ export class NavigatorController implements vscode.Disposable {
     await this.executeGuidanceRequest({
       kind: guidanceKind,
       userPrompt: userPrompt?.trim(),
-      additionalContext: this.resolveAdditionalContext(additionalContext, this.getStreamAdditionalContext(this.sessionStore.getState()))
+      additionalContext: additionalContext !== undefined
+        ? additionalContext
+        : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState()))
     });
   }
 
@@ -297,25 +299,6 @@ export class NavigatorController implements vscode.Disposable {
     await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
   }
 
-
-  public async deepDiveSelectedAdvice(): Promise<void> {
-    const selected = this.findSelectedConversation(this.sessionStore.getState());
-    if (!selected) {
-      this.patchSession({
-        statusMessage: {
-          kind: "warning",
-          text: "深掘りするアドバイスを先に選択してください。"
-        }
-      });
-      return;
-    }
-
-    await this.executeGuidanceRequest({
-      kind: "deep_dive",
-      userPrompt: "直前のアドバイスをもう少し具体的に説明してください。",
-      previousAssistantText: selected.text
-    });
-  }
 
   public selectConversation(conversationId: string): void {
     const entry = this.sessionStore.getState().conversationHistory.find((item) => item.id === conversationId && item.role === "assistant");
@@ -398,7 +381,15 @@ export class NavigatorController implements vscode.Disposable {
 
     await this.settingsService.saveSettings(nextSettings);
 
+    const isConnected = this.connectionService.getState() === "connected";
+    const canApplyAlways = input.defaultMode !== "always" || isConnected;
+
+    if (input.defaultMode === "always" && isConnected) {
+      this.adviceScheduler.resetPause();
+    }
+
     this.patchSession({
+      ...(canApplyAlways ? { mode: input.defaultMode } : {}),
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
       statusMessage: {
         kind: "info",
@@ -410,6 +401,7 @@ export class NavigatorController implements vscode.Disposable {
   public async resetSettings(): Promise<void> {
     await this.settingsService.resetSettings();
     this.patchSession({
+      mode: "manual",
       statusMessage: {
         kind: "info",
         text: "設定を初期値に戻しました。"
@@ -417,16 +409,9 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public async setMode(mode: AdviceMode): Promise<void> {
-    if (mode === "manual") {
-      this.patchSession({
-        mode,
-        statusMessage: undefined
-      });
-      return;
-    }
-
-    if (this.connectionService.getState() !== "connected") {
+  public async setMode(mode: AdviceMode, additionalContext?: string): Promise<void> {
+    const isConnected = this.connectionService.getState() === "connected";
+    if (mode === "always" && !isConnected) {
       this.patchSession({
         statusMessage: {
           kind: "warning",
@@ -436,9 +421,30 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    this.adviceScheduler.resetPause();
+    await this.settingsService.saveSettings({
+      ...this.settingsService.getSettings(),
+      defaultMode: mode
+    });
+
+    if (mode === "always") {
+      this.adviceScheduler.resetPause();
+    }
+
+    const state = this.sessionStore.getState();
+    const receivedAdditionalContext = additionalContext !== undefined;
+    const normalizedAdditionalContext = this.normalizeAdditionalContext(additionalContext);
+
     this.patchSession({
       mode,
+      ...(receivedAdditionalContext && state.screen === "main" && mode === "always"
+        ? {
+            activeAdditionalContext: normalizedAdditionalContext,
+            pendingAdditionalContext: normalizedAdditionalContext
+          }
+        : {}),
+      ...(receivedAdditionalContext && state.screen !== "main"
+        ? { activeAdditionalContext: normalizedAdditionalContext }
+        : {}),
       statusMessage: undefined
     });
   }
@@ -458,6 +464,16 @@ export class NavigatorController implements vscode.Disposable {
     this.adviceScheduler.togglePaused();
     this.patchSession({
       statusMessage: undefined
+    });
+  }
+
+  public setAdditionalContext(additionalContext: string): void {
+    const state = this.sessionStore.getState();
+    if (state.screen !== "main") {
+      return;
+    }
+    this.patchSession({
+      pendingAdditionalContext: this.normalizeAdditionalContext(additionalContext)
     });
   }
 
@@ -613,8 +629,9 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
+    const additionalContext = this.getGuidanceAdditionalContext(state);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
+      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), additionalContext),
       preview,
       settings,
       "always"
@@ -643,7 +660,8 @@ export class NavigatorController implements vscode.Disposable {
       kind: "always",
       prepared,
       preview,
-      triggerReason: reason
+      triggerReason: reason,
+      additionalContext
     });
 
     if (result.ok) {
@@ -657,7 +675,10 @@ export class NavigatorController implements vscode.Disposable {
     additionalContext?: string
   ): GuidanceExecutionOptions {
     const state = this.sessionStore.getState();
-    const effectiveAdditionalContext = this.resolveAdditionalContext(additionalContext, this.getStreamAdditionalContext(state));
+    const receivedAdditionalContext = additionalContext !== undefined;
+    const effectiveAdditionalContext = receivedAdditionalContext
+      ? this.normalizeAdditionalContext(additionalContext)
+      : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(state));
     const livePreview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const liveContext = this.contextCollector.collectGuidanceContext();
     const stickySelectionAvailable = Boolean(
@@ -673,7 +694,7 @@ export class NavigatorController implements vscode.Disposable {
         kind,
         userPrompt,
         preview: livePreview,
-        additionalContext: effectiveAdditionalContext
+        additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext
       };
     }
 
@@ -700,7 +721,7 @@ export class NavigatorController implements vscode.Disposable {
       userPrompt,
       preview,
       prepared,
-      additionalContext: effectiveAdditionalContext
+      additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext
     };
   }
 
@@ -725,12 +746,21 @@ export class NavigatorController implements vscode.Disposable {
 
     state = await this.prepareConversationForGuidance(state, options.kind);
 
+    const fallbackAdditionalContext = this.getGuidanceAdditionalContext(state);
+    const receivedAdditionalContext = options.additionalContext !== undefined;
     const incomingAdditionalContext = this.normalizeAdditionalContext(options.additionalContext);
-    const effectiveAdditionalContext = this.resolveAdditionalContext(incomingAdditionalContext, this.getStreamAdditionalContext(state));
-    if (incomingAdditionalContext && incomingAdditionalContext !== state.activeAdditionalContext) {
+    const effectiveAdditionalContext = receivedAdditionalContext
+      ? incomingAdditionalContext
+      : this.resolveAdditionalContext(undefined, fallbackAdditionalContext);
+    const nextActiveAdditionalContext = receivedAdditionalContext
+      ? incomingAdditionalContext
+      : state.screen === "main"
+        ? effectiveAdditionalContext
+        : state.activeAdditionalContext;
+    if (nextActiveAdditionalContext !== state.activeAdditionalContext) {
       state = {
         ...state,
-        activeAdditionalContext: incomingAdditionalContext
+        activeAdditionalContext: nextActiveAdditionalContext
       };
     }
 
@@ -763,15 +793,15 @@ export class NavigatorController implements vscode.Disposable {
       requestState: "requesting_guidance",
       connectionState: this.connectionService.getState(),
       screen:
-        options.kind === "always" || options.kind === "deep_dive"
+        options.kind === "always"
           ? state.screen
           : "conversation",
       contextPreview: contextPreviewAfterCapture,
       conversationHistory: nextHistory,
-      ...(incomingAdditionalContext ? { activeAdditionalContext: incomingAdditionalContext } : {}),
+      activeAdditionalContext: nextActiveAdditionalContext,
       statusMessage: {
         kind: "info",
-        text: this.buildPendingGuidanceMessage(options.kind, options.triggerReason)
+        text: this.buildPendingGuidanceMessage(options.kind)
       }
     });
 
@@ -779,7 +809,6 @@ export class NavigatorController implements vscode.Disposable {
       context: prepared.context,
       kind: options.kind,
       userPrompt: options.userPrompt?.trim(),
-      previousAssistantText: options.previousAssistantText,
       knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
     });
 
@@ -809,6 +838,8 @@ export class NavigatorController implements vscode.Disposable {
         contextPreview: refreshedPreview,
         latestGuidance: this.createGuidanceCard(assistantEntry),
         conversationHistory: updatedHistory,
+        activeAdditionalContext: nextActiveAdditionalContext,
+        pendingAdditionalContext: undefined,
         selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
         statusMessage: undefined
       });
@@ -831,7 +862,7 @@ export class NavigatorController implements vscode.Disposable {
       mode: nextMode,
       contextPreview: refreshedPreview,
       conversationHistory: nextHistory,
-      ...(incomingAdditionalContext ? { activeAdditionalContext: incomingAdditionalContext } : {}),
+      activeAdditionalContext: nextActiveAdditionalContext,
       statusMessage: {
         kind: "error",
         text:
@@ -891,7 +922,7 @@ export class NavigatorController implements vscode.Disposable {
       return this.ensureActiveConversationStream();
     }
 
-    if (kind !== "deep_dive" && state.screen === "main") {
+    if (state.screen === "main") {
       return this.createNewActiveConversationStream();
     }
 
@@ -903,11 +934,13 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private async createNewActiveConversationStream(): Promise<NavigatorSessionState> {
+    const currentState = this.sessionStore.getState();
+    const additionalContext = this.getGuidanceAdditionalContext(currentState);
     await this.discardActiveConversationIfEmpty();
     const record = await this.conversationStore.createStream();
     await this.conversationStore.setActiveStream(record.id);
     this.lastAutomaticContextFingerprint = undefined;
-    this.hydrateConversationStream(record);
+    this.hydrateConversationStream({ ...record, additionalContext });
     return this.sessionStore.getState();
   }
 
@@ -1060,7 +1093,7 @@ export class NavigatorController implements vscode.Disposable {
       createdAt: existing?.createdAt ?? now,
       updatedAt: existing?.updatedAt ?? now,
       entries,
-      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext ?? existing?.additionalContext)
+      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext)
     };
   }
 
@@ -1222,10 +1255,6 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private resolveScreenAfterSuccess(kind: GuidanceKind, currentScreen: NavigatorScreen): NavigatorScreen {
-    if (kind === "deep_dive") {
-      return "conversation";
-    }
-
     if (kind === "always") {
       return currentScreen === "main" ? "conversation" : currentScreen;
     }
@@ -1256,10 +1285,6 @@ export class NavigatorController implements vscode.Disposable {
     hasLatestGuidance: boolean
   ): NavigatorScreen {
     if (kind === "always" && !HOME_SCREENS.includes(currentScreen)) {
-      return currentScreen;
-    }
-
-    if (kind === "deep_dive") {
       return currentScreen;
     }
 
@@ -1316,31 +1341,15 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private buildPendingGuidanceMessage(kind: GuidanceKind, reason?: AdviceTriggerReason): string {
+  private buildPendingGuidanceMessage(kind: GuidanceKind): string {
     switch (kind) {
       case "always":
-        return `現在の作業文脈をもとに自動フィードバックを生成しています${reason ? ` (${this.describeTriggerReason(reason)})` : ""}...`;
-      case "deep_dive":
-        return "直前のアドバイスをもとに追加の観点を整理しています...";
+        return "現在の作業文脈をもとに自動フィードバックを生成しています...";
       case "context":
         return "現在の作業文脈をもとにガイダンスを生成しています...";
       case "manual":
       default:
         return "質問内容と現在の作業文脈をもとにガイダンスを生成しています...";
-    }
-  }
-
-  private describeTriggerReason(reason: AdviceTriggerReason): string {
-    switch (reason) {
-      case "text_edit":
-        return "編集";
-      case "selection_change":
-        return "選択範囲";
-      case "editor_change":
-        return "ファイル切替";
-      case "diagnostics_change":
-      default:
-        return "診断変化";
     }
   }
 
@@ -1482,8 +1491,6 @@ export class NavigatorController implements vscode.Disposable {
     switch (kind) {
       case "context":
         return "この箇所を相談";
-      case "deep_dive":
-        return "直前のアドバイスを深掘りしたい";
       case "always":
       case "manual":
       default:
@@ -1511,8 +1518,20 @@ export class NavigatorController implements vscode.Disposable {
     return state.screen === "main" ? undefined : state.activeAdditionalContext;
   }
 
+  private getVisibleAdditionalContext(state: NavigatorSessionState): string | undefined {
+    return state.screen === "main"
+      ? state.pendingAdditionalContext ?? state.activeAdditionalContext
+      : state.activeAdditionalContext ?? state.pendingAdditionalContext;
+  }
+
+  private getGuidanceAdditionalContext(state: NavigatorSessionState): string | undefined {
+    return state.screen === "main"
+      ? state.pendingAdditionalContext ?? state.activeAdditionalContext
+      : state.activeAdditionalContext;
+  }
+
   private resolveAdditionalContext(additionalContext: string | undefined, fallback?: string): string | undefined {
-    return this.normalizeAdditionalContext(additionalContext ?? fallback);
+    return this.normalizeAdditionalContext(additionalContext) ?? this.normalizeAdditionalContext(fallback);
   }
 
   private normalizeAdditionalContext(value?: string): string | undefined {
@@ -1572,22 +1591,9 @@ export class NavigatorController implements vscode.Disposable {
       conversationStreams: [],
       conversationHistory: [],
       knowledgeQuery: "",
-      activeAdditionalContext: undefined
+      activeAdditionalContext: undefined,
+      pendingAdditionalContext: undefined
     };
-  }
-
-  private createKnowledgeTitle(text: string): string {
-    const firstLine = text.split(/\r?\n/).map((line) => line.trim()).find((line) => line.length > 0);
-    if (!firstLine) {
-      return "AIアドバイス";
-    }
-
-    return firstLine.length <= 64 ? firstLine : `${firstLine.slice(0, 64)}...`;
-  }
-
-  private createKnowledgeSummary(text: string): string {
-    const normalized = text.replace(/\s+/g, " ").trim();
-    return normalized.length <= 160 ? normalized : `${normalized.slice(0, 160)}...`;
   }
 
   private createId(): string {

@@ -411,7 +411,6 @@ export class ConversationStore implements vscode.Disposable {
     switch (value) {
       case "manual":
       case "context":
-      case "deep_dive":
       case "always":
         return value;
       default:

@@ -8,7 +8,7 @@ export type WebviewToExtension =
   | { type: "deleteConversationStream"; id: string }
   | { type: "ask"; text: string; additionalContext?: string }
   | { type: "askContext" }
-  | { type: "setMode"; mode: AdviceMode }
+  | { type: "setMode"; mode: AdviceMode; additionalContext?: string }
   | { type: "toggleAutoPause" }
   | { type: "navigate"; screen: NavigatorScreen }
   | { type: "navigateBack" }
@@ -24,7 +24,8 @@ export type WebviewToExtension =
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
   | { type: "resetSettings" }
-  | { type: "searchKnowledge"; query: string };
+  | { type: "searchKnowledge"; query: string }
+  | { type: "setAdditionalContext"; additionalContext: string };
 
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;

@@ -58,7 +58,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.askForGuidance(undefined, "context");
             return;
           case "setMode":
-            await this.controller.setMode(message.mode);
+            await this.controller.setMode(message.mode, message.additionalContext);
             return;
           case "toggleAutoPause":
             this.controller.toggleAutoPause();
@@ -98,6 +98,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "searchKnowledge":
             this.controller.searchKnowledge(message.query);
+            return;
+          case "setAdditionalContext":
+            this.controller.setAdditionalContext(message.additionalContext);
             return;
           default:
             return;

@@ -19,7 +19,7 @@ export function S05Knowledge() {
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "home", title: "相談ホーム", onClick: () => send({ type: "navigate", screen: "main" }) },
+          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
         ]}
       />
 
