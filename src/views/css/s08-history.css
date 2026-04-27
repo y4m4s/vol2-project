@@ -1,8 +1,14 @@
 .s08-root {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   width: 100%;
+  height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
+.s08-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--vscode-sideBar-background);
 }
 
 .s08-head {

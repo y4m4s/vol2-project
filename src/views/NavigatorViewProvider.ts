@@ -134,7 +134,6 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "common.css",
       "s01-connection.css",
       "s02-main.css",
-      "s03-advice-detail.css",
       "s04-conversation.css",
       "s05-knowledge.css",
       "s06-settings.css",

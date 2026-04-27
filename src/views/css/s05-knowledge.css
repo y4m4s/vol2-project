@@ -1,3 +1,10 @@
+.s05-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--vscode-sideBar-background);
+}
+
 /* --- 検索バー --- */
 .search-bar {
   position: relative;
@@ -57,6 +64,8 @@
 .knowledge-root,
 .knowledge-detail-root {
   width: 100%;
+  height: calc(100vh - 24px);
+  overflow-y: auto;
 }
 
 .knowledge-list {

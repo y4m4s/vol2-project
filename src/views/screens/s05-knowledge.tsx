@@ -13,24 +13,26 @@ export function S05Knowledge() {
 
   return (
     <div className="knowledge-root">
-      <PageHeader
-        title="ナレッジ管理"
-        subtitle="保存したナレッジを開いて、内容を確認できます。"
-        navIcons={[
-          { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
-          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
-        ]}
-      />
-
-      <div className="search-bar">
-        <span className="material-symbols-outlined search-icon">search</span>
-        <input
-          type="text"
-          placeholder="検索..."
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
+      <div className="s05-sticky-top">
+        <PageHeader
+          title="ナレッジ管理"
+          subtitle="保存したナレッジを開いて、内容を確認できます。"
+          navIcons={[
+            { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+            { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+            { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
+          ]}
         />
+
+        <div className="search-bar">
+          <span className="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            placeholder="検索..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {items.length === 0 ? (

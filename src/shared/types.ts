@@ -132,16 +132,6 @@ export interface AutoAdviceState {
   lastAdviceAt?: string;
 }
 
-export interface AdviceDetailViewData {
-  id: string;
-  adviceBody: string;
-  speculativeNote: string;
-  referenceFiles: string[];
-  diagnosticsSummary: string;
-  changeSummary: string;
-  canDeepDive: boolean;
-}
-
 export interface KnowledgeListItem {
   id: string;
   title: string;
@@ -192,7 +182,6 @@ export interface NavigatorViewModel {
   activeConversationStreamId?: string;
   activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
-  selectedAdvice?: AdviceDetailViewData;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];

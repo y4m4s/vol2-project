@@ -9,7 +9,9 @@ export function S05KnowledgeDetail() {
   if (!detail) {
     return (
       <div className="knowledge-detail-root">
-        <PageHeader title="ナレッジ詳細" />
+        <div className="s05-sticky-top">
+          <PageHeader title="ナレッジ詳細" />
+        </div>
         <div className="empty-state">
           <span className="material-symbols-outlined empty-state-icon">auto_stories</span>
           <div className="empty-title">ナレッジを表示できません</div>
@@ -23,21 +25,23 @@ export function S05KnowledgeDetail() {
 
   return (
     <div className="knowledge-detail-root">
-      <PageHeader
-        title={detail.title}
-        subtitle={formatDateTime(detail.updatedAt)}
-        actions={(
-          <button
-            type="button"
-            className="knowledge-detail-delete-btn"
-            title="ナレッジを削除"
-            aria-label={`${detail.title}を削除`}
-            onClick={() => send({ type: "deleteKnowledge", id: detail.id })}
-          >
-            <span className="material-symbols-outlined">delete</span>
-          </button>
-        )}
-      />
+      <div className="s05-sticky-top">
+        <PageHeader
+          title={detail.title}
+          subtitle={formatDateTime(detail.updatedAt)}
+          actions={(
+            <button
+              type="button"
+              className="knowledge-detail-delete-btn"
+              title="ナレッジを削除"
+              aria-label={`${detail.title}を削除`}
+              onClick={() => send({ type: "deleteKnowledge", id: detail.id })}
+            >
+              <span className="material-symbols-outlined">delete</span>
+            </button>
+          )}
+        />
+      </div>
 
       <div className="knowledge-detail-section">
         <div className="knowledge-panel-title">内容プレビュー</div>
