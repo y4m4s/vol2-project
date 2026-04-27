@@ -585,6 +585,7 @@ button.danger {
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  cursor: not-allowed;
 }
 /* --- バッジ --- */
 .badge {

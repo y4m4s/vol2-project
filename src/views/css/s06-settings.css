@@ -1,10 +1,19 @@
 .s06-root {
   position: relative;
   width: 100%;
+  height: calc(100vh - 24px);
+  overflow-y: auto;
 }
 
 .s06-root.with-savebar {
   padding-bottom: 96px;
+}
+
+.s06-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--vscode-sideBar-background);
 }
 
 .settings-section {

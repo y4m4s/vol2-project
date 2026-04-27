@@ -14,11 +14,9 @@ import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import {
-  AdviceDetailViewData,
   AdviceMode,
   AdviceTriggerReason,
   ConnectionState,
-  ContextCategoryKey,
   ConversationEntry,
   GuidanceCard,
   GuidanceKind,
@@ -166,7 +164,6 @@ export class NavigatorController implements vscode.Disposable {
       activeConversationStreamId: state.activeConversationStreamId,
       activeAdditionalContext: this.getVisibleAdditionalContext(state),
       conversationHistory: state.conversationHistory,
-      selectedAdvice: this.buildSelectedAdvice(state),
       currentRequestPlan,
       settings,
       knowledgeItems: this.buildKnowledgeItems(state),
@@ -1388,41 +1385,6 @@ export class NavigatorController implements vscode.Disposable {
         estimatedSizeText: "0 B / 0カテゴリ"
       }
     };
-  }
-
-  private buildSelectedAdvice(state: NavigatorSessionState): AdviceDetailViewData | undefined {
-    const selected = this.findSelectedConversation(state) ?? this.findLatestAssistant(state.conversationHistory);
-    if (!selected) {
-      return undefined;
-    }
-
-    const diagnosticsSummary =
-      selected.basedOn?.diagnosticsSummary.length
-        ? selected.basedOn.diagnosticsSummary.map((item) => `${item.severity} L${item.line}: ${item.message}`).join(" / ")
-        : "診断情報はありません";
-
-    return {
-      id: selected.id,
-      adviceBody: selected.text,
-      speculativeNote: "参照文脈に基づいて整理した内容です。推測が含まれる可能性があります。",
-      referenceFiles: selected.requestPlan?.targetFiles.filter((file) => file.included).map((file) => file.path) ?? [],
-      diagnosticsSummary,
-      changeSummary: this.describeCategory(selected.requestPlan?.categories, "recentEdits"),
-      canDeepDive: this.connectionService.getState() === "connected"
-    };
-  }
-
-  private describeCategory(categories: GuidanceCard["requestPlan"]["categories"] | undefined, key: ContextCategoryKey): string {
-    const category = categories?.find((item) => item.key === key);
-    if (!category) {
-      return "情報はありません";
-    }
-
-    if (category.note) {
-      return category.note;
-    }
-
-    return category.included ? "参照対象に含まれています" : "現在は参照対象に含まれていません";
   }
 
   private buildKnowledgeItems(state: NavigatorSessionState): KnowledgeListItem[] {

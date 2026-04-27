@@ -1,46 +1,65 @@
-import React from "react";
+import React, { useState } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 
 export function S08History() {
   const { viewModel, send } = useApp();
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (!viewModel) {
     return null;
   }
 
-  const {
-    conversationStreams,
-    isBusy
-  } = viewModel;
+  const { conversationStreams, isBusy } = viewModel;
+
+  const filteredStreams = searchQuery.trim()
+    ? conversationStreams.filter((s) =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : conversationStreams;
 
   return (
     <div className="s08-root">
-      <PageHeader
-        title="相談履歴"
-        subtitle="過去の相談を開いて、続きから質問できます。"
-        navIcons={[
-          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
-          { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
-          { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
-        ]}
-      />
+      <div className="s08-sticky-top">
+        <PageHeader
+          title="相談履歴"
+          subtitle="過去の相談を開いて、続きから質問できます。"
+          navIcons={[
+            { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+            { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
+            { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
+          ]}
+        />
+
+        <div className="search-bar">
+          <span className="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            placeholder="履歴を検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
 
       {conversationStreams.length === 0 ? (
-        <div className="s08-empty">
-          <span className="material-symbols-outlined">history</span>
-          <div className="s08-empty-title">履歴はまだありません</div>
-          <div className="s08-empty-desc">
-            相談が始まると、ここに履歴が並びます。
+          <div className="s08-empty">
+            <span className="material-symbols-outlined">history</span>
+            <div className="s08-empty-title">履歴はまだありません</div>
+            <div className="s08-empty-desc">
+              相談が始まると、ここに履歴が並びます。
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="s08-list">
-          {conversationStreams.map((stream) => (
-              <div
-                key={stream.id}
-                className="s08-item"
-              >
+        ) : filteredStreams.length === 0 ? (
+          <div className="s08-empty">
+            <span className="material-symbols-outlined">search_off</span>
+            <div className="s08-empty-title">該当する履歴がありません</div>
+            <div className="s08-empty-desc">別のキーワードで検索してみてください。</div>
+          </div>
+        ) : (
+          <div className="s08-list">
+            {filteredStreams.map((stream) => (
+              <div key={stream.id} className="s08-item">
                 <button
                   className="s08-item-main"
                   disabled={isBusy}
@@ -71,13 +90,12 @@ export function S08History() {
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
     </div>
   );
 }
-
 
 function formatRelativeTime(value: string): string {
   const date = new Date(value);

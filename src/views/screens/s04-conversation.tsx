@@ -139,16 +139,16 @@ function ChatBubble(
             {isUser ? entry.text : <MarkdownText text={entry.text} />}
           </div>
         )}
-
-        {!isUser && (
-          <ResponseActions
-            text={entry.text}
-            alreadySaved={alreadySaved}
-            isSavingKnowledge={isSavingKnowledge}
-            onSave={() => onSave(entry.id)}
-          />
-        )}
       </div>
+
+      {!isUser && (
+        <ResponseActions
+          text={entry.text}
+          alreadySaved={alreadySaved}
+          isSavingKnowledge={isSavingKnowledge}
+          onSave={() => onSave(entry.id)}
+        />
+      )}
     </div>
   );
 }
