@@ -355,7 +355,7 @@ export class ConversationStore implements vscode.Disposable {
       basedOn: this.parseJson<NavigatorContextPreview>(row.based_on_json),
       mode: this.parseMode(row.mode),
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
-      guidanceContext: this.parseJson<GuidanceContext>(row.guidance_context_json)
+      guidanceContext: this.parseGuidanceContext(row.guidance_context_json)
     };
   }
 
@@ -428,6 +428,21 @@ export class ConversationStore implements vscode.Disposable {
     } catch {
       return undefined;
     }
+  }
+
+  private parseGuidanceContext(value: unknown): GuidanceContext | undefined {
+    const parsed = this.parseJson<Partial<GuidanceContext>>(value);
+    if (!parsed) {
+      return undefined;
+    }
+
+    return {
+      ...parsed,
+      referencedFiles: parsed.referencedFiles ?? [],
+      diagnosticsSummary: parsed.diagnosticsSummary ?? [],
+      recentEditsSummary: parsed.recentEditsSummary ?? [],
+      relatedSymbols: parsed.relatedSymbols ?? []
+    };
   }
 
   private resolveUpdatedAt(currentUpdatedAt: string, entries: StoredConversationEntry[]): string {

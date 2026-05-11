@@ -29,8 +29,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new KnowledgeStore(context.globalStorageUri)
   );
 
-  await controller.initialize();
-
   const viewProvider = new NavigatorViewProvider(context.extensionUri, controller);
 
   context.subscriptions.push(
@@ -42,6 +40,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       new NaviComSelectionCodeActionProvider(),
       { providedCodeActionKinds: NaviComSelectionCodeActionProvider.providedCodeActionKinds }
     ),
+    vscode.commands.registerCommand("aiPairNavigator.openView", async () => {
+      await focusNaviComView();
+    }),
     vscode.commands.registerCommand("aiPairNavigator.connectCopilot", async () => {
       await controller.connectCopilot();
     }),
@@ -60,6 +61,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await request;
     })
   );
+
+  void controller.initialize().catch((error) => {
+    console.error("NaviCom initialization failed", error);
+    void vscode.window.showErrorMessage("NaviCom の初期化に失敗しました。Extension Host ログを確認してください。");
+  });
+
+  revealNaviComViewForDevelopment(context);
 }
 
 export function deactivate(): void {
@@ -105,4 +113,17 @@ async function focusNaviComView(): Promise<void> {
     undefined,
     () => undefined
   );
+}
+
+function revealNaviComViewForDevelopment(context: vscode.ExtensionContext): void {
+  if (context.extensionMode !== vscode.ExtensionMode.Development) {
+    return;
+  }
+
+  setTimeout(() => {
+    void vscode.commands.executeCommand("workbench.action.resetViewLocations").then(
+      () => focusNaviComView(),
+      () => focusNaviComView()
+    );
+  }, 500);
 }

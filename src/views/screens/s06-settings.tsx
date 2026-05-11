@@ -16,22 +16,26 @@ export function S06Settings() {
 
   const savedDefaultMode = settings?.defaultMode ?? "manual";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
+  const savedEnableWorkspaceContext = settings?.enableWorkspaceContext ?? false;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
 
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
+  const [enableWorkspaceContext, setEnableWorkspaceContext] = useState(savedEnableWorkspaceContext);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
 
   useEffect(() => {
     setDefaultMode(savedDefaultMode);
     setIdleDelaySec(savedIdleDelaySec);
+    setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedDefaultMode, savedIdleDelaySec, savedExcludeGlobs]);
+  }, [savedDefaultMode, savedIdleDelaySec, savedEnableWorkspaceContext, savedExcludeGlobs]);
 
   const hasPendingChanges =
     defaultMode !== savedDefaultMode ||
     idleDelaySec !== savedIdleDelaySec ||
+    enableWorkspaceContext !== savedEnableWorkspaceContext ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
 
   function handleSave() {
@@ -40,6 +44,7 @@ export function S06Settings() {
       payload: {
         defaultMode,
         idleDelaySec,
+        enableWorkspaceContext,
         excludeGlobs
       }
     });
@@ -48,6 +53,7 @@ export function S06Settings() {
   function handleRevertDraft() {
     setDefaultMode(savedDefaultMode);
     setIdleDelaySec(savedIdleDelaySec);
+    setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
   }
 
@@ -86,6 +92,32 @@ export function S06Settings() {
         value={idleDelaySec}
         onChange={setIdleDelaySec}
       />
+
+      <div className="settings-section">
+        <span className="material-symbols-outlined">account_tree</span> 文脈参照
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-row">
+          <div>
+            <div className="setting-label">複数ファイル・ディレクトリ構造</div>
+            <div className="setting-desc">
+              ON にすると、ディレクトリ構造と関連ファイル断片も相談時の文脈に含めます
+            </div>
+          </div>
+          <label className="setting-switch">
+            <input
+              type="checkbox"
+              aria-label="複数ファイル・ディレクトリ構造の参照を有効化"
+              checked={enableWorkspaceContext}
+              onChange={(event) => setEnableWorkspaceContext(event.target.checked)}
+            />
+            <span className="setting-switch-track">
+              <span className="setting-switch-thumb" />
+            </span>
+          </label>
+        </div>
+      </div>
 
       <div className="settings-section">
         <span className="material-symbols-outlined">block</span> 除外設定

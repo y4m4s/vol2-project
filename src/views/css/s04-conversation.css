@@ -205,9 +205,20 @@
 
 .s04-response-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 6px;
   margin-top: 4px;
+  min-width: 0;
+}
+
+.s04-response-action-buttons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .s04-response-action {
@@ -237,6 +248,107 @@
 
 .s04-response-action .material-symbols-outlined {
   font-size: 16px;
+}
+
+.referenced-files-badge {
+  position: relative;
+  min-width: 0;
+  max-width: calc(100% - 78px);
+  align-self: center;
+}
+
+.referenced-files-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  height: 30px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  font-size: 0.76em;
+}
+
+.referenced-files-trigger:hover,
+.referenced-files-trigger:focus-visible {
+  color: var(--vscode-textLink-foreground);
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 34%, transparent);
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: none;
+}
+
+.referenced-files-trigger .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.referenced-files-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referenced-files-card {
+  position: fixed;
+  z-index: 120;
+  width: min(360px, calc(100vw - 40px));
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+
+.referenced-files-card-title {
+  margin-bottom: 8px;
+  font-size: 0.8em;
+  font-weight: 700;
+}
+
+.referenced-files-card-list {
+  display: grid;
+  gap: 8px;
+}
+
+.referenced-files-card-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.referenced-files-card-item .material-symbols-outlined {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 15px;
+}
+
+.referenced-files-card-copy {
+  min-width: 0;
+}
+
+.referenced-files-card-name {
+  overflow: hidden;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.8em;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referenced-files-card-path {
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.74em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 

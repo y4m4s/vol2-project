@@ -23,11 +23,14 @@ export class RequestPlanner {
   ): PreparedGuidanceRequest {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
+    const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
       activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
       selectedText: !fileExcluded ? context.selectedText : undefined,
+      workspaceTree: settings.enableWorkspaceContext ? context.workspaceTree : undefined,
+      referencedFiles: settings.enableWorkspaceContext ? referencedFiles : [],
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
       relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
@@ -39,7 +42,7 @@ export class RequestPlanner {
       requestPlan: {
         kind,
         categories: this.buildCategories(context, filteredContext, fileExcluded),
-        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded),
+        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded, excludedGlobs),
         excludedGlobs,
         estimatedSizeText: this.estimateSizeText(filteredContext, preview)
       }
@@ -93,6 +96,24 @@ export class RequestPlanner {
         this.describeCollectionNote(fileExcluded, rawContext.relatedSymbols.length, context.relatedSymbols, "関連シンボル候補はまだありません")
       ),
       this.createCategory(
+        "workspaceTree",
+        "ディレクトリ構造",
+        "ワークスペース内のファイル配置",
+        true,
+        Boolean(context.workspaceTree?.treeText),
+        context.workspaceTree?.treeText ? "ワークスペース構造を送信します" : "ディレクトリ構造は送信しません"
+      ),
+      this.createCategory(
+        "referencedFiles",
+        "関連ファイル",
+        "開いているファイル、診断、最近の編集、同一ディレクトリから選んだ候補",
+        true,
+        context.referencedFiles.length > 0,
+        context.referencedFiles.length > 0
+          ? `${context.referencedFiles.length}件の関連ファイル断片を送信します`
+          : "関連ファイル候補はありません"
+      ),
+      this.createCategory(
         "additionalContext",
         "追加コンテキスト",
         "ユーザーが入力した補足文脈",
@@ -106,27 +127,27 @@ export class RequestPlanner {
   private buildTargetFiles(
     rawContext: GuidanceContext,
     filteredContext: GuidanceContext,
-    fileExcluded: boolean
+    fileExcluded: boolean,
+    excludedGlobs: string[]
   ): RequestPlanFile[] {
-    if (!rawContext.activeFilePath) {
-      return [];
-    }
+    const files: RequestPlanFile[] = [];
+    const includedReferencedFiles = new Map(filteredContext.referencedFiles.map((file) => [file.path, file]));
 
-    const includedSize = this.byteLength(
-      `${filteredContext.activeFileExcerpt ?? ""}${filteredContext.selectedText ?? ""}${filteredContext.diagnosticsSummary.map((item) => item.message).join("")}${filteredContext.recentEditsSummary.join("")}${filteredContext.relatedSymbols.join("")}`
-    );
+    if (rawContext.activeFilePath) {
+      const includedSize = this.byteLength(
+        `${filteredContext.activeFileExcerpt ?? ""}${filteredContext.selectedText ?? ""}${filteredContext.diagnosticsSummary.map((item) => item.message).join("")}${filteredContext.recentEditsSummary.join("")}${filteredContext.relatedSymbols.join("")}`
+      );
 
-    const included = Boolean(
-      !fileExcluded &&
-        (filteredContext.activeFileExcerpt ||
-          filteredContext.selectedText ||
-          filteredContext.diagnosticsSummary.length > 0 ||
-          filteredContext.recentEditsSummary.length > 0 ||
-          filteredContext.relatedSymbols.length > 0)
-    );
+      const included = Boolean(
+        !fileExcluded &&
+          (filteredContext.activeFileExcerpt ||
+            filteredContext.selectedText ||
+            filteredContext.diagnosticsSummary.length > 0 ||
+            filteredContext.recentEditsSummary.length > 0 ||
+            filteredContext.relatedSymbols.length > 0)
+      );
 
-    return [
-      {
+      files.push({
         path: rawContext.activeFilePath,
         sizeText: this.toReadableSize(includedSize),
         included,
@@ -135,18 +156,53 @@ export class RequestPlanner {
           : fileExcluded
             ? "除外 glob に一致したため送信しません"
             : "送信できる文脈がまだありません"
+      });
+    }
+
+    for (const rawFile of rawContext.referencedFiles ?? []) {
+      if (rawFile.path === rawContext.activeFilePath) {
+        continue;
       }
-    ];
+
+      const filteredFile = includedReferencedFiles.get(rawFile.path);
+      const excluded = this.isPathExcluded(rawFile.path, excludedGlobs);
+      const included = Boolean(
+        filteredFile &&
+          (filteredFile.excerpt ||
+            filteredFile.diagnosticsSummary.length > 0 ||
+            filteredFile.recentEditsSummary.length > 0)
+      );
+      const size = filteredFile
+        ? this.byteLength(
+            `${filteredFile.excerpt ?? ""}${filteredFile.diagnosticsSummary.map((item) => item.message).join("")}${filteredFile.recentEditsSummary.join("")}`
+          )
+        : 0;
+
+      files.push({
+        path: rawFile.path,
+        sizeText: this.toReadableSize(size),
+        included,
+        excludedReason: included
+          ? undefined
+          : excluded
+            ? "除外 glob に一致したため送信しません"
+            : "送信できる文脈がまだありません"
+      });
+    }
+
+    return files;
   }
 
   private estimateSizeText(context: GuidanceContext, _preview: NavigatorContextPreview): string {
     const byteLength = this.byteLength(
-      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${context.additionalContext ?? ""}`
+      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.workspaceTree?.treeText ?? ""}${context.referencedFiles.map((file) => `${file.excerpt ?? ""}${file.diagnosticsSummary.map((item) => item.message).join("")}${file.recentEditsSummary.join("")}`).join("")}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${context.additionalContext ?? ""}`
     );
 
     const categories = [
       context.activeFileExcerpt ? "ファイル" : undefined,
       context.selectedText ? "選択範囲" : undefined,
+      context.workspaceTree?.treeText ? "構造" : undefined,
+      context.referencedFiles.length > 0 ? "関連ファイル" : undefined,
       context.diagnosticsSummary.length > 0 ? "diagnostics" : undefined,
       context.recentEditsSummary.length > 0 ? "recentEdits" : undefined,
       context.relatedSymbols.length > 0 ? "symbols" : undefined,

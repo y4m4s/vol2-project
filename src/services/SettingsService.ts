@@ -58,6 +58,7 @@ const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
   requestIntervalMs: 20000,
   idleDelayMs: 10000,
+  enableWorkspaceContext: false,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
@@ -90,6 +91,7 @@ export class SettingsService {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
       requestIntervalMs: DEFAULT_SETTINGS.requestIntervalMs,
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
+      enableWorkspaceContext: partial?.enableWorkspaceContext ?? DEFAULT_SETTINGS.enableWorkspaceContext,
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };

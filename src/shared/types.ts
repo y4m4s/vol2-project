@@ -29,7 +29,15 @@ export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
-export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols" | "additionalContext";
+export type ContextCategoryKey =
+  | "activeFile"
+  | "selection"
+  | "diagnostics"
+  | "recentEdits"
+  | "relatedSymbols"
+  | "workspaceTree"
+  | "referencedFiles"
+  | "additionalContext";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -44,11 +52,36 @@ export interface NavigatorContextPreview {
   diagnosticsSummary: DiagnosticSummary[];
 }
 
+export type ReferencedFileReason =
+  | "open"
+  | "diagnostic"
+  | "recentEdit"
+  | "sameDirectory"
+  | "workspace";
+
+export interface ReferencedFileContext {
+  path: string;
+  languageId?: string;
+  reason: ReferencedFileReason;
+  excerpt?: string;
+  diagnosticsSummary: DiagnosticSummary[];
+  recentEditsSummary: string[];
+  score: number;
+}
+
+export interface WorkspaceTreeContext {
+  rootPath: string;
+  treeText: string;
+  truncated: boolean;
+}
+
 export interface GuidanceContext {
   activeFilePath?: string;
   activeFileLanguage?: string;
   activeFileExcerpt?: string;
   selectedText?: string;
+  workspaceTree?: WorkspaceTreeContext;
+  referencedFiles: ReferencedFileContext[];
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
@@ -59,6 +92,7 @@ export interface NavigatorSettings {
   defaultMode: AdviceMode;
   requestIntervalMs: number;
   idleDelayMs: number;
+  enableWorkspaceContext: boolean;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
 }

@@ -30,6 +30,7 @@ export type WebviewToExtension =
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
   idleDelaySec: number;
+  enableWorkspaceContext: boolean;
   excludeGlobs: string;
 }
 

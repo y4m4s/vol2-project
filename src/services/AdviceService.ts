@@ -200,6 +200,36 @@ export class AdviceService {
       lines.push("", `関連シンボル候補: ${context.relatedSymbols.join(", ")}`);
     }
 
+    if (context.workspaceTree?.treeText) {
+      lines.push("", "ディレクトリ構造:", "```text", context.workspaceTree.treeText, "```");
+    }
+
+    if (context.referencedFiles.length > 0) {
+      lines.push("", "関連ファイル断片:");
+      for (const file of context.referencedFiles) {
+        lines.push(
+          `### ${file.path}`,
+          `reason: ${this.formatReferencedFileReason(file.reason)} / score: ${file.score}`
+        );
+
+        if (file.diagnosticsSummary.length > 0) {
+          lines.push("Diagnostics:");
+          for (const diagnostic of file.diagnosticsSummary) {
+            const source = diagnostic.source ? ` (${diagnostic.source})` : "";
+            lines.push(`- ${diagnostic.severity}${source} L${diagnostic.line}: ${diagnostic.message}`);
+          }
+        }
+
+        if (file.recentEditsSummary.length > 0) {
+          lines.push("最近の編集:", ...file.recentEditsSummary.map((item) => `- ${item}`));
+        }
+
+        if (file.excerpt) {
+          lines.push("```" + (file.languageId ?? ""), file.excerpt, "```");
+        }
+      }
+    }
+
     if (context.additionalContext) {
       lines.push("", "追加コンテキスト:", "```", context.additionalContext, "```");
     }
@@ -233,6 +263,22 @@ export class AdviceService {
       case "context":
       default:
         return "ユーザーが選択箇所について相談しています。その箇所の周辺で注目すべき処理・依存関係・データの流れを指し示して、ユーザー自身が原因や改善点にたどり着けるよう誘導してください。";
+    }
+  }
+
+  private formatReferencedFileReason(reason: GuidanceContext["referencedFiles"][number]["reason"]): string {
+    switch (reason) {
+      case "diagnostic":
+        return "diagnostics";
+      case "recentEdit":
+        return "recent edit";
+      case "sameDirectory":
+        return "same directory";
+      case "workspace":
+        return "workspace";
+      case "open":
+      default:
+        return "open file";
     }
   }
 
@@ -379,6 +425,20 @@ export class AdviceService {
 
     if (context?.relatedSymbols.length) {
       lines.push(`- 関連シンボル: ${context.relatedSymbols.slice(0, 12).join(", ")}`);
+    }
+
+    if (context?.workspaceTree?.treeText) {
+      lines.push("- ディレクトリ構造:", "```text", this.truncate(context.workspaceTree.treeText, 1600), "```");
+    }
+
+    if (context?.referencedFiles?.length) {
+      lines.push("- 関連ファイル:");
+      for (const file of context.referencedFiles.slice(0, 5)) {
+        lines.push(`  - ${file.path} (${this.formatReferencedFileReason(file.reason)})`);
+        if (file.excerpt) {
+          lines.push("```", this.truncate(file.excerpt, 1200), "```");
+        }
+      }
     }
 
     if (context?.additionalContext) {

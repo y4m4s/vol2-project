@@ -51,6 +51,7 @@ export class NavigatorController implements vscode.Disposable {
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
+  private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -130,6 +131,7 @@ export class NavigatorController implements vscode.Disposable {
       })
     );
 
+    this.initialized = true;
     this.patchSession({
       screen: this.resolveHomeScreen(this.connectionService.getState()),
       mode: settings.defaultMode
@@ -166,9 +168,9 @@ export class NavigatorController implements vscode.Disposable {
       conversationHistory: state.conversationHistory,
       currentRequestPlan,
       settings,
-      knowledgeItems: this.buildKnowledgeItems(state),
-      selectedKnowledge: this.buildSelectedKnowledge(state),
-      savedKnowledgeSourceIds: this.knowledgeStore.listSourceAdviceIds(),
+      knowledgeItems: this.initialized ? this.buildKnowledgeItems(state) : [],
+      selectedKnowledge: this.initialized ? this.buildSelectedKnowledge(state) : undefined,
+      savedKnowledgeSourceIds: this.initialized ? this.knowledgeStore.listSourceAdviceIds() : [],
       knowledgeQuery: state.knowledgeQuery
     };
   }
@@ -276,7 +278,7 @@ export class NavigatorController implements vscode.Disposable {
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
     const guidanceKind = kind ?? (userPrompt?.trim() ? "manual" : "context");
     if (guidanceKind === "context") {
-      await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt?.trim(), true, additionalContext));
+      await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(userPrompt?.trim(), true, additionalContext));
       return;
     }
 
@@ -290,7 +292,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
-    await this.executeGuidanceRequest(this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
+    await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
   }
 
 
@@ -351,12 +353,14 @@ export class NavigatorController implements vscode.Disposable {
   public async saveSettings(input: {
     defaultMode: AdviceMode;
     idleDelaySec: number;
+    enableWorkspaceContext: boolean;
     excludeGlobs: string;
   }): Promise<void> {
     const nextSettings: NavigatorSettings = {
       ...this.settingsService.getSettings(),
       defaultMode: input.defaultMode,
       idleDelayMs: input.idleDelaySec * 1000,
+      enableWorkspaceContext: input.enableWorkspaceContext,
       excludedGlobs: input.excludeGlobs
         .split(/\r?\n/)
         .map((value) => value.trim())
@@ -618,8 +622,9 @@ export class NavigatorController implements vscode.Disposable {
     const settings = this.settingsService.getSettings();
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const additionalContext = this.getGuidanceAdditionalContext(state);
+    const guidanceContext = await this.contextCollector.collectGuidanceContextWithWorkspace(settings);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), additionalContext),
+      this.withAdditionalContext(guidanceContext, additionalContext),
       preview,
       settings,
       "always"
@@ -657,12 +662,13 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private buildCurrentContextGuidanceOptions(
+  private async buildCurrentContextGuidanceOptions(
     userPrompt: string | undefined,
     requireContext: boolean,
     additionalContext?: string
-  ): GuidanceExecutionOptions {
+  ): Promise<GuidanceExecutionOptions> {
     const state = this.sessionStore.getState();
+    const settings = this.settingsService.getSettings();
     const receivedAdditionalContext = additionalContext !== undefined;
     const effectiveAdditionalContext = receivedAdditionalContext
       ? this.normalizeAdditionalContext(additionalContext)
@@ -696,9 +702,9 @@ export class NavigatorController implements vscode.Disposable {
       : stickySelectionAvailable
         ? this.pendingSelectionContext!
         : liveContext;
-    const settings = this.settingsService.getSettings();
+    const requestContext = await this.contextCollector.collectGuidanceContextWithWorkspace(settings, rawContext);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(rawContext, effectiveAdditionalContext),
+      this.withAdditionalContext(requestContext, effectiveAdditionalContext),
       preview,
       settings,
       kind
@@ -758,7 +764,7 @@ export class NavigatorController implements vscode.Disposable {
       options.prepared ??
       this.requestPlanner.prepareGuidanceRequest(
         this.withAdditionalContext(
-          this.contextCollector.collectGuidanceContext(),
+          await this.contextCollector.collectGuidanceContextWithWorkspace(settings),
           effectiveAdditionalContext
         ),
         preview,
@@ -1439,6 +1445,8 @@ export class NavigatorController implements vscode.Disposable {
     return Boolean(
       context.activeFileExcerpt ||
         context.selectedText ||
+        context.workspaceTree?.treeText ||
+        context.referencedFiles.length > 0 ||
         context.diagnosticsSummary.length > 0 ||
         context.recentEditsSummary.length > 0 ||
         context.relatedSymbols.length > 0 ||
@@ -1488,6 +1496,13 @@ export class NavigatorController implements vscode.Disposable {
       diagnostics: context.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`),
       recentEdits: context.recentEditsSummary,
       relatedSymbols: context.relatedSymbols,
+      workspaceTree: context.workspaceTree?.treeText,
+      referencedFiles: context.referencedFiles.map((file) => ({
+        path: file.path,
+        reason: file.reason,
+        excerpt: file.excerpt,
+        diagnostics: file.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`)
+      })),
       additionalContext: context.additionalContext
     });
   }

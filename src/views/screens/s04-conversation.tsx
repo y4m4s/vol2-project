@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
+import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
 import { formatConnectionState } from "../webview/utils/formatState";
@@ -152,6 +153,7 @@ function ChatBubble(
       {!isUser && (
         <ResponseActions
           text={entry.text}
+          referencedFiles={entry.requestPlan?.targetFiles}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
           onSave={() => onSave(entry.id)}
@@ -352,11 +354,13 @@ function SelectionReference({ selectedText }: { selectedText?: string }) {
 function ResponseActions(
   {
     text,
+    referencedFiles,
     alreadySaved,
     isSavingKnowledge,
     onSave
   }: {
     text: string;
+    referencedFiles?: ConversationEntry["requestPlan"]["targetFiles"];
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     onSave: () => void;
@@ -393,30 +397,34 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      <button
-        className={`s04-response-action ${alreadySaved ? "active" : ""}`}
-        title={
-          alreadySaved
-            ? "ナレッジに保存しました"
-            : pendingSave || isSavingKnowledge
-              ? "ナレッジに整理しています"
-              : "ナレッジとして保存"
-        }
-        disabled={saveDisabled}
-        onClick={handleSave}
-      >
-        <span className="material-symbols-outlined">
-          {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
-        </span>
-      </button>
+      <ReferencedFilesBadge files={referencedFiles} />
 
-      <button
-        className={`s04-response-action ${copied ? "active" : ""}`}
-        title={copied ? "コピーしました" : "内容をコピー"}
-        onClick={() => void handleCopy()}
-      >
-        <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
-      </button>
+      <div className="s04-response-action-buttons">
+        <button
+          className={`s04-response-action ${alreadySaved ? "active" : ""}`}
+          title={
+            alreadySaved
+              ? "ナレッジに保存しました"
+              : pendingSave || isSavingKnowledge
+                ? "ナレッジに整理しています"
+                : "ナレッジとして保存"
+          }
+          disabled={saveDisabled}
+          onClick={handleSave}
+        >
+          <span className="material-symbols-outlined">
+            {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
+          </span>
+        </button>
+
+        <button
+          className={`s04-response-action ${copied ? "active" : ""}`}
+          title={copied ? "コピーしました" : "内容をコピー"}
+          onClick={() => void handleCopy()}
+        >
+          <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
+        </button>
+      </div>
     </div>
   );
 }

@@ -53,6 +53,58 @@
   min-width: 0;
 }
 
+.setting-switch {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.setting-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.setting-switch-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  background: var(--vscode-input-background);
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.setting-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+  transition: transform 0.18s, background 0.18s;
+}
+
+.setting-switch input:checked + .setting-switch-track {
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 70%, var(--vscode-panel-border));
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 18%, var(--vscode-input-background));
+}
+
+.setting-switch input:checked + .setting-switch-track .setting-switch-thumb {
+  transform: translateX(20px);
+  background: var(--vscode-textLink-foreground);
+}
+
+.setting-switch input:focus-visible + .setting-switch-track {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
 .setting-label {
   font-weight: bold;
   font-size: 0.93em;
