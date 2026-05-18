@@ -1,4 +1,4 @@
-import type { AdviceMode, NavigatorScreen, NavigatorViewModel } from "./types";
+import type { AdviceMode, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -8,6 +8,7 @@ export type WebviewToExtension =
   | { type: "deleteConversationStream"; id: string }
   | { type: "ask"; text: string; additionalContext?: string }
   | { type: "setMode"; mode: AdviceMode; additionalContext?: string }
+  | { type: "setAssistanceDepth"; assistanceDepth: AssistanceDepth }
   | { type: "toggleAutoPause" }
   | { type: "navigate"; screen: NavigatorScreen }
   | { type: "navigateBack" }
@@ -29,6 +30,7 @@ export type WebviewToExtension =
 
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
+  defaultAssistanceDepth: AssistanceDepth;
   idleDelaySec: number;
   enableWorkspaceContext: boolean;
   excludeGlobs: string;

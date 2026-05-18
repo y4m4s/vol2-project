@@ -124,6 +124,10 @@ function ChatBubble(
   const label = isUser ? "あなた" : entry.kind === "always" ? "NaviCom (自動)" : "NaviCom";
   const selectedText = entry.basedOn?.selectedTextPreview;
   const isSelectionRequest = isUser && entry.kind === "context" && Boolean(selectedText);
+  const slashCommandLabel = entry.slashCommand
+    ? `/${entry.slashCommand}${entry.slashCommandScope === "deep" ? " deep" : ""}`
+    : undefined;
+  const depthLabel = entry.assistanceDepth === "high" ? "ハイ" : entry.assistanceDepth === "low" ? "ロウ" : undefined;
 
   return (
     <div className={`s04-bubble-wrap ${isUser ? "user" : "assistant"}`}>
@@ -132,6 +136,8 @@ function ChatBubble(
           {isUser ? "person" : "smart_toy"}
         </span>
         <span className="s04-bubble-role">{label}</span>
+        {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
+        {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 

@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
-import type { AdviceMode } from "../../shared/types";
+import type { AdviceMode, AssistanceDepth } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
 const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
   { value: "manual", label: "必要時" },
   { value: "always", label: "常時" }
+];
+const DEPTH_OPTIONS: Array<{ value: AssistanceDepth; label: string }> = [
+  { value: "low", label: "ロウ" },
+  { value: "high", label: "ハイ" }
 ];
 
 export function S06Settings() {
@@ -15,11 +19,13 @@ export function S06Settings() {
   const settings = viewModel?.settings;
 
   const savedDefaultMode = settings?.defaultMode ?? "manual";
+  const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedEnableWorkspaceContext = settings?.enableWorkspaceContext ?? false;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
 
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
+  const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [enableWorkspaceContext, setEnableWorkspaceContext] = useState(savedEnableWorkspaceContext);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
@@ -27,13 +33,15 @@ export function S06Settings() {
 
   useEffect(() => {
     setDefaultMode(savedDefaultMode);
+    setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setIdleDelaySec(savedIdleDelaySec);
     setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedDefaultMode, savedIdleDelaySec, savedEnableWorkspaceContext, savedExcludeGlobs]);
+  }, [savedDefaultMode, savedDefaultAssistanceDepth, savedIdleDelaySec, savedEnableWorkspaceContext, savedExcludeGlobs]);
 
   const hasPendingChanges =
     defaultMode !== savedDefaultMode ||
+    defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
     idleDelaySec !== savedIdleDelaySec ||
     enableWorkspaceContext !== savedEnableWorkspaceContext ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
@@ -43,6 +51,7 @@ export function S06Settings() {
       type: "saveSettings",
       payload: {
         defaultMode,
+        defaultAssistanceDepth,
         idleDelaySec,
         enableWorkspaceContext,
         excludeGlobs
@@ -52,6 +61,7 @@ export function S06Settings() {
 
   function handleRevertDraft() {
     setDefaultMode(savedDefaultMode);
+    setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setIdleDelaySec(savedIdleDelaySec);
     setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
@@ -79,6 +89,12 @@ export function S06Settings() {
         <div className="setting-label">初期モード</div>
         <div className="setting-desc">相談開始時に使用するモードです</div>
         <ModeButtonGroup value={defaultMode} onChange={setDefaultMode} />
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-label">既定の深さ</div>
+        <div className="setting-desc">手動相談で最初に使う助言の深さです</div>
+        <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
       </div>
 
       <div className="settings-section">
@@ -204,6 +220,33 @@ function ModeButtonGroup({
   return (
     <div className="choice-options mode-options" role="group" aria-label="初期モード">
       {MODE_OPTIONS.map((option) => {
+        const selected = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={`choice-option ${selected ? "selected" : ""}`}
+            aria-pressed={selected}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DepthButtonGroup({
+  value,
+  onChange
+}: {
+  value: AssistanceDepth;
+  onChange: (value: AssistanceDepth) => void;
+}) {
+  return (
+    <div className="choice-options mode-options" role="group" aria-label="既定の深さ">
+      {DEPTH_OPTIONS.map((option) => {
         const selected = option.value === value;
         return (
           <button

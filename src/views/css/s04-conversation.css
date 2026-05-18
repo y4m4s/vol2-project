@@ -102,6 +102,28 @@
   margin-left: auto;
 }
 
+.s04-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.86em;
+  line-height: 1;
+}
+
+.s04-meta-pill.command {
+  color: var(--vscode-textLink-foreground);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 9%, transparent);
+}
+
+.s04-meta-pill.depth {
+  color: var(--vscode-descriptionForeground);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 82%, transparent);
+}
+
 .s04-bubble-wrap.user .s04-bubble-time {
   margin-left: 0;
 }

@@ -16,6 +16,7 @@ import { SettingsService } from "../services/SettingsService";
 import {
   AdviceMode,
   AdviceTriggerReason,
+  AssistanceDepth,
   ConnectionState,
   ConversationEntry,
   GuidanceCard,
@@ -27,7 +28,10 @@ import {
   NavigatorSessionState,
   NavigatorSettings,
   NavigatorStatusMessage,
-  NavigatorViewModel
+  NavigatorViewModel,
+  ProjectContextScope,
+  SlashCommand,
+  SlashCommandScope
 } from "../shared/types";
 
 const HOME_SCREENS: NavigatorScreen[] = ["onboarding", "main", "error"];
@@ -40,6 +44,15 @@ interface GuidanceExecutionOptions {
   preview?: NavigatorSessionState["contextPreview"];
   triggerReason?: AdviceTriggerReason;
   additionalContext?: string;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
+}
+
+interface ParsedSlashInput {
+  userPrompt?: string;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
 }
 
 export class NavigatorController implements vscode.Disposable {
@@ -134,7 +147,8 @@ export class NavigatorController implements vscode.Disposable {
     this.initialized = true;
     this.patchSession({
       screen: this.resolveHomeScreen(this.connectionService.getState()),
-      mode: settings.defaultMode
+      mode: settings.defaultMode,
+      assistanceDepth: settings.defaultAssistanceDepth
     });
     this.refreshContextPreview();
   }
@@ -146,7 +160,8 @@ export class NavigatorController implements vscode.Disposable {
       this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
       state.contextPreview,
       settings,
-      state.mode === "always" ? "always" : "context"
+      state.mode === "always" ? "always" : "context",
+      this.resolveEffectiveAssistanceDepth(state.mode === "always" ? "always" : "context", state.assistanceDepth)
     ).requestPlan;
 
     return {
@@ -154,9 +169,11 @@ export class NavigatorController implements vscode.Disposable {
       connectionState: state.connectionState,
       requestState: state.requestState,
       mode: state.mode,
+      assistanceDepth: state.assistanceDepth,
       canConnect: state.requestState === "idle",
       canAskForGuidance: state.connectionState === "connected" && state.requestState === "idle",
       canSwitchMode: state.connectionState === "connected" && state.requestState === "idle",
+      canSwitchAssistanceDepth: state.requestState === "idle",
       isBusy: state.requestState !== "idle",
       autoAdvice: this.adviceScheduler.getState(),
       statusMessage: state.statusMessage,
@@ -189,6 +206,7 @@ export class NavigatorController implements vscode.Disposable {
     const connectionState = await this.connectionService.connect();
     const settings = this.settingsService.getSettings();
     const nextMode = settings.defaultMode;
+    const nextAssistanceDepth = settings.defaultAssistanceDepth;
 
     if (connectionState === "connected") {
       this.patchSession({
@@ -196,6 +214,7 @@ export class NavigatorController implements vscode.Disposable {
         requestState: "idle",
         screen: "main",
         mode: nextMode,
+        assistanceDepth: nextAssistanceDepth,
         statusMessage: undefined,
         contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
       });
@@ -276,23 +295,27 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
-    const guidanceKind = kind ?? (userPrompt?.trim() ? "manual" : "context");
+    const parsed = this.parseSlashInput(userPrompt);
+    const guidanceKind = kind ?? (parsed.userPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
-      await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(userPrompt?.trim(), true, additionalContext));
+      await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, true, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
       return;
     }
 
     await this.executeGuidanceRequest({
       kind: guidanceKind,
-      userPrompt: userPrompt?.trim(),
+      userPrompt: parsed.userPrompt,
       additionalContext: additionalContext !== undefined
         ? additionalContext
-        : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState()))
+        : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState())),
+      slashCommand: parsed.slashCommand,
+      slashCommandScope: parsed.slashCommandScope
     });
   }
 
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
-    await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(userPrompt.trim(), false, additionalContext));
+    const parsed = this.parseSlashInput(userPrompt);
+    await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, false, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
   }
 
 
@@ -352,6 +375,7 @@ export class NavigatorController implements vscode.Disposable {
 
   public async saveSettings(input: {
     defaultMode: AdviceMode;
+    defaultAssistanceDepth: AssistanceDepth;
     idleDelaySec: number;
     enableWorkspaceContext: boolean;
     excludeGlobs: string;
@@ -359,6 +383,7 @@ export class NavigatorController implements vscode.Disposable {
     const nextSettings: NavigatorSettings = {
       ...this.settingsService.getSettings(),
       defaultMode: input.defaultMode,
+      defaultAssistanceDepth: input.defaultAssistanceDepth,
       idleDelayMs: input.idleDelaySec * 1000,
       enableWorkspaceContext: input.enableWorkspaceContext,
       excludedGlobs: input.excludeGlobs
@@ -378,6 +403,7 @@ export class NavigatorController implements vscode.Disposable {
 
     this.patchSession({
       ...(canApplyAlways ? { mode: input.defaultMode } : {}),
+      assistanceDepth: input.defaultAssistanceDepth,
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
       statusMessage: {
         kind: "info",
@@ -390,10 +416,27 @@ export class NavigatorController implements vscode.Disposable {
     await this.settingsService.resetSettings();
     this.patchSession({
       mode: "manual",
+      assistanceDepth: "low",
       statusMessage: {
         kind: "info",
         text: "設定を初期値に戻しました。"
       }
+    });
+  }
+
+  public async setAssistanceDepth(assistanceDepth: AssistanceDepth): Promise<void> {
+    if (this.sessionStore.getState().requestState !== "idle") {
+      return;
+    }
+
+    await this.settingsService.saveSettings({
+      ...this.settingsService.getSettings(),
+      defaultAssistanceDepth: assistanceDepth
+    });
+
+    this.patchSession({
+      assistanceDepth,
+      statusMessage: undefined
     });
   }
 
@@ -627,7 +670,8 @@ export class NavigatorController implements vscode.Disposable {
       this.withAdditionalContext(guidanceContext, additionalContext),
       preview,
       settings,
-      "always"
+      "always",
+      "low"
     );
 
     if (!this.hasMeaningfulContext(prepared.context)) {
@@ -654,7 +698,8 @@ export class NavigatorController implements vscode.Disposable {
       prepared,
       preview,
       triggerReason: reason,
-      additionalContext
+      additionalContext,
+      assistanceDepth: "low"
     });
 
     if (result.ok) {
@@ -665,7 +710,9 @@ export class NavigatorController implements vscode.Disposable {
   private async buildCurrentContextGuidanceOptions(
     userPrompt: string | undefined,
     requireContext: boolean,
-    additionalContext?: string
+    additionalContext?: string,
+    slashCommand?: SlashCommand,
+    slashCommandScope?: SlashCommandScope
   ): Promise<GuidanceExecutionOptions> {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
@@ -682,13 +729,36 @@ export class NavigatorController implements vscode.Disposable {
     );
     const hasSelection = Boolean(liveContext.selectedText) || stickySelectionAvailable;
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
+    const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth);
+    const projectScope = slashCommand === "next"
+      ? this.resolveNextProjectScope(assistanceDepth, slashCommandScope)
+      : undefined;
 
     if (kind !== "context") {
+      const prepared = projectScope
+        ? this.requestPlanner.prepareGuidanceRequest(
+            this.withAdditionalContext(
+              await this.contextCollector.collectNextActionContext(settings, projectScope, liveContext),
+              effectiveAdditionalContext
+            ),
+            livePreview,
+            settings,
+            kind,
+            assistanceDepth,
+            slashCommand,
+            slashCommandScope
+          )
+        : undefined;
+
       return {
         kind,
         userPrompt,
         preview: livePreview,
-        additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext
+        prepared,
+        additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext,
+        assistanceDepth,
+        slashCommand,
+        slashCommandScope
       };
     }
 
@@ -702,12 +772,17 @@ export class NavigatorController implements vscode.Disposable {
       : stickySelectionAvailable
         ? this.pendingSelectionContext!
         : liveContext;
-    const requestContext = await this.contextCollector.collectGuidanceContextWithWorkspace(settings, rawContext);
+    const requestContext = projectScope
+      ? await this.contextCollector.collectNextActionContext(settings, projectScope, rawContext)
+      : await this.contextCollector.collectGuidanceContextWithWorkspace(settings, rawContext);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
       this.withAdditionalContext(requestContext, effectiveAdditionalContext),
       preview,
       settings,
-      kind
+      kind,
+      assistanceDepth,
+      slashCommand,
+      slashCommandScope
     );
 
     return {
@@ -715,7 +790,10 @@ export class NavigatorController implements vscode.Disposable {
       userPrompt,
       preview,
       prepared,
-      additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext
+      additionalContext: receivedAdditionalContext ? additionalContext : effectiveAdditionalContext,
+      assistanceDepth,
+      slashCommand,
+      slashCommandScope
     };
   }
 
@@ -760,16 +838,28 @@ export class NavigatorController implements vscode.Disposable {
 
     const settings = this.settingsService.getSettings();
     const preview = options.preview ?? this.rememberSelectionContext(this.contextCollector.collectPreview());
+    const assistanceDepth = this.resolveEffectiveAssistanceDepth(options.kind, options.assistanceDepth ?? state.assistanceDepth);
+    const fallbackContext = options.prepared
+      ? undefined
+      : options.slashCommand === "next"
+        ? await this.contextCollector.collectNextActionContext(
+            settings,
+            this.resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
+          )
+        : await this.contextCollector.collectGuidanceContextWithWorkspace(settings);
     const prepared =
       options.prepared ??
       this.requestPlanner.prepareGuidanceRequest(
         this.withAdditionalContext(
-          await this.contextCollector.collectGuidanceContextWithWorkspace(settings),
+          fallbackContext!,
           effectiveAdditionalContext
         ),
         preview,
         settings,
-        options.kind
+        options.kind,
+        assistanceDepth,
+        options.slashCommand,
+        options.slashCommandScope
       );
     this.clearSelectionAfterContextCapture(options.kind, prepared.context);
     const contextPreviewAfterCapture =
@@ -778,9 +868,19 @@ export class NavigatorController implements vscode.Disposable {
         : preview;
 
     const nextHistory = [...state.conversationHistory];
-    const userEntryText = this.resolveUserEntryText(options.kind, options.userPrompt);
+    const userEntryText = this.resolveUserEntryText(options.kind, options.userPrompt, options.slashCommand, options.slashCommandScope);
     if (userEntryText) {
-      nextHistory.push(this.createConversationEntry("user", userEntryText, options.kind, preview));
+      nextHistory.push(this.createConversationEntry(
+        "user",
+        userEntryText,
+        options.kind,
+        preview,
+        undefined,
+        undefined,
+        assistanceDepth,
+        options.slashCommand,
+        options.slashCommandScope
+      ));
     }
 
     this.patchSession({
@@ -799,6 +899,9 @@ export class NavigatorController implements vscode.Disposable {
       context: prepared.context,
       kind: options.kind,
       userPrompt: options.userPrompt?.trim(),
+      assistanceDepth,
+      slashCommand: options.slashCommand,
+      slashCommandScope: options.slashCommandScope,
       knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
     });
 
@@ -816,7 +919,10 @@ export class NavigatorController implements vscode.Disposable {
         options.kind,
         preview,
         state.mode,
-        prepared.requestPlan
+        prepared.requestPlan,
+        assistanceDepth,
+        options.slashCommand,
+        options.slashCommandScope
       );
       this.guidanceContextByConversationId.set(assistantEntry.id, prepared.context);
       const updatedHistory = [...nextHistory, assistantEntry];
@@ -1337,7 +1443,10 @@ export class NavigatorController implements vscode.Disposable {
     kind: GuidanceKind,
     basedOn?: NavigatorSessionState["contextPreview"],
     mode?: AdviceMode,
-    requestPlan?: GuidanceCard["requestPlan"]
+    requestPlan?: GuidanceCard["requestPlan"],
+    assistanceDepth?: AssistanceDepth,
+    slashCommand?: SlashCommand,
+    slashCommandScope?: SlashCommandScope
   ): ConversationEntry {
     return {
       id: this.createId(),
@@ -1347,6 +1456,9 @@ export class NavigatorController implements vscode.Disposable {
       kind,
       basedOn,
       mode,
+      assistanceDepth,
+      slashCommand,
+      slashCommandScope,
       requestPlan
     };
   }
@@ -1356,10 +1468,16 @@ export class NavigatorController implements vscode.Disposable {
       id: entry.id,
       requestedAt: entry.createdAt,
       mode: entry.mode ?? "manual",
+      assistanceDepth: entry.assistanceDepth ?? entry.requestPlan?.assistanceDepth ?? "low",
+      slashCommand: entry.slashCommand ?? entry.requestPlan?.slashCommand,
+      slashCommandScope: entry.slashCommandScope ?? entry.requestPlan?.slashCommandScope,
       text: entry.text,
       basedOn: entry.basedOn ?? { diagnosticsSummary: [] },
       requestPlan: entry.requestPlan ?? {
         kind: entry.kind,
+        assistanceDepth: entry.assistanceDepth,
+        slashCommand: entry.slashCommand,
+        slashCommandScope: entry.slashCommandScope,
         categories: [],
         targetFiles: [],
         excludedGlobs: [],
@@ -1426,7 +1544,16 @@ export class NavigatorController implements vscode.Disposable {
     return state.conversationHistory.slice(start, end);
   }
 
-  private resolveUserEntryText(kind: GuidanceKind, userPrompt?: string): string | undefined {
+  private resolveUserEntryText(
+    kind: GuidanceKind,
+    userPrompt?: string,
+    slashCommand?: SlashCommand,
+    slashCommandScope?: SlashCommandScope
+  ): string | undefined {
+    if (slashCommand) {
+      return userPrompt?.trim() || this.getSlashCommandUserEntryText(slashCommand, slashCommandScope);
+    }
+
     if (userPrompt?.trim() && kind !== "always") {
       return userPrompt.trim();
     }
@@ -1441,6 +1568,113 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
+  private getSlashCommandUserEntryText(
+    slashCommand: SlashCommand,
+    slashCommandScope?: SlashCommandScope
+  ): string {
+    switch (slashCommand) {
+      case "hint":
+        return "ヒントをください";
+      case "next":
+        return slashCommandScope === "deep"
+          ? "次に何をすればよいか広めに整理してください"
+          : "次に何をすればよいか整理してください";
+      case "flow":
+        return "処理やデータの流れを整理してください";
+      case "risk":
+        return "壊れやすい箇所や注意点を確認してください";
+      case "test":
+        return "テスト観点を整理してください";
+      default:
+        return "相談したいです";
+    }
+  }
+
+  private parseSlashInput(value?: string): ParsedSlashInput {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return {};
+    }
+
+    const match = /^\/([a-zA-Z][a-zA-Z0-9_-]*)(?:\s+([\s\S]*))?$/.exec(trimmed);
+    if (!match) {
+      return { userPrompt: trimmed };
+    }
+
+    const slashCommand = this.normalizeSlashCommand(match[1]);
+    if (!slashCommand) {
+      return { userPrompt: trimmed };
+    }
+
+    const userPrompt = match[2]?.trim();
+    if (slashCommand === "next") {
+      const nextScope = this.parseNextSlashCommandScope(userPrompt);
+      return {
+        slashCommand,
+        slashCommandScope: nextScope.scope,
+        userPrompt: nextScope.userPrompt
+      };
+    }
+
+    return {
+      slashCommand,
+      slashCommandScope: "standard",
+      userPrompt: userPrompt || undefined
+    };
+  }
+
+  private parseNextSlashCommandScope(value: string | undefined): {
+    scope: SlashCommandScope;
+    userPrompt?: string;
+  } {
+    const args = value?.trim();
+    if (!args) {
+      return { scope: "standard" };
+    }
+
+    const [firstArg, ...rest] = args.split(/\s+/);
+    if (firstArg && /^(deep|wide|full)$/i.test(firstArg)) {
+      const userPrompt = rest.join(" ").trim();
+      return {
+        scope: "deep",
+        userPrompt: userPrompt || undefined
+      };
+    }
+
+    return {
+      scope: "standard",
+      userPrompt: args
+    };
+  }
+
+  private normalizeSlashCommand(value: string): SlashCommand | undefined {
+    switch (value.toLowerCase()) {
+      case "hint":
+      case "next":
+      case "flow":
+      case "risk":
+      case "test":
+        return value.toLowerCase() as SlashCommand;
+      default:
+        return undefined;
+    }
+  }
+
+  private resolveEffectiveAssistanceDepth(kind: GuidanceKind, assistanceDepth: AssistanceDepth): AssistanceDepth {
+    return kind === "always" ? "low" : assistanceDepth;
+  }
+
+  private resolveNextProjectScope(
+    assistanceDepth: AssistanceDepth,
+    slashCommandScope?: SlashCommandScope
+  ): ProjectContextScope {
+    if (slashCommandScope === "deep") {
+      return "deep";
+    }
+
+    return assistanceDepth === "high" ? "project" : "project-lite";
+  }
+
   private hasMeaningfulContext(context: GuidanceContext): boolean {
     return Boolean(
       context.activeFileExcerpt ||
@@ -1450,6 +1684,7 @@ export class NavigatorController implements vscode.Disposable {
         context.diagnosticsSummary.length > 0 ||
         context.recentEditsSummary.length > 0 ||
         context.relatedSymbols.length > 0 ||
+        context.projectSummary ||
         context.additionalContext
     );
   }
@@ -1530,6 +1765,7 @@ export class NavigatorController implements vscode.Disposable {
       connectionState,
       requestState: "idle",
       mode: "manual",
+      assistanceDepth: "low",
       autoAdvice: {
         enabled: false,
         paused: false,

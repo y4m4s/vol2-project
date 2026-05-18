@@ -1,12 +1,15 @@
 import {
   ContextCategoryKey,
+  AssistanceDepth,
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
   NavigatorSettings,
   RequestPlanCategory,
   RequestPlanFile,
-  RequestPlanSnapshot
+  RequestPlanSnapshot,
+  SlashCommand,
+  SlashCommandScope
 } from "../shared/types";
 
 export interface PreparedGuidanceRequest {
@@ -19,7 +22,10 @@ export class RequestPlanner {
     context: GuidanceContext,
     preview: NavigatorContextPreview,
     settings: NavigatorSettings,
-    kind: GuidanceKind
+    kind: GuidanceKind,
+    assistanceDepth?: AssistanceDepth,
+    slashCommand?: SlashCommand,
+    slashCommandScope?: SlashCommandScope
   ): PreparedGuidanceRequest {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
@@ -34,6 +40,7 @@ export class RequestPlanner {
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
       relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
+      projectSummary: context.projectSummary,
       additionalContext: context.additionalContext
     };
 
@@ -41,6 +48,9 @@ export class RequestPlanner {
       context: filteredContext,
       requestPlan: {
         kind,
+        assistanceDepth,
+        slashCommand,
+        slashCommandScope,
         categories: this.buildCategories(context, filteredContext, fileExcluded),
         targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded, excludedGlobs),
         excludedGlobs,
@@ -112,6 +122,16 @@ export class RequestPlanner {
         context.referencedFiles.length > 0
           ? `${context.referencedFiles.length}件の関連ファイル断片を送信します`
           : "関連ファイル候補はありません"
+      ),
+      this.createCategory(
+        "projectSummary",
+        "プロジェクト概要",
+        "次の一手を考えるための薄いプロジェクト文脈",
+        true,
+        Boolean(context.projectSummary),
+        context.projectSummary
+          ? `${this.formatProjectScope(context.projectSummary.scope)}でプロジェクト概要を送信します`
+          : "プロジェクト概要は送信しません"
       ),
       this.createCategory(
         "additionalContext",
@@ -195,7 +215,7 @@ export class RequestPlanner {
 
   private estimateSizeText(context: GuidanceContext, _preview: NavigatorContextPreview): string {
     const byteLength = this.byteLength(
-      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.workspaceTree?.treeText ?? ""}${context.referencedFiles.map((file) => `${file.excerpt ?? ""}${file.diagnosticsSummary.map((item) => item.message).join("")}${file.recentEditsSummary.join("")}`).join("")}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${context.additionalContext ?? ""}`
+      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.workspaceTree?.treeText ?? ""}${context.referencedFiles.map((file) => `${file.excerpt ?? ""}${file.diagnosticsSummary.map((item) => item.message).join("")}${file.recentEditsSummary.join("")}`).join("")}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${this.projectSummaryText(context)}${context.additionalContext ?? ""}`
     );
 
     const categories = [
@@ -206,6 +226,7 @@ export class RequestPlanner {
       context.diagnosticsSummary.length > 0 ? "diagnostics" : undefined,
       context.recentEditsSummary.length > 0 ? "recentEdits" : undefined,
       context.relatedSymbols.length > 0 ? "symbols" : undefined,
+      context.projectSummary ? "project" : undefined,
       context.additionalContext ? "追加" : undefined
     ].filter((value): value is string => Boolean(value));
 
@@ -228,6 +249,35 @@ export class RequestPlanner {
       included,
       note
     };
+  }
+
+  private formatProjectScope(scope: NonNullable<GuidanceContext["projectSummary"]>["scope"]): string {
+    switch (scope) {
+      case "deep":
+        return "Deep";
+      case "project":
+        return "Project";
+      case "project-lite":
+      default:
+        return "Project-lite";
+    }
+  }
+
+  private projectSummaryText(context: GuidanceContext): string {
+    const summary = context.projectSummary;
+    if (!summary) {
+      return "";
+    }
+
+    return [
+      summary.scope,
+      ...summary.openFiles,
+      ...summary.diagnosticsSummary,
+      ...summary.recentEditsSummary,
+      ...summary.todoSummary,
+      ...summary.manifestSummary,
+      ...summary.docsSummary
+    ].join("");
   }
 
   private describeFileCategoryNote(fileExcluded: boolean, activeFilePath?: string, excerpt?: string): string | undefined {

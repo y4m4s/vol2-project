@@ -8,6 +8,14 @@ export type ConnectionState =
 
 export type AdviceMode = "manual" | "always";
 
+export type AssistanceDepth = "low" | "high";
+
+export type SlashCommand = "hint" | "next" | "flow" | "risk" | "test";
+
+export type SlashCommandScope = "standard" | "deep";
+
+export type ProjectContextScope = "project-lite" | "project" | "deep";
+
 export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
 
 export type NavigatorScreen =
@@ -37,6 +45,7 @@ export type ContextCategoryKey =
   | "relatedSymbols"
   | "workspaceTree"
   | "referencedFiles"
+  | "projectSummary"
   | "additionalContext";
 
 export interface DiagnosticSummary {
@@ -75,6 +84,16 @@ export interface WorkspaceTreeContext {
   truncated: boolean;
 }
 
+export interface ProjectContextSummary {
+  scope: ProjectContextScope;
+  openFiles: string[];
+  diagnosticsSummary: string[];
+  recentEditsSummary: string[];
+  todoSummary: string[];
+  manifestSummary: string[];
+  docsSummary: string[];
+}
+
 export interface GuidanceContext {
   activeFilePath?: string;
   activeFileLanguage?: string;
@@ -85,11 +104,13 @@ export interface GuidanceContext {
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
+  projectSummary?: ProjectContextSummary;
   additionalContext?: string;
 }
 
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
+  defaultAssistanceDepth: AssistanceDepth;
   requestIntervalMs: number;
   idleDelayMs: number;
   enableWorkspaceContext: boolean;
@@ -115,6 +136,9 @@ export interface RequestPlanFile {
 
 export interface RequestPlanSnapshot {
   kind: GuidanceKind;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   categories: RequestPlanCategory[];
   targetFiles: RequestPlanFile[];
   excludedGlobs: string[];
@@ -125,6 +149,9 @@ export interface GuidanceCard {
   id: string;
   requestedAt: string;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   text: string;
   basedOn: NavigatorContextPreview;
   requestPlan: RequestPlanSnapshot;
@@ -138,6 +165,9 @@ export interface ConversationEntry {
   kind: GuidanceKind;
   basedOn?: NavigatorContextPreview;
   mode?: AdviceMode;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   requestPlan?: RequestPlanSnapshot;
 }
 
@@ -185,6 +215,7 @@ export interface NavigatorSessionState {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
@@ -204,9 +235,11 @@ export interface NavigatorViewModel {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   canConnect: boolean;
   canAskForGuidance: boolean;
   canSwitchMode: boolean;
+  canSwitchAssistanceDepth: boolean;
   isBusy: boolean;
   autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;

@@ -5,6 +5,7 @@ import {
   DiagnosticSummary,
   GuidanceContext,
   NavigatorSettings,
+  ProjectContextScope,
   ReferencedFileContext,
   ReferencedFileReason,
   NavigatorContextPreview
@@ -24,6 +25,10 @@ const MAX_REFERENCED_FILE_COUNT = 5;
 const MAX_REFERENCED_FILE_EXCERPT_LENGTH = 3000;
 const MAX_REFERENCED_FILE_BYTES = 200_000;
 const SAME_DIRECTORY_FILE_LIMIT = 10;
+const NEXT_TODO_FILE_LIMIT = 180;
+const NEXT_TODO_MAX_FILE_BYTES = 200_000;
+const NEXT_MANIFEST_MAX_FILE_BYTES = 200_000;
+const NEXT_DOC_MAX_FILE_BYTES = 200_000;
 
 interface RecentEditRecord {
   lineStart: number;
@@ -42,6 +47,54 @@ interface WorkspaceTreeNode {
   children: Map<string, WorkspaceTreeNode>;
   file: boolean;
 }
+
+interface NextContextLimits {
+  workspaceTreeFiles: number;
+  workspaceTreeTextLength: number;
+  referencedFileCount: number;
+  referencedFileExcerptLength: number;
+  diagnosticsCount: number;
+  recentEditCount: number;
+  openFileCount: number;
+  todoCount: number;
+  docsCount: number;
+}
+
+const NEXT_CONTEXT_LIMITS: Record<ProjectContextScope, NextContextLimits> = {
+  "project-lite": {
+    workspaceTreeFiles: 120,
+    workspaceTreeTextLength: 3600,
+    referencedFileCount: 2,
+    referencedFileExcerptLength: 1400,
+    diagnosticsCount: 8,
+    recentEditCount: 8,
+    openFileCount: 8,
+    todoCount: 8,
+    docsCount: 4
+  },
+  project: {
+    workspaceTreeFiles: 180,
+    workspaceTreeTextLength: 5200,
+    referencedFileCount: 3,
+    referencedFileExcerptLength: 2200,
+    diagnosticsCount: 12,
+    recentEditCount: 12,
+    openFileCount: 12,
+    todoCount: 12,
+    docsCount: 6
+  },
+  deep: {
+    workspaceTreeFiles: 260,
+    workspaceTreeTextLength: 7600,
+    referencedFileCount: 5,
+    referencedFileExcerptLength: 3200,
+    diagnosticsCount: 18,
+    recentEditCount: 18,
+    openFileCount: 16,
+    todoCount: 18,
+    docsCount: 9
+  }
+};
 
 export class ContextCollector {
   private readonly recentEditsByDocument = new Map<string, RecentEditRecord[]>();
@@ -130,6 +183,50 @@ export class ContextCollector {
       ...context,
       workspaceTree,
       referencedFiles
+    };
+  }
+
+  public async collectNextActionContext(
+    settings: NavigatorSettings,
+    scope: ProjectContextScope,
+    baseContext?: GuidanceContext
+  ): Promise<GuidanceContext> {
+    const context = baseContext ?? this.collectGuidanceContext();
+    const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
+    const limits = NEXT_CONTEXT_LIMITS[scope];
+    const [
+      workspaceTree,
+      referencedFiles,
+      openFiles,
+      diagnosticsSummary,
+      recentEditsSummary,
+      todoSummary,
+      manifestSummary,
+      docsSummary
+    ] = await Promise.all([
+      this.collectWorkspaceTree(excludedGlobs, limits.workspaceTreeFiles, limits.workspaceTreeTextLength),
+      this.collectReferencedFiles(context, excludedGlobs, limits.referencedFileCount, limits.referencedFileExcerptLength),
+      Promise.resolve(this.collectOpenFileSummary(excludedGlobs, limits.openFileCount)),
+      Promise.resolve(this.collectWorkspaceDiagnosticsSummary(excludedGlobs, limits.diagnosticsCount)),
+      Promise.resolve(this.collectWorkspaceRecentEditsSummary(excludedGlobs, limits.recentEditCount)),
+      this.collectTodoSummary(excludedGlobs, limits.todoCount),
+      this.collectManifestSummary(excludedGlobs),
+      this.collectDocsSummary(excludedGlobs, limits.docsCount)
+    ]);
+
+    return {
+      ...context,
+      workspaceTree,
+      referencedFiles,
+      projectSummary: {
+        scope,
+        openFiles,
+        diagnosticsSummary,
+        recentEditsSummary,
+        todoSummary,
+        manifestSummary,
+        docsSummary
+      }
     };
   }
 
@@ -245,16 +342,20 @@ export class ContextCollector {
     });
   }
 
-  private async collectWorkspaceTree(excludedGlobs: string[]): Promise<GuidanceContext["workspaceTree"]> {
+  private async collectWorkspaceTree(
+    excludedGlobs: string[],
+    maxFiles = MAX_WORKSPACE_TREE_FILES,
+    maxTextLength = MAX_WORKSPACE_TREE_TEXT_LENGTH
+  ): Promise<GuidanceContext["workspaceTree"]> {
     if (!vscode.workspace.workspaceFolders?.length) {
       return undefined;
     }
 
     const excludePattern = this.toFindFilesExcludePattern(excludedGlobs);
-    const uris = await vscode.workspace.findFiles("**/*", excludePattern, MAX_WORKSPACE_TREE_FILES + 1);
+    const uris = await vscode.workspace.findFiles("**/*", excludePattern, maxFiles + 1);
     const relativePaths = uris
       .filter((uri) => uri.scheme === "file" && !this.isPathExcluded(uri.fsPath, excludedGlobs))
-      .slice(0, MAX_WORKSPACE_TREE_FILES)
+      .slice(0, maxFiles)
       .map((uri) => this.toWorkspaceRelativePath(uri))
       .sort((a, b) => a.localeCompare(b));
 
@@ -263,18 +364,20 @@ export class ContextCollector {
     }
 
     const rawTreeText = this.buildTreeText(relativePaths);
-    const treeText = this.limitText(rawTreeText, MAX_WORKSPACE_TREE_TEXT_LENGTH) ?? rawTreeText;
+    const treeText = this.limitText(rawTreeText, maxTextLength) ?? rawTreeText;
 
     return {
       rootPath: vscode.workspace.workspaceFolders.map((folder) => folder.uri.fsPath).join("; "),
       treeText,
-      truncated: uris.length > MAX_WORKSPACE_TREE_FILES || treeText.length < rawTreeText.length
+      truncated: uris.length > maxFiles || treeText.length < rawTreeText.length
     };
   }
 
   private async collectReferencedFiles(
     context: GuidanceContext,
-    excludedGlobs: string[]
+    excludedGlobs: string[],
+    maxCount = MAX_REFERENCED_FILE_COUNT,
+    maxExcerptLength = MAX_REFERENCED_FILE_EXCERPT_LENGTH
   ): Promise<ReferencedFileContext[]> {
     const candidates = new Map<string, ReferencedFileCandidate>();
     const activePath = context.activeFilePath;
@@ -308,8 +411,8 @@ export class ContextCollector {
 
     const selected = [...candidates.values()]
       .sort((a, b) => b.score - a.score || a.uri.fsPath.localeCompare(b.uri.fsPath))
-      .slice(0, MAX_REFERENCED_FILE_COUNT);
-    const contexts = await Promise.all(selected.map((candidate) => this.toReferencedFileContext(candidate)));
+      .slice(0, maxCount);
+    const contexts = await Promise.all(selected.map((candidate) => this.toReferencedFileContext(candidate, maxExcerptLength)));
 
     return contexts.filter((item): item is ReferencedFileContext => Boolean(item));
   }
@@ -366,7 +469,8 @@ export class ContextCollector {
   }
 
   private async toReferencedFileContext(
-    candidate: ReferencedFileCandidate
+    candidate: ReferencedFileCandidate,
+    maxExcerptLength = MAX_REFERENCED_FILE_EXCERPT_LENGTH
   ): Promise<ReferencedFileContext | undefined> {
     try {
       const stat = await vscode.workspace.fs.stat(candidate.uri);
@@ -375,7 +479,7 @@ export class ContextCollector {
       }
 
       const document = await vscode.workspace.openTextDocument(candidate.uri);
-      const excerpt = this.collectDocumentExcerpt(document, MAX_REFERENCED_FILE_EXCERPT_LENGTH);
+      const excerpt = this.collectDocumentExcerpt(document, maxExcerptLength);
       if (!excerpt && this.collectDiagnostics(candidate.uri).length === 0) {
         return undefined;
       }
@@ -455,6 +559,218 @@ export class ContextCollector {
 
   private toFindFilesExcludePattern(patterns: string[]): string | undefined {
     return patterns.length > 0 ? `{${patterns.join(",")}}` : undefined;
+  }
+
+  private collectOpenFileSummary(excludedGlobs: string[], maxCount: number): string[] {
+    return vscode.workspace.textDocuments
+      .filter((document) => document.uri.scheme === "file" && !this.isPathExcluded(document.uri.fsPath, excludedGlobs))
+      .map((document) => `${this.toWorkspaceRelativePath(document.uri)} (${document.languageId})`)
+      .slice(0, maxCount);
+  }
+
+  private collectWorkspaceDiagnosticsSummary(excludedGlobs: string[], maxCount: number): string[] {
+    return vscode.languages.getDiagnostics()
+      .flatMap(([uri, diagnostics]) => diagnostics
+        .filter(() => uri.scheme === "file" && !this.isPathExcluded(uri.fsPath, excludedGlobs))
+        .map((diagnostic) => ({
+          uri,
+          diagnostic
+        })))
+      .sort((a, b) => a.diagnostic.severity - b.diagnostic.severity)
+      .slice(0, maxCount)
+      .map(({ uri, diagnostic }) => {
+        const source = diagnostic.source ? ` (${diagnostic.source})` : "";
+        return `${this.toWorkspaceRelativePath(uri)} L${diagnostic.range.start.line + 1}: ${this.mapSeverity(diagnostic.severity)}${source}: ${this.normalizeOneLine(diagnostic.message, 160)}`;
+      });
+  }
+
+  private collectWorkspaceRecentEditsSummary(excludedGlobs: string[], maxCount: number): string[] {
+    const summaries: Array<{ timestamp: number; text: string }> = [];
+
+    for (const [key, records] of this.recentEditsByDocument.entries()) {
+      const uri = vscode.Uri.parse(key);
+      if (uri.scheme !== "file" || this.isPathExcluded(uri.fsPath, excludedGlobs)) {
+        continue;
+      }
+
+      const pruned = this.pruneRecentEdits(records);
+      this.recentEditsByDocument.set(key, pruned);
+      for (const record of pruned) {
+        const lineLabel = record.lineStart === record.lineEnd ? `L${record.lineStart}` : `L${record.lineStart}-L${record.lineEnd}`;
+        summaries.push({
+          timestamp: record.timestamp,
+          text: `${this.toWorkspaceRelativePath(uri)} ${lineLabel}: ${record.preview}`
+        });
+      }
+    }
+
+    return summaries
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, maxCount)
+      .map((item) => item.text);
+  }
+
+  private async collectTodoSummary(excludedGlobs: string[], maxCount: number): Promise<string[]> {
+    if (!vscode.workspace.workspaceFolders?.length) {
+      return [];
+    }
+
+    const uris = await vscode.workspace.findFiles(
+      "**/*",
+      this.toFindFilesExcludePattern(excludedGlobs),
+      NEXT_TODO_FILE_LIMIT
+    );
+    const summaries: string[] = [];
+
+    for (const uri of uris) {
+      if (
+        summaries.length >= maxCount ||
+        uri.scheme !== "file" ||
+        this.isPathExcluded(uri.fsPath, excludedGlobs) ||
+        !this.isLikelyTextPath(uri.fsPath)
+      ) {
+        continue;
+      }
+
+      const text = await this.readSmallTextFile(uri, NEXT_TODO_MAX_FILE_BYTES);
+      if (!text) {
+        continue;
+      }
+
+      const lines = text.replace(/\r\n/g, "\n").split("\n");
+      for (let index = 0; index < lines.length && summaries.length < maxCount; index += 1) {
+        if (/\b(TODO|FIXME|XXX)\b/i.test(lines[index])) {
+          summaries.push(`${this.toWorkspaceRelativePath(uri)} L${index + 1}: ${this.normalizeOneLine(lines[index], 180)}`);
+        }
+      }
+    }
+
+    return summaries;
+  }
+
+  private async collectManifestSummary(excludedGlobs: string[]): Promise<string[]> {
+    const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+    const summaries: string[] = [];
+
+    for (const folder of workspaceFolders) {
+      const packageJsonUri = vscode.Uri.joinPath(folder.uri, "package.json");
+      if (!this.isPathExcluded(packageJsonUri.fsPath, excludedGlobs)) {
+        const packageSummary = await this.summarizePackageJson(packageJsonUri);
+        if (packageSummary) {
+          summaries.push(packageSummary);
+        }
+      }
+
+      for (const fileName of ["tsconfig.json", "pyproject.toml", "Cargo.toml", "go.mod"]) {
+        const uri = vscode.Uri.joinPath(folder.uri, fileName);
+        if (this.isPathExcluded(uri.fsPath, excludedGlobs)) {
+          continue;
+        }
+        const text = await this.readSmallTextFile(uri, NEXT_MANIFEST_MAX_FILE_BYTES);
+        if (text) {
+          summaries.push(`${this.toWorkspaceRelativePath(uri)}: ${this.normalizeOneLine(text, 220)}`);
+        }
+      }
+    }
+
+    return summaries.slice(0, 6);
+  }
+
+  private async collectDocsSummary(excludedGlobs: string[], maxCount: number): Promise<string[]> {
+    const excludePattern = this.toFindFilesExcludePattern(excludedGlobs);
+    const uriGroups = await Promise.all([
+      vscode.workspace.findFiles("**/README.md", excludePattern, 4),
+      vscode.workspace.findFiles("**/readme.md", excludePattern, 4),
+      vscode.workspace.findFiles("docs/**/*.md", excludePattern, maxCount)
+    ]);
+    const seen = new Set<string>();
+    const summaries: string[] = [];
+
+    for (const uri of uriGroups.flat()) {
+      if (
+        summaries.length >= maxCount ||
+        uri.scheme !== "file" ||
+        this.isPathExcluded(uri.fsPath, excludedGlobs) ||
+        seen.has(uri.toString())
+      ) {
+        continue;
+      }
+
+      seen.add(uri.toString());
+      const text = await this.readSmallTextFile(uri, NEXT_DOC_MAX_FILE_BYTES);
+      if (text) {
+        summaries.push(`${this.toWorkspaceRelativePath(uri)}: ${this.summarizeMarkdownText(text)}`);
+      }
+    }
+
+    return summaries;
+  }
+
+  private async summarizePackageJson(uri: vscode.Uri): Promise<string | undefined> {
+    const text = await this.readSmallTextFile(uri, NEXT_MANIFEST_MAX_FILE_BYTES);
+    if (!text) {
+      return undefined;
+    }
+
+    try {
+      const parsed = JSON.parse(text) as Record<string, unknown>;
+      const scripts = parsed.scripts && typeof parsed.scripts === "object"
+        ? Object.keys(parsed.scripts).slice(0, 8).join(", ")
+        : "";
+      const dependencies = parsed.dependencies && typeof parsed.dependencies === "object"
+        ? Object.keys(parsed.dependencies).slice(0, 8).join(", ")
+        : "";
+      const devDependencies = parsed.devDependencies && typeof parsed.devDependencies === "object"
+        ? Object.keys(parsed.devDependencies).slice(0, 8).join(", ")
+        : "";
+      return [
+        `${this.toWorkspaceRelativePath(uri)}:`,
+        parsed.name ? `name=${String(parsed.name)}` : undefined,
+        scripts ? `scripts=${scripts}` : undefined,
+        dependencies ? `deps=${dependencies}` : undefined,
+        devDependencies ? `devDeps=${devDependencies}` : undefined
+      ].filter((value): value is string => Boolean(value)).join(" ");
+    } catch {
+      return `${this.toWorkspaceRelativePath(uri)}: ${this.normalizeOneLine(text, 220)}`;
+    }
+  }
+
+  private summarizeMarkdownText(text: string): string {
+    const normalizedLines = text.replace(/\r\n/g, "\n").split("\n");
+    const headingLines = normalizedLines
+      .map((line) => line.trim())
+      .filter((line) => /^#{1,3}\s+/.test(line))
+      .slice(0, 6)
+      .map((line) => line.replace(/^#{1,3}\s+/, ""));
+    const introLines = normalizedLines
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && !line.startsWith("```"))
+      .slice(0, 3);
+
+    return this.normalizeOneLine([...headingLines, ...introLines].join(" / "), 360);
+  }
+
+  private async readSmallTextFile(uri: vscode.Uri, maxBytes: number): Promise<string | undefined> {
+    try {
+      const stat = await vscode.workspace.fs.stat(uri);
+      if (stat.type !== vscode.FileType.File || stat.size > maxBytes) {
+        return undefined;
+      }
+
+      const bytes = await vscode.workspace.fs.readFile(uri);
+      return Buffer.from(bytes).toString("utf8");
+    } catch {
+      return undefined;
+    }
+  }
+
+  private isLikelyTextPath(filePath: string): boolean {
+    return /\.(c|cc|cpp|cs|css|go|h|hpp|html|java|js|json|jsx|kt|md|py|rs|scss|ts|tsx|txt|vue|xml|yaml|yml)$/i.test(filePath);
+  }
+
+  private normalizeOneLine(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
   }
 
   private getEffectiveExcludedGlobs(settings: NavigatorSettings): string[] {

@@ -1,12 +1,15 @@
 import * as vscode from "vscode";
 import {
   AdviceMode,
+  AssistanceDepth,
   ConnectionState,
   ConversationEntry,
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
-  RequestPlanSnapshot
+  RequestPlanSnapshot,
+  SlashCommand,
+  SlashCommandScope
 } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
 import type { KnowledgeRecord } from "./KnowledgeStore";
@@ -28,6 +31,9 @@ export interface GuidanceRequestInput {
   context: GuidanceContext;
   kind: GuidanceKind;
   userPrompt?: string;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   knowledgeItems?: KnowledgeRecord[];
 }
 
@@ -145,7 +151,8 @@ export class AdviceService {
   }
 
   private buildPrompt(input: GuidanceRequestInput): string {
-    const { context, kind, userPrompt, knowledgeItems } = input;
+    const { context, kind, userPrompt, knowledgeItems, slashCommand, slashCommandScope } = input;
+    const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
     const lines: string[] = [
       "You are a pair programming navigator.",
       "Your default goal is to help the user think and move forward on their own.",
@@ -157,10 +164,15 @@ export class AdviceService {
       "- Do not drift into active-file code advice when the user's question is about the additional context itself.",
       "- Ignore noise from in-progress editing: unclosed braces, incomplete expressions, half-typed lines. These are not issues.",
       "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
-      "- Do not output code unless the user explicitly asks for code.",
+      "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow.",
       "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
-      "- Write in a way that naturally leads the user to their next action — without prescribing exact wording or phrasing patterns.",
-      "- Respond in Japanese. Be concise. Use 2–4 short points.",
+      "- Write in a way that naturally leads the user to their next action without prescribing exact wording or phrasing patterns.",
+      "- Respond in Japanese.",
+      this.getDepthRule(assistanceDepth),
+      "",
+      "## 応答設定",
+      `深さ: ${assistanceDepth}`,
+      slashCommand ? `スラッシュコマンド: /${slashCommand}${slashCommandScope === "deep" ? " deep" : ""}` : "スラッシュコマンド: なし",
       "",
       "## 現在の作業文脈"
     ];
@@ -230,6 +242,16 @@ export class AdviceService {
       }
     }
 
+    if (context.projectSummary) {
+      lines.push("", "## プロジェクト概要", `scope: ${context.projectSummary.scope}`);
+      this.pushListSection(lines, "開いているファイル:", context.projectSummary.openFiles);
+      this.pushListSection(lines, "ワークスペース診断:", context.projectSummary.diagnosticsSummary);
+      this.pushListSection(lines, "最近の編集:", context.projectSummary.recentEditsSummary);
+      this.pushListSection(lines, "TODO/FIXME:", context.projectSummary.todoSummary);
+      this.pushListSection(lines, "Manifest/設定:", context.projectSummary.manifestSummary);
+      this.pushListSection(lines, "Docs:", context.projectSummary.docsSummary);
+    }
+
     if (context.additionalContext) {
       lines.push("", "追加コンテキスト:", "```", context.additionalContext, "```");
     }
@@ -246,12 +268,24 @@ export class AdviceService {
       lines.push("", "## ユーザーからの相談", userPrompt.trim());
     }
 
+    if (slashCommand) {
+      lines.push("", "## スラッシュコマンド指示", this.getSlashCommandInstruction(slashCommand, assistanceDepth, slashCommandScope));
+    }
+
     lines.push(
       "",
       this.getInstructionByKind(kind)
     );
 
     return lines.join("\n");
+  }
+
+  private getDepthRule(depth: AssistanceDepth): string {
+    if (depth === "high") {
+      return "- High mode: give a structured explanation with the next checks, tradeoffs, and boundaries. Keep it compact, but go deeper than hints.";
+    }
+
+    return "- Low mode: give short hints and checking points only. Avoid long explanations and avoid jumping to the final answer.";
   }
 
   private getInstructionByKind(kind: GuidanceKind): string {
@@ -279,6 +313,49 @@ export class AdviceService {
       case "open":
       default:
         return "open file";
+    }
+  }
+
+  private pushListSection(lines: string[], title: string, values: string[]): void {
+    if (values.length === 0) {
+      return;
+    }
+
+    lines.push(title, ...values.map((value) => `- ${value}`));
+  }
+
+  private getSlashCommandInstruction(
+    command: SlashCommand,
+    depth: AssistanceDepth,
+    scope?: SlashCommandScope
+  ): string {
+    switch (command) {
+      case "hint":
+        return depth === "high"
+          ? "詰まりをほどくために、原因候補を広げすぎず、確認順を3-5個で整理してください。完成した修正案ではなく、ユーザーが次に観察するポイントを中心にしてください。"
+          : "詰まりをほどくための短いヒントを2-3個だけ出してください。答えや完成コードは出さず、見る場所と問いを中心にしてください。";
+      case "next":
+        if (scope === "deep") {
+          return "プロジェクト全体を薄く見た前提で、作業の完了確認、未検証のリスク、次に着手する候補、後回しでよいことを根拠つきで短く整理してください。ファイル配置、診断、TODO、docs から読み取れる範囲を優先し、推測しすぎないでください。";
+        }
+
+        return depth === "high"
+          ? "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、完了確認、検証、次の実装候補、後回しでよいことを分けて整理してください。命令ではなく、判断材料として提示してください。"
+          : "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、次に確認するとよいことを3個以内で短く提示してください。実行を代行せず、ユーザーが選べる次の一手にしてください。";
+      case "flow":
+        return depth === "high"
+          ? "現在の文脈から処理やデータの流れを整理し、Mermaid の flowchart TD コードブロックを1つ含めてください。図は推測しすぎず、分かる範囲の流れだけを描いてください。"
+          : "現在の文脈から処理やデータの流れを箇条書きで短く整理してください。入力、変換、出力、副作用が分かる範囲で示してください。";
+      case "risk":
+        return depth === "high"
+          ? "変更や設計の壊れやすい境界、副作用、見落としやすい条件、影響を受けそうな箇所を整理してください。重大度が高そうな順にしてください。"
+          : "壊れやすそうな箇所や見落としやすい条件を3個以内で短く示してください。断定しすぎず、確認ポイントとして書いてください。";
+      case "test":
+        return depth === "high"
+          ? "テスト観点を、正常系、境界値、失敗系、回帰確認に分けて整理してください。テストコードは書かず、何を確かめるかに絞ってください。"
+          : "今の変更に対して確認するとよいテスト観点を3個以内で短く示してください。テストコードは書かないでください。";
+      default:
+        return "ユーザーの意図に沿って、学習支援として短く整理してください。";
     }
   }
 

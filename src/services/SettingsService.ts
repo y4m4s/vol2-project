@@ -56,6 +56,7 @@ const PROTECTED_EXCLUDED_GLOBS = [
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
+  defaultAssistanceDepth: "low",
   requestIntervalMs: 20000,
   idleDelayMs: 10000,
   enableWorkspaceContext: false,
@@ -89,6 +90,7 @@ export class SettingsService {
 
     return {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
+      defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
       requestIntervalMs: DEFAULT_SETTINGS.requestIntervalMs,
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       enableWorkspaceContext: partial?.enableWorkspaceContext ?? DEFAULT_SETTINGS.enableWorkspaceContext,
@@ -101,6 +103,10 @@ export class SettingsService {
     return IDLE_DELAY_OPTIONS_MS.reduce((nearest, option) =>
       Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
     );
+  }
+
+  private normalizeAssistanceDepth(value: unknown): NavigatorSettings["defaultAssistanceDepth"] {
+    return value === "high" ? "high" : DEFAULT_SETTINGS.defaultAssistanceDepth;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

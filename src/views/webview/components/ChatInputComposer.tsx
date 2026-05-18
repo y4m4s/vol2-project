@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { AutoAdviceState } from "../../../shared/types";
 import { useApp } from "../state/AppContext";
@@ -7,6 +7,11 @@ import {
   AdditionalContextPanel,
   AdditionalContextReadonlyPanel
 } from "./AdditionalContextComposer";
+import {
+  getMatchingSlashCommands,
+  SlashCommandButton,
+  SlashCommandSuggest
+} from "./SlashCommandSuggest";
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 import { getSelectionLabel } from "../utils/labelUtils";
 
@@ -18,6 +23,9 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const { viewModel, send, additionalContextDraft, setAdditionalContextDraft } = useApp();
   const [inputText, setInputText] = useState("");
   const [isAdditionalContextOpen, setAdditionalContextOpen] = useState(false);
+  const [isSlashCommandOpen, setSlashCommandOpen] = useState(false);
+  const [dismissedSlashInput, setDismissedSlashInput] = useState<string | undefined>();
+  const [activeSlashCommandIndex, setActiveSlashCommandIndex] = useState(0);
   const textareaRef = useAutoResizeTextarea(inputText);
   const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
   const isConversationComposer = viewModel?.screen === "conversation" || viewModel?.screen === "advice_detail";
@@ -30,6 +38,8 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setInputText("");
     setAdditionalContextDraft(activeAdditionalContext);
     setAdditionalContextOpen(false);
+    setSlashCommandOpen(false);
+    setDismissedSlashInput(undefined);
     // activeAdditionalContext を deps に含めない:
     // main 画面で追加コンテキストを入力するたびにラウンドトリップで変化するため、
     // 入力中にメイン入力欄がクリアされたりパネルが閉じるのを防ぐ
@@ -44,14 +54,42 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     send({ type: "setComposerActive", active: Boolean(inputText.trim()) });
   }, [inputText, send]);
 
+  useEffect(() => {
+    if (inputText.trim() && getSlashCommandQuery(inputText) === undefined) {
+      setSlashCommandOpen(false);
+    }
+  }, [inputText]);
+
+  useEffect(() => {
+    if (dismissedSlashInput && inputText !== dismissedSlashInput) {
+      setDismissedSlashInput(undefined);
+    }
+  }, [dismissedSlashInput, inputText]);
+
+  const slashCommandQuery = getSlashCommandQuery(inputText);
+  const slashCommandMenuOpen = Boolean(
+    (slashCommandQuery !== undefined && inputText !== dismissedSlashInput) ||
+      isSlashCommandOpen
+  );
+  const slashCommandOptions = useMemo(
+    () => getMatchingSlashCommands(slashCommandQuery ?? ""),
+    [slashCommandQuery]
+  );
+
+  useEffect(() => {
+    setActiveSlashCommandIndex(0);
+  }, [slashCommandQuery, slashCommandMenuOpen]);
+
   if (!viewModel) {
     return null;
   }
 
   const {
     mode,
+    assistanceDepth,
     canAskForGuidance,
     canSwitchMode,
+    canSwitchAssistanceDepth,
     isBusy,
     autoAdvice,
     contextPreview
@@ -59,6 +97,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
+  const isHigh = assistanceDepth === "high";
 
   function handleSend() {
     const text = inputText.trim();
@@ -72,9 +111,64 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       additionalContext: additionalContextDraft
     });
     setInputText("");
+    setSlashCommandOpen(false);
+    setDismissedSlashInput(undefined);
+  }
+
+  function handleRunSlashCommand(commandText: string) {
+    if (!canAskForGuidance || isBusy) {
+      return;
+    }
+
+    send({
+      type: "ask",
+      text: commandText,
+      additionalContext: additionalContextDraft
+    });
+    setInputText("");
+    setSlashCommandOpen(false);
+    setDismissedSlashInput(undefined);
+    textareaRef.current?.focus();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (slashCommandMenuOpen) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveSlashCommandIndex((index) => {
+          if (slashCommandOptions.length === 0) {
+            return 0;
+          }
+          return (index + 1) % slashCommandOptions.length;
+        });
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveSlashCommandIndex((index) => {
+          if (slashCommandOptions.length === 0) {
+            return 0;
+          }
+          return (index - 1 + slashCommandOptions.length) % slashCommandOptions.length;
+        });
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSlashCommandOpen(false);
+        setDismissedSlashInput(inputText);
+        return;
+      }
+
+      if (event.key === "Enter" && !event.shiftKey && slashCommandOptions[activeSlashCommandIndex]) {
+        event.preventDefault();
+        handleRunSlashCommand(slashCommandOptions[activeSlashCommandIndex].commandText);
+        return;
+      }
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -108,6 +202,15 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
           )
         )}
 
+        <SlashCommandSuggest
+          open={slashCommandMenuOpen}
+          query={slashCommandQuery ?? ""}
+          activeIndex={activeSlashCommandIndex}
+          disabled={!canAskForGuidance || isBusy}
+          onActiveIndexChange={setActiveSlashCommandIndex}
+          onRunCommand={handleRunSlashCommand}
+        />
+
         <textarea
           ref={textareaRef}
           className="chat-input-textarea"
@@ -128,6 +231,21 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                 onClick={() => setAdditionalContextOpen((open) => !open)}
               />
             )}
+            <SlashCommandButton
+              open={slashCommandMenuOpen}
+              disabled={isBusy}
+              onClick={() => {
+                if (slashCommandMenuOpen) {
+                  setSlashCommandOpen(false);
+                  setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+                } else {
+                  setSlashCommandOpen(true);
+                  setDismissedSlashInput(undefined);
+                }
+                setAdditionalContextOpen(false);
+                textareaRef.current?.focus();
+              }}
+            />
           </div>
 
           <div className="chat-input-footer-right">
@@ -149,6 +267,19 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                 </button>
               </div>
             )}
+
+            <button
+              className={`chat-depth-btn ${isHigh ? "high" : ""}`}
+              title={isHigh ? "ロウモードへ切り替え" : "ハイモードへ切り替え"}
+              disabled={!canSwitchAssistanceDepth}
+              onClick={() => send({
+                type: "setAssistanceDepth",
+                assistanceDepth: isHigh ? "low" : "high"
+              })}
+            >
+              <span className="material-symbols-outlined">{isHigh ? "travel_explore" : "lightbulb"}</span>
+              {isHigh ? "ハイ" : "ロウ"}
+            </button>
 
             <button
               className={`chat-mode-btn ${isAlways ? "always" : ""}`}
@@ -176,6 +307,15 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       </div>
     </div>
   );
+}
+
+function getSlashCommandQuery(value: string): string | undefined {
+  const trimmed = value.trimStart();
+  if (!trimmed.startsWith("/") || trimmed.includes("\n")) {
+    return undefined;
+  }
+
+  return trimmed.slice(1).toLowerCase();
 }
 
 

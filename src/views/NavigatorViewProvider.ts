@@ -57,6 +57,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "setMode":
             await this.controller.setMode(message.mode, message.additionalContext);
             return;
+          case "setAssistanceDepth":
+            await this.controller.setAssistanceDepth(message.assistanceDepth);
+            return;
           case "toggleAutoPause":
             this.controller.toggleAutoPause();
             return;
@@ -174,6 +177,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private isCompletePayload(payload: unknown): payload is {
     defaultMode: "manual" | "always";
+    defaultAssistanceDepth: "low" | "high";
     idleDelaySec: number;
     enableWorkspaceContext: boolean;
     excludeGlobs: string;
@@ -182,6 +186,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     const p = payload as Record<string, unknown>;
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
+      (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
       typeof p.idleDelaySec === "number" &&
       typeof p.enableWorkspaceContext === "boolean" &&
       typeof p.excludeGlobs === "string"
