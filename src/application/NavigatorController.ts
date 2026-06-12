@@ -13,6 +13,7 @@ import { ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
+import { UsageMeter } from "../services/UsageMeter";
 import {
   AdviceMode,
   AdviceTriggerReason,
@@ -31,7 +32,8 @@ import {
   NavigatorViewModel,
   ProjectContextScope,
   SlashCommand,
-  SlashCommandScope
+  SlashCommandScope,
+  UsageTodayViewData
 } from "../shared/types";
 
 const HOME_SCREENS: NavigatorScreen[] = ["onboarding", "main", "error"];
@@ -76,7 +78,8 @@ export class NavigatorController implements vscode.Disposable {
     private readonly requestPlanner: RequestPlanner,
     private readonly settingsService: SettingsService,
     private readonly conversationStore: ConversationStore,
-    private readonly knowledgeStore: KnowledgeStore
+    private readonly knowledgeStore: KnowledgeStore,
+    private readonly usageMeter: UsageMeter
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
 
@@ -176,6 +179,8 @@ export class NavigatorController implements vscode.Disposable {
       canSwitchAssistanceDepth: state.requestState === "idle",
       isBusy: state.requestState !== "idle",
       autoAdvice: this.adviceScheduler.getState(),
+      usageToday: this.buildUsageToday(settings),
+      modelLabel: this.connectionService.getModel()?.name,
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       latestGuidance: state.latestGuidance,
@@ -377,6 +382,8 @@ export class NavigatorController implements vscode.Disposable {
     defaultMode: AdviceMode;
     defaultAssistanceDepth: AssistanceDepth;
     idleDelaySec: number;
+    requestIntervalSec: number;
+    dailyBudgetUsd: number;
     enableWorkspaceContext: boolean;
     excludeGlobs: string;
   }): Promise<void> {
@@ -385,6 +392,8 @@ export class NavigatorController implements vscode.Disposable {
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
       idleDelayMs: input.idleDelaySec * 1000,
+      requestIntervalMs: input.requestIntervalSec * 1000,
+      dailyBudgetUsd: input.dailyBudgetUsd,
       enableWorkspaceContext: input.enableWorkspaceContext,
       excludedGlobs: input.excludeGlobs
         .split(/\r?\n/)
@@ -663,6 +672,12 @@ export class NavigatorController implements vscode.Disposable {
   private async handleAutomaticGuidance(reason: AdviceTriggerReason): Promise<void> {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
+
+    if (this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), settings.dailyBudgetUsd)) {
+      this.pauseAutoAdviceForBudget();
+      return;
+    }
+
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const additionalContext = this.getGuidanceAdditionalContext(state);
     const guidanceContext = await this.contextCollector.collectGuidanceContextWithWorkspace(settings);
@@ -705,6 +720,42 @@ export class NavigatorController implements vscode.Disposable {
     if (result.ok) {
       this.lastAutomaticContextFingerprint = fingerprint;
     }
+  }
+
+  private getModelIdentifier(): string | undefined {
+    const model = this.connectionService.getModel();
+    return model ? `${model.id} ${model.family}` : undefined;
+  }
+
+  private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
+    const usage = this.usageMeter.getToday();
+    const modelIdentifier = this.getModelIdentifier();
+    const cost = this.usageMeter.estimateCostUsd(modelIdentifier, usage);
+
+    return {
+      date: usage.date,
+      requestCount: usage.requestCount,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.inputTokens + usage.outputTokens,
+      estimatedCostText: cost > 0 && cost < 0.001 ? "$0.001未満" : `$${cost.toFixed(3)}`,
+      blendedPricePerMTokenUsd: this.usageMeter.estimateBlendedPricePerMTokUsd(modelIdentifier, usage),
+      budgetUsd: settings.dailyBudgetUsd,
+      budgetExceeded: this.usageMeter.isBudgetExceeded(modelIdentifier, settings.dailyBudgetUsd)
+    };
+  }
+
+  private pauseAutoAdviceForBudget(): void {
+    if (!this.adviceScheduler.getState().paused) {
+      this.adviceScheduler.togglePaused();
+    }
+
+    this.patchSession({
+      statusMessage: {
+        kind: "warning",
+        text: "本日の利用額が上限に達したため、自動助言を一時停止しました。設定から上限を変更できます。"
+      }
+    });
   }
 
   private async buildCurrentContextGuidanceOptions(
@@ -924,6 +975,13 @@ export class NavigatorController implements vscode.Disposable {
         options.slashCommand,
         options.slashCommandScope
       );
+      if (result.usage) {
+        assistantEntry.tokenUsage = {
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          estimatedCostUsd: this.usageMeter.estimateCostUsd(this.getModelIdentifier(), result.usage)
+        };
+      }
       this.guidanceContextByConversationId.set(assistantEntry.id, prepared.context);
       const updatedHistory = [...nextHistory, assistantEntry];
 
@@ -937,7 +995,12 @@ export class NavigatorController implements vscode.Disposable {
         activeAdditionalContext: nextActiveAdditionalContext,
         pendingAdditionalContext: undefined,
         selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
-        statusMessage: undefined
+        statusMessage: this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), settings.dailyBudgetUsd)
+          ? {
+              kind: "warning",
+              text: "本日の利用額が設定上限を超えています。設定から上限を確認できます。"
+            }
+          : undefined
       });
       await this.persistActiveConversationState();
       return { ok: true };
@@ -1147,6 +1210,11 @@ export class NavigatorController implements vscode.Disposable {
       this.summarizedConversationTitleStreamIds.has(record.id) ||
       this.connectionService.getState() !== "connected"
     ) {
+      return record;
+    }
+
+    // 予算超過時はタイトル生成のリクエストを行わずフォールバック名を使う
+    if (this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), this.settingsService.getSettings().dailyBudgetUsd)) {
       return record;
     }
 
@@ -1414,7 +1482,7 @@ export class NavigatorController implements vscode.Disposable {
         return {
           kind: "error",
           text: vscode.workspace.isTrusted
-            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、included model（GPT-4.1 / GPT-5 mini / GPT-4o）が利用可能か確認してください。"
+            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、低コストモデル（GPT-5.4 nano / GPT-5 mini / Raptor mini / Gemini 3 Flash）が利用可能か確認してください。"
             : "Workspace Trust が無効です。ワークスペースを信頼してから再試行してください。"
         };
       case "restricted":

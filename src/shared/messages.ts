@@ -32,6 +32,8 @@ export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   idleDelaySec: number;
+  requestIntervalSec: number;
+  dailyBudgetUsd: number;
   enableWorkspaceContext: boolean;
   excludeGlobs: string;
 }

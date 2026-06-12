@@ -17,6 +17,16 @@ export interface PreparedGuidanceRequest {
   requestPlan: RequestPlanSnapshot;
 }
 
+// ロウモード(常時モード含む)はトークン消費を抑えるため、送信する文脈を必要最小限に絞る。
+// docs/11 §11.1: ロウ = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
+// ハイ = 上記に加えて関連ファイル・ディレクトリ構造・プロジェクト概要
+const LOW_DEPTH_CONTEXT_LIMITS = {
+  excerptChars: 2000,
+  diagnostics: 5,
+  recentEdits: 5,
+  relatedSymbols: 8
+} as const;
+
 export class RequestPlanner {
   public prepareGuidanceRequest(
     context: GuidanceContext,
@@ -44,6 +54,11 @@ export class RequestPlanner {
       additionalContext: context.additionalContext
     };
 
+    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
+    if (effectiveDepth === "low") {
+      this.applyLowDepthContextLimits(filteredContext);
+    }
+
     return {
       context: filteredContext,
       requestPlan: {
@@ -57,6 +72,18 @@ export class RequestPlanner {
         estimatedSizeText: this.estimateSizeText(filteredContext, preview)
       }
     };
+  }
+
+  private applyLowDepthContextLimits(context: GuidanceContext): void {
+    if (context.activeFileExcerpt && context.activeFileExcerpt.length > LOW_DEPTH_CONTEXT_LIMITS.excerptChars) {
+      context.activeFileExcerpt = context.activeFileExcerpt.slice(0, LOW_DEPTH_CONTEXT_LIMITS.excerptChars);
+    }
+
+    context.diagnosticsSummary = context.diagnosticsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.diagnostics);
+    context.recentEditsSummary = context.recentEditsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.recentEdits);
+    context.relatedSymbols = context.relatedSymbols.slice(0, LOW_DEPTH_CONTEXT_LIMITS.relatedSymbols);
+    context.workspaceTree = undefined;
+    context.referencedFiles = [];
   }
 
   private buildCategories(

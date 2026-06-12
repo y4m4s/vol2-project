@@ -6,8 +6,9 @@ import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
 import { formatConnectionState } from "../webview/utils/formatState";
+import { formatCostUsd, formatTokenCount } from "../webview/utils/formatUsage";
 import { getSelectionLabel } from "../webview/utils/labelUtils";
-import type { ConversationEntry } from "../../shared/types";
+import type { ConversationEntry, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -160,6 +161,7 @@ function ChatBubble(
         <ResponseActions
           text={entry.text}
           referencedFiles={entry.requestPlan?.targetFiles}
+          tokenUsage={entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
           onSave={() => onSave(entry.id)}
@@ -361,12 +363,14 @@ function ResponseActions(
   {
     text,
     referencedFiles,
+    tokenUsage,
     alreadySaved,
     isSavingKnowledge,
     onSave
   }: {
     text: string;
-    referencedFiles?: ConversationEntry["requestPlan"]["targetFiles"];
+    referencedFiles?: RequestPlanSnapshot["targetFiles"];
+    tokenUsage?: TokenUsage;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     onSave: () => void;
@@ -406,6 +410,15 @@ function ResponseActions(
       <ReferencedFilesBadge files={referencedFiles} />
 
       <div className="s04-response-action-buttons">
+        {tokenUsage && (
+          <span
+            className="s04-response-usage"
+            title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
+          >
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（目安 {formatCostUsd(tokenUsage.estimatedCostUsd)}）消費
+          </span>
+        )}
+
         <button
           className={`s04-response-action ${alreadySaved ? "active" : ""}`}
           title={

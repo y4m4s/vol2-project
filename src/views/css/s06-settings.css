@@ -338,3 +338,11 @@
     flex: 1;
   }
 }
+
+.choice-option .choice-option-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82em;
+  font-weight: 500;
+  opacity: 0.75;
+}

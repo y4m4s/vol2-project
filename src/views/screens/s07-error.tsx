@@ -29,7 +29,7 @@ export function S07Error() {
         },
         {
           icon: "speed",
-          text: "included model（GPT-4.1 / GPT-5 mini / GPT-4o）が利用できない"
+          text: "低コストモデル（GPT-5.4 nano / GPT-5 mini / Raptor mini / Gemini 3 Flash）が利用できない"
         },
         {
           icon: "verified_user",

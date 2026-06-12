@@ -113,9 +113,22 @@ export interface NavigatorSettings {
   defaultAssistanceDepth: AssistanceDepth;
   requestIntervalMs: number;
   idleDelayMs: number;
+  dailyBudgetUsd: number;
   enableWorkspaceContext: boolean;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
+}
+
+export interface UsageTodayViewData {
+  date: string;
+  requestCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostText: string;
+  blendedPricePerMTokenUsd: number;
+  budgetUsd: number;
+  budgetExceeded: boolean;
 }
 
 export interface RequestPlanCategory {
@@ -157,6 +170,12 @@ export interface GuidanceCard {
   requestPlan: RequestPlanSnapshot;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+}
+
 export interface ConversationEntry {
   id: string;
   role: ConversationRole;
@@ -169,6 +188,7 @@ export interface ConversationEntry {
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
   requestPlan?: RequestPlanSnapshot;
+  tokenUsage?: TokenUsage;
 }
 
 export interface ConversationStreamListItem {
@@ -242,6 +262,8 @@ export interface NavigatorViewModel {
   canSwitchAssistanceDepth: boolean;
   isBusy: boolean;
   autoAdvice: AutoAdviceState;
+  usageToday: UsageTodayViewData;
+  modelLabel?: string;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;

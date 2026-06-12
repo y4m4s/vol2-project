@@ -8,6 +8,7 @@ import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
+import { UsageMeter } from "./services/UsageMeter";
 import {
   ASK_SELECTION_COMMAND,
   NaviComSelectionCodeActionProvider
@@ -16,17 +17,19 @@ import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
-  const connectionService = new ConnectionService();
+  const usageMeter = new UsageMeter(context.globalState);
+  const connectionService = new ConnectionService(usageMeter);
   const contextCollector = new ContextCollector();
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
-    new AdviceService(connectionService),
+    new AdviceService(connectionService, usageMeter),
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
     new ConversationStore(conversationStorageUri),
-    new KnowledgeStore(context.globalStorageUri)
+    new KnowledgeStore(context.globalStorageUri),
+    usageMeter
   );
 
   const viewProvider = new NavigatorViewProvider(context.extensionUri, controller);

@@ -179,6 +179,8 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     defaultMode: "manual" | "always";
     defaultAssistanceDepth: "low" | "high";
     idleDelaySec: number;
+    requestIntervalSec: number;
+    dailyBudgetUsd: number;
     enableWorkspaceContext: boolean;
     excludeGlobs: string;
   } {
@@ -188,6 +190,8 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
       (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
       typeof p.idleDelaySec === "number" &&
+      typeof p.requestIntervalSec === "number" &&
+      typeof p.dailyBudgetUsd === "number" &&
       typeof p.enableWorkspaceContext === "boolean" &&
       typeof p.excludeGlobs === "string"
     );

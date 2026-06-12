@@ -414,3 +414,12 @@
     max-width: 94%;
   }
 }
+
+.s04-response-usage {
+  margin-right: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.74em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

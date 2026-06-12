@@ -9,7 +9,8 @@ import {
   NavigatorContextPreview,
   RequestPlanSnapshot,
   SlashCommand,
-  SlashCommandScope
+  SlashCommandScope,
+  TokenUsage
 } from "../shared/types";
 
 type SqlValue = string | number | Uint8Array | null;
@@ -183,8 +184,8 @@ export class ConversationStore implements vscode.Disposable {
     normalizedEntries.forEach((entry, index) => {
       this.getDb().run(
         `INSERT INTO conversation_entries
-          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         this.toEntryParams(nextRecord.id, index, entry)
       );
     });
@@ -283,6 +284,7 @@ export class ConversationStore implements vscode.Disposable {
     this.ensureColumn("conversation_entries", "assistance_depth", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
+    this.ensureColumn("conversation_entries", "token_usage_json", "TEXT");
   }
 
   private deleteEmptyStreamsInMemory(): void {
@@ -323,7 +325,7 @@ export class ConversationStore implements vscode.Disposable {
 
   private selectEntries(streamId: string): StoredConversationEntry[] {
     const stmt = this.getDb().prepare(
-      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json
+      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json
          FROM conversation_entries
         WHERE stream_id = ?
         ORDER BY entry_order ASC`
@@ -367,7 +369,8 @@ export class ConversationStore implements vscode.Disposable {
       slashCommand: this.parseSlashCommand(row.slash_command),
       slashCommandScope: this.parseSlashCommandScope(row.slash_command_scope),
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
-      guidanceContext: this.parseGuidanceContext(row.guidance_context_json)
+      guidanceContext: this.parseGuidanceContext(row.guidance_context_json),
+      tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json)
     };
   }
 
@@ -386,7 +389,8 @@ export class ConversationStore implements vscode.Disposable {
       entry.slashCommand ?? null,
       entry.slashCommandScope ?? null,
       entry.requestPlan ? JSON.stringify(entry.requestPlan) : null,
-      entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null
+      entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null,
+      entry.tokenUsage ? JSON.stringify(entry.tokenUsage) : null
     ];
   }
 

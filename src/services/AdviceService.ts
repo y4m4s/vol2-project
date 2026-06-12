@@ -13,10 +13,15 @@ import {
 } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
 import type { KnowledgeRecord } from "./KnowledgeStore";
+import type { UsageMeter } from "./UsageMeter";
 
 export interface GuidanceRequestSuccess {
   ok: true;
   text: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
 }
 
 export interface GuidanceRequestFailure {
@@ -68,7 +73,10 @@ export interface ConversationTitleInput {
 }
 
 export class AdviceService {
-  public constructor(private readonly connectionService: ConnectionService) {}
+  public constructor(
+    private readonly connectionService: ConnectionService,
+    private readonly usageMeter?: UsageMeter
+  ) {}
 
   public async requestGuidance(input: GuidanceRequestInput): Promise<GuidanceRequestResult> {
     return this.requestText(this.buildPrompt(input));
@@ -129,9 +137,12 @@ export class AdviceService {
         text += chunk;
       }
 
+      const usage = await this.recordUsage(model, prompt, text);
+
       return {
         ok: true,
-        text
+        text,
+        usage
       };
     } catch (error) {
       const connectionState = this.classifyGuidanceError(error);
@@ -147,6 +158,36 @@ export class AdviceService {
         connectionState,
         message: this.errorMessage(error)
       };
+    }
+  }
+
+  private async recordUsage(
+    model: vscode.LanguageModelChat,
+    prompt: string,
+    responseText: string
+  ): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
+    if (!this.usageMeter) {
+      return undefined;
+    }
+
+    const [inputTokens, outputTokens] = await Promise.all([
+      this.countTokensSafe(model, prompt),
+      this.countTokensSafe(model, responseText)
+    ]);
+    await this.usageMeter.record({ inputTokens, outputTokens });
+    return { inputTokens, outputTokens };
+  }
+
+  private async countTokensSafe(model: vscode.LanguageModelChat, text: string): Promise<number> {
+    if (!text) {
+      return 0;
+    }
+
+    try {
+      return await model.countTokens(text);
+    } catch {
+      // 日本語とコードの混在を想定した粗い推定
+      return Math.ceil(text.length / 3);
     }
   }
 
