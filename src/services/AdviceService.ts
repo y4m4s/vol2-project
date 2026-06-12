@@ -209,7 +209,7 @@ export class AdviceService {
       "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
       "- Write in a way that naturally leads the user to their next action without prescribing exact wording or phrasing patterns.",
       "- Respond in Japanese.",
-      this.getDepthRule(assistanceDepth),
+      this.getDepthRule(assistanceDepth, slashCommand),
       "",
       "## 応答設定",
       `深さ: ${assistanceDepth}`,
@@ -321,7 +321,12 @@ export class AdviceService {
     return lines.join("\n");
   }
 
-  private getDepthRule(depth: AssistanceDepth): string {
+  private getDepthRule(depth: AssistanceDepth, slashCommand?: SlashCommand): string {
+    // /flow はハイ固定だが、確認手順や注意点ではなくフローの整理だけに集中させる
+    if (slashCommand === "flow") {
+      return "- Flow mode: focus only on organizing the flow. Do not add checklists, cautions, or next-action sections.";
+    }
+
     if (depth === "high") {
       return "- High mode: give a structured explanation with the next checks, tradeoffs, and boundaries. Keep it compact, but go deeper than hints.";
     }
@@ -384,9 +389,15 @@ export class AdviceService {
           ? "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、完了確認、検証、次の実装候補、後回しでよいことを分けて整理してください。命令ではなく、判断材料として提示してください。"
           : "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、次に確認するとよいことを3個以内で短く提示してください。実行を代行せず、ユーザーが選べる次の一手にしてください。";
       case "flow":
-        return depth === "high"
-          ? "現在の文脈から処理やデータの流れを整理し、Mermaid の flowchart TD コードブロックを1つ含めてください。図は推測しすぎず、分かる範囲の流れだけを描いてください。"
-          : "現在の文脈から処理やデータの流れを箇条書きで短く整理してください。入力、変換、出力、副作用が分かる範囲で示してください。";
+        // /flow は深さ設定に関わらず常にハイとして実行される
+        return [
+          "現在の文脈から処理やデータの流れを整理してください。",
+          "出力は次の2つだけで構成してください: (1) 流れの要点の説明(2〜3行)、(2) Mermaid の flowchart TD コードブロック1つ。",
+          "確認手順、注意点、関心箇所の列挙、次のアクションなど、フロー以外のセクションは含めないでください。",
+          "コードブロックは必ず ```mermaid で開始してください。",
+          'ノードラベルは A["ラベル"] のように必ずダブルクォートで囲み、括弧やコロンなどの記号を含めても構文エラーにならないようにしてください。',
+          "図は推測しすぎず、分かる範囲の流れだけを描いてください。"
+        ].join("\n");
       case "risk":
         return depth === "high"
           ? "変更や設計の壊れやすい境界、副作用、見落としやすい条件、影響を受けそうな箇所を整理してください。重大度が高そうな順にしてください。"

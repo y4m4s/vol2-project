@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
+import { MermaidDiagram } from "../webview/components/MermaidDiagram";
 import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
@@ -18,7 +19,7 @@ type MarkdownBlock =
   | { type: "paragraph"; text: string }
   | { type: "heading"; text: string }
   | { type: "bullet" | "ordered"; items: string[] }
-  | { type: "code"; text: string };
+  | { type: "code"; text: string; lang?: string };
 
 export function S04Conversation() {
   const { viewModel, send } = useApp();
@@ -196,6 +197,9 @@ function MarkdownText({ text }: { text: string }) {
             );
           }
           case "code":
+            if (isMermaidBlock(block)) {
+              return <MermaidDiagram key={index} code={block.text} />;
+            }
             return (
               <pre key={index} className="s04-md-code">
                 <code>{block.text}</code>
@@ -214,6 +218,20 @@ function MarkdownText({ text }: { text: string }) {
   );
 }
 
+function isMermaidBlock(block: Extract<MarkdownBlock, { type: "code" }>): boolean {
+  if (block.lang === "mermaid") {
+    return true;
+  }
+
+  // 言語タグなしのフェンスでも、先頭行が Mermaid のダイアグラム宣言なら描画を試みる
+  if (block.lang) {
+    return false;
+  }
+
+  const firstLine = block.text.trimStart().split("\n")[0]?.trim() ?? "";
+  return /^(flowchart|graph)\s/.test(firstLine) || /^(sequenceDiagram|classDiagram|stateDiagram)/.test(firstLine);
+}
+
 function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = [];
   const lines = text.replace(/\r\n/g, "\n").split("\n");
@@ -221,6 +239,7 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   let listItems: string[] = [];
   let listType: "bullet" | "ordered" | undefined;
   let codeLines: string[] = [];
+  let codeLang: string | undefined;
   let inCode = false;
 
   function flushParagraph() {
@@ -247,12 +266,14 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
 
     if (trimmed.startsWith("```")) {
       if (inCode) {
-        blocks.push({ type: "code", text: codeLines.join("\n") });
+        blocks.push({ type: "code", text: codeLines.join("\n"), lang: codeLang });
         codeLines = [];
+        codeLang = undefined;
         inCode = false;
       } else {
         flushParagraph();
         flushList();
+        codeLang = trimmed.slice(3).trim().toLowerCase() || undefined;
         inCode = true;
       }
       continue;
@@ -304,7 +325,7 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   }
 
   if (inCode) {
-    blocks.push({ type: "code", text: codeLines.join("\n") });
+    blocks.push({ type: "code", text: codeLines.join("\n"), lang: codeLang });
   }
 
   flushParagraph();

@@ -117,6 +117,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "mermaid": "^11.15.0",
     "sql.js": "^1.14.1"
   }
 }

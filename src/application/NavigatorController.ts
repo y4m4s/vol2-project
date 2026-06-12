@@ -780,7 +780,7 @@ export class NavigatorController implements vscode.Disposable {
     );
     const hasSelection = Boolean(liveContext.selectedText) || stickySelectionAvailable;
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
-    const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth);
+    const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
     const projectScope = slashCommand === "next"
       ? this.resolveNextProjectScope(assistanceDepth, slashCommandScope)
       : undefined;
@@ -889,7 +889,11 @@ export class NavigatorController implements vscode.Disposable {
 
     const settings = this.settingsService.getSettings();
     const preview = options.preview ?? this.rememberSelectionContext(this.contextCollector.collectPreview());
-    const assistanceDepth = this.resolveEffectiveAssistanceDepth(options.kind, options.assistanceDepth ?? state.assistanceDepth);
+    const assistanceDepth = this.resolveEffectiveAssistanceDepth(
+      options.kind,
+      options.assistanceDepth ?? state.assistanceDepth,
+      options.slashCommand
+    );
     const fallbackContext = options.prepared
       ? undefined
       : options.slashCommand === "next"
@@ -1728,8 +1732,21 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private resolveEffectiveAssistanceDepth(kind: GuidanceKind, assistanceDepth: AssistanceDepth): AssistanceDepth {
-    return kind === "always" ? "low" : assistanceDepth;
+  private resolveEffectiveAssistanceDepth(
+    kind: GuidanceKind,
+    assistanceDepth: AssistanceDepth,
+    slashCommand?: SlashCommand
+  ): AssistanceDepth {
+    if (kind === "always") {
+      return "low";
+    }
+
+    // /flow は流れの整理に関連ファイル等の厚い文脈が必要なため、常にハイとして実行する
+    if (slashCommand === "flow") {
+      return "high";
+    }
+
+    return assistanceDepth;
   }
 
   private resolveNextProjectScope(
