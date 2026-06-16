@@ -1,19 +1,27 @@
 import * as vscode from "vscode";
 import {
   AdviceMode,
+  AssistanceDepth,
   ConnectionState,
   ConversationEntry,
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
-  RequestPlanSnapshot
+  RequestPlanSnapshot,
+  SlashCommand,
+  SlashCommandScope
 } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
 import type { KnowledgeRecord } from "./KnowledgeStore";
+import type { UsageMeter } from "./UsageMeter";
 
 export interface GuidanceRequestSuccess {
   ok: true;
   text: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
 }
 
 export interface GuidanceRequestFailure {
@@ -28,6 +36,9 @@ export interface GuidanceRequestInput {
   context: GuidanceContext;
   kind: GuidanceKind;
   userPrompt?: string;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   knowledgeItems?: KnowledgeRecord[];
 }
 
@@ -62,7 +73,10 @@ export interface ConversationTitleInput {
 }
 
 export class AdviceService {
-  public constructor(private readonly connectionService: ConnectionService) {}
+  public constructor(
+    private readonly connectionService: ConnectionService,
+    private readonly usageMeter?: UsageMeter
+  ) {}
 
   public async requestGuidance(input: GuidanceRequestInput): Promise<GuidanceRequestResult> {
     return this.requestText(this.buildPrompt(input));
@@ -123,9 +137,12 @@ export class AdviceService {
         text += chunk;
       }
 
+      const usage = await this.recordUsage(model, prompt, text);
+
       return {
         ok: true,
-        text
+        text,
+        usage
       };
     } catch (error) {
       const connectionState = this.classifyGuidanceError(error);
@@ -144,8 +161,39 @@ export class AdviceService {
     }
   }
 
+  private async recordUsage(
+    model: vscode.LanguageModelChat,
+    prompt: string,
+    responseText: string
+  ): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
+    if (!this.usageMeter) {
+      return undefined;
+    }
+
+    const [inputTokens, outputTokens] = await Promise.all([
+      this.countTokensSafe(model, prompt),
+      this.countTokensSafe(model, responseText)
+    ]);
+    await this.usageMeter.record({ inputTokens, outputTokens });
+    return { inputTokens, outputTokens };
+  }
+
+  private async countTokensSafe(model: vscode.LanguageModelChat, text: string): Promise<number> {
+    if (!text) {
+      return 0;
+    }
+
+    try {
+      return await model.countTokens(text);
+    } catch {
+      // 日本語とコードの混在を想定した粗い推定
+      return Math.ceil(text.length / 3);
+    }
+  }
+
   private buildPrompt(input: GuidanceRequestInput): string {
-    const { context, kind, userPrompt, knowledgeItems } = input;
+    const { context, kind, userPrompt, knowledgeItems, slashCommand, slashCommandScope } = input;
+    const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
     const lines: string[] = [
       "You are a pair programming navigator.",
       "Your default goal is to help the user think and move forward on their own.",
@@ -157,10 +205,15 @@ export class AdviceService {
       "- Do not drift into active-file code advice when the user's question is about the additional context itself.",
       "- Ignore noise from in-progress editing: unclosed braces, incomplete expressions, half-typed lines. These are not issues.",
       "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
-      "- Do not output code unless the user explicitly asks for code.",
+      "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow.",
       "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
-      "- Write in a way that naturally leads the user to their next action — without prescribing exact wording or phrasing patterns.",
-      "- Respond in Japanese. Be concise. Use 2–4 short points.",
+      "- Write in a way that naturally leads the user to their next action without prescribing exact wording or phrasing patterns.",
+      "- Respond in Japanese.",
+      this.getDepthRule(assistanceDepth, slashCommand),
+      "",
+      "## 応答設定",
+      `深さ: ${assistanceDepth}`,
+      slashCommand ? `スラッシュコマンド: /${slashCommand}${slashCommandScope === "deep" ? " deep" : ""}` : "スラッシュコマンド: なし",
       "",
       "## 現在の作業文脈"
     ];
@@ -200,6 +253,46 @@ export class AdviceService {
       lines.push("", `関連シンボル候補: ${context.relatedSymbols.join(", ")}`);
     }
 
+    if (context.workspaceTree?.treeText) {
+      lines.push("", "ディレクトリ構造:", "```text", context.workspaceTree.treeText, "```");
+    }
+
+    if (context.referencedFiles.length > 0) {
+      lines.push("", "関連ファイル断片:");
+      for (const file of context.referencedFiles) {
+        lines.push(
+          `### ${file.path}`,
+          `reason: ${this.formatReferencedFileReason(file.reason)} / score: ${file.score}`
+        );
+
+        if (file.diagnosticsSummary.length > 0) {
+          lines.push("Diagnostics:");
+          for (const diagnostic of file.diagnosticsSummary) {
+            const source = diagnostic.source ? ` (${diagnostic.source})` : "";
+            lines.push(`- ${diagnostic.severity}${source} L${diagnostic.line}: ${diagnostic.message}`);
+          }
+        }
+
+        if (file.recentEditsSummary.length > 0) {
+          lines.push("最近の編集:", ...file.recentEditsSummary.map((item) => `- ${item}`));
+        }
+
+        if (file.excerpt) {
+          lines.push("```" + (file.languageId ?? ""), file.excerpt, "```");
+        }
+      }
+    }
+
+    if (context.projectSummary) {
+      lines.push("", "## プロジェクト概要", `scope: ${context.projectSummary.scope}`);
+      this.pushListSection(lines, "開いているファイル:", context.projectSummary.openFiles);
+      this.pushListSection(lines, "ワークスペース診断:", context.projectSummary.diagnosticsSummary);
+      this.pushListSection(lines, "最近の編集:", context.projectSummary.recentEditsSummary);
+      this.pushListSection(lines, "TODO/FIXME:", context.projectSummary.todoSummary);
+      this.pushListSection(lines, "Manifest/設定:", context.projectSummary.manifestSummary);
+      this.pushListSection(lines, "Docs:", context.projectSummary.docsSummary);
+    }
+
     if (context.additionalContext) {
       lines.push("", "追加コンテキスト:", "```", context.additionalContext, "```");
     }
@@ -216,12 +309,29 @@ export class AdviceService {
       lines.push("", "## ユーザーからの相談", userPrompt.trim());
     }
 
+    if (slashCommand) {
+      lines.push("", "## スラッシュコマンド指示", this.getSlashCommandInstruction(slashCommand, assistanceDepth, slashCommandScope));
+    }
+
     lines.push(
       "",
       this.getInstructionByKind(kind)
     );
 
     return lines.join("\n");
+  }
+
+  private getDepthRule(depth: AssistanceDepth, slashCommand?: SlashCommand): string {
+    // /flow はハイ固定だが、確認手順や注意点ではなくフローの整理だけに集中させる
+    if (slashCommand === "flow") {
+      return "- Flow mode: focus only on organizing the flow. Do not add checklists, cautions, or next-action sections.";
+    }
+
+    if (depth === "high") {
+      return "- High mode: give a structured explanation with the next checks, tradeoffs, and boundaries. Keep it compact, but go deeper than hints.";
+    }
+
+    return "- Low mode: give short hints and checking points only. Avoid long explanations and avoid jumping to the final answer.";
   }
 
   private getInstructionByKind(kind: GuidanceKind): string {
@@ -233,6 +343,71 @@ export class AdviceService {
       case "context":
       default:
         return "ユーザーが選択箇所について相談しています。その箇所の周辺で注目すべき処理・依存関係・データの流れを指し示して、ユーザー自身が原因や改善点にたどり着けるよう誘導してください。";
+    }
+  }
+
+  private formatReferencedFileReason(reason: GuidanceContext["referencedFiles"][number]["reason"]): string {
+    switch (reason) {
+      case "diagnostic":
+        return "diagnostics";
+      case "recentEdit":
+        return "recent edit";
+      case "sameDirectory":
+        return "same directory";
+      case "workspace":
+        return "workspace";
+      case "open":
+      default:
+        return "open file";
+    }
+  }
+
+  private pushListSection(lines: string[], title: string, values: string[]): void {
+    if (values.length === 0) {
+      return;
+    }
+
+    lines.push(title, ...values.map((value) => `- ${value}`));
+  }
+
+  private getSlashCommandInstruction(
+    command: SlashCommand,
+    depth: AssistanceDepth,
+    scope?: SlashCommandScope
+  ): string {
+    switch (command) {
+      case "hint":
+        return depth === "high"
+          ? "詰まりをほどくために、原因候補を広げすぎず、確認順を3-5個で整理してください。完成した修正案ではなく、ユーザーが次に観察するポイントを中心にしてください。"
+          : "詰まりをほどくための短いヒントを2-3個だけ出してください。答えや完成コードは出さず、見る場所と問いを中心にしてください。";
+      case "next":
+        if (scope === "deep") {
+          return "プロジェクト全体を薄く見た前提で、作業の完了確認、未検証のリスク、次に着手する候補、後回しでよいことを根拠つきで短く整理してください。ファイル配置、診断、TODO、docs から読み取れる範囲を優先し、推測しすぎないでください。";
+        }
+
+        return depth === "high"
+          ? "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、完了確認、検証、次の実装候補、後回しでよいことを分けて整理してください。命令ではなく、判断材料として提示してください。"
+          : "作業が一区切りついた前提で、送られたプロジェクト概要も使いながら、次に確認するとよいことを3個以内で短く提示してください。実行を代行せず、ユーザーが選べる次の一手にしてください。";
+      case "flow":
+        // /flow は深さ設定に関わらず常にハイとして実行される
+        return [
+          "現在の文脈から処理やデータの流れを整理してください。",
+          "出力は次の2つだけで構成してください: (1) 流れの要点の説明(2〜3行)、(2) Mermaid の flowchart TD コードブロック1つ。",
+          "確認手順、注意点、関心箇所の列挙、次のアクションなど、フロー以外のセクションは含めないでください。",
+          "コードブロックは必ず ```mermaid で開始してください。",
+          'ノードラベルは A["ラベル"] のように必ずダブルクォートで囲み、括弧やコロンなどの記号を含めても構文エラーにならないようにしてください。',
+          "図は推測しすぎず、分かる範囲の流れだけを描いてください。"
+        ].join("\n");
+      case "risk":
+        return depth === "high"
+          ? "変更や設計の壊れやすい境界、副作用、見落としやすい条件、影響を受けそうな箇所を整理してください。重大度が高そうな順にしてください。"
+          : "壊れやすそうな箇所や見落としやすい条件を3個以内で短く示してください。断定しすぎず、確認ポイントとして書いてください。";
+      case "test":
+        return depth === "high"
+          ? "テスト観点を、正常系、境界値、失敗系、回帰確認に分けて整理してください。テストコードは書かず、何を確かめるかに絞ってください。"
+          : "今の変更に対して確認するとよいテスト観点を3個以内で短く示してください。テストコードは書かないでください。";
+      default:
+        return "ユーザーの意図に沿って、学習支援として短く整理してください。";
     }
   }
 
@@ -379,6 +554,20 @@ export class AdviceService {
 
     if (context?.relatedSymbols.length) {
       lines.push(`- 関連シンボル: ${context.relatedSymbols.slice(0, 12).join(", ")}`);
+    }
+
+    if (context?.workspaceTree?.treeText) {
+      lines.push("- ディレクトリ構造:", "```text", this.truncate(context.workspaceTree.treeText, 1600), "```");
+    }
+
+    if (context?.referencedFiles?.length) {
+      lines.push("- 関連ファイル:");
+      for (const file of context.referencedFiles.slice(0, 5)) {
+        lines.push(`  - ${file.path} (${this.formatReferencedFileReason(file.reason)})`);
+        if (file.excerpt) {
+          lines.push("```", this.truncate(file.excerpt, 1200), "```");
+        }
+      }
     }
 
     if (context?.additionalContext) {

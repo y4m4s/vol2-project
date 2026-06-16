@@ -2,6 +2,7 @@ import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
 import { formatConnectionState } from "../webview/utils/formatState";
+import { formatTokenCount } from "../webview/utils/formatUsage";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -16,7 +17,9 @@ export function S02Main() {
 
   const {
     connectionState,
-    canConnect
+    canConnect,
+    usageToday,
+    modelLabel
   } = viewModel;
 
   return (
@@ -90,6 +93,16 @@ export function S02Main() {
           </div>
         </div>
       </div>
+
+      {usageToday && (
+        <div className={`s02-usage ${usageToday.budgetExceeded ? "exceeded" : ""}`}>
+          <span className="material-symbols-outlined">data_usage</span>
+          <span className="s02-usage-text">
+            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（目安 {usageToday.estimatedCostText}）
+          </span>
+          {modelLabel && <span className="s02-usage-model">{modelLabel}</span>}
+        </div>
+      )}
 
       <ChatInputComposer />
     </div>

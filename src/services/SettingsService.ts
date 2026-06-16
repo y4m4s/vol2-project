@@ -56,13 +56,18 @@ const PROTECTED_EXCLUDED_GLOBS = [
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
-  requestIntervalMs: 20000,
+  defaultAssistanceDepth: "low",
+  requestIntervalMs: 60000,
   idleDelayMs: 10000,
+  dailyBudgetUsd: 1.0,
+  enableWorkspaceContext: false,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
 
 const IDLE_DELAY_OPTIONS_MS = [5000, 10000, 15000] as const;
+const REQUEST_INTERVAL_OPTIONS_MS = [20000, 60000, 180000] as const;
+const DAILY_BUDGET_USD_OPTIONS = [0, 1.0] as const;
 
 export class SettingsService {
   public constructor(private readonly storage: vscode.Memento) {}
@@ -88,8 +93,11 @@ export class SettingsService {
 
     return {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
-      requestIntervalMs: DEFAULT_SETTINGS.requestIntervalMs,
+      defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
+      requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
+      dailyBudgetUsd: this.normalizeDailyBudgetUsd(partial?.dailyBudgetUsd ?? DEFAULT_SETTINGS.dailyBudgetUsd),
+      enableWorkspaceContext: partial?.enableWorkspaceContext ?? DEFAULT_SETTINGS.enableWorkspaceContext,
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };
@@ -99,6 +107,22 @@ export class SettingsService {
     return IDLE_DELAY_OPTIONS_MS.reduce((nearest, option) =>
       Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
     );
+  }
+
+  private normalizeRequestIntervalMs(value: number): number {
+    return REQUEST_INTERVAL_OPTIONS_MS.reduce((nearest, option) =>
+      Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
+    );
+  }
+
+  private normalizeDailyBudgetUsd(value: number): number {
+    return DAILY_BUDGET_USD_OPTIONS.reduce((nearest, option) =>
+      Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
+    );
+  }
+
+  private normalizeAssistanceDepth(value: unknown): NavigatorSettings["defaultAssistanceDepth"] {
+    return value === "high" ? "high" : DEFAULT_SETTINGS.defaultAssistanceDepth;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

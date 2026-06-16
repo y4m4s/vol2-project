@@ -13,11 +13,20 @@
   ],
   "icon": "media/icon.png",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onView:aiPairNavigator.sidebar",
+    "onCommand:aiPairNavigator.openView",
+    "onCommand:aiPairNavigator.connectCopilot",
+    "onCommand:aiPairNavigator.askForGuidance",
+    "onCommand:aiPairNavigator.askSelection"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "aiPairNavigator.openView",
+        "title": "NaviCom: Open View"
+      },
       {
         "command": "aiPairNavigator.connectCopilot",
         "title": "NaviCom: Connect Copilot"
@@ -49,7 +58,8 @@
         {
           "type": "webview",
           "id": "aiPairNavigator.sidebar",
-          "name": "NaviCom"
+          "name": "NaviCom",
+          "visibility": "visible"
         }
       ]
     },
@@ -71,6 +81,11 @@
           "minimum": 5000,
           "maximum": 15000,
           "description": "Idle time before automatic feedback can be triggered."
+        },
+        "aiPairNavigator.enableWorkspaceContext": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include workspace directory structure and selected related files in guidance context."
         },
         "aiPairNavigator.excludedGlobs": {
           "type": "array",
@@ -102,6 +117,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "mermaid": "^11.15.0",
     "sql.js": "^1.14.1"
   }
 }

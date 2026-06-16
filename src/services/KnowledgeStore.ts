@@ -315,7 +315,15 @@ export class KnowledgeStore implements vscode.Disposable {
       context.activeFileLanguage,
       context.selectedText,
       context.activeFileExcerpt,
+      context.workspaceTree?.treeText,
       context.additionalContext,
+      ...(context.referencedFiles ?? []).flatMap((file) => [
+        path.basename(file.path),
+        file.languageId,
+        file.excerpt,
+        ...file.diagnosticsSummary.map((item) => item.message),
+        ...file.recentEditsSummary
+      ]),
       ...context.relatedSymbols,
       ...context.diagnosticsSummary.map((item) => item.message)
     ];

@@ -1,12 +1,16 @@
 import * as vscode from "vscode";
 import {
   AdviceMode,
+  AssistanceDepth,
   ConversationEntry,
   ConversationStreamListItem,
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
-  RequestPlanSnapshot
+  RequestPlanSnapshot,
+  SlashCommand,
+  SlashCommandScope,
+  TokenUsage
 } from "../shared/types";
 
 type SqlValue = string | number | Uint8Array | null;
@@ -180,8 +184,8 @@ export class ConversationStore implements vscode.Disposable {
     normalizedEntries.forEach((entry, index) => {
       this.getDb().run(
         `INSERT INTO conversation_entries
-          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, request_plan_json, guidance_context_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         this.toEntryParams(nextRecord.id, index, entry)
       );
     });
@@ -257,6 +261,9 @@ export class ConversationStore implements vscode.Disposable {
         kind TEXT NOT NULL CHECK (kind IN ('manual', 'context', 'deep_dive', 'always')),
         based_on_json TEXT,
         mode TEXT,
+        assistance_depth TEXT,
+        slash_command TEXT,
+        slash_command_scope TEXT,
         request_plan_json TEXT,
         guidance_context_json TEXT
       );
@@ -274,6 +281,10 @@ export class ConversationStore implements vscode.Disposable {
     `);
 
     this.ensureColumn("conversation_streams", "additional_context", "TEXT");
+    this.ensureColumn("conversation_entries", "assistance_depth", "TEXT");
+    this.ensureColumn("conversation_entries", "slash_command", "TEXT");
+    this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
+    this.ensureColumn("conversation_entries", "token_usage_json", "TEXT");
   }
 
   private deleteEmptyStreamsInMemory(): void {
@@ -314,7 +325,7 @@ export class ConversationStore implements vscode.Disposable {
 
   private selectEntries(streamId: string): StoredConversationEntry[] {
     const stmt = this.getDb().prepare(
-      `SELECT id, role, text, created_at, kind, based_on_json, mode, request_plan_json, guidance_context_json
+      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json
          FROM conversation_entries
         WHERE stream_id = ?
         ORDER BY entry_order ASC`
@@ -354,8 +365,12 @@ export class ConversationStore implements vscode.Disposable {
       kind: this.parseGuidanceKind(row.kind),
       basedOn: this.parseJson<NavigatorContextPreview>(row.based_on_json),
       mode: this.parseMode(row.mode),
+      assistanceDepth: this.parseAssistanceDepth(row.assistance_depth),
+      slashCommand: this.parseSlashCommand(row.slash_command),
+      slashCommandScope: this.parseSlashCommandScope(row.slash_command_scope),
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
-      guidanceContext: this.parseJson<GuidanceContext>(row.guidance_context_json)
+      guidanceContext: this.parseGuidanceContext(row.guidance_context_json),
+      tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json)
     };
   }
 
@@ -370,8 +385,12 @@ export class ConversationStore implements vscode.Disposable {
       entry.kind,
       entry.basedOn ? JSON.stringify(entry.basedOn) : null,
       entry.mode ?? null,
+      entry.assistanceDepth ?? null,
+      entry.slashCommand ?? null,
+      entry.slashCommandScope ?? null,
       entry.requestPlan ? JSON.stringify(entry.requestPlan) : null,
-      entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null
+      entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null,
+      entry.tokenUsage ? JSON.stringify(entry.tokenUsage) : null
     ];
   }
 
@@ -407,6 +426,27 @@ export class ConversationStore implements vscode.Disposable {
     return value === "always" || value === "manual" ? value : undefined;
   }
 
+  private parseAssistanceDepth(value: unknown): AssistanceDepth | undefined {
+    return value === "low" || value === "high" ? value : undefined;
+  }
+
+  private parseSlashCommand(value: unknown): SlashCommand | undefined {
+    switch (value) {
+      case "hint":
+      case "next":
+      case "flow":
+      case "risk":
+      case "test":
+        return value;
+      default:
+        return undefined;
+    }
+  }
+
+  private parseSlashCommandScope(value: unknown): SlashCommandScope | undefined {
+    return value === "standard" || value === "deep" ? value : undefined;
+  }
+
   private parseGuidanceKind(value: unknown): GuidanceKind {
     switch (value) {
       case "manual":
@@ -428,6 +468,21 @@ export class ConversationStore implements vscode.Disposable {
     } catch {
       return undefined;
     }
+  }
+
+  private parseGuidanceContext(value: unknown): GuidanceContext | undefined {
+    const parsed = this.parseJson<Partial<GuidanceContext>>(value);
+    if (!parsed) {
+      return undefined;
+    }
+
+    return {
+      ...parsed,
+      referencedFiles: parsed.referencedFiles ?? [],
+      diagnosticsSummary: parsed.diagnosticsSummary ?? [],
+      recentEditsSummary: parsed.recentEditsSummary ?? [],
+      relatedSymbols: parsed.relatedSymbols ?? []
+    };
   }
 
   private resolveUpdatedAt(currentUpdatedAt: string, entries: StoredConversationEntry[]): string {

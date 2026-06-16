@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
+import { MermaidDiagram } from "../webview/components/MermaidDiagram";
+import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
 import { formatConnectionState } from "../webview/utils/formatState";
+import { formatCostUsd, formatTokenCount } from "../webview/utils/formatUsage";
 import { getSelectionLabel } from "../webview/utils/labelUtils";
-import type { ConversationEntry } from "../../shared/types";
+import type { ConversationEntry, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -16,7 +19,7 @@ type MarkdownBlock =
   | { type: "paragraph"; text: string }
   | { type: "heading"; text: string }
   | { type: "bullet" | "ordered"; items: string[] }
-  | { type: "code"; text: string };
+  | { type: "code"; text: string; lang?: string };
 
 export function S04Conversation() {
   const { viewModel, send } = useApp();
@@ -123,6 +126,10 @@ function ChatBubble(
   const label = isUser ? "あなた" : entry.kind === "always" ? "NaviCom (自動)" : "NaviCom";
   const selectedText = entry.basedOn?.selectedTextPreview;
   const isSelectionRequest = isUser && entry.kind === "context" && Boolean(selectedText);
+  const slashCommandLabel = entry.slashCommand
+    ? `/${entry.slashCommand}${entry.slashCommandScope === "deep" ? " deep" : ""}`
+    : undefined;
+  const depthLabel = entry.assistanceDepth === "high" ? "ハイ" : entry.assistanceDepth === "low" ? "ロウ" : undefined;
 
   return (
     <div className={`s04-bubble-wrap ${isUser ? "user" : "assistant"}`}>
@@ -131,6 +138,8 @@ function ChatBubble(
           {isUser ? "person" : "smart_toy"}
         </span>
         <span className="s04-bubble-role">{label}</span>
+        {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
+        {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 
@@ -152,6 +161,8 @@ function ChatBubble(
       {!isUser && (
         <ResponseActions
           text={entry.text}
+          referencedFiles={entry.requestPlan?.targetFiles}
+          tokenUsage={entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
           onSave={() => onSave(entry.id)}
@@ -186,6 +197,9 @@ function MarkdownText({ text }: { text: string }) {
             );
           }
           case "code":
+            if (isMermaidBlock(block)) {
+              return <MermaidDiagram key={index} code={block.text} />;
+            }
             return (
               <pre key={index} className="s04-md-code">
                 <code>{block.text}</code>
@@ -204,6 +218,20 @@ function MarkdownText({ text }: { text: string }) {
   );
 }
 
+function isMermaidBlock(block: Extract<MarkdownBlock, { type: "code" }>): boolean {
+  if (block.lang === "mermaid") {
+    return true;
+  }
+
+  // 言語タグなしのフェンスでも、先頭行が Mermaid のダイアグラム宣言なら描画を試みる
+  if (block.lang) {
+    return false;
+  }
+
+  const firstLine = block.text.trimStart().split("\n")[0]?.trim() ?? "";
+  return /^(flowchart|graph)\s/.test(firstLine) || /^(sequenceDiagram|classDiagram|stateDiagram)/.test(firstLine);
+}
+
 function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = [];
   const lines = text.replace(/\r\n/g, "\n").split("\n");
@@ -211,6 +239,7 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   let listItems: string[] = [];
   let listType: "bullet" | "ordered" | undefined;
   let codeLines: string[] = [];
+  let codeLang: string | undefined;
   let inCode = false;
 
   function flushParagraph() {
@@ -237,12 +266,14 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
 
     if (trimmed.startsWith("```")) {
       if (inCode) {
-        blocks.push({ type: "code", text: codeLines.join("\n") });
+        blocks.push({ type: "code", text: codeLines.join("\n"), lang: codeLang });
         codeLines = [];
+        codeLang = undefined;
         inCode = false;
       } else {
         flushParagraph();
         flushList();
+        codeLang = trimmed.slice(3).trim().toLowerCase() || undefined;
         inCode = true;
       }
       continue;
@@ -294,7 +325,7 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   }
 
   if (inCode) {
-    blocks.push({ type: "code", text: codeLines.join("\n") });
+    blocks.push({ type: "code", text: codeLines.join("\n"), lang: codeLang });
   }
 
   flushParagraph();
@@ -352,11 +383,15 @@ function SelectionReference({ selectedText }: { selectedText?: string }) {
 function ResponseActions(
   {
     text,
+    referencedFiles,
+    tokenUsage,
     alreadySaved,
     isSavingKnowledge,
     onSave
   }: {
     text: string;
+    referencedFiles?: RequestPlanSnapshot["targetFiles"];
+    tokenUsage?: TokenUsage;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     onSave: () => void;
@@ -393,30 +428,43 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      <button
-        className={`s04-response-action ${alreadySaved ? "active" : ""}`}
-        title={
-          alreadySaved
-            ? "ナレッジに保存しました"
-            : pendingSave || isSavingKnowledge
-              ? "ナレッジに整理しています"
-              : "ナレッジとして保存"
-        }
-        disabled={saveDisabled}
-        onClick={handleSave}
-      >
-        <span className="material-symbols-outlined">
-          {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
-        </span>
-      </button>
+      <ReferencedFilesBadge files={referencedFiles} />
 
-      <button
-        className={`s04-response-action ${copied ? "active" : ""}`}
-        title={copied ? "コピーしました" : "内容をコピー"}
-        onClick={() => void handleCopy()}
-      >
-        <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
-      </button>
+      <div className="s04-response-action-buttons">
+        {tokenUsage && (
+          <span
+            className="s04-response-usage"
+            title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
+          >
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（目安 {formatCostUsd(tokenUsage.estimatedCostUsd)}）消費
+          </span>
+        )}
+
+        <button
+          className={`s04-response-action ${alreadySaved ? "active" : ""}`}
+          title={
+            alreadySaved
+              ? "ナレッジに保存しました"
+              : pendingSave || isSavingKnowledge
+                ? "ナレッジに整理しています"
+                : "ナレッジとして保存"
+          }
+          disabled={saveDisabled}
+          onClick={handleSave}
+        >
+          <span className="material-symbols-outlined">
+            {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
+          </span>
+        </button>
+
+        <button
+          className={`s04-response-action ${copied ? "active" : ""}`}
+          title={copied ? "コピーしました" : "内容をコピー"}
+          onClick={() => void handleCopy()}
+        >
+          <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
+        </button>
+      </div>
     </div>
   );
 }

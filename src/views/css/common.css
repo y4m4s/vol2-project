@@ -332,6 +332,7 @@ button.danger {
 .chat-input-footer-left {
   display: flex;
   align-items: center;
+  gap: 6px;
   flex: 0 0 auto;
   min-width: 0;
 }
@@ -349,6 +350,7 @@ button.danger {
 
 .chat-auto-inline,
 .chat-auto-inline-toggle,
+.chat-depth-btn,
 .chat-mode-btn,
 .chat-send-btn {
   width: auto;
@@ -430,6 +432,134 @@ button.danger {
   font-weight: 700;
 }
 
+.slash-command-panel {
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: color-mix(in srgb, var(--vscode-input-background) 84%, var(--vscode-editorWidget-background));
+}
+
+.slash-command-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 4px 7px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+  font-weight: 700;
+}
+
+.slash-command-panel-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  color: var(--vscode-textLink-foreground);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, transparent);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 1.06em;
+}
+
+.slash-command-list {
+  display: grid;
+  gap: 3px;
+}
+
+.slash-command-option {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0;
+  padding: 8px 9px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--vscode-foreground);
+  background: transparent;
+  text-align: left;
+}
+
+.slash-command-option:hover:not(:disabled),
+.slash-command-option.active:not(:disabled) {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 34%, transparent);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, transparent);
+}
+
+.slash-command-option:disabled {
+  opacity: 0.48;
+}
+
+.slash-command-option-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--vscode-textLink-foreground);
+  font-size: 17px;
+}
+
+.slash-command-option-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.slash-command-option-title {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.86em;
+  font-weight: 700;
+}
+
+.slash-command-option-title code {
+  color: var(--vscode-textLink-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.94em;
+}
+
+.slash-command-option-desc,
+.slash-command-empty {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.slash-command-empty {
+  padding: 10px 9px;
+}
+
+.chat-depth-btn {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 5px;
+  min-width: 62px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-size: 0.77em;
+  font-weight: 700;
+}
+
+.chat-depth-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.chat-depth-btn.high {
+  color: var(--vscode-textLink-foreground);
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 52%, var(--vscode-panel-border));
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, transparent);
+}
+
 .chat-mode-btn .material-symbols-outlined {
   font-size: 16px;
 }
@@ -486,6 +616,38 @@ button.danger {
   border: 1px solid var(--vscode-panel-border);
   color: var(--vscode-descriptionForeground);
   background: transparent;
+}
+
+.slash-command-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  margin-top: 0;
+  padding: 0;
+  border-radius: 9px;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+}
+
+.slash-command-toggle:hover:not(:disabled),
+.slash-command-toggle.open {
+  opacity: 1;
+  color: var(--vscode-textLink-foreground);
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 42%, var(--vscode-panel-border));
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 9%, transparent);
+}
+
+.slash-command-glyph {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .additional-context-toggle:hover:not(:disabled),

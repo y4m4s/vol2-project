@@ -8,6 +8,14 @@ export type ConnectionState =
 
 export type AdviceMode = "manual" | "always";
 
+export type AssistanceDepth = "low" | "high";
+
+export type SlashCommand = "hint" | "next" | "flow" | "risk" | "test";
+
+export type SlashCommandScope = "standard" | "deep";
+
+export type ProjectContextScope = "project-lite" | "project" | "deep";
+
 export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
 
 export type NavigatorScreen =
@@ -29,7 +37,16 @@ export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
-export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols" | "additionalContext";
+export type ContextCategoryKey =
+  | "activeFile"
+  | "selection"
+  | "diagnostics"
+  | "recentEdits"
+  | "relatedSymbols"
+  | "workspaceTree"
+  | "referencedFiles"
+  | "projectSummary"
+  | "additionalContext";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -44,23 +61,74 @@ export interface NavigatorContextPreview {
   diagnosticsSummary: DiagnosticSummary[];
 }
 
+export type ReferencedFileReason =
+  | "open"
+  | "diagnostic"
+  | "recentEdit"
+  | "sameDirectory"
+  | "workspace";
+
+export interface ReferencedFileContext {
+  path: string;
+  languageId?: string;
+  reason: ReferencedFileReason;
+  excerpt?: string;
+  diagnosticsSummary: DiagnosticSummary[];
+  recentEditsSummary: string[];
+  score: number;
+}
+
+export interface WorkspaceTreeContext {
+  rootPath: string;
+  treeText: string;
+  truncated: boolean;
+}
+
+export interface ProjectContextSummary {
+  scope: ProjectContextScope;
+  openFiles: string[];
+  diagnosticsSummary: string[];
+  recentEditsSummary: string[];
+  todoSummary: string[];
+  manifestSummary: string[];
+  docsSummary: string[];
+}
+
 export interface GuidanceContext {
   activeFilePath?: string;
   activeFileLanguage?: string;
   activeFileExcerpt?: string;
   selectedText?: string;
+  workspaceTree?: WorkspaceTreeContext;
+  referencedFiles: ReferencedFileContext[];
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
+  projectSummary?: ProjectContextSummary;
   additionalContext?: string;
 }
 
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
+  defaultAssistanceDepth: AssistanceDepth;
   requestIntervalMs: number;
   idleDelayMs: number;
+  dailyBudgetUsd: number;
+  enableWorkspaceContext: boolean;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
+}
+
+export interface UsageTodayViewData {
+  date: string;
+  requestCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostText: string;
+  blendedPricePerMTokenUsd: number;
+  budgetUsd: number;
+  budgetExceeded: boolean;
 }
 
 export interface RequestPlanCategory {
@@ -81,6 +149,9 @@ export interface RequestPlanFile {
 
 export interface RequestPlanSnapshot {
   kind: GuidanceKind;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   categories: RequestPlanCategory[];
   targetFiles: RequestPlanFile[];
   excludedGlobs: string[];
@@ -91,9 +162,18 @@ export interface GuidanceCard {
   id: string;
   requestedAt: string;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   text: string;
   basedOn: NavigatorContextPreview;
   requestPlan: RequestPlanSnapshot;
+}
+
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
 }
 
 export interface ConversationEntry {
@@ -104,7 +184,11 @@ export interface ConversationEntry {
   kind: GuidanceKind;
   basedOn?: NavigatorContextPreview;
   mode?: AdviceMode;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   requestPlan?: RequestPlanSnapshot;
+  tokenUsage?: TokenUsage;
 }
 
 export interface ConversationStreamListItem {
@@ -151,6 +235,7 @@ export interface NavigatorSessionState {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
@@ -170,11 +255,15 @@ export interface NavigatorViewModel {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   canConnect: boolean;
   canAskForGuidance: boolean;
   canSwitchMode: boolean;
+  canSwitchAssistanceDepth: boolean;
   isBusy: boolean;
   autoAdvice: AutoAdviceState;
+  usageToday: UsageTodayViewData;
+  modelLabel?: string;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
