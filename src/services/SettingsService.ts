@@ -60,14 +60,13 @@ const DEFAULT_SETTINGS: NavigatorSettings = {
   requestIntervalMs: 60000,
   idleDelayMs: 10000,
   dailyBudgetUsd: 1.0,
-  enableWorkspaceContext: false,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
 
 const IDLE_DELAY_OPTIONS_MS = [5000, 10000, 15000] as const;
 const REQUEST_INTERVAL_OPTIONS_MS = [20000, 60000, 180000] as const;
-const DAILY_BUDGET_USD_OPTIONS = [0, 1.0] as const;
+const DAILY_BUDGET_USD_OPTIONS = [0.5, 1.0, 2.0, 0] as const;
 
 export class SettingsService {
   public constructor(private readonly storage: vscode.Memento) {}
@@ -94,10 +93,10 @@ export class SettingsService {
     return {
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
       defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
+      copilotModelId: this.normalizeCopilotModelId(partial?.copilotModelId),
       requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       dailyBudgetUsd: this.normalizeDailyBudgetUsd(partial?.dailyBudgetUsd ?? DEFAULT_SETTINGS.dailyBudgetUsd),
-      enableWorkspaceContext: partial?.enableWorkspaceContext ?? DEFAULT_SETTINGS.enableWorkspaceContext,
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };
@@ -123,6 +122,15 @@ export class SettingsService {
 
   private normalizeAssistanceDepth(value: unknown): NavigatorSettings["defaultAssistanceDepth"] {
     return value === "high" ? "high" : DEFAULT_SETTINGS.defaultAssistanceDepth;
+  }
+
+  private normalizeCopilotModelId(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalized = value.trim();
+    return normalized.length > 0 && normalized !== "auto" ? normalized : undefined;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

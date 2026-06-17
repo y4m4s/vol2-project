@@ -19,7 +19,7 @@ export interface PreparedGuidanceRequest {
 
 // ロウモード(常時モード含む)はトークン消費を抑えるため、送信する文脈を必要最小限に絞る。
 // docs/11 §11.1: ロウ = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
-// ハイ = 上記に加えて関連ファイル・ディレクトリ構造・プロジェクト概要
+// ハイ = 上記に加えて関連ファイル・ディレクトリ構造
 const LOW_DEPTH_CONTEXT_LIMITS = {
   excerptChars: 2000,
   diagnostics: 5,
@@ -40,13 +40,14 @@ export class RequestPlanner {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
+    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
       activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
       selectedText: !fileExcluded ? context.selectedText : undefined,
-      workspaceTree: settings.enableWorkspaceContext ? context.workspaceTree : undefined,
-      referencedFiles: settings.enableWorkspaceContext ? referencedFiles : [],
+      workspaceTree: effectiveDepth === "high" ? context.workspaceTree : undefined,
+      referencedFiles: effectiveDepth === "high" ? referencedFiles : [],
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
       relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
@@ -54,7 +55,6 @@ export class RequestPlanner {
       additionalContext: context.additionalContext
     };
 
-    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
     if (effectiveDepth === "low") {
       this.applyLowDepthContextLimits(filteredContext);
     }

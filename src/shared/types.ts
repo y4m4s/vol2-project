@@ -111,12 +111,18 @@ export interface GuidanceContext {
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
+  copilotModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyBudgetUsd: number;
-  enableWorkspaceContext: boolean;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
+}
+
+export interface CopilotModelOption {
+  id: string;
+  label: string;
+  tokenLimitText: string;
 }
 
 export interface UsageTodayViewData {
@@ -165,6 +171,7 @@ export interface GuidanceCard {
   assistanceDepth: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   text: string;
   basedOn: NavigatorContextPreview;
   requestPlan: RequestPlanSnapshot;
@@ -187,6 +194,7 @@ export interface ConversationEntry {
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
 }
@@ -264,6 +272,7 @@ export interface NavigatorViewModel {
   autoAdvice: AutoAdviceState;
   usageToday: UsageTodayViewData;
   modelLabel?: string;
+  copilotModelOptions: CopilotModelOption[];
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;

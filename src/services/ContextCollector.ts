@@ -169,10 +169,6 @@ export class ContextCollector {
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
     const context = baseContext ?? this.collectGuidanceContext();
-    if (!settings.enableWorkspaceContext) {
-      return context;
-    }
-
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const [workspaceTree, referencedFiles] = await Promise.all([
       this.collectWorkspaceTree(excludedGlobs),

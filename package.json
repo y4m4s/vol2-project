@@ -82,11 +82,6 @@
           "maximum": 15000,
           "description": "Idle time before automatic feedback can be triggered."
         },
-        "aiPairNavigator.enableWorkspaceContext": {
-          "type": "boolean",
-          "default": false,
-          "description": "Include workspace directory structure and selected related files in guidance context."
-        },
         "aiPairNavigator.excludedGlobs": {
           "type": "array",
           "default": [],

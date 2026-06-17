@@ -31,10 +31,10 @@ export type WebviewToExtension =
 export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
+  copilotModelId?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyBudgetUsd: number;
-  enableWorkspaceContext: boolean;
   excludeGlobs: string;
 }
 

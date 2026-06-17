@@ -3,13 +3,15 @@ import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
-import type { AdviceMode, AssistanceDepth } from "../../shared/types";
+import type { AdviceMode, AssistanceDepth, CopilotModelOption } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
 const REQUEST_INTERVAL_OPTIONS = [20, 60, 180];
 const DAILY_BUDGET_USD_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 0, label: "無制限" },
-  { value: 1.0, label: "$1.00" }
+  { value: 0.5, label: "節約 $0.50" },
+  { value: 1.0, label: "標準 $1.00" },
+  { value: 2.0, label: "多め $2.00" },
+  { value: 0, label: "無制限" }
 ];
 const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
   { value: "manual", label: "必要時" },
@@ -26,38 +28,38 @@ export function S06Settings() {
 
   const savedDefaultMode = settings?.defaultMode ?? "manual";
   const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
+  const savedCopilotModelId = settings?.copilotModelId ?? "auto";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedRequestIntervalSec = settings ? normalizeRequestIntervalSec(settings.requestIntervalMs / 1000) : 60;
   const savedDailyBudgetUsd = settings ? normalizeDailyBudgetUsd(settings.dailyBudgetUsd) : 1.0;
-  const savedEnableWorkspaceContext = settings?.enableWorkspaceContext ?? false;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
 
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
   const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
+  const [copilotModelId, setCopilotModelId] = useState(savedCopilotModelId);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
   const [dailyBudgetUsd, setDailyBudgetUsd] = useState(savedDailyBudgetUsd);
-  const [enableWorkspaceContext, setEnableWorkspaceContext] = useState(savedEnableWorkspaceContext);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
 
   useEffect(() => {
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
+    setCopilotModelId(savedCopilotModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyBudgetUsd(savedDailyBudgetUsd);
-    setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedDefaultMode, savedDefaultAssistanceDepth, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedEnableWorkspaceContext, savedExcludeGlobs]);
+  }, [savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedExcludeGlobs]);
 
   const hasPendingChanges =
     defaultMode !== savedDefaultMode ||
     defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
+    copilotModelId !== savedCopilotModelId ||
     idleDelaySec !== savedIdleDelaySec ||
     requestIntervalSec !== savedRequestIntervalSec ||
     dailyBudgetUsd !== savedDailyBudgetUsd ||
-    enableWorkspaceContext !== savedEnableWorkspaceContext ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
 
   function handleSave() {
@@ -66,10 +68,10 @@ export function S06Settings() {
       payload: {
         defaultMode,
         defaultAssistanceDepth,
+        copilotModelId: copilotModelId === "auto" ? undefined : copilotModelId,
         idleDelaySec,
         requestIntervalSec,
         dailyBudgetUsd,
-        enableWorkspaceContext,
         excludeGlobs
       }
     });
@@ -78,10 +80,10 @@ export function S06Settings() {
   function handleRevertDraft() {
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
+    setCopilotModelId(savedCopilotModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyBudgetUsd(savedDailyBudgetUsd);
-    setEnableWorkspaceContext(savedEnableWorkspaceContext);
     setExcludeGlobs(savedExcludeGlobs);
   }
 
@@ -111,7 +113,7 @@ export function S06Settings() {
 
       <div className="setting-item">
         <div className="setting-label">既定の深さ</div>
-        <div className="setting-desc">手動相談で最初に使う助言の深さです</div>
+        <div className="setting-desc">手動相談で最初に使う助言の深さです。ハイでは関連ファイルとディレクトリ構造も参照します</div>
         <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
       </div>
 
@@ -159,30 +161,18 @@ export function S06Settings() {
         />
       </div>
 
-      <div className="settings-section">
-        <span className="material-symbols-outlined">account_tree</span> 文脈参照
-      </div>
-
       <div className="setting-item">
-        <div className="setting-row">
-          <div>
-            <div className="setting-label">複数ファイル・ディレクトリ構造</div>
-            <div className="setting-desc">
-              ON にすると、ディレクトリ構造と関連ファイル断片も相談時の文脈に含めます
-            </div>
-          </div>
-          <label className="setting-switch">
-            <input
-              type="checkbox"
-              aria-label="複数ファイル・ディレクトリ構造の参照を有効化"
-              checked={enableWorkspaceContext}
-              onChange={(event) => setEnableWorkspaceContext(event.target.checked)}
-            />
-            <span className="setting-switch-track">
-              <span className="setting-switch-thumb" />
-            </span>
-          </label>
+        <div className="setting-label">使用モデル</div>
+        <div className="setting-desc">
+          自動では低コストモデルを優先し、見つからない場合は警告つきで利用可能なモデルへ接続します
+          <br />
+          文脈上限は、一度に参照できる入力文脈量の目安です
         </div>
+        <ModelButtonGroup
+          value={copilotModelId}
+          onChange={setCopilotModelId}
+          options={viewModel?.copilotModelOptions ?? []}
+        />
       </div>
 
       <div className="settings-section">
@@ -366,6 +356,51 @@ function ScheduleButtonGroup({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function ModelButtonGroup({
+  value,
+  onChange,
+  options
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: CopilotModelOption[];
+}) {
+  const selectedModelIsMissing = value !== "auto" && !options.some((option) => option.id === value);
+  const modelOptions = selectedModelIsMissing
+    ? [...options, { id: value, label: "指定モデル", tokenLimitText: "現在のモデル一覧にありません" }]
+    : options;
+
+  return (
+    <div className="choice-options model-options" role="group" aria-label="使用モデル">
+      <button
+        type="button"
+        className={`choice-option ${value === "auto" ? "selected" : ""}`}
+        aria-pressed={value === "auto"}
+        onClick={() => onChange("auto")}
+      >
+        <span className="model-option-name">自動</span>
+        <span className="model-option-meta">低コスト優先</span>
+      </button>
+
+      {modelOptions.map((option) => {
+        const selected = option.id === value;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            className={`choice-option ${selected ? "selected" : ""}`}
+            aria-pressed={selected}
+            onClick={() => onChange(option.id)}
+          >
+            <span className="model-option-name">{option.label}</span>
+            <span className="model-option-meta">{option.tokenLimitText}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
