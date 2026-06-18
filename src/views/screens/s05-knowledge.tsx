@@ -45,9 +45,15 @@ export function S05Knowledge() {
               >
                 <span className="knowledge-item-title">{item.title}</span>
                 <span className="knowledge-item-preview">{item.summary}</span>
-                <span className="knowledge-item-date">
-                  <span className="material-symbols-outlined">schedule</span>
-                  {formatDateTime(item.updatedAt)}
+                <span className="knowledge-item-meta">
+                  <span className="knowledge-item-date">
+                    <span className="material-symbols-outlined">schedule</span>
+                    {formatDateTime(item.updatedAt)}
+                  </span>
+                  <span className="knowledge-item-model" title={`作成モデル: ${item.modelLabel ?? "記録なし"}`}>
+                    <span className="material-symbols-outlined">memory</span>
+                    作成モデル: {item.modelLabel ?? "記録なし"}
+                  </span>
                 </span>
               </button>
 

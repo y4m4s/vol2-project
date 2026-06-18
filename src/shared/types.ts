@@ -228,6 +228,7 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
+  modelLabel?: string;
   updatedAt: string;
 }
 
@@ -235,6 +236,7 @@ export interface KnowledgeDetailViewData extends KnowledgeListItem {
   body: string;
   createdAt: string;
   sourceConversation?: ConversationStreamListItem;
+  sourceConversationDeleted?: boolean;
 }
 
 export interface NavigatorSessionState {

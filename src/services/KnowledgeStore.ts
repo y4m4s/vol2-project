@@ -35,6 +35,7 @@ export interface KnowledgeRecord {
   body: string;
   status: KnowledgeStatus;
   sourceAdviceId?: string;
+  modelLabel?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +45,7 @@ export interface KnowledgeCreateInput {
   summary: string;
   body: string;
   sourceAdviceId?: string;
+  modelLabel?: string;
 }
 
 export interface KnowledgeUpdateInput {
@@ -125,14 +127,15 @@ export class KnowledgeStore implements vscode.Disposable {
       body: input.body.trim(),
       status: "active",
       sourceAdviceId: input.sourceAdviceId,
+      modelLabel: input.modelLabel,
       createdAt: now,
       updatedAt: now
     };
 
     this.getDb().run(
       `INSERT INTO knowledge
-        (id, title, summary, body, status, source_advice_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, title, summary, body, status, source_advice_id, model_label, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       this.toSqlParams(record)
     );
     await this.persist();
@@ -214,6 +217,7 @@ export class KnowledgeStore implements vscode.Disposable {
         body TEXT NOT NULL,
         status TEXT NOT NULL CHECK (status IN ('active', 'disabled')),
         source_advice_id TEXT,
+        model_label TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -224,6 +228,8 @@ export class KnowledgeStore implements vscode.Disposable {
       CREATE INDEX IF NOT EXISTS idx_knowledge_source_advice
         ON knowledge(source_advice_id);
     `);
+
+    this.ensureColumn("knowledge", "model_label", "TEXT");
   }
 
   private selectRecords(sql: string, params: SqlValue[]): KnowledgeRecord[] {
@@ -250,6 +256,7 @@ export class KnowledgeStore implements vscode.Disposable {
       body: String(row.body),
       status: row.status === "disabled" ? "disabled" : "active",
       sourceAdviceId: row.source_advice_id ? String(row.source_advice_id) : undefined,
+      modelLabel: row.model_label ? String(row.model_label) : undefined,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at)
     };
@@ -263,9 +270,34 @@ export class KnowledgeStore implements vscode.Disposable {
       record.body,
       record.status,
       record.sourceAdviceId ?? null,
+      record.modelLabel ?? null,
       record.createdAt,
       record.updatedAt
     ];
+  }
+
+  private ensureColumn(tableName: string, columnName: string, definition: string): void {
+    if (this.hasColumn(tableName, columnName)) {
+      return;
+    }
+
+    this.getDb().run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+
+  private hasColumn(tableName: string, columnName: string): boolean {
+    const stmt = this.getDb().prepare(`PRAGMA table_info(${tableName})`);
+
+    try {
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        if (String(row.name) === columnName) {
+          return true;
+        }
+      }
+      return false;
+    } finally {
+      stmt.free();
+    }
   }
 
   private async readExistingDatabase(): Promise<Uint8Array | undefined> {

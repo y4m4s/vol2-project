@@ -649,6 +649,7 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
+    const knowledgeModelLabel = this.getCurrentModelLabel();
     const draftResult = await this.adviceService.createKnowledgeDraft({
       source: {
         ...source,
@@ -673,7 +674,8 @@ export class NavigatorController implements vscode.Disposable {
       title: draftResult.draft.title,
       summary: draftResult.draft.summary,
       body: draftResult.draft.body,
-      sourceAdviceId: source.id
+      sourceAdviceId: source.id,
+      modelLabel: knowledgeModelLabel
     });
 
     this.patchSession({
@@ -1663,6 +1665,7 @@ export class NavigatorController implements vscode.Disposable {
       id: item.id,
       title: item.title,
       summary: item.summary,
+      modelLabel: item.modelLabel,
       updatedAt: item.updatedAt
     }));
   }
@@ -1676,15 +1679,18 @@ export class NavigatorController implements vscode.Disposable {
     const sourceConversation = selected.sourceAdviceId
       ? this.conversationStore.findStreamByEntryId(selected.sourceAdviceId)
       : undefined;
+    const sourceConversationDeleted = Boolean(selected.sourceAdviceId && !sourceConversation);
 
     return {
       id: selected.id,
       title: selected.title,
       summary: selected.summary,
+      modelLabel: selected.modelLabel,
       body: selected.body,
       createdAt: selected.createdAt,
       updatedAt: selected.updatedAt,
-      sourceConversation
+      sourceConversation,
+      sourceConversationDeleted
     };
   }
 
