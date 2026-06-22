@@ -11,7 +11,8 @@ import {
   SlashCommand,
   SlashCommandScope
 } from "../shared/types";
-import { ConnectionService } from "./ConnectionService";
+import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
+import { LmStudioError } from "./LmStudioClient";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
 
@@ -117,7 +118,7 @@ export class AdviceService {
   }
 
   private async requestText(prompt: string): Promise<GuidanceRequestResult> {
-    const model = this.connectionService.getModel();
+    const model = this.connectionService.getConnectedModel();
 
     if (!model || this.connectionService.getState() !== "connected") {
       return {
@@ -129,19 +130,18 @@ export class AdviceService {
 
     try {
       const tokenSource = new vscode.CancellationTokenSource();
-      const messages = [vscode.LanguageModelChatMessage.User(prompt)];
-      const response = await model.sendRequest(messages, {}, tokenSource.token);
-
-      let text = "";
-      for await (const chunk of response.text) {
-        text += chunk;
+      let response: ProviderTextResponse;
+      try {
+        response = await model.requestText(prompt, tokenSource.token);
+      } finally {
+        tokenSource.dispose();
       }
 
-      const usage = await this.recordUsage(model, prompt, text);
+      const usage = await this.recordUsage(model, prompt, response);
 
       return {
         ok: true,
-        text,
+        text: response.text,
         usage
       };
     } catch (error) {
@@ -151,6 +151,8 @@ export class AdviceService {
         this.connectionService.markRestricted();
       } else if (connectionState === "disconnected") {
         this.connectionService.resetToDisconnected();
+      } else if (model.providerId === "lmStudio") {
+        this.connectionService.markUnavailable();
       }
 
       return {
@@ -162,29 +164,36 @@ export class AdviceService {
   }
 
   private async recordUsage(
-    model: vscode.LanguageModelChat,
+    model: ConnectedProviderModel,
     prompt: string,
-    responseText: string
+    response: ProviderTextResponse
   ): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
     if (!this.usageMeter) {
       return undefined;
     }
 
-    const [inputTokens, outputTokens] = await Promise.all([
-      this.countTokensSafe(model, prompt),
-      this.countTokensSafe(model, responseText)
-    ]);
-    await this.usageMeter.record({ inputTokens, outputTokens });
+    const [inputTokens, outputTokens] = response.inputTokens !== undefined && response.outputTokens !== undefined
+      ? [response.inputTokens, response.outputTokens]
+      : await Promise.all([
+          this.countTokensSafe(model, prompt),
+          this.countTokensSafe(model, response.text)
+        ]);
+    await this.usageMeter.record({
+      providerId: model.providerId,
+      modelId: model.modelId,
+      inputTokens,
+      outputTokens
+    });
     return { inputTokens, outputTokens };
   }
 
-  private async countTokensSafe(model: vscode.LanguageModelChat, text: string): Promise<number> {
+  private async countTokensSafe(model: ConnectedProviderModel, text: string): Promise<number> {
     if (!text) {
       return 0;
     }
 
     try {
-      return await model.countTokens(text);
+      return model.countTokens ? await model.countTokens(text) : Math.ceil(text.length / 3);
     } catch {
       // 日本語とコードの混在を想定した粗い推定
       return Math.ceil(text.length / 3);
@@ -685,6 +694,9 @@ export class AdviceService {
   }
 
   private classifyGuidanceError(error: unknown): ConnectionState {
+    if (error instanceof LmStudioError) {
+      return "unavailable";
+    }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked" || error.code === "NoPermissions") {
         return "restricted";
@@ -698,6 +710,18 @@ export class AdviceService {
   }
 
   private errorMessage(error: unknown): string {
+    if (error instanceof LmStudioError) {
+      switch (error.kind) {
+        case "auth":
+          return "LM Studio の API トークンを確認してください。";
+        case "unreachable":
+          return "LM Studio サーバーに接続できません。起動状態を確認してください。";
+        case "timeout":
+          return "LM Studio の応答がタイムアウトしました。";
+        default:
+          return "LM Studio へのリクエストに失敗しました。";
+      }
+    }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked") {
         return "Copilot にブロックされました。利用上限に達したか、ポリシーで制限されています。";

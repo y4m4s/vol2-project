@@ -6,6 +6,8 @@ import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
+import { LmStudioClient } from "./services/LmStudioClient";
+import { LmStudioSecretStore } from "./services/LmStudioSecretStore";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
 import { UsageMeter } from "./services/UsageMeter";
@@ -18,7 +20,11 @@ import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
   const usageMeter = new UsageMeter(context.globalState);
-  const connectionService = new ConnectionService(usageMeter);
+  const connectionService = new ConnectionService(
+    usageMeter,
+    new LmStudioClient(),
+    new LmStudioSecretStore(context.secrets)
+  );
   const contextCollector = new ContextCollector();
   const controller = new NavigatorController(
     contextCollector,

@@ -19,13 +19,16 @@ export function S02Main() {
     connectionState,
     canConnect,
     usageToday,
+    providerId,
     modelLabel,
     settings
   } = viewModel;
   const usageModelLabel = connectionState === "connected"
-    ? settings.copilotModelId
-      ? `モデル：${modelLabel ?? "指定モデル"}`
-      : "モデル：自動"
+    ? providerId === "lmStudio"
+      ? `LM Studio：${modelLabel ?? "ロード済みモデル"}`
+      : settings.copilotModelId
+        ? `GitHub Copilot：${modelLabel ?? "指定モデル"}`
+        : "GitHub Copilot：自動"
     : undefined;
 
   return (

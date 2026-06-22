@@ -16,6 +16,7 @@ import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
 import {
   AdviceMode,
+  AiProviderId,
   AdviceTriggerReason,
   AssistanceDepth,
   ConnectionState,
@@ -184,6 +185,7 @@ export class NavigatorController implements vscode.Disposable {
       isBusy: state.requestState !== "idle",
       autoAdvice: this.adviceScheduler.getState(),
       usageToday: this.buildUsageToday(settings),
+      providerId: settings.providerId,
       modelLabel: this.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
       statusMessage: state.statusMessage,
@@ -214,9 +216,10 @@ export class NavigatorController implements vscode.Disposable {
     });
 
     const settings = this.settingsService.getSettings();
-    const connectionState = await this.connectionService.connect(settings.copilotModelId);
-    const nextMode = settings.defaultMode;
-    const nextAssistanceDepth = settings.defaultAssistanceDepth;
+    const connectionState = await this.connectionService.connect(settings);
+    const effectiveSettings = await this.applyLmStudioModelKeyChange(settings);
+    const nextMode = effectiveSettings.defaultMode;
+    const nextAssistanceDepth = effectiveSettings.defaultAssistanceDepth;
 
     if (connectionState === "connected") {
       this.patchSession({
@@ -384,20 +387,41 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async saveSettings(input: {
+    providerId: AiProviderId;
     defaultMode: AdviceMode;
     defaultAssistanceDepth: AssistanceDepth;
     copilotModelId?: string;
+    lmStudioBaseUrl: string;
+    lmStudioToken?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
     excludeGlobs: string;
   }): Promise<void> {
     const previousSettings = this.settingsService.getSettings();
+    let lmStudioBaseUrl = previousSettings.lmStudioBaseUrl;
+    if (input.providerId === "lmStudio") {
+      try {
+        lmStudioBaseUrl = this.connectionService.normalizeLmStudioBaseUrl(input.lmStudioBaseUrl);
+      } catch {
+        this.patchSession({
+          statusMessage: { kind: "error", text: "LM Studio の接続先はローカルホストの URL を指定してください。" }
+        });
+        return;
+      }
+    }
+
+    if (input.lmStudioToken?.trim()) {
+      await this.connectionService.saveLmStudioToken(input.lmStudioToken);
+    }
+
     const nextSettings: NavigatorSettings = {
       ...previousSettings,
+      providerId: input.providerId,
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
       copilotModelId: input.copilotModelId,
+      lmStudioBaseUrl,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
       dailyBudgetUsd: input.dailyBudgetUsd,
@@ -411,13 +435,17 @@ export class NavigatorController implements vscode.Disposable {
 
     const isConnected = this.connectionService.getState() === "connected";
     const canApplyAlways = input.defaultMode !== "always" || isConnected;
-    const modelSettingChanged = previousSettings.copilotModelId !== savedSettings.copilotModelId;
+    const modelSettingChanged =
+      previousSettings.providerId !== savedSettings.providerId ||
+      previousSettings.copilotModelId !== savedSettings.copilotModelId ||
+      previousSettings.lmStudioBaseUrl !== savedSettings.lmStudioBaseUrl;
+    const connectionSettingChanged = modelSettingChanged || Boolean(input.lmStudioToken?.trim());
 
     if (input.defaultMode === "always" && isConnected) {
       this.adviceScheduler.resetPause();
     }
 
-    if (modelSettingChanged && isConnected && this.sessionStore.getState().requestState === "idle") {
+    if (connectionSettingChanged && isConnected && this.sessionStore.getState().requestState === "idle") {
       this.patchSession({
         ...(canApplyAlways ? { mode: input.defaultMode } : {}),
         assistanceDepth: input.defaultAssistanceDepth,
@@ -432,8 +460,8 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: input.defaultAssistanceDepth,
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
       statusMessage: {
-        kind: modelSettingChanged && isConnected ? "warning" : "info",
-        text: modelSettingChanged && isConnected
+        kind: connectionSettingChanged && isConnected ? "warning" : "info",
+        text: connectionSettingChanged && isConnected
           ? "設定を保存しました。使用モデルは現在のリクエスト完了後、次回接続時に反映されます。"
           : "設定を保存しました。"
       }
@@ -442,7 +470,6 @@ export class NavigatorController implements vscode.Disposable {
 
   public async resetSettings(): Promise<void> {
     const wasConnected = this.connectionService.getState() === "connected";
-    const previousModelId = this.settingsService.getSettings().copilotModelId;
     const settings = await this.settingsService.resetSettings();
     this.patchSession({
       mode: "manual",
@@ -453,7 +480,7 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
-    if (wasConnected && previousModelId && this.sessionStore.getState().requestState === "idle") {
+    if (wasConnected && this.sessionStore.getState().requestState === "idle") {
       await this.reconnectCopilotForModelSetting(settings);
     }
   }
@@ -469,7 +496,8 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
-    const connectionState = await this.connectionService.connect(settings.copilotModelId);
+    const connectionState = await this.connectionService.connect(settings);
+    await this.applyLmStudioModelKeyChange(settings);
     if (connectionState === "connected") {
       const fallbackStatusMessage = this.buildAutoModelFallbackStatusMessage();
       this.patchSession({
@@ -649,7 +677,7 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
-    const knowledgeModelLabel = this.getCurrentModelLabel();
+    const knowledgeModelLabel = source.modelLabel ?? this.getCurrentModelLabel();
     const draftResult = await this.adviceService.createKnowledgeDraft({
       source: {
         ...source,
@@ -675,6 +703,8 @@ export class NavigatorController implements vscode.Disposable {
       summary: draftResult.draft.summary,
       body: draftResult.draft.body,
       sourceAdviceId: source.id,
+      providerId: source.providerId,
+      modelId: source.modelId,
       modelLabel: knowledgeModelLabel
     });
 
@@ -733,7 +763,7 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
 
-    if (this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), settings.dailyBudgetUsd)) {
+    if (this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), settings.dailyBudgetUsd)) {
       this.pauseAutoAdviceForBudget();
       return;
     }
@@ -783,14 +813,17 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private getModelIdentifier(): string | undefined {
-    const model = this.connectionService.getModel();
-    return model ? `${model.id} ${model.family}` : undefined;
+    return this.connectionService.getConnectedModel()?.modelId;
+  }
+
+  private getCurrentProviderId(): AiProviderId {
+    return this.settingsService.getSettings().providerId;
   }
 
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
-    const usage = this.usageMeter.getToday();
-    const modelIdentifier = this.getModelIdentifier();
-    const cost = this.usageMeter.estimateCostUsd(modelIdentifier, usage);
+    const providerId = this.getCurrentProviderId();
+    const usage = this.usageMeter.getToday(providerId);
+    const cost = this.usageMeter.estimateCostUsd(providerId);
 
     return {
       date: usage.date,
@@ -799,9 +832,9 @@ export class NavigatorController implements vscode.Disposable {
       outputTokens: usage.outputTokens,
       totalTokens: usage.inputTokens + usage.outputTokens,
       estimatedCostText: cost > 0 && cost < 0.001 ? "$0.001未満" : `$${cost.toFixed(3)}`,
-      blendedPricePerMTokenUsd: this.usageMeter.estimateBlendedPricePerMTokUsd(modelIdentifier, usage),
+      blendedPricePerMTokenUsd: this.usageMeter.estimateBlendedPricePerMTokUsd(providerId),
       budgetUsd: settings.dailyBudgetUsd,
-      budgetExceeded: this.usageMeter.isBudgetExceeded(modelIdentifier, settings.dailyBudgetUsd)
+      budgetExceeded: this.usageMeter.isBudgetExceeded(providerId, settings.dailyBudgetUsd)
     };
   }
 
@@ -1010,6 +1043,7 @@ export class NavigatorController implements vscode.Disposable {
       activeAdditionalContext: nextActiveAdditionalContext
     });
 
+    const responseModel = this.connectionService.getConnectedModel();
     const responseModelLabel = this.getCurrentModelLabel();
     const result = await this.adviceService.requestGuidance({
       context: prepared.context,
@@ -1039,13 +1073,19 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         options.slashCommand,
         options.slashCommandScope,
-        responseModelLabel
+        responseModelLabel,
+        responseModel?.providerId,
+        responseModel?.modelId
       );
       if (result.usage) {
         assistantEntry.tokenUsage = {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
-          estimatedCostUsd: this.usageMeter.estimateCostUsd(this.getModelIdentifier(), result.usage)
+          estimatedCostUsd: this.usageMeter.estimateCostUsd(
+            this.getCurrentProviderId(),
+            this.getModelIdentifier(),
+            result.usage
+          )
         };
       }
       this.guidanceContextByConversationId.set(assistantEntry.id, prepared.context);
@@ -1061,7 +1101,7 @@ export class NavigatorController implements vscode.Disposable {
         activeAdditionalContext: nextActiveAdditionalContext,
         pendingAdditionalContext: undefined,
         selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
-        statusMessage: this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), settings.dailyBudgetUsd)
+        statusMessage: this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), settings.dailyBudgetUsd)
           ? {
               kind: "warning",
               text: "本日の利用額が設定上限を超えています。設定から上限を確認できます。"
@@ -1280,7 +1320,7 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     // 予算超過時はタイトル生成のリクエストを行わずフォールバック名を使う
-    if (this.usageMeter.isBudgetExceeded(this.getModelIdentifier(), this.settingsService.getSettings().dailyBudgetUsd)) {
+    if (this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), this.settingsService.getSettings().dailyBudgetUsd)) {
       return record;
     }
 
@@ -1424,6 +1464,30 @@ export class NavigatorController implements vscode.Disposable {
     this.didChangeStateEmitter.fire();
   }
 
+  public async deleteLmStudioToken(): Promise<void> {
+    await this.connectionService.deleteLmStudioToken();
+    this.patchSession({
+      statusMessage: { kind: "info", text: "LM Studio の API トークンを削除しました。" }
+    });
+  }
+
+  private async applyLmStudioModelKeyChange(settings: NavigatorSettings): Promise<NavigatorSettings> {
+    if (settings.providerId !== "lmStudio") {
+      this.connectionService.consumeLmStudioModelKeyChange();
+      return settings;
+    }
+
+    const nextModelKey = this.connectionService.consumeLmStudioModelKeyChange();
+    if (nextModelKey === undefined || nextModelKey === settings.lmStudioModelKey) {
+      return settings;
+    }
+
+    return this.settingsService.saveSettings({
+      ...settings,
+      lmStudioModelKey: nextModelKey ?? undefined
+    });
+  }
+
   private async collectGuidanceContextForDepth(
     settings: NavigatorSettings,
     assistanceDepth: AssistanceDepth,
@@ -1555,6 +1619,36 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
+    if (this.settingsService.getSettings().providerId === "lmStudio") {
+      if (!vscode.workspace.isTrusted) {
+        return { kind: "error", text: "Workspace Trust を有効にしてから LM Studio に接続してください。" };
+      }
+      if (connectionState === "unavailable") {
+        switch (this.connectionService.getLastLmStudioIssue()) {
+          case "auth":
+            return { kind: "error", text: "LM Studio の API トークンを確認してください。" };
+          case "unreachable":
+            return { kind: "error", text: "LM Studio サーバーに接続できません。起動状態を確認してください。" };
+          case "timeout":
+            return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
+          case "savedModelNotLoaded":
+            return { kind: "warning", text: "保存済みモデルを LM Studio でロードしてください。" };
+          case "noLoadedModel":
+            return { kind: "warning", text: "LM Studio でモデルをロードしてから接続してください。" };
+          case "selectionCancelled":
+            return { kind: "warning", text: "使用する LM Studio モデルを選択してください。" };
+          default:
+            return { kind: "error", text: "LM Studio への接続に失敗しました。" };
+        }
+      }
+      if (connectionState === "connecting") {
+        return { kind: "info", text: "LM Studio に接続しています..." };
+      }
+      if (connectionState === "connected") {
+        return { kind: "info", text: "LM Studio に接続しました。" };
+      }
+    }
+
     switch (connectionState) {
       case "disconnected":
         return {
@@ -1602,8 +1696,11 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private getCurrentModelLabel(): string | undefined {
-    const model = this.connectionService.getModel();
-    return model?.name || model?.family || model?.id;
+    const model = this.connectionService.getConnectedModel();
+    if (!model) {
+      return undefined;
+    }
+    return `${model.providerId === "lmStudio" ? "LM Studio" : "GitHub Copilot"} · ${model.modelLabel}`;
   }
 
   private createConversationEntry(
@@ -1616,7 +1713,9 @@ export class NavigatorController implements vscode.Disposable {
     assistanceDepth?: AssistanceDepth,
     slashCommand?: SlashCommand,
     slashCommandScope?: SlashCommandScope,
-    modelLabel?: string
+    modelLabel?: string,
+    providerId?: AiProviderId,
+    modelId?: string
   ): ConversationEntry {
     return {
       id: this.createId(),
@@ -1629,6 +1728,8 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth,
       slashCommand,
       slashCommandScope,
+      providerId,
+      modelId,
       modelLabel,
       requestPlan
     };
@@ -1642,6 +1743,8 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: entry.assistanceDepth ?? entry.requestPlan?.assistanceDepth ?? "low",
       slashCommand: entry.slashCommand ?? entry.requestPlan?.slashCommand,
       slashCommandScope: entry.slashCommandScope ?? entry.requestPlan?.slashCommandScope,
+      providerId: entry.providerId,
+      modelId: entry.modelId,
       modelLabel: entry.modelLabel,
       text: entry.text,
       basedOn: entry.basedOn ?? { diagnosticsSummary: [] },
@@ -1665,6 +1768,8 @@ export class NavigatorController implements vscode.Disposable {
       id: item.id,
       title: item.title,
       summary: item.summary,
+      providerId: item.providerId,
+      modelId: item.modelId,
       modelLabel: item.modelLabel,
       updatedAt: item.updatedAt
     }));
@@ -1685,6 +1790,8 @@ export class NavigatorController implements vscode.Disposable {
       id: selected.id,
       title: selected.title,
       summary: selected.summary,
+      providerId: selected.providerId,
+      modelId: selected.modelId,
       modelLabel: selected.modelLabel,
       body: selected.body,
       createdAt: selected.createdAt,

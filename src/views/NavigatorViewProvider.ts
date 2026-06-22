@@ -96,6 +96,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
               await this.controller.saveSettings(message.payload);
             }
             return;
+          case "deleteLmStudioToken":
+            await this.controller.deleteLmStudioToken();
+            return;
           case "resetSettings":
             await this.controller.resetSettings();
             return;
@@ -176,9 +179,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   private isCompletePayload(payload: unknown): payload is {
+    providerId: "copilot" | "lmStudio";
     defaultMode: "manual" | "always";
     defaultAssistanceDepth: "low" | "high";
     copilotModelId?: string;
+    lmStudioBaseUrl: string;
+    lmStudioToken?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
@@ -189,7 +195,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
       (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
+      (p.providerId === "copilot" || p.providerId === "lmStudio") &&
       (p.copilotModelId === undefined || typeof p.copilotModelId === "string") &&
+      typeof p.lmStudioBaseUrl === "string" &&
+      (p.lmStudioToken === undefined || typeof p.lmStudioToken === "string") &&
       typeof p.idleDelaySec === "number" &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.dailyBudgetUsd === "number" &&

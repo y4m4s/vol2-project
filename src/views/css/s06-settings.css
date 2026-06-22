@@ -120,6 +120,21 @@
   margin-top: 10px;
 }
 
+.mode-options .choice-option {
+  display: flex;
+  min-height: 56px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  text-align: left;
+}
+
+.mode-options .model-option-meta {
+  flex: 0 1 auto;
+  text-align: left;
+}
+
 .schedule-options {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -219,6 +234,29 @@
 
 .exclude-textarea textarea:focus {
   border-color: var(--vscode-focusBorder);
+}
+
+.setting-text-input,
+.setting-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.5));
+  border-radius: 6px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.setting-textarea {
+  resize: vertical;
+}
+
+.setting-text-input:focus,
+.setting-textarea:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
 }
 
 .s06-savebar {

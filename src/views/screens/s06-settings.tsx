@@ -1,90 +1,93 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
-import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
-import { formatTokenCount } from "../webview/utils/formatUsage";
-import type { AdviceMode, AssistanceDepth, CopilotModelOption } from "../../shared/types";
+import { useApp } from "../webview/state/AppContext";
+import type { AdviceMode, AiProviderId, AssistanceDepth, CopilotModelOption } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
 const REQUEST_INTERVAL_OPTIONS = [20, 60, 180];
-const DAILY_BUDGET_USD_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 0.5, label: "節約 $0.50" },
-  { value: 1.0, label: "標準 $1.00" },
-  { value: 2.0, label: "多め $2.00" },
-  { value: 0, label: "無制限" }
-];
-const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
-  { value: "manual", label: "必要時" },
-  { value: "always", label: "常時" }
-];
-const DEPTH_OPTIONS: Array<{ value: AssistanceDepth; label: string }> = [
-  { value: "low", label: "ロウ" },
-  { value: "high", label: "ハイ" }
-];
+const DAILY_BUDGET_OPTIONS = [0.5, 1, 2, 0];
 
 export function S06Settings() {
   const { viewModel, send } = useApp();
   const settings = viewModel?.settings;
 
+  const savedProviderId = settings?.providerId ?? "copilot";
   const savedDefaultMode = settings?.defaultMode ?? "manual";
-  const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
+  const savedDepth = settings?.defaultAssistanceDepth ?? "low";
   const savedCopilotModelId = settings?.copilotModelId ?? "auto";
-  const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
-  const savedRequestIntervalSec = settings ? normalizeRequestIntervalSec(settings.requestIntervalMs / 1000) : 60;
-  const savedDailyBudgetUsd = settings ? normalizeDailyBudgetUsd(settings.dailyBudgetUsd) : 1.0;
-  const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
+  const savedLmStudioBaseUrl = settings?.lmStudioBaseUrl ?? "http://127.0.0.1:1234";
+  const savedIdleDelay = settings ? normalizeOption(settings.idleDelayMs / 1000, IDLE_DELAY_OPTIONS) : 10;
+  const savedInterval = settings ? normalizeOption(settings.requestIntervalMs / 1000, REQUEST_INTERVAL_OPTIONS) : 60;
+  const savedBudget = settings ? normalizeOption(settings.dailyBudgetUsd, DAILY_BUDGET_OPTIONS) : 1;
+  const savedExcludes = settings?.excludedGlobs.join("\n") ?? "";
 
+  const [providerId, setProviderId] = useState<AiProviderId>(savedProviderId);
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
-  const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
+  const [depth, setDepth] = useState<AssistanceDepth>(savedDepth);
   const [copilotModelId, setCopilotModelId] = useState(savedCopilotModelId);
-  const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
-  const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
-  const [dailyBudgetUsd, setDailyBudgetUsd] = useState(savedDailyBudgetUsd);
-  const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
+  const [lmStudioBaseUrl, setLmStudioBaseUrl] = useState(savedLmStudioBaseUrl);
+  const [lmStudioToken, setLmStudioToken] = useState("");
+  const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelay);
+  const [requestIntervalSec, setRequestIntervalSec] = useState(savedInterval);
+  const [dailyBudgetUsd, setDailyBudgetUsd] = useState(savedBudget);
+  const [excludeGlobs, setExcludeGlobs] = useState(savedExcludes);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
 
   useEffect(() => {
+    setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
-    setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
+    setDepth(savedDepth);
     setCopilotModelId(savedCopilotModelId);
-    setIdleDelaySec(savedIdleDelaySec);
-    setRequestIntervalSec(savedRequestIntervalSec);
-    setDailyBudgetUsd(savedDailyBudgetUsd);
-    setExcludeGlobs(savedExcludeGlobs);
-  }, [savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedExcludeGlobs]);
+    setLmStudioBaseUrl(savedLmStudioBaseUrl);
+    setIdleDelaySec(savedIdleDelay);
+    setRequestIntervalSec(savedInterval);
+    setDailyBudgetUsd(savedBudget);
+    setExcludeGlobs(savedExcludes);
+  }, [savedProviderId, savedDefaultMode, savedDepth, savedCopilotModelId, savedLmStudioBaseUrl, savedIdleDelay, savedInterval, savedBudget, savedExcludes]);
 
   const hasPendingChanges =
+    providerId !== savedProviderId ||
     defaultMode !== savedDefaultMode ||
-    defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
+    depth !== savedDepth ||
     copilotModelId !== savedCopilotModelId ||
-    idleDelaySec !== savedIdleDelaySec ||
-    requestIntervalSec !== savedRequestIntervalSec ||
-    dailyBudgetUsd !== savedDailyBudgetUsd ||
-    normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
+    lmStudioBaseUrl.trim() !== savedLmStudioBaseUrl ||
+    idleDelaySec !== savedIdleDelay ||
+    requestIntervalSec !== savedInterval ||
+    dailyBudgetUsd !== savedBudget ||
+    normalizeLines(excludeGlobs) !== normalizeLines(savedExcludes) ||
+    Boolean(lmStudioToken.trim());
 
   function handleSave() {
     send({
       type: "saveSettings",
       payload: {
+        providerId,
         defaultMode,
-        defaultAssistanceDepth,
+        defaultAssistanceDepth: depth,
         copilotModelId: copilotModelId === "auto" ? undefined : copilotModelId,
+        lmStudioBaseUrl,
+        lmStudioToken: lmStudioToken.trim() || undefined,
         idleDelaySec,
         requestIntervalSec,
         dailyBudgetUsd,
         excludeGlobs
       }
     });
+    setLmStudioToken("");
   }
 
-  function handleRevertDraft() {
+  function handleRevert() {
+    setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
-    setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
+    setDepth(savedDepth);
     setCopilotModelId(savedCopilotModelId);
-    setIdleDelaySec(savedIdleDelaySec);
-    setRequestIntervalSec(savedRequestIntervalSec);
-    setDailyBudgetUsd(savedDailyBudgetUsd);
-    setExcludeGlobs(savedExcludeGlobs);
+    setLmStudioBaseUrl(savedLmStudioBaseUrl);
+    setLmStudioToken("");
+    setIdleDelaySec(savedIdleDelay);
+    setRequestIntervalSec(savedInterval);
+    setDailyBudgetUsd(savedBudget);
+    setExcludeGlobs(savedExcludes);
   }
 
   return (
@@ -92,143 +95,117 @@ export function S06Settings() {
       <div className="s06-sticky-top">
         <PageHeader
           title="設定"
-          subtitle="NaviCom の動作と除外パターンを設定できます"
+          subtitle="NaviCom の接続先と利用方法を設定します"
           navIcons={[
-            { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
+            { icon: "history", title: "履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
             { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
-            { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
+            { icon: "add_comment", title: "新しい会話", onClick: () => send({ type: "navigate", screen: "main" }) }
           ]}
         />
       </div>
 
-      <div className="settings-section">
-        <span className="material-symbols-outlined">tune</span> モード設定
+      <Section icon="hub" title="AI プロバイダー" />
+      <div className="setting-item">
+        <div className="setting-label">接続先</div>
+        <div className="setting-desc">助言を生成する AI を選択します。</div>
+        <ChoiceGroup value={providerId} onChange={setProviderId} options={[
+          { value: "copilot", label: "GitHub Copilot", description: "VS Code の Copilot を利用" },
+          { value: "lmStudio", label: "LM Studio", description: "ローカルでロードしたモデルを利用" }
+        ]} />
       </div>
 
+      {providerId === "copilot" ? (
+        <div className="setting-item">
+          <div className="setting-label">Copilot の使用モデル</div>
+          <div className="setting-desc">自動、または VS Code で利用可能な Copilot モデルを選びます。</div>
+          <CopilotModelChoices value={copilotModelId} onChange={setCopilotModelId} options={viewModel?.copilotModelOptions ?? []} />
+        </div>
+      ) : (
+        <>
+          <div className="setting-item">
+            <label className="setting-label" htmlFor="lmStudioBaseUrl">LM Studio の Base URL</label>
+            <div className="setting-desc">localhost、127.0.0.1、::1 だけを指定できます。</div>
+            <input
+              id="lmStudioBaseUrl"
+              className="setting-text-input"
+              value={lmStudioBaseUrl}
+              placeholder="http://127.0.0.1:1234"
+              onChange={(event) => setLmStudioBaseUrl(event.target.value)}
+            />
+          </div>
+          <div className="setting-item">
+            <label className="setting-label" htmlFor="lmStudioToken">API トークン（任意）</label>
+            <div className="setting-desc">空欄で保存しても、保存済みトークンは保持されます。</div>
+            <input
+              id="lmStudioToken"
+              className="setting-text-input"
+              type="password"
+              value={lmStudioToken}
+              autoComplete="new-password"
+              onChange={(event) => setLmStudioToken(event.target.value)}
+            />
+            <button className="btn-gray" onClick={() => { setLmStudioToken(""); send({ type: "deleteLmStudioToken" }); }}>
+              トークンを削除
+            </button>
+          </div>
+          <div className="setting-item">
+            <div className="setting-label">使用モデル</div>
+            <div className="setting-desc">LM Studio からロード済みモデルを自動検知します。モデル ID の入力や常設の選択欄はありません。</div>
+          </div>
+        </>
+      )}
+
+      <Section icon="tune" title="助言" />
       <div className="setting-item">
         <div className="setting-label">初期モード</div>
-        <div className="setting-desc">相談開始時に使用するモードです</div>
-        <ModeButtonGroup value={defaultMode} onChange={setDefaultMode} />
+        <ChoiceGroup value={defaultMode} onChange={setDefaultMode} options={[
+          { value: "manual", label: "手動", description: "必要なときに助言を求める" },
+          { value: "always", label: "常時", description: "編集後に助言を表示する" }
+        ]} />
       </div>
-
       <div className="setting-item">
-        <div className="setting-label">既定の深さ</div>
-        <div className="setting-desc">手動相談で最初に使う助言の深さです。ハイでは関連ファイルとディレクトリ構造も参照します</div>
-        <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
+        <div className="setting-label">初期の助言の深さ</div>
+        <ChoiceGroup value={depth} onChange={setDepth} options={[
+          { value: "low", label: "ロー", description: "短いヒント中心" },
+          { value: "high", label: "ハイ", description: "構造化して詳しく確認" }
+        ]} />
       </div>
 
-      <div className="settings-section">
-        <span className="material-symbols-outlined">speed</span> 助言の頻度
-      </div>
+      <Section icon="speed" title="自動助言" />
+      <OptionButtons label="待機時間" value={idleDelaySec} options={IDLE_DELAY_OPTIONS} suffix="秒" onChange={setIdleDelaySec} />
+      <OptionButtons label="リクエスト間隔" value={requestIntervalSec} options={REQUEST_INTERVAL_OPTIONS} suffix="秒" onChange={setRequestIntervalSec} />
 
-      <ScheduleButtonGroup
-        id="idleDelay"
-        label="待ち時間"
-        description="操作停止後、自動助言を出すまでの待ち時間です"
-        options={IDLE_DELAY_OPTIONS}
-        value={idleDelaySec}
-        onChange={setIdleDelaySec}
-      />
+      <Section icon="data_usage" title="利用量" />
+      <OptionButtons label="Copilot の日次予算" value={dailyBudgetUsd} options={DAILY_BUDGET_OPTIONS} suffix="$" onChange={setDailyBudgetUsd} />
+      {providerId === "lmStudio" && <div className="setting-desc">LM Studio の推定料金は $0 で、日次予算の対象外です。</div>}
 
-      <ScheduleButtonGroup
-        id="requestInterval"
-        label="インターバル"
-        description="自動助言を出してから次の自動助言までの最短間隔です。長くするほどトークン消費を抑えられます"
-        options={REQUEST_INTERVAL_OPTIONS}
-        value={requestIntervalSec}
-        onChange={setRequestIntervalSec}
-      />
-
-      <div className="settings-section">
-        <span className="material-symbols-outlined">data_usage</span> 利用量
-      </div>
-
-      <div className="setting-item">
-        <div className="setting-label">1日の使用上限</div>
-        <div className="setting-desc">
-          上限に達すると自動助言を一時停止します（手動相談は警告のみ）
-          {viewModel?.usageToday && (
-            <>
-              <br />
-              今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（目安 {viewModel.usageToday.estimatedCostText}）
-            </>
-          )}
-        </div>
-        <BudgetButtonGroup
-          value={dailyBudgetUsd}
-          onChange={setDailyBudgetUsd}
-          pricePerMTokenUsd={viewModel?.usageToday?.blendedPricePerMTokenUsd}
-        />
-      </div>
-
-      <div className="setting-item">
-        <div className="setting-label">使用モデル</div>
-        <div className="setting-desc">
-          自動では低コストモデルを優先し、見つからない場合は警告つきで利用可能なモデルへ接続します
-          <br />
-          文脈上限は、一度に参照できる入力文脈量の目安です
-        </div>
-        <ModelButtonGroup
-          value={copilotModelId}
-          onChange={setCopilotModelId}
-          options={viewModel?.copilotModelOptions ?? []}
-        />
-      </div>
-
-      <div className="settings-section">
-        <span className="material-symbols-outlined">block</span> 除外設定
-      </div>
-
+      <Section icon="block" title="コンテキスト除外" />
       <div className="setting-item">
         <div className="setting-label">保護済みパターン</div>
-        <div className="setting-desc">機密性やサイズの観点から常に除外されるパターンです</div>
-        <div className="protected-exclude-list">
-          {settings?.protectedExcludedGlobs.join("\n") ?? ""}
-        </div>
+        <div className="protected-exclude-list">{settings?.protectedExcludedGlobs.join("\n") ?? ""}</div>
       </div>
-
       <div className="setting-item">
-        <label className="setting-label" htmlFor="excludeGlobs">追加除外パターン (glob)</label>
-        <div className="setting-desc">ワークスペースで追加除外したいパターンを1行ずつ入力します</div>
-        <div className="exclude-textarea">
-          <textarea
-            ref={excludeTextareaRef}
-            id="excludeGlobs"
-            placeholder="例: **/tmp/**"
-            rows={3}
-            value={excludeGlobs}
-            onChange={(event) => setExcludeGlobs(event.target.value)}
-          />
-        </div>
+        <label className="setting-label" htmlFor="excludeGlobs">追加の除外パターン（glob）</label>
+        <textarea
+          ref={excludeTextareaRef}
+          id="excludeGlobs"
+          className="setting-textarea"
+          rows={3}
+          value={excludeGlobs}
+          onChange={(event) => setExcludeGlobs(event.target.value)}
+        />
       </div>
 
       <div className="s06-actions">
-        <div className="setting-label">初期化</div>
-        <div className="setting-desc">保存済みの設定を初期値に戻します</div>
-        <button className="btn-gray" onClick={() => send({ type: "resetSettings" })}>
-          <span className="material-symbols-outlined">restart_alt</span>
-          初期値に戻す
-        </button>
+        <button className="btn-gray" onClick={() => send({ type: "resetSettings" })}>設定を初期値に戻す</button>
       </div>
 
       {hasPendingChanges && (
         <div className="s06-savebar">
-          <div className="s06-savebar-copy">
-            <span className="material-symbols-outlined">edit</span>
-            <div>
-              <div className="s06-savebar-title">変更があります</div>
-              <div className="s06-savebar-desc">保存するとこの画面の設定に反映されます</div>
-            </div>
-          </div>
-
+          <div className="s06-savebar-copy"><span className="material-symbols-outlined">edit</span><div>変更があります</div></div>
           <div className="s06-savebar-actions">
-            <button className="btn-gray s06-revert-btn" onClick={handleRevertDraft}>
-              元に戻す
-            </button>
-            <button className="s06-save-btn" onClick={handleSave}>
-              <span className="material-symbols-outlined">save</span>
-              保存
-            </button>
+            <button className="btn-gray" onClick={handleRevert}>元に戻す</button>
+            <button className="s06-save-btn" onClick={handleSave}><span className="material-symbols-outlined">save</span>保存</button>
           </div>
         </div>
       )}
@@ -236,211 +213,37 @@ export function S06Settings() {
   );
 }
 
-function normalizeExcludeGlobs(value: string): string {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .join("\n");
+function Section({ icon, title }: { icon: string; title: string }) {
+  return <div className="settings-section"><span className="material-symbols-outlined">{icon}</span>{title}</div>;
 }
 
-function normalizeIdleDelaySec(value: number): number {
-  return IDLE_DELAY_OPTIONS.reduce((nearest, option) =>
-    Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
-  );
+function ChoiceGroup<T extends string>({ value, onChange, options }: { value: T; onChange: (value: T) => void; options: Array<{ value: T; label: string; description: string }> }) {
+  return <div className="choice-options mode-options" role="group">{options.map((option) => (
+    <button key={option.value} type="button" className={`choice-option ${value === option.value ? "selected" : ""}`} aria-pressed={value === option.value} onClick={() => onChange(option.value)}>
+      <span className="model-option-name">{option.label}</span><span className="model-option-meta">{option.description}</span>
+    </button>
+  ))}</div>;
 }
 
-function normalizeRequestIntervalSec(value: number): number {
-  return REQUEST_INTERVAL_OPTIONS.reduce((nearest, option) =>
-    Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
-  );
-}
-
-function normalizeDailyBudgetUsd(value: number): number {
-  return DAILY_BUDGET_USD_OPTIONS.reduce((nearest, option) =>
-    Math.abs(option.value - value) < Math.abs(nearest.value - value) ? option : nearest
-  , DAILY_BUDGET_USD_OPTIONS[0]).value;
-}
-
-function ModeButtonGroup({
-  value,
-  onChange
-}: {
-  value: AdviceMode;
-  onChange: (value: AdviceMode) => void;
-}) {
-  return (
-    <div className="choice-options mode-options" role="group" aria-label="初期モード">
-      {MODE_OPTIONS.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={`choice-option ${selected ? "selected" : ""}`}
-            aria-pressed={selected}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function DepthButtonGroup({
-  value,
-  onChange
-}: {
-  value: AssistanceDepth;
-  onChange: (value: AssistanceDepth) => void;
-}) {
-  return (
-    <div className="choice-options mode-options" role="group" aria-label="既定の深さ">
-      {DEPTH_OPTIONS.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={`choice-option ${selected ? "selected" : ""}`}
-            aria-pressed={selected}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function ScheduleButtonGroup({
-  id,
-  label,
-  description,
-  options,
-  value,
-  onChange
-}: {
-  id: string;
-  label: string;
-  description: string;
-  options: number[];
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="schedule-group" role="group" aria-labelledby={`${id}-label`}>
-      <div className="schedule-header">
-        <div>
-          <div id={`${id}-label`} className="setting-label">{label}</div>
-          <div className="setting-desc">{description}</div>
-        </div>
-      </div>
-
-      <div className="choice-options schedule-options">
-        {options.map((option) => {
-          const selected = option === value;
-          return (
-            <button
-              key={option}
-              type="button"
-              className={`choice-option ${selected ? "selected" : ""}`}
-              aria-pressed={selected}
-              onClick={() => onChange(option)}
-            >
-              {option}秒
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ModelButtonGroup({
-  value,
-  onChange,
-  options
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: CopilotModelOption[];
-}) {
-  const selectedModelIsMissing = value !== "auto" && !options.some((option) => option.id === value);
-  const modelOptions = selectedModelIsMissing
-    ? [...options, { id: value, label: "指定モデル", tokenLimitText: "現在のモデル一覧にありません" }]
+function CopilotModelChoices({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: CopilotModelOption[] }) {
+  const allOptions = value !== "auto" && !options.some((option) => option.id === value)
+    ? [...options, { id: value, label: "保存済みモデル", tokenLimitText: "現在は利用できません" }]
     : options;
-
-  return (
-    <div className="choice-options model-options" role="group" aria-label="使用モデル">
-      <button
-        type="button"
-        className={`choice-option ${value === "auto" ? "selected" : ""}`}
-        aria-pressed={value === "auto"}
-        onClick={() => onChange("auto")}
-      >
-        <span className="model-option-name">自動</span>
-        <span className="model-option-meta">低コスト優先</span>
-      </button>
-
-      {modelOptions.map((option) => {
-        const selected = option.id === value;
-        return (
-          <button
-            key={option.id}
-            type="button"
-            className={`choice-option ${selected ? "selected" : ""}`}
-            aria-pressed={selected}
-            onClick={() => onChange(option.id)}
-          >
-            <span className="model-option-name">{option.label}</span>
-            <span className="model-option-meta">{option.tokenLimitText}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <div className="choice-options model-options" role="group">
+    <button type="button" className={`choice-option ${value === "auto" ? "selected" : ""}`} onClick={() => onChange("auto")}><span className="model-option-name">自動</span><span className="model-option-meta">低コストモデルを優先</span></button>
+    {allOptions.map((option) => <button key={option.id} type="button" className={`choice-option ${value === option.id ? "selected" : ""}`} onClick={() => onChange(option.id)}><span className="model-option-name">{option.label}</span><span className="model-option-meta">{option.tokenLimitText}</span></button>)}
+  </div>;
 }
 
-function BudgetButtonGroup({
-  value,
-  onChange,
-  pricePerMTokenUsd
-}: {
-  value: number;
-  onChange: (value: number) => void;
-  pricePerMTokenUsd?: number;
-}) {
-  return (
-    <div className="choice-options mode-options" role="group" aria-label="1日の使用上限">
-      {DAILY_BUDGET_USD_OPTIONS.map((option) => {
-        const selected = option.value === value;
-        const tokenText = formatBudgetTokenEquivalent(option.value, pricePerMTokenUsd);
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={`choice-option ${selected ? "selected" : ""}`}
-            aria-pressed={selected}
-            onClick={() => onChange(option.value)}
-          >
-            <span>{option.label}</span>
-            {tokenText && <span className="choice-option-sub">{tokenText}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
+function OptionButtons({ label, value, options, suffix, onChange }: { label: string; value: number; options: number[]; suffix: string; onChange: (value: number) => void }) {
+  const layoutClassName = options.length === 3 ? "schedule-options" : "mode-options";
+  return <div className="setting-item"><div className="setting-label">{label}</div><div className={`choice-options ${layoutClassName}`}>{options.map((option) => <button key={option} type="button" className={`choice-option ${option === value ? "selected" : ""}`} onClick={() => onChange(option)}>{suffix === "$" ? `$${option.toFixed(2)}` : `${option}${suffix}`}</button>)}</div></div>;
 }
 
-function formatBudgetTokenEquivalent(budgetUsd: number, pricePerMTokenUsd?: number): string | undefined {
-  if (budgetUsd <= 0 || pricePerMTokenUsd === undefined || pricePerMTokenUsd <= 0) {
-    return undefined;
-  }
+function normalizeLines(value: string): string {
+  return value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).join("\n");
+}
 
-  const tokens = (budgetUsd / pricePerMTokenUsd) * 1_000_000;
-  return `約${formatTokenCount(Math.round(tokens))}トークン相当`;
+function normalizeOption(value: number, options: number[]): number {
+  return options.reduce((nearest, option) => Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest, options[0]);
 }

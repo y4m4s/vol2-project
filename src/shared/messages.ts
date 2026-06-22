@@ -1,4 +1,4 @@
-import type { AdviceMode, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
+import type { AdviceMode, AiProviderId, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -23,15 +23,19 @@ export type WebviewToExtension =
     }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
+  | { type: "deleteLmStudioToken" }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
   | { type: "setComposerActive"; active: boolean };
 
 export interface SaveSettingsPayload {
+  providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
+  lmStudioBaseUrl: string;
+  lmStudioToken?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyBudgetUsd: number;
