@@ -1,12 +1,15 @@
 import {
   ContextCategoryKey,
+  AssistanceDepth,
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
   NavigatorSettings,
   RequestPlanCategory,
   RequestPlanFile,
-  RequestPlanSnapshot
+  RequestPlanSnapshot,
+  SlashCommand,
+  SlashCommandScope
 } from "../shared/types";
 
 export interface PreparedGuidanceRequest {
@@ -14,40 +17,78 @@ export interface PreparedGuidanceRequest {
   requestPlan: RequestPlanSnapshot;
 }
 
+// ロウモード(常時モード含む)はトークン消費を抑えるため、送信する文脈を必要最小限に絞る。
+// docs/11 §11.1: ロウ = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
+// ハイ = 上記に加えて関連ファイル・ディレクトリ構造
+const LOW_DEPTH_CONTEXT_LIMITS = {
+  excerptChars: 2000,
+  diagnostics: 5,
+  recentEdits: 5,
+  relatedSymbols: 8
+} as const;
+
 export class RequestPlanner {
   public prepareGuidanceRequest(
     context: GuidanceContext,
     preview: NavigatorContextPreview,
     settings: NavigatorSettings,
-    kind: GuidanceKind
+    kind: GuidanceKind,
+    assistanceDepth?: AssistanceDepth,
+    slashCommand?: SlashCommand,
+    slashCommandScope?: SlashCommandScope
   ): PreparedGuidanceRequest {
-    const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, settings.excludedGlobs) : false;
+    const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
+    const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
+    const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
+    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
-      activeFileExcerpt: !fileExcluded && settings.sendTargets.activeFile ? context.activeFileExcerpt : undefined,
-      selectedText: !fileExcluded && settings.sendTargets.selection ? context.selectedText : undefined,
-      diagnosticsSummary: !fileExcluded && settings.sendTargets.diagnostics ? context.diagnosticsSummary : [],
-      recentEditsSummary: !fileExcluded && settings.sendTargets.recentEdits ? context.recentEditsSummary : [],
-      relatedSymbols: !fileExcluded && settings.sendTargets.relatedSymbols ? context.relatedSymbols : []
+      activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
+      selectedText: !fileExcluded ? context.selectedText : undefined,
+      workspaceTree: effectiveDepth === "high" ? context.workspaceTree : undefined,
+      referencedFiles: effectiveDepth === "high" ? referencedFiles : [],
+      diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
+      recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
+      relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
+      projectSummary: context.projectSummary,
+      additionalContext: context.additionalContext
     };
+
+    if (effectiveDepth === "low") {
+      this.applyLowDepthContextLimits(filteredContext);
+    }
 
     return {
       context: filteredContext,
       requestPlan: {
         kind,
-        categories: this.buildCategories(context, filteredContext, settings, fileExcluded),
-        targetFiles: this.buildTargetFiles(context, filteredContext, settings, fileExcluded),
-        excludedGlobs: settings.excludedGlobs,
+        assistanceDepth,
+        slashCommand,
+        slashCommandScope,
+        categories: this.buildCategories(context, filteredContext, fileExcluded),
+        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded, excludedGlobs),
+        excludedGlobs,
         estimatedSizeText: this.estimateSizeText(filteredContext, preview)
       }
     };
   }
 
+  private applyLowDepthContextLimits(context: GuidanceContext): void {
+    if (context.activeFileExcerpt && context.activeFileExcerpt.length > LOW_DEPTH_CONTEXT_LIMITS.excerptChars) {
+      context.activeFileExcerpt = context.activeFileExcerpt.slice(0, LOW_DEPTH_CONTEXT_LIMITS.excerptChars);
+    }
+
+    context.diagnosticsSummary = context.diagnosticsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.diagnostics);
+    context.recentEditsSummary = context.recentEditsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.recentEdits);
+    context.relatedSymbols = context.relatedSymbols.slice(0, LOW_DEPTH_CONTEXT_LIMITS.relatedSymbols);
+    context.workspaceTree = undefined;
+    context.referencedFiles = [];
+  }
+
   private buildCategories(
     rawContext: GuidanceContext,
     context: GuidanceContext,
-    settings: NavigatorSettings,
     fileExcluded: boolean
   ): RequestPlanCategory[] {
     return [
@@ -55,7 +96,7 @@ export class RequestPlanner {
         "activeFile",
         "アクティブファイル断片",
         "現在編集中のファイルの内容",
-        settings.sendTargets.activeFile,
+        true,
         Boolean(context.activeFileExcerpt),
         this.describeFileCategoryNote(fileExcluded, rawContext.activeFilePath, context.activeFileExcerpt)
       ),
@@ -63,7 +104,7 @@ export class RequestPlanner {
         "selection",
         "選択範囲",
         "エディタで選択している範囲",
-        settings.sendTargets.selection,
+        true,
         Boolean(context.selectedText),
         this.describeSelectionCategoryNote(fileExcluded, rawContext.selectedText, context.selectedText)
       ),
@@ -71,7 +112,7 @@ export class RequestPlanner {
         "diagnostics",
         "診断情報",
         "エラーや警告の情報",
-        settings.sendTargets.diagnostics,
+        true,
         context.diagnosticsSummary.length > 0,
         this.describeDiagnosticsCategoryNote(fileExcluded, rawContext.diagnosticsSummary, context.diagnosticsSummary)
       ),
@@ -79,7 +120,7 @@ export class RequestPlanner {
         "recentEdits",
         "最近の編集範囲",
         "直近で編集した箇所",
-        settings.sendTargets.recentEdits,
+        true,
         context.recentEditsSummary.length > 0,
         this.describeCollectionNote(fileExcluded, rawContext.recentEditsSummary.length, context.recentEditsSummary, "最近の編集はまだ記録されていません")
       ),
@@ -87,9 +128,45 @@ export class RequestPlanner {
         "relatedSymbols",
         "関連シンボル",
         "現在位置から推定した関数や変数の候補",
-        settings.sendTargets.relatedSymbols,
+        true,
         context.relatedSymbols.length > 0,
         this.describeCollectionNote(fileExcluded, rawContext.relatedSymbols.length, context.relatedSymbols, "関連シンボル候補はまだありません")
+      ),
+      this.createCategory(
+        "workspaceTree",
+        "ディレクトリ構造",
+        "ワークスペース内のファイル配置",
+        true,
+        Boolean(context.workspaceTree?.treeText),
+        context.workspaceTree?.treeText ? "ワークスペース構造を送信します" : "ディレクトリ構造は送信しません"
+      ),
+      this.createCategory(
+        "referencedFiles",
+        "関連ファイル",
+        "開いているファイル、診断、最近の編集、同一ディレクトリから選んだ候補",
+        true,
+        context.referencedFiles.length > 0,
+        context.referencedFiles.length > 0
+          ? `${context.referencedFiles.length}件の関連ファイル断片を送信します`
+          : "関連ファイル候補はありません"
+      ),
+      this.createCategory(
+        "projectSummary",
+        "プロジェクト概要",
+        "次の一手を考えるための薄いプロジェクト文脈",
+        true,
+        Boolean(context.projectSummary),
+        context.projectSummary
+          ? `${this.formatProjectScope(context.projectSummary.scope)}でプロジェクト概要を送信します`
+          : "プロジェクト概要は送信しません"
+      ),
+      this.createCategory(
+        "additionalContext",
+        "追加コンテキスト",
+        "ユーザーが入力した補足文脈",
+        true,
+        Boolean(context.additionalContext),
+        context.additionalContext ? "入力された補足文脈を送信します" : "追加コンテキストは入力されていません"
       )
     ];
   }
@@ -97,28 +174,27 @@ export class RequestPlanner {
   private buildTargetFiles(
     rawContext: GuidanceContext,
     filteredContext: GuidanceContext,
-    settings: NavigatorSettings,
-    fileExcluded: boolean
+    fileExcluded: boolean,
+    excludedGlobs: string[]
   ): RequestPlanFile[] {
-    if (!rawContext.activeFilePath) {
-      return [];
-    }
+    const files: RequestPlanFile[] = [];
+    const includedReferencedFiles = new Map(filteredContext.referencedFiles.map((file) => [file.path, file]));
 
-    const includedSize = this.byteLength(
-      `${filteredContext.activeFileExcerpt ?? ""}${filteredContext.selectedText ?? ""}${filteredContext.diagnosticsSummary.map((item) => item.message).join("")}${filteredContext.recentEditsSummary.join("")}${filteredContext.relatedSymbols.join("")}`
-    );
+    if (rawContext.activeFilePath) {
+      const includedSize = this.byteLength(
+        `${filteredContext.activeFileExcerpt ?? ""}${filteredContext.selectedText ?? ""}${filteredContext.diagnosticsSummary.map((item) => item.message).join("")}${filteredContext.recentEditsSummary.join("")}${filteredContext.relatedSymbols.join("")}`
+      );
 
-    const included = Boolean(
-      !fileExcluded &&
-        ((settings.sendTargets.activeFile && filteredContext.activeFileExcerpt) ||
-          (settings.sendTargets.selection && filteredContext.selectedText) ||
-          (settings.sendTargets.diagnostics && filteredContext.diagnosticsSummary.length > 0) ||
-          (settings.sendTargets.recentEdits && filteredContext.recentEditsSummary.length > 0) ||
-          (settings.sendTargets.relatedSymbols && filteredContext.relatedSymbols.length > 0))
-    );
+      const included = Boolean(
+        !fileExcluded &&
+          (filteredContext.activeFileExcerpt ||
+            filteredContext.selectedText ||
+            filteredContext.diagnosticsSummary.length > 0 ||
+            filteredContext.recentEditsSummary.length > 0 ||
+            filteredContext.relatedSymbols.length > 0)
+      );
 
-    return [
-      {
+      files.push({
         path: rawContext.activeFilePath,
         sizeText: this.toReadableSize(includedSize),
         included,
@@ -126,22 +202,59 @@ export class RequestPlanner {
           ? undefined
           : fileExcluded
             ? "除外 glob に一致したため送信しません"
-            : "現在の設定では送信対象が含まれていません"
+            : "送信できる文脈がまだありません"
+      });
+    }
+
+    for (const rawFile of rawContext.referencedFiles ?? []) {
+      if (rawFile.path === rawContext.activeFilePath) {
+        continue;
       }
-    ];
+
+      const filteredFile = includedReferencedFiles.get(rawFile.path);
+      const excluded = this.isPathExcluded(rawFile.path, excludedGlobs);
+      const included = Boolean(
+        filteredFile &&
+          (filteredFile.excerpt ||
+            filteredFile.diagnosticsSummary.length > 0 ||
+            filteredFile.recentEditsSummary.length > 0)
+      );
+      const size = filteredFile
+        ? this.byteLength(
+            `${filteredFile.excerpt ?? ""}${filteredFile.diagnosticsSummary.map((item) => item.message).join("")}${filteredFile.recentEditsSummary.join("")}`
+          )
+        : 0;
+
+      files.push({
+        path: rawFile.path,
+        sizeText: this.toReadableSize(size),
+        included,
+        excludedReason: included
+          ? undefined
+          : excluded
+            ? "除外 glob に一致したため送信しません"
+            : "送信できる文脈がまだありません"
+      });
+    }
+
+    return files;
   }
 
   private estimateSizeText(context: GuidanceContext, _preview: NavigatorContextPreview): string {
     const byteLength = this.byteLength(
-      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}`
+      `${context.activeFileExcerpt ?? ""}${context.selectedText ?? ""}${context.workspaceTree?.treeText ?? ""}${context.referencedFiles.map((file) => `${file.excerpt ?? ""}${file.diagnosticsSummary.map((item) => item.message).join("")}${file.recentEditsSummary.join("")}`).join("")}${context.diagnosticsSummary.map((item) => item.message).join("")}${context.recentEditsSummary.join("")}${context.relatedSymbols.join("")}${this.projectSummaryText(context)}${context.additionalContext ?? ""}`
     );
 
     const categories = [
       context.activeFileExcerpt ? "ファイル" : undefined,
       context.selectedText ? "選択範囲" : undefined,
+      context.workspaceTree?.treeText ? "構造" : undefined,
+      context.referencedFiles.length > 0 ? "関連ファイル" : undefined,
       context.diagnosticsSummary.length > 0 ? "diagnostics" : undefined,
       context.recentEditsSummary.length > 0 ? "recentEdits" : undefined,
-      context.relatedSymbols.length > 0 ? "symbols" : undefined
+      context.relatedSymbols.length > 0 ? "symbols" : undefined,
+      context.projectSummary ? "project" : undefined,
+      context.additionalContext ? "追加" : undefined
     ].filter((value): value is string => Boolean(value));
 
     return `${this.toReadableSize(byteLength)} / ${categories.length}カテゴリ`;
@@ -163,6 +276,35 @@ export class RequestPlanner {
       included,
       note
     };
+  }
+
+  private formatProjectScope(scope: NonNullable<GuidanceContext["projectSummary"]>["scope"]): string {
+    switch (scope) {
+      case "deep":
+        return "Deep";
+      case "project":
+        return "Project";
+      case "project-lite":
+      default:
+        return "Project-lite";
+    }
+  }
+
+  private projectSummaryText(context: GuidanceContext): string {
+    const summary = context.projectSummary;
+    if (!summary) {
+      return "";
+    }
+
+    return [
+      summary.scope,
+      ...summary.openFiles,
+      ...summary.diagnosticsSummary,
+      ...summary.recentEditsSummary,
+      ...summary.todoSummary,
+      ...summary.manifestSummary,
+      ...summary.docsSummary
+    ].join("");
   }
 
   private describeFileCategoryNote(fileExcluded: boolean, activeFilePath?: string, excerpt?: string): string | undefined {
@@ -190,10 +332,6 @@ export class RequestPlanner {
       return "選択範囲がないため送信しません";
     }
 
-    if (!selection) {
-      return "設定により選択範囲は送信しません";
-    }
-
     return "現在の選択範囲を優先して送信します";
   }
 
@@ -208,10 +346,6 @@ export class RequestPlanner {
 
     if (rawDiagnostics.length === 0) {
       return "現在のファイルに診断情報はありません";
-    }
-
-    if (diagnostics.length === 0) {
-      return "設定により診断情報は送信しません";
     }
 
     return `${diagnostics.length}件の診断情報を送信します`;
@@ -231,16 +365,16 @@ export class RequestPlanner {
       return emptyMessage;
     }
 
-    if (values.length === 0) {
-      return "設定により送信しません";
-    }
-
     return values.join(" / ");
   }
 
   private isPathExcluded(filePath: string, patterns: string[]): boolean {
     const normalizedPath = filePath.replaceAll("\\", "/");
     return patterns.some((pattern) => this.globToRegExp(pattern).test(normalizedPath));
+  }
+
+  private getEffectiveExcludedGlobs(settings: NavigatorSettings): string[] {
+    return [...new Set([...settings.protectedExcludedGlobs, ...settings.excludedGlobs])];
   }
 
   private globToRegExp(pattern: string): RegExp {

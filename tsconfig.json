@@ -19,5 +19,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/views/webview",
+    "src/views/screens"
   ]
 }

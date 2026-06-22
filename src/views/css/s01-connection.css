@@ -1,154 +1,143 @@
-/* ========================================
-   s01-connection.css - 接続画面
-   ======================================== */
-
-/* --- インフォボックス（学習支援が目的です） --- */
-.info-box {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-  margin-bottom: 10px;
-}
-
-.info-box .info-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid var(--vscode-descriptionForeground);
+.s01-root {
+  width: 100%;
+  min-height: calc(100vh - 24px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.75em;
-  color: var(--vscode-descriptionForeground);
-  margin-top: 2px;
+  padding: 24px 0;
 }
 
-.info-box .info-title {
-  font-weight: bold;
-  margin-bottom: 4px;
+.s01-panel {
+  width: min(100%, 560px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 24px 20px;
+  border: 1px solid color-mix(in srgb, var(--vscode-button-background) 28%, var(--vscode-panel-border));
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--vscode-button-background) 10%, transparent),
+      color-mix(in srgb, var(--vscode-editorWidget-background) 94%, transparent)
+    );
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
 }
 
-.info-box ul {
-  list-style: none;
-  padding: 0;
-  margin: 4px 0 0;
+.s01-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
 }
 
-.info-box ul li {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9em;
-  padding-left: 16px;
-  position: relative;
-  margin-bottom: 2px;
+.s01-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.info-box ul li::before {
-  content: "・";
-  position: absolute;
-  left: 0;
+.s01-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
 }
 
-/* --- 送信される情報リスト --- */
-.sent-info-list {
-  list-style: disc;
-  padding-left: 22px;
-  margin: 8px 0;
+.s01-title {
+  font-size: 1.6em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
-.sent-info-list li {
-  margin-bottom: 4px;
-  font-size: 0.93em;
-}
-
-/* --- 除外される情報ボックス --- */
-.exclude-box {
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-top: 8px;
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9em;
-}
-
-/* --- 利用条件カード --- */
-.requirement-card {
-  background: var(--vscode-editorWidget-background);
-}
-
-.requirement-card ul {
-  list-style: disc;
-  padding-left: 20px;
-  margin: 6px 0 0;
-}
-
-.requirement-card li {
-  font-size: 0.9em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 2px;
-}
-
-/* --- ボタン群（下部固定風） --- */
-.s01-actions {
-  margin-top: 8px;
-}
-
-.s01-actions button {
-  margin-top: 6px;
-}
-
-/* --- Material Icons をボタン内で揃える --- */
-.s01-actions .material-symbols-outlined {
-  font-size: 18px;
-  vertical-align: middle;
-  margin-right: 4px;
-}
-
-/* --- 接続ボタンの白背景カード --- */
-.connect-card {
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.connect-card button {
-  margin-top: 0;
-}
-
-/* --- サブアクション（白背景の囲み） --- */
-.sub-actions {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.sub-actions button {
-  margin-top: 6px;
-}
-
-.sub-actions button:first-child {
-  margin-top: 0;
-}
-
-/* --- グレーボタン + ホバーエフェクト --- */
-.btn-gray {
-  width: 100%;
-  border: 0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
+.s01-subtitle {
+  font-size: 0.92em;
+  line-height: 1.6;
   color: var(--vscode-foreground);
-  background: var(--vscode-input-background);
-  transition: background 0.2s;
+  overflow-wrap: anywhere;
 }
 
-.btn-gray:hover {
-  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
+.s01-feature-list {
+  display: grid;
+  gap: 10px;
+}
+
+.s01-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--vscode-panel-border);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 90%, transparent);
+  text-align: left;
+}
+
+.s01-feature .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--vscode-textLink-foreground);
+  flex-shrink: 0;
+}
+
+.s01-feature-copy {
+  min-width: 0;
+}
+
+.s01-feature-title {
+  color: var(--vscode-foreground);
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.s01-feature-desc {
+  margin-top: 2px;
+  font-size: 0.8em;
+  line-height: 1.55;
+  color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.s01-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.s01-connect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 210px;
+  margin-top: 0;
+  padding: 10px 18px;
+  border-radius: 999px;
+}
+
+.s01-connect-btn.busy:disabled {
+  opacity: 0.82;
+}
+
+.s01-connect-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+@keyframes s01-spin {
+  to { transform: rotate(360deg); }
+}
+
+.s01-spin {
+  animation: s01-spin 0.9s linear infinite;
+}
+
+@media (max-width: 520px) {
+  .s01-panel {
+    padding: 24px 16px;
+  }
+
+  .s01-connect-btn {
+    width: 100%;
+  }
 }

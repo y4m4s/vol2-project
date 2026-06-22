@@ -1,7 +1,7 @@
 {
   "name": "ai-pair-navigator",
-  "displayName": "AI Pair Navigator",
-  "description": "A VS Code extension scaffold for an AI pair-programming navigator focused on learning support.",
+  "displayName": "NaviCom",
+  "description": "NaviCom is a VS Code extension for AI-assisted coding guidance and learning support.",
   "version": "0.0.1",
   "publisher": "local-dev",
   "private": true,
@@ -12,24 +12,43 @@
     "Other"
   ],
   "icon": "media/icon.png",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:aiPairNavigator.sidebar",
+    "onCommand:aiPairNavigator.openView",
+    "onCommand:aiPairNavigator.connectCopilot",
+    "onCommand:aiPairNavigator.askForGuidance",
+    "onCommand:aiPairNavigator.askSelection"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
+        "command": "aiPairNavigator.openView",
+        "title": "NaviCom: Open View"
+      },
+      {
         "command": "aiPairNavigator.connectCopilot",
-        "title": "AI Pair Navigator: Connect Copilot"
+        "title": "NaviCom: Connect Copilot"
       },
       {
         "command": "aiPairNavigator.askForGuidance",
-        "title": "AI Pair Navigator: Ask For Guidance"
+        "title": "NaviCom: Ask For Guidance"
+      },
+      {
+        "command": "aiPairNavigator.askSelection",
+        "title": "NaviCom: この箇所を相談",
+        "icon": {
+          "light": "media/activity-icon.svg",
+          "dark": "media/activity-icon.svg"
+        }
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "aiPairNavigator",
-          "title": "AI Navigator",
+          "title": "NaviCom",
           "icon": "media/activity-icon.svg"
         }
       ]
@@ -39,12 +58,13 @@
         {
           "type": "webview",
           "id": "aiPairNavigator.sidebar",
-          "name": "Navigator"
+          "name": "NaviCom",
+          "visibility": "visible"
         }
       ]
     },
     "configuration": {
-      "title": "AI Pair Navigator",
+      "title": "NaviCom",
       "properties": {
         "aiPairNavigator.mode": {
           "type": "string",
@@ -55,42 +75,44 @@
           "default": "manual",
           "description": "Controls whether advice is shown only on demand or continuously."
         },
-        "aiPairNavigator.requestIntervalMs": {
-          "type": "number",
-          "default": 30000,
-          "minimum": 5000,
-          "description": "Minimum interval between automatic AI requests."
-        },
         "aiPairNavigator.idleDelayMs": {
           "type": "number",
-          "default": 2000,
-          "minimum": 500,
+          "default": 10000,
+          "minimum": 5000,
+          "maximum": 15000,
           "description": "Idle time before automatic feedback can be triggered."
         },
         "aiPairNavigator.excludedGlobs": {
           "type": "array",
-          "default": [
-            "**/.env",
-            "**/dist/**",
-            "**/build/**",
-            "**/node_modules/**"
-          ],
+          "default": [],
           "items": {
             "type": "string"
           },
-          "description": "Glob patterns excluded from context collection."
+          "description": "Additional glob patterns excluded from context collection. NaviCom always applies built-in protected exclusions for secrets, dependencies, build output, databases, and archives."
         }
       }
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "npm run compile:ext && npm run build:webview",
+    "compile:ext": "tsc -p ./",
+    "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
     "watch": "tsc -watch -p ./",
+    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.99.0",
+    "esbuild": "^0.28.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "mermaid": "^11.15.0",
+    "sql.js": "^1.14.1"
   }
 }

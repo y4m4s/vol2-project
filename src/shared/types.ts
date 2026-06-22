@@ -8,26 +8,45 @@ export type ConnectionState =
 
 export type AdviceMode = "manual" | "always";
 
+export type AssistanceDepth = "low" | "high";
+
+export type SlashCommand = "hint" | "next" | "flow" | "risk" | "test";
+
+export type SlashCommandScope = "standard" | "deep";
+
+export type ProjectContextScope = "project-lite" | "project" | "deep";
+
 export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
 
 export type NavigatorScreen =
   | "onboarding"
   | "main"
+  | "history"
+  | "conversation"
   | "error"
   | "advice_detail"
-  | "context_check"
   | "knowledge"
+  | "knowledge_detail"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance";
+export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
-export type GuidanceKind = "manual" | "context" | "deep_dive" | "always";
+export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
 
-export type ContextCategoryKey = "activeFile" | "selection" | "diagnostics" | "recentEdits" | "relatedSymbols";
+export type ContextCategoryKey =
+  | "activeFile"
+  | "selection"
+  | "diagnostics"
+  | "recentEdits"
+  | "relatedSymbols"
+  | "workspaceTree"
+  | "referencedFiles"
+  | "projectSummary"
+  | "additionalContext";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -42,32 +61,80 @@ export interface NavigatorContextPreview {
   diagnosticsSummary: DiagnosticSummary[];
 }
 
+export type ReferencedFileReason =
+  | "open"
+  | "diagnostic"
+  | "recentEdit"
+  | "sameDirectory"
+  | "workspace";
+
+export interface ReferencedFileContext {
+  path: string;
+  languageId?: string;
+  reason: ReferencedFileReason;
+  excerpt?: string;
+  diagnosticsSummary: DiagnosticSummary[];
+  recentEditsSummary: string[];
+  score: number;
+}
+
+export interface WorkspaceTreeContext {
+  rootPath: string;
+  treeText: string;
+  truncated: boolean;
+}
+
+export interface ProjectContextSummary {
+  scope: ProjectContextScope;
+  openFiles: string[];
+  diagnosticsSummary: string[];
+  recentEditsSummary: string[];
+  todoSummary: string[];
+  manifestSummary: string[];
+  docsSummary: string[];
+}
+
 export interface GuidanceContext {
   activeFilePath?: string;
   activeFileLanguage?: string;
   activeFileExcerpt?: string;
   selectedText?: string;
+  workspaceTree?: WorkspaceTreeContext;
+  referencedFiles: ReferencedFileContext[];
   diagnosticsSummary: DiagnosticSummary[];
   recentEditsSummary: string[];
   relatedSymbols: string[];
-}
-
-export interface ContextTargetSettings {
-  activeFile: boolean;
-  selection: boolean;
-  diagnostics: boolean;
-  recentEdits: boolean;
-  relatedSymbols: boolean;
+  projectSummary?: ProjectContextSummary;
+  additionalContext?: string;
 }
 
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
-  alwaysModeEnabled: boolean;
+  defaultAssistanceDepth: AssistanceDepth;
+  copilotModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
-  suppressDuplicate: boolean;
-  sendTargets: ContextTargetSettings;
+  dailyBudgetUsd: number;
+  protectedExcludedGlobs: string[];
   excludedGlobs: string[];
+}
+
+export interface CopilotModelOption {
+  id: string;
+  label: string;
+  tokenLimitText: string;
+}
+
+export interface UsageTodayViewData {
+  date: string;
+  requestCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCostText: string;
+  blendedPricePerMTokenUsd: number;
+  budgetUsd: number;
+  budgetExceeded: boolean;
 }
 
 export interface RequestPlanCategory {
@@ -88,6 +155,9 @@ export interface RequestPlanFile {
 
 export interface RequestPlanSnapshot {
   kind: GuidanceKind;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
   categories: RequestPlanCategory[];
   targetFiles: RequestPlanFile[];
   excludedGlobs: string[];
@@ -98,9 +168,19 @@ export interface GuidanceCard {
   id: string;
   requestedAt: string;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   text: string;
   basedOn: NavigatorContextPreview;
   requestPlan: RequestPlanSnapshot;
+}
+
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
 }
 
 export interface ConversationEntry {
@@ -111,7 +191,22 @@ export interface ConversationEntry {
   kind: GuidanceKind;
   basedOn?: NavigatorContextPreview;
   mode?: AdviceMode;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
+  slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
+  tokenUsage?: TokenUsage;
+}
+
+export interface ConversationStreamListItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessagePreview?: string;
+  additionalContext?: string;
 }
 
 export interface NavigatorStatusMessage {
@@ -129,22 +224,19 @@ export interface AutoAdviceState {
   lastAdviceAt?: string;
 }
 
-export interface AdviceDetailViewData {
-  id: string;
-  adviceBody: string;
-  speculativeNote: string;
-  referenceFiles: string[];
-  diagnosticsSummary: string;
-  changeSummary: string;
-  canDeepDive: boolean;
-}
-
 export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
-  status: "active" | "disabled";
+  modelLabel?: string;
   updatedAt: string;
+}
+
+export interface KnowledgeDetailViewData extends KnowledgeListItem {
+  body: string;
+  createdAt: string;
+  sourceConversation?: ConversationStreamListItem;
+  sourceConversationDeleted?: boolean;
 }
 
 export interface NavigatorSessionState {
@@ -153,29 +245,47 @@ export interface NavigatorSessionState {
   connectionState: ConnectionState;
   requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   autoAdvice: AutoAdviceState;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
+  knowledgeQuery: string;
+  selectedKnowledgeId?: string;
+  activeAdditionalContext?: string;
+  pendingAdditionalContext?: string;
 }
 
 export interface NavigatorViewModel {
   screen: NavigatorScreen;
   connectionState: ConnectionState;
+  requestState: RequestState;
   mode: AdviceMode;
+  assistanceDepth: AssistanceDepth;
   canConnect: boolean;
   canAskForGuidance: boolean;
   canSwitchMode: boolean;
+  canSwitchAssistanceDepth: boolean;
   isBusy: boolean;
   autoAdvice: AutoAdviceState;
+  usageToday: UsageTodayViewData;
+  modelLabel?: string;
+  copilotModelOptions: CopilotModelOption[];
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
+  conversationStreams: ConversationStreamListItem[];
+  activeConversationStreamId?: string;
+  activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
-  selectedAdvice?: AdviceDetailViewData;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];
+  selectedKnowledge?: KnowledgeDetailViewData;
+  savedKnowledgeSourceIds: string[];
+  knowledgeQuery: string;
 }

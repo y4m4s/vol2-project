@@ -1,334 +1,150 @@
-/* ========================================
-   s02-main.css - メイン画面
-   ======================================== */
-
-/* --- ステータスヘッダー --- */
-.status-header {
-  display: flex;
-  align-items: center;
-  padding: 8px 0 10px;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #22c55e;
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.status-dot.disconnected {
-  background: #888;
-}
-
-.status-label {
-  font-weight: bold;
-  flex-grow: 1;
-}
-
-.header-icons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-}
-
-.header-icons button {
-  width: auto;
-  background: transparent;
-  color: var(--vscode-foreground);
-  padding: 4px;
-  margin: 0;
-  font-size: 1.1em;
-  opacity: 0.7;
-}
-
-.header-icons button:hover {
-  opacity: 1;
-}
-
-/* --- モード切替タブ --- */
-.mode-tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 6px;
-}
-
-.mode-tabs button {
-  flex: 1;
-  border-radius: 8px;
-  padding: 8px;
-  margin: 0;
-  font-size: 0.88em;
-  background: transparent;
-  color: var(--vscode-descriptionForeground);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.mode-tabs button.active {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-foreground);
-  font-weight: bold;
-}
-
-.mode-note {
-  font-size: 0.82em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 10px;
-}
-
-.auto-status-panel {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: var(--vscode-editorWidget-background);
-  margin-bottom: 10px;
-}
-
-.auto-status-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.auto-status-title {
-  font-size: 0.95em;
-  font-weight: 700;
-}
-
-.auto-status-sub {
-  font-size: 0.8em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.auto-status-text {
-  font-size: 0.88em;
-  line-height: 1.6;
-}
-
-.auto-pause-btn {
-  width: auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82em;
-  white-space: nowrap;
-}
-
-/* --- 参照文脈 --- */
-.context-ref {
-  margin-bottom: 10px;
-}
-
-.context-ref .ref-title {
-  font-size: 0.85em;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 4px;
-}
-
-.context-ref .ref-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9em;
-  margin-bottom: 2px;
-}
-
-.context-ref .ref-icon {
-  font-size: 0.85em;
-  opacity: 0.7;
-}
-
-.ref-warning {
-  color: #facc15;
-}
-
-/* --- チャットエリア --- */
-.chat-area {
-  min-height: 250px;
+.s02-root {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  border: none;
-  background: transparent;
-  padding: 0;
-  gap: 8px;
+  height: calc(100vh - 24px);
+  max-height: calc(100vh - 24px);
+  min-height: 0;
+  overflow: hidden;
 }
 
-.status-notice {
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  font-size: 0.86em;
-  border: 1px solid transparent;
-}
-
-.status-notice.info {
-  background: color-mix(in srgb, var(--vscode-button-background) 18%, transparent);
-  border-color: color-mix(in srgb, var(--vscode-button-background) 40%, transparent);
-}
-
-.status-notice.warning {
-  background: rgba(234, 179, 8, 0.12);
-  border-color: rgba(234, 179, 8, 0.35);
-}
-
-.status-notice.error {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
-}
-
-.empty-chat {
-  text-align: center;
-  color: var(--vscode-descriptionForeground);
-  margin: auto 0;
-}
-
-.empty-chat .empty-title {
-  font-size: 1em;
-  margin-bottom: 8px;
-  color: var(--vscode-foreground);
-}
-
-.empty-chat .empty-desc {
-  font-size: 0.85em;
-  line-height: 1.6;
-}
-
-/* --- 入力エリア --- */
-.input-row {
-  display: flex;
+.s02-connect-btn {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  align-items: flex-end;
-  margin-bottom: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
 }
 
-.input-row input[type="text"] {
-  flex: 1;
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.93em;
-  outline: none;
-}
-
-.input-row .send-btn {
-  width: 40px;
-  height: 40px;
+.s02-empty-point .material-symbols-outlined {
+  font-size: 17px;
   flex-shrink: 0;
-  border-radius: 8px;
-  padding: 0;
-  margin: 0;
+}
+
+.s02-stage {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1em;
+  padding: 16px 0;
 }
 
-/* --- この箇所を相談ボタン --- */
-.consult-btn {
-  margin-top: 0;
-}
-
-.chat-entry {
-  display: flex;
+.s02-empty {
   width: 100%;
-}
-
-.chat-entry.user {
-  justify-content: flex-end;
-}
-
-.chat-entry.assistant {
-  justify-content: flex-start;
-}
-
-.chat-bubble {
-  width: 100%;
-  max-width: 100%;
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-}
-
-.chat-entry.user .chat-bubble {
-  background: var(--vscode-button-secondaryBackground);
-}
-
-.chat-meta {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  font-size: 0.8em;
+  gap: 10px;
+  padding: 24px 16px;
+  border: 1px dashed color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+  border-radius: 18px;
+  text-align: center;
   color: var(--vscode-descriptionForeground);
 }
 
-.chat-text {
-  white-space: pre-wrap;
-  font-size: 0.9em;
-}
-
-.chat-actions {
-  margin-top: 8px;
+.s02-empty-brand {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
 }
 
-.chat-actions button {
-  width: auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82em;
+.s02-empty-icon {
+  width: 44px;
+  height: 44px;
+  opacity: 0.85;
 }
 
-.auto-advice-card {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-  background: color-mix(in srgb, var(--vscode-button-secondaryBackground) 36%, transparent);
-}
-
-.auto-advice-card.empty {
-  background: var(--vscode-editorWidget-background);
-}
-
-.auto-advice-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 0.8em;
-  color: var(--vscode-descriptionForeground);
-}
-
-.auto-advice-title {
+.s02-empty-title {
   color: var(--vscode-foreground);
-  font-weight: 700;
+  font-size: 1.6em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
-.auto-advice-text {
-  white-space: pre-wrap;
-  font-size: 0.88em;
-  line-height: 1.6;
-}
-
-.auto-advice-actions {
-  display: flex;
-  justify-content: flex-end;
+.s02-empty-points {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  gap: 10px;
   margin-top: 8px;
 }
 
-.auto-advice-actions button {
-  width: auto;
-  margin: 0;
+.s02-empty-point {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--vscode-panel-border);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 90%, transparent);
+  text-align: left;
+}
+
+.s02-empty-point-copy {
+  min-width: 0;
+}
+
+.s02-empty-point-title {
+  color: var(--vscode-foreground);
+  font-size: 0.88em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.s02-empty-point-desc {
+  margin-top: 2px;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+
+
+@media (max-width: 520px) {
+  .s02-empty {
+    padding: 18px 12px;
+  }
+
+  .s02-empty-points {
+    max-width: none;
+  }
+}
+
+.s02-usage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
   padding: 6px 10px;
-  font-size: 0.82em;
+  border-radius: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 90%, transparent);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+}
+
+.s02-usage .material-symbols-outlined {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.s02-usage-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s02-usage-model {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-panel-border);
+  font-size: 0.92em;
+}
+
+.s02-usage.exceeded {
+  border-color: color-mix(in srgb, var(--vscode-editorWarning-foreground) 60%, transparent);
+  color: var(--vscode-editorWarning-foreground);
 }
