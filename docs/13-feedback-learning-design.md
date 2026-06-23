@@ -19,7 +19,7 @@ AI が出したアドバイス（`ConversationEntry`, role: `assistant`）に対
 | プロンプトへの反映 | `knowledgeItems`（具体的な過去事例として注入） | `feedbackTendency`（傾向の指示文として注入） |
 | 生成方法 | LLM 要約（`createKnowledgeDraft`） | ルールベース集計（後述 11.5） |
 
-両者は独立して併存させる。Good 評価を押した回答を自動でナレッジ化する、といった連動は今回のスコープには含めない（将来課題、11.9 に記載）。
+両者は独立して併存させる。Good 評価を押した回答を自動でナレッジ化する、といった連動は今回のスコープには含めない（将来課題、本書末尾に記載）。
 
 ## 機能要件
 
@@ -129,7 +129,7 @@ export interface NavigatorSessionState {
 - DB ファイルの初期化（`globalStorageUri/feedback.sqlite`）
 - `saveFeedback(input: AdviceFeedbackInput, meta: { kind: GuidanceKind; assistanceDepth?: AssistanceDepth; slashCommand?: SlashCommand; adviceText: string }): Promise<void>`
 - `getTendencySummary(): FeedbackTendencySummary`
-  - 直近 good 5件 / bad 5件程度を読み、ルールベースで指示文を組み立てる（11.5）。
+  - 直近 good 5件 / bad 5件程度を読み、ルールベースで指示文を組み立てる（13.5、13.10 のトークン予算を参照）。
 
 `extension.ts` で `KnowledgeStore` / `ConversationStore` と同様にインスタンス化し、`NavigatorController` のコンストラクタに渡す。
 
@@ -179,6 +179,28 @@ if (input.feedbackTendency?.badAvoidPatterns.length) {
 ```
 
 `always`（自動助言）は元々短く・控えめに作る設計のため、`feedbackTendency` は `manual` / `context` のみに注入し、`always` には注入しない方針とする（自動助言の応答方針は既に `getInstructionByKind("always")` で厳格に制御されているため、ここに評価傾向を混ぜると一貫性が崩れる）。
+
+### 13.10 トークン消費・コンテキスト圧縮の検討
+
+既存実装は、トークン消費の「計測」（`UsageMeter`）と「送信量の制御」（`RequestPlanner`）を分離している。`UsageMeter`（[UsageMeter.ts](../src/services/UsageMeter.ts)）はトークン数を実測してコスト換算・日次予算判定を行うだけで、プロンプト自体を圧縮する機能は持たない。実際の圧縮・縮約は `RequestPlanner.applyLowDepthContextLimits`（[RequestPlanner.ts:77](../src/services/RequestPlanner.ts#L77)）が担い、ロウモード（`always` 含む）では抜粋 2000 文字・診断 5 件・最近の編集 5 件・関連シンボル 8 件に切り詰め、`workspaceTree` と `referencedFiles` を完全に除外している。
+
+`feedbackTendency` の注入はこの既存の圧縮対象（`GuidanceContext`）とは別枠で `buildPrompt` に直接追加するため、`RequestPlanner` の上限管理の外側にいる。素朴に実装すると「ロウモードでせっかく文脈を削っても、評価傾向セクションが無制限に増えていく」という抜け道になりうる。これを避けるため、以下の上限を明示する。
+
+#### トークン予算の方針
+
+- **`goodPatterns` / `badAvoidPatterns` は合計で概ね 5〜8 行以内**に収める。1行あたり40文字程度の日本語指示文を想定すると、追加トークンはおよそ 150〜250 トークン程度（日本語1文字を概ね1〜2トークンとして見積もり）。`UsageMeter` の単価表（[UsageMeter.ts:6](../src/services/UsageMeter.ts#L6)）に当てはめても、1リクエストあたり数十円のオーダーには収まらない程度の影響に抑えられる。
+- **`comment`（自由記述）の直近採用件数は3件、かつ1件あたり80文字程度で切り詰める**（13.5 で触れた上限を本節で数値として確定する）。自由記述は長文になりやすく、ここを無制限にすると評価が蓄積するほどプロンプトが線形に肥大化するため、件数・文字数の両方でキャップする。
+- **`assistanceDepth === "low"`（および `always`）のリクエストでは `feedbackTendency` 自体を注入しない**、という案も検討した。ロウモードはそもそも「短いヒントのみ」を狙ったモードであり、追加の指示セクションを載せることが目的と相反する可能性がある。一方で、Bad評価の多くは「答えを書きすぎ」等の応答スタイルに関するものであり、ロウモードでこそ効かせたい内容でもある。今回は **ハイ/ロウ問わず注入するが、上記の行数・文字数キャップで実害を抑える** 方針を採用する（`always` のみ除外、13.6 で既述）。
+- `getTendencySummary()` の戻り値はサマリー文字列の配列であり、`AdviceFeedbackInput` や DB の生レコードをそのまま `buildPrompt` に渡さない。これにより、件数が増えてもプロンプト側のサイズは前述のキャップで頭打ちになり、DB のレコード数増加とプロンプトサイズが比例しない構造にする。
+
+#### `getTendencySummary()` の集計コスト
+
+- `FeedbackStore.getTendencySummary()` は `executeGuidanceRequest` のたびに呼ばれる（11.7 / 13.7 参照）。`sql.js` は同期 API だが、`advice_feedback` テーブルは1ユーザーのローカル利用前提で件数が少なく（数百〜数千件程度）、`ORDER BY created_at DESC LIMIT N` で直近件数のみ取得すれば毎回のクエリコストは無視できる。集計結果（`FeedbackTendencySummary`）自体はリクエストごとに作り直してよく、キャッシュは不要と判断する（過去の評価が増えるたびに反映内容が変わるべきものであり、キャッシュすると更新が遅れるリスクの方が大きい）。
+
+#### 将来の精緻化（今回は実装しない）
+
+- `assistanceDepth` ごとに別々の `goodPatterns` / `badAvoidPatterns` を持たせ、「ロウモードでは specifically何が不評だったか」を分離する案。今回はデータ量が少ない初期段階のため、深さを問わず一括集計する。
+- プロンプト全体のトークン数が `UsageMeter` の日次予算に近づいている場合、`feedbackTendency` を自動的に省略するなど、既存の予算管理（`dailyBudgetUsd` / `isBudgetExceeded`）と連動させる案。今回は両者を独立に保ち、連携は将来課題とする。
 
 ### 13.7 `NavigatorController` の拡張
 
@@ -337,3 +359,5 @@ send({ type: "cancelBadFeedback" });
 - Bad 評価が一定数を超えた際のユーザーへの振り返り通知。
 - Good 評価された回答を既存ナレッジ機能と連携してワンクリックでナレッジ化する導線。
 - 評価データのエクスポート / リセット機能。
+- `assistanceDepth` 別の傾向集計の分離（13.10）。
+- `feedbackTendency` の注入と `UsageMeter` の日次予算管理との連携（13.10）。
