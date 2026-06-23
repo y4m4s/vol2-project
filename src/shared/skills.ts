@@ -1,4 +1,4 @@
-import type { AssistanceDepth, SlashCommandScope } from "./types";
+import type { AssistanceDepth, ContextCategoryKey, SlashCommandScope } from "./types";
 
 /**
  * スラッシュコマンド（擬似スキル）のレジストリ。
@@ -32,6 +32,9 @@ export interface SkillDefinition {
   usesProjectScope?: boolean;
   // /flow のように深さ設定を無視して固定するか。
   forceDepth?: AssistanceDepth;
+  // ①: このスキルで送る文脈カテゴリの許可リスト。省略時は制限なし（従来どおり全カテゴリ）。
+  // additionalContext（ユーザー入力）は許可リストに関わらず常に送る。
+  contextPreset?: ContextCategoryKey[];
   // UI サジェスト候補（1 個以上）。
   suggestions: SkillSuggestion[];
   // 会話履歴に表示するユーザー発言テキスト。
@@ -45,6 +48,8 @@ export interface SkillDefinition {
 export const SKILLS = {
   hint: {
     description: "Short hints and checkpoints to get unstuck without giving the answer.",
+    // 詰まりの手元に集中する（選択・診断・最近の編集）。構造系や関連ファイルは送らない。
+    contextPreset: ["activeFile", "selection", "diagnostics", "recentEdits"],
     suggestions: [
       { commandText: "/hint", title: "ヒント", description: "詰まりをほどく短い確認ポイント", icon: "lightbulb" }
     ],
@@ -61,6 +66,8 @@ export const SKILLS = {
     description: "Organize what to verify and what to tackle next after reaching a milestone.",
     supportsScope: true,
     usesProjectScope: true,
+    // 次の一手はプロジェクト概要と診断が主役。関連ファイル断片までは送らない。
+    contextPreset: ["activeFile", "selection", "diagnostics", "projectSummary"],
     suggestions: [
       { commandText: "/next", title: "次の一手", description: "一区切り後に見ることを整理", icon: "arrow_forward" },
       { commandText: "/next deep", title: "次の一手 Deep", description: "プロジェクトを広めに見て整理", icon: "travel_explore" }
@@ -84,6 +91,8 @@ export const SKILLS = {
   flow: {
     description: "Organize the processing/data flow as a Mermaid diagram.",
     forceDepth: "high",
+    // 流れの把握には構造系（関連ファイル・シンボル・ディレクトリ構造）が要る。診断や編集履歴は不要。
+    contextPreset: ["activeFile", "selection", "relatedSymbols", "referencedFiles", "workspaceTree"],
     suggestions: [
       { commandText: "/flow", title: "流れ", description: "処理やデータの流れを整理", icon: "account_tree" }
     ],
@@ -111,6 +120,8 @@ export const SKILLS = {
   },
   risk: {
     description: "Point out fragile boundaries, side effects, and easy-to-miss conditions.",
+    // 壊れやすさは最近の編集・診断・影響範囲（関連ファイル）から読む。
+    contextPreset: ["activeFile", "selection", "diagnostics", "recentEdits", "referencedFiles"],
     suggestions: [
       { commandText: "/risk", title: "リスク", description: "壊れやすい箇所や副作用を確認", icon: "crisis_alert" }
     ],
@@ -125,6 +136,8 @@ export const SKILLS = {
   },
   test: {
     description: "Organize test perspectives without writing test code.",
+    // テスト観点は変更箇所中心（選択・診断・最近の編集）。構造系は送らない。
+    contextPreset: ["activeFile", "selection", "diagnostics", "recentEdits"],
     suggestions: [
       { commandText: "/test", title: "テスト", description: "確認観点を整理", icon: "fact_check" }
     ],

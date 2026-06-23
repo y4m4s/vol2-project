@@ -12,7 +12,8 @@ import {
   SlashCommandScope
 } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
-import { getSkill } from "../shared/skills";
+import { deriveModelProfile } from "./ModelProfile";
+import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
 
@@ -193,236 +194,11 @@ export class AdviceService {
   }
 
   private buildPrompt(input: GuidanceRequestInput): string {
-    const { context, kind, userPrompt, knowledgeItems, slashCommand, slashCommandScope } = input;
-    const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
-    const lines: string[] = [
-      // あなたはペアプログラミングのナビゲーターです。
-      "You are a pair programming navigator.",
-      // 既定の目標は、ユーザー自身が考えて前に進めるよう支援することです。
-      "Your default goal is to help the user think and move forward on their own.",
-      "",
-      // ルール:
-      "Rules:",
-      // 実装やデバッグの依頼では、完全な解決策や修正そのものを述べず、ユーザーが自力で気づけるよう導いてください。
-      "- For implementation or debugging requests, do not state complete solutions or fixes. Guide the user to discover them.",
-      // 追加コンテキストの内容・要件・制約・入出力・意味について尋ねられたら、追加コンテキストから直接答えてください。
-      "- If the user asks about the contents, requirements, constraints, input/output, or meaning of the additional context, answer directly from the additional context.",
-      // 追加コンテキストがコーディングテストや問題文に見える場合、「その問題」に関する質問は追加コンテキストへの質問として扱ってください。
-      "- If the additional context looks like a coding test or problem statement, treat questions about 'the problem' as questions about that additional context.",
-      // ユーザーの質問が追加コンテキスト自体に関するものなら、アクティブファイルのコード助言へ話を逸らさないでください。
-      "- Do not drift into active-file code advice when the user's question is about the additional context itself.",
-      // 編集途中のノイズ（閉じていない括弧、未完成の式、書きかけの行）は無視してください。これらは問題ではありません。
-      "- Ignore noise from in-progress editing: unclosed braces, incomplete expressions, half-typed lines. These are not issues.",
-      // 命令的・断定的な言い回し（「これを直して」「これは間違い」「〜すべき」）は使わないでください。
-      "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
-      // ユーザーが明示的にコードを求めない限り、実装コードは出力しないでください。/flow では Mermaid 図のみ許可します。
-      "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow.",
-      // 具体的な場所・関数・変数・ロジックの流れを示して、ユーザーの注意を向けてください。
-      "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
-      // 正確な言い回しやフレーズの型を指定せず、自然に次の行動へ導く書き方をしてください。
-      "- Write in a way that naturally leads the user to their next action without prescribing exact wording or phrasing patterns.",
-      // 日本語で回答してください。
-      "- Respond in Japanese.",
-      this.getDepthRule(assistanceDepth, slashCommand),
-      "",
-      // ## 応答設定
-      "## Response settings",
-      // 深さ: <値>
-      `depth: ${assistanceDepth}`,
-      // スラッシュコマンド: /<コマンド>（指定なしのときは none）
-      slashCommand ? `slash command: /${slashCommand}${slashCommandScope === "deep" ? " deep" : ""}` : "slash command: none",
-      "",
-      // ## 現在の作業文脈
-      "## Current working context"
-    ];
-
-    if (context.activeFilePath) {
-      // ファイル: <パス>
-      lines.push(`file: ${context.activeFilePath}`);
-    } else {
-      // ファイル: なし
-      lines.push("file: none");
-    }
-
-    if (context.activeFileLanguage) {
-      // 言語: <言語>
-      lines.push(`language: ${context.activeFileLanguage}`);
-    }
-
-    if (context.selectedText) {
-      // 選択テキスト:
-      lines.push("", "Selected text:", "```", context.selectedText, "```");
-    } else if (context.activeFileExcerpt) {
-      // アクティブファイル断片:
-      lines.push("", "Active file excerpt:", "```", context.activeFileExcerpt, "```");
-    }
-
-    if (context.diagnosticsSummary.length > 0) {
-      lines.push("", "Diagnostics:");
-      for (const diagnostic of context.diagnosticsSummary) {
-        const source = diagnostic.source ? ` (${diagnostic.source})` : "";
-        lines.push(`- ${diagnostic.severity}${source} L${diagnostic.line}: ${diagnostic.message}`);
-      }
-    }
-
-    if (context.recentEditsSummary.length > 0) {
-      // 最近の編集:
-      lines.push("", "Recent edits:");
-      for (const recentEdit of context.recentEditsSummary) {
-        lines.push(`- ${recentEdit}`);
-      }
-    }
-
-    if (context.relatedSymbols.length > 0) {
-      // 関連シンボル候補: <一覧>
-      lines.push("", `Related symbol candidates: ${context.relatedSymbols.join(", ")}`);
-    }
-
-    if (context.workspaceTree?.treeText) {
-      // ディレクトリ構造:
-      lines.push("", "Directory structure:", "```text", context.workspaceTree.treeText, "```");
-    }
-
-    if (context.referencedFiles.length > 0) {
-      // 関連ファイル断片:
-      lines.push("", "Related file excerpts:");
-      for (const file of context.referencedFiles) {
-        lines.push(
-          `### ${file.path}`,
-          `reason: ${this.formatReferencedFileReason(file.reason)} / score: ${file.score}`
-        );
-
-        if (file.diagnosticsSummary.length > 0) {
-          lines.push("Diagnostics:");
-          for (const diagnostic of file.diagnosticsSummary) {
-            const source = diagnostic.source ? ` (${diagnostic.source})` : "";
-            lines.push(`- ${diagnostic.severity}${source} L${diagnostic.line}: ${diagnostic.message}`);
-          }
-        }
-
-        if (file.recentEditsSummary.length > 0) {
-          // 最近の編集:
-          lines.push("Recent edits:", ...file.recentEditsSummary.map((item) => `- ${item}`));
-        }
-
-        if (file.excerpt) {
-          lines.push("```" + (file.languageId ?? ""), file.excerpt, "```");
-        }
-      }
-    }
-
-    if (context.projectSummary) {
-      // ## プロジェクト概要
-      lines.push("", "## Project overview", `scope: ${context.projectSummary.scope}`);
-      // 開いているファイル:
-      this.pushListSection(lines, "Open files:", context.projectSummary.openFiles);
-      // ワークスペース診断:
-      this.pushListSection(lines, "Workspace diagnostics:", context.projectSummary.diagnosticsSummary);
-      // 最近の編集:
-      this.pushListSection(lines, "Recent edits:", context.projectSummary.recentEditsSummary);
-      // TODO/FIXME:
-      this.pushListSection(lines, "TODO/FIXME:", context.projectSummary.todoSummary);
-      // Manifest/設定:
-      this.pushListSection(lines, "Manifest/config:", context.projectSummary.manifestSummary);
-      // Docs:
-      this.pushListSection(lines, "Docs:", context.projectSummary.docsSummary);
-    }
-
-    if (context.additionalContext) {
-      // 追加コンテキスト:
-      lines.push("", "Additional context:", "```", context.additionalContext, "```");
-    }
-
-    if (knowledgeItems && knowledgeItems.length > 0) {
-      // ## 再利用する個人ナレッジ
-      lines.push("", "## Personal knowledge to reuse");
-      for (const item of knowledgeItems) {
-        lines.push(`- ${item.title}: ${item.summary}`);
-      }
-      // これらは過去の学びとして参考にし、現在の文脈に合う場合だけ控えめに活用してください。
-      lines.push("Treat these as past lessons; draw on them sparingly and only when they fit the current context.");
-    }
-
-    if (userPrompt?.trim()) {
-      // ## ユーザーからの相談
-      lines.push("", "## User's question", userPrompt.trim());
-    }
-
-    if (slashCommand) {
-      // ## スラッシュコマンド指示
-      lines.push("", "## Slash command instruction", this.getSlashCommandInstruction(slashCommand, assistanceDepth, slashCommandScope));
-    }
-
-    lines.push(
-      "",
-      this.getInstructionByKind(kind)
-    );
-
-    return lines.join("\n");
-  }
-
-  private getDepthRule(depth: AssistanceDepth, slashCommand?: SlashCommand): string {
-    // スキル固有の深さルール上書き（例: /flow はフローの整理だけに集中させる）があれば優先する。
-    const override = slashCommand ? getSkill(slashCommand).depthRule : undefined;
-    if (override) {
-      return override(depth);
-    }
-
-    if (depth === "high") {
-      // ハイモード: 次の確認事項・トレードオフ・境界を含む構造化された説明を行う。簡潔に、ただしヒントより踏み込む。
-      return "- High mode: give a structured explanation with the next checks, tradeoffs, and boundaries. Keep it compact, but go deeper than hints.";
-    }
-
-    // ロウモード: 短いヒントと確認ポイントのみ。長い説明を避け、最終的な答えへ飛ばない。
-    return "- Low mode: give short hints and checking points only. Avoid long explanations and avoid jumping to the final answer.";
-  }
-
-  private getInstructionByKind(kind: GuidanceKind): string {
-    switch (kind) {
-      case "manual":
-        // ユーザーが質問しています。追加コンテキストの問題文・要件・制約・入出力・意味について尋ねている場合は、追加コンテキストを最優先にして直接説明してください。実装やデバッグの相談では、着目すべき場所・処理・関係性を示して、ユーザー自身が手を動かして確かめられるよう誘導してください。
-        return "The user is asking a question. If they ask about the problem statement, requirements, constraints, input/output, or meaning of the additional context, explain it directly with the additional context as the top priority. For implementation or debugging questions, point to the relevant locations, operations, and relationships so the user can verify things hands-on themselves.";
-      case "always":
-        // 今の編集の流れを見て、見落としやすい設計上の懸念・壊れやすい境界・次に影響が出そうな箇所があれば、それだけを短く指し示してください。書きかけのコードや構文の不完全さには触れないでください。何も気になる点がなければ何も返さないでください。
-        return "Looking at the current editing flow, if there are easy-to-miss design concerns, fragile boundaries, or spots likely to be affected next, point to only those, briefly. Do not comment on in-progress code or syntactic incompleteness. If nothing stands out, return nothing.";
-      case "context":
-      default:
-        // ユーザーが選択箇所について相談しています。その箇所の周辺で注目すべき処理・依存関係・データの流れを指し示して、ユーザー自身が原因や改善点にたどり着けるよう誘導してください。
-        return "The user is consulting about the selected location. Point to the operations, dependencies, and data flow worth noting around it so the user can arrive at the cause or improvement themselves.";
-    }
-  }
-
-  private formatReferencedFileReason(reason: GuidanceContext["referencedFiles"][number]["reason"]): string {
-    switch (reason) {
-      case "diagnostic":
-        return "diagnostics";
-      case "recentEdit":
-        return "recent edit";
-      case "sameDirectory":
-        return "same directory";
-      case "workspace":
-        return "workspace";
-      case "open":
-      default:
-        return "open file";
-    }
-  }
-
-  private pushListSection(lines: string[], title: string, values: string[]): void {
-    if (values.length === 0) {
-      return;
-    }
-
-    lines.push(title, ...values.map((value) => `- ${value}`));
-  }
-
-  private getSlashCommandInstruction(
-    command: SlashCommand,
-    depth: AssistanceDepth,
-    scope?: SlashCommandScope
-  ): string {
-    // ②: 指示本体はレジストリ（skills.ts）から取得し、選択時のみ注入する。
-    return getSkill(command).buildInstruction(depth, scope);
+    // プロンプト組み立ては純粋ロジック（PromptBuilder）に委譲する（評価ハーネスから直接計測可能）。
+    return buildGuidancePrompt({
+      ...input,
+      modelProfile: deriveModelProfile(this.connectionService.getModel())
+    });
   }
 
   private buildConversationTitlePrompt(input: ConversationTitleInput): string {
@@ -604,7 +380,7 @@ export class AdviceService {
       // - 関連ファイル:
       lines.push("- Related files:");
       for (const file of context.referencedFiles.slice(0, 5)) {
-        lines.push(`  - ${file.path} (${this.formatReferencedFileReason(file.reason)})`);
+        lines.push(`  - ${file.path} (${formatReferencedFileReason(file.reason)})`);
         if (file.excerpt) {
           lines.push("```", this.truncate(file.excerpt, 1200), "```");
         }
