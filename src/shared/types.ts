@@ -10,7 +10,10 @@ export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
 
-export type SlashCommand = "hint" | "next" | "flow" | "risk" | "test";
+// SlashCommand の実体は skills.ts のレジストリ（SKILLS）から導出される。
+// 互換のためここから再エクスポートする。コマンドの追加は skills.ts のみで完結する。
+import type { SlashCommand } from "./skills";
+export type { SlashCommand };
 
 export type SlashCommandScope = "standard" | "deep";
 
