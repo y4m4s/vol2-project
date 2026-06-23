@@ -11,11 +11,13 @@ interface AdditionalContextPanelProps {
   id: string;
   value: string;
   onChange: (value: string) => void;
+  onClose: () => void;
 }
 
 interface AdditionalContextReadonlyPanelProps {
   id: string;
   value: string;
+  onClose: () => void;
 }
 
 export function AdditionalContextButton({ open, hasValue, readOnly = false, onClick }: AdditionalContextButtonProps) {
@@ -39,13 +41,8 @@ export function AdditionalContextButton({ open, hasValue, readOnly = false, onCl
   );
 }
 
-export function AdditionalContextPanel({ id, value, onChange }: AdditionalContextPanelProps) {
+export function AdditionalContextPanel({ id, value, onChange, onClose }: AdditionalContextPanelProps) {
   const textareaRef = useAutoResizeTextarea(value);
-
-  function handleClear() {
-    onChange("");
-    textareaRef.current?.focus();
-  }
 
   return (
     <div className="additional-context-panel">
@@ -57,10 +54,9 @@ export function AdditionalContextPanel({ id, value, onChange }: AdditionalContex
         <button
           type="button"
           className="additional-context-clear"
-          title="追加コンテキストを消去"
-          aria-label="追加コンテキストを消去"
-          disabled={!value.trim()}
-          onClick={handleClear}
+          title="追加コンテキストを閉じる"
+          aria-label="追加コンテキストを閉じる"
+          onClick={onClose}
         >
           <span className="material-symbols-outlined">close</span>
         </button>
@@ -79,7 +75,7 @@ export function AdditionalContextPanel({ id, value, onChange }: AdditionalContex
   );
 }
 
-export function AdditionalContextReadonlyPanel({ id, value }: AdditionalContextReadonlyPanelProps) {
+export function AdditionalContextReadonlyPanel({ id, value, onClose }: AdditionalContextReadonlyPanelProps) {
   return (
     <div className="additional-context-panel readonly" id={id}>
       <div className="additional-context-head">
@@ -87,6 +83,15 @@ export function AdditionalContextReadonlyPanel({ id, value }: AdditionalContextR
           <span className="material-symbols-outlined">description</span>
           追加コンテキスト
         </div>
+        <button
+          type="button"
+          className="additional-context-clear"
+          title="追加コンテキストを閉じる"
+          aria-label="追加コンテキストを閉じる"
+          onClick={onClose}
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       <div className="additional-context-readonly">{value}</div>
