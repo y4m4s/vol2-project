@@ -204,7 +204,7 @@ export class NavigatorController implements vscode.Disposable {
     };
   }
 
-  public async connectCopilot(): Promise<void> {
+  public async connectCopilot(providerId?: AiProviderId): Promise<void> {
     const state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
       return;
@@ -215,7 +215,10 @@ export class NavigatorController implements vscode.Disposable {
       connectionState: "connecting"
     });
 
-    const settings = this.settingsService.getSettings();
+    const currentSettings = this.settingsService.getSettings();
+    const settings = providerId && providerId !== currentSettings.providerId
+      ? await this.settingsService.saveSettings({ ...currentSettings, providerId })
+      : currentSettings;
     const connectionState = await this.connectionService.connect(settings);
     const effectiveSettings = await this.applyLmStudioModelKeyChange(settings);
     const nextMode = effectiveSettings.defaultMode;

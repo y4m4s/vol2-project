@@ -40,7 +40,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.postViewModel();
             return;
           case "connect":
-            await this.controller.connectCopilot();
+            await this.controller.connectCopilot(message.providerId);
             return;
           case "createConversationStream":
             await this.controller.createConversationStream();

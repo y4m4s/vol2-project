@@ -120,21 +120,6 @@
   margin-top: 10px;
 }
 
-.mode-options .choice-option {
-  display: flex;
-  min-height: 56px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 3px;
-  text-align: left;
-}
-
-.mode-options .model-option-meta {
-  flex: 0 1 auto;
-  text-align: left;
-}
-
 .schedule-options {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -236,27 +221,34 @@
   border-color: var(--vscode-focusBorder);
 }
 
-.setting-text-input,
-.setting-textarea {
-  width: 100%;
+.lmstudio-input {
   box-sizing: border-box;
+  width: 100%;
   margin-top: 8px;
-  border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.5));
-  border-radius: 6px;
-  background: var(--vscode-input-background);
+  padding: 9px 10px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
   color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
   font: inherit;
-  padding: 8px 10px;
 }
 
-.setting-textarea {
-  resize: vertical;
-}
-
-.setting-text-input:focus,
-.setting-textarea:focus {
+.lmstudio-input:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
+}
+
+.lmstudio-token-label {
+  display: block;
+  margin-top: 14px;
+}
+
+.lmstudio-delete-token {
+  margin-top: 8px;
+}
+
+.lmstudio-model-note {
+  margin-top: 12px;
 }
 
 .s06-savebar {

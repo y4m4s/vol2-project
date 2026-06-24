@@ -2,7 +2,7 @@ import type { AdviceMode, AiProviderId, AssistanceDepth, NavigatorScreen, Naviga
 
 export type WebviewToExtension =
   | { type: "ready" }
-  | { type: "connect" }
+  | { type: "connect"; providerId?: AiProviderId }
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
