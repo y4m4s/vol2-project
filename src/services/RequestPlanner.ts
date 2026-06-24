@@ -11,6 +11,7 @@ import {
   SlashCommand,
   SlashCommandScope
 } from "../shared/types";
+import { applySkillContextPreset, getSkillContextPreset } from "./contextPreset";
 
 export interface PreparedGuidanceRequest {
   context: GuidanceContext;
@@ -59,19 +60,44 @@ export class RequestPlanner {
       this.applyLowDepthContextLimits(filteredContext);
     }
 
+    // ① スキル別の文脈プリセットを適用し、このスキルに不要なカテゴリを落とす。
+    const presetAllow = getSkillContextPreset(slashCommand);
+    const finalContext = applySkillContextPreset(filteredContext, slashCommand);
+
     return {
-      context: filteredContext,
+      context: finalContext,
       requestPlan: {
         kind,
         assistanceDepth,
         slashCommand,
         slashCommandScope,
-        categories: this.buildCategories(context, filteredContext, fileExcluded),
-        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded, excludedGlobs),
+        categories: this.applyPresetNotes(
+          this.buildCategories(context, finalContext, fileExcluded),
+          presetAllow,
+          slashCommand
+        ),
+        targetFiles: this.buildTargetFiles(context, finalContext, fileExcluded, excludedGlobs),
         excludedGlobs,
-        estimatedSizeText: this.estimateSizeText(filteredContext, preview)
+        estimatedSizeText: this.estimateSizeText(finalContext, preview)
       }
     };
+  }
+
+  // プリセットで除外されたカテゴリは、リクエストプラン上で理由を明示する（UI の整合）。
+  private applyPresetNotes(
+    categories: RequestPlanCategory[],
+    presetAllow: Set<ContextCategoryKey> | undefined,
+    slashCommand?: SlashCommand
+  ): RequestPlanCategory[] {
+    if (!presetAllow || !slashCommand) {
+      return categories;
+    }
+
+    return categories.map((category) =>
+      presetAllow.has(category.key) || category.key === "additionalContext"
+        ? category
+        : { ...category, included: false, note: `/${slashCommand} では送信しません` }
+    );
   }
 
   private applyLowDepthContextLimits(context: GuidanceContext): void {

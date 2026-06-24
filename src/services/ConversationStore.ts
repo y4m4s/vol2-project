@@ -12,6 +12,7 @@ import {
   SlashCommandScope,
   TokenUsage
 } from "../shared/types";
+import { isSlashCommand } from "../shared/skills";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -436,16 +437,7 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   private parseSlashCommand(value: unknown): SlashCommand | undefined {
-    switch (value) {
-      case "hint":
-      case "next":
-      case "flow":
-      case "risk":
-      case "test":
-        return value;
-      default:
-        return undefined;
-    }
+    return typeof value === "string" && isSlashCommand(value) ? value : undefined;
   }
 
   private parseSlashCommandScope(value: unknown): SlashCommandScope | undefined {
