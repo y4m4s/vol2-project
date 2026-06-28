@@ -256,10 +256,70 @@ button.danger {
 
 /* --- チャット入力 --- */
 .chat-input-area {
+  position: relative;
   flex-shrink: 0;
   padding-top: 10px;
   border-top: 1px solid var(--vscode-panel-border);
   background: var(--vscode-sideBar-background);
+}
+
+/* スラッシュ候補・追加コンテキストを入力ボックスの上に浮かせる層。
+   通常フローから外すことで main の内容を押し上げない。 */
+.chat-input-overlays {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 6px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+}
+
+/* パネル表示中に背後の main をぼかし・減光して前面のパネルを見やすくするスクリム */
+.chat-input-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--vscode-editor-background) 45%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: chat-backdrop-in 120ms ease-out;
+}
+
+/* 入力領域(パネル＋入力ボックス)はスクリムより前面に出して鮮明に保つ */
+.chat-input-area.has-overlay {
+  z-index: 50;
+}
+
+/* パネル出現時に、ほんの一瞬だけ下からふわっと浮き上がる微アニメーション */
+@keyframes chat-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* モーション控えめ設定では出現アニメーションを無効化する */
+@media (prefers-reduced-motion: reduce) {
+  .chat-input-backdrop,
+  .slash-command-panel,
+  .additional-context-panel {
+    animation: none;
+  }
 }
 
 .chat-input-wrap {
@@ -434,8 +494,11 @@ button.danger {
 
 .slash-command-panel {
   padding: 8px;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  background: color-mix(in srgb, var(--vscode-input-background) 84%, var(--vscode-editorWidget-background));
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  animation: chat-overlay-in 130ms ease-out;
 }
 
 .slash-command-panel-head {
@@ -665,8 +728,11 @@ button.danger {
 
 .additional-context-panel {
   padding: 10px 12px 11px;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  background: color-mix(in srgb, var(--vscode-input-background) 88%, var(--vscode-editorWidget-background));
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  animation: chat-overlay-in 130ms ease-out;
 }
 
 .additional-context-head {

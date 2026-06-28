@@ -16,6 +16,7 @@ import {
   NaviComSelectionCodeActionProvider
 } from "./editor/NaviComSelectionCodeActionProvider";
 import { NavigatorViewProvider } from "./views/NavigatorViewProvider";
+import { runEvalLiveCommand } from "./eval/live";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
@@ -68,8 +69,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const request = controller.askForGuidance(undefined, "context");
       await focusNaviComView();
       await request;
+    }),
+    // 開発者専用: プロンプト評価ハーネスのライブモード（接続中モデルへ実送信）。
+    // コマンドは常に登録するが、コマンドパレットでは naviCom.devMode のときだけ表示する。
+    vscode.commands.registerCommand("aiPairNavigator.runEvalLive", async () => {
+      await runEvalLiveCommand(connectionService);
     })
   );
+
+  // 開発モードのときだけライブ評価コマンドをコマンドパレットへ出す。
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    void vscode.commands.executeCommand("setContext", "naviCom.devMode", true);
+  }
 
   void controller.initialize().catch((error) => {
     console.error("NaviCom initialization failed", error);

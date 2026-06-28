@@ -14,6 +14,7 @@ import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
+import { getSkill, isSlashCommand } from "../shared/skills";
 import {
   AdviceMode,
   AiProviderId,
@@ -877,7 +878,7 @@ export class NavigatorController implements vscode.Disposable {
     const hasSelection = Boolean(liveContext.selectedText) || stickySelectionAvailable;
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
     const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
-    const projectScope = slashCommand === "next"
+    const projectScope = slashCommand && getSkill(slashCommand).usesProjectScope
       ? this.resolveNextProjectScope(assistanceDepth, slashCommandScope)
       : undefined;
 
@@ -990,9 +991,12 @@ export class NavigatorController implements vscode.Disposable {
       options.assistanceDepth ?? state.assistanceDepth,
       options.slashCommand
     );
+    const usesProjectScope = options.slashCommand
+      ? getSkill(options.slashCommand).usesProjectScope
+      : false;
     const fallbackContext = options.prepared
       ? undefined
-      : options.slashCommand === "next"
+      : usesProjectScope
         ? await this.contextCollector.collectNextActionContext(
             settings,
             this.resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
@@ -1858,22 +1862,7 @@ export class NavigatorController implements vscode.Disposable {
     slashCommand: SlashCommand,
     slashCommandScope?: SlashCommandScope
   ): string {
-    switch (slashCommand) {
-      case "hint":
-        return "ヒントをください";
-      case "next":
-        return slashCommandScope === "deep"
-          ? "次に何をすればよいか広めに整理してください"
-          : "次に何をすればよいか整理してください";
-      case "flow":
-        return "処理やデータの流れを整理してください";
-      case "risk":
-        return "壊れやすい箇所や注意点を確認してください";
-      case "test":
-        return "テスト観点を整理してください";
-      default:
-        return "相談したいです";
-    }
+    return getSkill(slashCommand).userEntryText(slashCommandScope);
   }
 
   private parseSlashInput(value?: string): ParsedSlashInput {
@@ -1893,7 +1882,7 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     const userPrompt = match[2]?.trim();
-    if (slashCommand === "next") {
+    if (getSkill(slashCommand).supportsScope) {
       const nextScope = this.parseNextSlashCommandScope(userPrompt);
       return {
         slashCommand,
@@ -1934,16 +1923,8 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private normalizeSlashCommand(value: string): SlashCommand | undefined {
-    switch (value.toLowerCase()) {
-      case "hint":
-      case "next":
-      case "flow":
-      case "risk":
-      case "test":
-        return value.toLowerCase() as SlashCommand;
-      default:
-        return undefined;
-    }
+    const normalized = value.toLowerCase();
+    return isSlashCommand(normalized) ? normalized : undefined;
   }
 
   private resolveEffectiveAssistanceDepth(
@@ -1955,9 +1936,10 @@ export class NavigatorController implements vscode.Disposable {
       return "low";
     }
 
-    // /flow は流れの整理に関連ファイル等の厚い文脈が必要なため、常にハイとして実行する
-    if (slashCommand === "flow") {
-      return "high";
+    // スキルが深さを固定している場合（例: /flow は厚い文脈が要るので常にハイ）はそれを優先する。
+    const forced = slashCommand ? getSkill(slashCommand).forceDepth : undefined;
+    if (forced) {
+      return forced;
     }
 
     return assistanceDepth;

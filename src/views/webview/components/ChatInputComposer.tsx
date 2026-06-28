@@ -80,6 +80,14 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setActiveSlashCommandIndex(0);
   }, [slashCommandQuery, slashCommandMenuOpen]);
 
+  useEffect(() => {
+    // スラッシュ候補と追加コンテキストパネルを同時に開かない。
+    // 両方開くと入力エリアが肥大化し、フッター(送信ボタン)が画面外へ押し出されるため。
+    if (slashCommandMenuOpen) {
+      setAdditionalContextOpen(false);
+    }
+  }, [slashCommandMenuOpen]);
+
   if (!viewModel) {
     return null;
   }
@@ -98,6 +106,14 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
   const isHigh = assistanceDepth === "high";
+  // いずれかのパネルが開いているか（背後をぼかすバックドロップの表示判定）。
+  const hasOpenPanel = slashCommandMenuOpen || isAdditionalContextOpen;
+
+  function closeOverlays() {
+    setAdditionalContextOpen(false);
+    setSlashCommandOpen(false);
+    setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+  }
 
   function handleSend() {
     const text = inputText.trim();
@@ -176,28 +192,26 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   }
 
   return (
-    <div className="chat-input-area">
-      <div className="chat-input-wrap">
-        {contextPreview.selectedTextPreview && (
-          <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
-            <span className="material-symbols-outlined">code</span>
-            <span className="chat-selected-context-text">
-              {getSelectionLabel(contextPreview.selectedTextPreview)}
-            </span>
-          </div>
-        )}
+    <>
+      {/* パネル表示中は背後の main をぼかして前面のパネルを見やすくする。クリックで閉じる。 */}
+      {hasOpenPanel && <div className="chat-input-backdrop" onClick={closeOverlays} />}
 
+      <div className={`chat-input-area ${hasOpenPanel ? "has-overlay" : ""}`}>
+        {/* スラッシュ候補・追加コンテキストは入力ボックスの上に浮かせ、main の内容を押し上げない */}
+        <div className="chat-input-overlays">
         {isAdditionalContextOpen && (
           isAdditionalContextReadonly ? (
             <AdditionalContextReadonlyPanel
               id="chat-additional-context"
               value={activeAdditionalContext}
+              onClose={() => setAdditionalContextOpen(false)}
             />
           ) : (
             <AdditionalContextPanel
               id="chat-additional-context"
               value={additionalContextDraft}
               onChange={setAdditionalContextDraft}
+              onClose={() => setAdditionalContextOpen(false)}
             />
           )
         )}
@@ -210,6 +224,17 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
           onActiveIndexChange={setActiveSlashCommandIndex}
           onRunCommand={handleRunSlashCommand}
         />
+      </div>
+
+      <div className="chat-input-wrap">
+        {contextPreview.selectedTextPreview && (
+          <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
+            <span className="material-symbols-outlined">code</span>
+            <span className="chat-selected-context-text">
+              {getSelectionLabel(contextPreview.selectedTextPreview)}
+            </span>
+          </div>
+        )}
 
         <textarea
           ref={textareaRef}
@@ -228,7 +253,18 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                 open={isAdditionalContextOpen}
                 hasValue={hasAdditionalContext}
                 readOnly={isAdditionalContextReadonly}
-                onClick={() => setAdditionalContextOpen((open) => !open)}
+                onClick={() =>
+                  setAdditionalContextOpen((open) => {
+                    const next = !open;
+                    if (next) {
+                      // 追加コンテキストを開くときはスラッシュ候補を閉じる(同時表示を防ぐ)。
+                      // `/...` 入力中の自動オープンも抑止するため dismissed に積む。
+                      setSlashCommandOpen(false);
+                      setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+                    }
+                    return next;
+                  })
+                }
               />
             )}
             <SlashCommandButton
@@ -305,7 +341,8 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
