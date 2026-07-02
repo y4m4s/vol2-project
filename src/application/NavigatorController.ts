@@ -14,6 +14,7 @@ import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
+import { getSkill, isSlashCommand } from "../shared/skills";
 import {
   AdviceMode,
   AdviceTriggerReason,
@@ -144,6 +145,9 @@ export class NavigatorController implements vscode.Disposable {
           this.refreshContextPreview();
           this.adviceScheduler.handleActivity("diagnostics_change");
         }
+      }),
+      vscode.lm.onDidChangeChatModels(() => {
+        void this.refreshCopilotModelOptions();
       })
     );
 
@@ -154,6 +158,7 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: settings.defaultAssistanceDepth
     });
     this.refreshContextPreview();
+    void this.refreshCopilotModelOptions();
   }
 
   public getViewModel(): NavigatorViewModel {
@@ -180,7 +185,8 @@ export class NavigatorController implements vscode.Disposable {
       isBusy: state.requestState !== "idle",
       autoAdvice: this.adviceScheduler.getState(),
       usageToday: this.buildUsageToday(settings),
-      modelLabel: this.connectionService.getModel()?.name,
+      modelLabel: this.getCurrentModelLabel(),
+      copilotModelOptions: this.connectionService.getModelOptions(),
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       latestGuidance: state.latestGuidance,
@@ -208,8 +214,8 @@ export class NavigatorController implements vscode.Disposable {
       connectionState: "connecting"
     });
 
-    const connectionState = await this.connectionService.connect();
     const settings = this.settingsService.getSettings();
+    const connectionState = await this.connectionService.connect(settings.copilotModelId);
     const nextMode = settings.defaultMode;
     const nextAssistanceDepth = settings.defaultAssistanceDepth;
 
@@ -220,7 +226,7 @@ export class NavigatorController implements vscode.Disposable {
         screen: "main",
         mode: nextMode,
         assistanceDepth: nextAssistanceDepth,
-        statusMessage: undefined,
+        statusMessage: this.buildAutoModelFallbackStatusMessage(),
         contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
       });
       return;
@@ -381,33 +387,45 @@ export class NavigatorController implements vscode.Disposable {
   public async saveSettings(input: {
     defaultMode: AdviceMode;
     defaultAssistanceDepth: AssistanceDepth;
+    copilotModelId?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
-    enableWorkspaceContext: boolean;
     excludeGlobs: string;
   }): Promise<void> {
+    const previousSettings = this.settingsService.getSettings();
     const nextSettings: NavigatorSettings = {
-      ...this.settingsService.getSettings(),
+      ...previousSettings,
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
+      copilotModelId: input.copilotModelId,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
       dailyBudgetUsd: input.dailyBudgetUsd,
-      enableWorkspaceContext: input.enableWorkspaceContext,
       excludedGlobs: input.excludeGlobs
         .split(/\r?\n/)
         .map((value) => value.trim())
         .filter((value) => value.length > 0)
     };
 
-    await this.settingsService.saveSettings(nextSettings);
+    const savedSettings = await this.settingsService.saveSettings(nextSettings);
 
     const isConnected = this.connectionService.getState() === "connected";
     const canApplyAlways = input.defaultMode !== "always" || isConnected;
+    const modelSettingChanged = previousSettings.copilotModelId !== savedSettings.copilotModelId;
 
     if (input.defaultMode === "always" && isConnected) {
       this.adviceScheduler.resetPause();
+    }
+
+    if (modelSettingChanged && isConnected && this.sessionStore.getState().requestState === "idle") {
+      this.patchSession({
+        ...(canApplyAlways ? { mode: input.defaultMode } : {}),
+        assistanceDepth: input.defaultAssistanceDepth,
+        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
+      });
+      await this.reconnectCopilotForModelSetting(savedSettings);
+      return;
     }
 
     this.patchSession({
@@ -415,14 +433,18 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: input.defaultAssistanceDepth,
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
       statusMessage: {
-        kind: "info",
-        text: "設定を保存しました。"
+        kind: modelSettingChanged && isConnected ? "warning" : "info",
+        text: modelSettingChanged && isConnected
+          ? "設定を保存しました。使用モデルは現在のリクエスト完了後、次回接続時に反映されます。"
+          : "設定を保存しました。"
       }
     });
   }
 
   public async resetSettings(): Promise<void> {
-    await this.settingsService.resetSettings();
+    const wasConnected = this.connectionService.getState() === "connected";
+    const previousModelId = this.settingsService.getSettings().copilotModelId;
+    const settings = await this.settingsService.resetSettings();
     this.patchSession({
       mode: "manual",
       assistanceDepth: "low",
@@ -430,6 +452,43 @@ export class NavigatorController implements vscode.Disposable {
         kind: "info",
         text: "設定を初期値に戻しました。"
       }
+    });
+
+    if (wasConnected && previousModelId && this.sessionStore.getState().requestState === "idle") {
+      await this.reconnectCopilotForModelSetting(settings);
+    }
+  }
+
+  private async reconnectCopilotForModelSetting(settings: NavigatorSettings): Promise<void> {
+    this.connectionService.resetToDisconnected();
+    this.patchSession({
+      requestState: "connecting",
+      connectionState: "connecting",
+      statusMessage: {
+        kind: "info",
+        text: "設定を保存し、使用モデルを切り替えています..."
+      }
+    });
+
+    const connectionState = await this.connectionService.connect(settings.copilotModelId);
+    if (connectionState === "connected") {
+      const fallbackStatusMessage = this.buildAutoModelFallbackStatusMessage();
+      this.patchSession({
+        connectionState,
+        requestState: "idle",
+        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
+        statusMessage: fallbackStatusMessage ?? {
+          kind: "info",
+          text: `設定を保存し、使用モデルを ${this.getCurrentModelLabel() ?? "指定モデル"} に切り替えました。`
+        }
+      });
+      return;
+    }
+
+    this.patchSession({
+      connectionState,
+      requestState: "idle",
+      statusMessage: this.buildConnectionStatusMessage(connectionState)
     });
   }
 
@@ -591,6 +650,7 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
+    const knowledgeModelLabel = this.getCurrentModelLabel();
     const draftResult = await this.adviceService.createKnowledgeDraft({
       source: {
         ...source,
@@ -615,7 +675,8 @@ export class NavigatorController implements vscode.Disposable {
       title: draftResult.draft.title,
       summary: draftResult.draft.summary,
       body: draftResult.draft.body,
-      sourceAdviceId: source.id
+      sourceAdviceId: source.id,
+      modelLabel: knowledgeModelLabel
     });
 
     this.patchSession({
@@ -680,7 +741,7 @@ export class NavigatorController implements vscode.Disposable {
 
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const additionalContext = this.getGuidanceAdditionalContext(state);
-    const guidanceContext = await this.contextCollector.collectGuidanceContextWithWorkspace(settings);
+    const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
     const prepared = this.requestPlanner.prepareGuidanceRequest(
       this.withAdditionalContext(guidanceContext, additionalContext),
       preview,
@@ -781,7 +842,7 @@ export class NavigatorController implements vscode.Disposable {
     const hasSelection = Boolean(liveContext.selectedText) || stickySelectionAvailable;
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
     const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
-    const projectScope = slashCommand === "next"
+    const projectScope = slashCommand && getSkill(slashCommand).usesProjectScope
       ? this.resolveNextProjectScope(assistanceDepth, slashCommandScope)
       : undefined;
 
@@ -825,7 +886,7 @@ export class NavigatorController implements vscode.Disposable {
         : liveContext;
     const requestContext = projectScope
       ? await this.contextCollector.collectNextActionContext(settings, projectScope, rawContext)
-      : await this.contextCollector.collectGuidanceContextWithWorkspace(settings, rawContext);
+      : await this.collectGuidanceContextForDepth(settings, assistanceDepth, rawContext);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
       this.withAdditionalContext(requestContext, effectiveAdditionalContext),
       preview,
@@ -894,14 +955,17 @@ export class NavigatorController implements vscode.Disposable {
       options.assistanceDepth ?? state.assistanceDepth,
       options.slashCommand
     );
+    const usesProjectScope = options.slashCommand
+      ? getSkill(options.slashCommand).usesProjectScope
+      : false;
     const fallbackContext = options.prepared
       ? undefined
-      : options.slashCommand === "next"
+      : usesProjectScope
         ? await this.contextCollector.collectNextActionContext(
             settings,
             this.resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
           )
-        : await this.contextCollector.collectGuidanceContextWithWorkspace(settings);
+        : await this.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared =
       options.prepared ??
       this.requestPlanner.prepareGuidanceRequest(
@@ -950,6 +1014,7 @@ export class NavigatorController implements vscode.Disposable {
       activeAdditionalContext: nextActiveAdditionalContext
     });
 
+    const responseModelLabel = this.getCurrentModelLabel();
     const result = await this.adviceService.requestGuidance({
       context: prepared.context,
       kind: options.kind,
@@ -977,7 +1042,8 @@ export class NavigatorController implements vscode.Disposable {
         prepared.requestPlan,
         assistanceDepth,
         options.slashCommand,
-        options.slashCommandScope
+        options.slashCommandScope,
+        responseModelLabel
       );
       if (result.usage) {
         assistantEntry.tokenUsage = {
@@ -1357,6 +1423,23 @@ export class NavigatorController implements vscode.Disposable {
     );
   }
 
+  private async refreshCopilotModelOptions(): Promise<void> {
+    await this.connectionService.refreshAvailableModels();
+    this.didChangeStateEmitter.fire();
+  }
+
+  private async collectGuidanceContextForDepth(
+    settings: NavigatorSettings,
+    assistanceDepth: AssistanceDepth,
+    baseContext?: GuidanceContext
+  ): Promise<GuidanceContext> {
+    if (assistanceDepth !== "high") {
+      return baseContext ?? this.contextCollector.collectGuidanceContext();
+    }
+
+    return this.contextCollector.collectGuidanceContextWithWorkspace(settings, baseContext);
+  }
+
   private clearSelectionAfterContextCapture(kind: GuidanceKind, context: GuidanceContext): void {
     if (kind !== "context" || !context.selectedText) {
       return;
@@ -1486,7 +1569,9 @@ export class NavigatorController implements vscode.Disposable {
         return {
           kind: "error",
           text: vscode.workspace.isTrusted
-            ? "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、低コストモデル（GPT-5.4 nano / GPT-5 mini / Raptor mini / Gemini 3 Flash）が利用可能か確認してください。"
+            ? this.settingsService.getSettings().copilotModelId
+              ? "Copilot に接続できません。設定で指定したモデルが現在利用可能か確認するか、使用モデルを自動に戻してください。"
+              : "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、利用可能な Copilot モデルがあるか確認してください。"
             : "Workspace Trust が無効です。ワークスペースを信頼してから再試行してください。"
         };
       case "restricted":
@@ -1509,6 +1594,22 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
+  private buildAutoModelFallbackStatusMessage(): NavigatorStatusMessage | undefined {
+    if (!this.connectionService.didUseAutoFallbackModel()) {
+      return undefined;
+    }
+
+    return {
+      kind: "warning",
+      text: `低コストモデルが見つからなかったため、${this.getCurrentModelLabel() ?? "利用可能なモデル"} で接続しました。使用量に注意してください。`
+    };
+  }
+
+  private getCurrentModelLabel(): string | undefined {
+    const model = this.connectionService.getModel();
+    return model?.name || model?.family || model?.id;
+  }
+
   private createConversationEntry(
     role: "user" | "assistant",
     text: string,
@@ -1518,7 +1619,8 @@ export class NavigatorController implements vscode.Disposable {
     requestPlan?: GuidanceCard["requestPlan"],
     assistanceDepth?: AssistanceDepth,
     slashCommand?: SlashCommand,
-    slashCommandScope?: SlashCommandScope
+    slashCommandScope?: SlashCommandScope,
+    modelLabel?: string
   ): ConversationEntry {
     return {
       id: this.createId(),
@@ -1531,6 +1633,7 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth,
       slashCommand,
       slashCommandScope,
+      modelLabel,
       requestPlan
     };
   }
@@ -1543,6 +1646,7 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: entry.assistanceDepth ?? entry.requestPlan?.assistanceDepth ?? "low",
       slashCommand: entry.slashCommand ?? entry.requestPlan?.slashCommand,
       slashCommandScope: entry.slashCommandScope ?? entry.requestPlan?.slashCommandScope,
+      modelLabel: entry.modelLabel,
       text: entry.text,
       basedOn: entry.basedOn ?? { diagnosticsSummary: [] },
       requestPlan: entry.requestPlan ?? {
@@ -1565,6 +1669,7 @@ export class NavigatorController implements vscode.Disposable {
       id: item.id,
       title: item.title,
       summary: item.summary,
+      modelLabel: item.modelLabel,
       updatedAt: item.updatedAt
     }));
   }
@@ -1578,15 +1683,18 @@ export class NavigatorController implements vscode.Disposable {
     const sourceConversation = selected.sourceAdviceId
       ? this.conversationStore.findStreamByEntryId(selected.sourceAdviceId)
       : undefined;
+    const sourceConversationDeleted = Boolean(selected.sourceAdviceId && !sourceConversation);
 
     return {
       id: selected.id,
       title: selected.title,
       summary: selected.summary,
+      modelLabel: selected.modelLabel,
       body: selected.body,
       createdAt: selected.createdAt,
       updatedAt: selected.updatedAt,
-      sourceConversation
+      sourceConversation,
+      sourceConversationDeleted
     };
   }
 
@@ -1644,22 +1752,7 @@ export class NavigatorController implements vscode.Disposable {
     slashCommand: SlashCommand,
     slashCommandScope?: SlashCommandScope
   ): string {
-    switch (slashCommand) {
-      case "hint":
-        return "ヒントをください";
-      case "next":
-        return slashCommandScope === "deep"
-          ? "次に何をすればよいか広めに整理してください"
-          : "次に何をすればよいか整理してください";
-      case "flow":
-        return "処理やデータの流れを整理してください";
-      case "risk":
-        return "壊れやすい箇所や注意点を確認してください";
-      case "test":
-        return "テスト観点を整理してください";
-      default:
-        return "相談したいです";
-    }
+    return getSkill(slashCommand).userEntryText(slashCommandScope);
   }
 
   private parseSlashInput(value?: string): ParsedSlashInput {
@@ -1679,7 +1772,7 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     const userPrompt = match[2]?.trim();
-    if (slashCommand === "next") {
+    if (getSkill(slashCommand).supportsScope) {
       const nextScope = this.parseNextSlashCommandScope(userPrompt);
       return {
         slashCommand,
@@ -1720,16 +1813,8 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private normalizeSlashCommand(value: string): SlashCommand | undefined {
-    switch (value.toLowerCase()) {
-      case "hint":
-      case "next":
-      case "flow":
-      case "risk":
-      case "test":
-        return value.toLowerCase() as SlashCommand;
-      default:
-        return undefined;
-    }
+    const normalized = value.toLowerCase();
+    return isSlashCommand(normalized) ? normalized : undefined;
   }
 
   private resolveEffectiveAssistanceDepth(
@@ -1741,9 +1826,10 @@ export class NavigatorController implements vscode.Disposable {
       return "low";
     }
 
-    // /flow は流れの整理に関連ファイル等の厚い文脈が必要なため、常にハイとして実行する
-    if (slashCommand === "flow") {
-      return "high";
+    // スキルが深さを固定している場合（例: /flow は厚い文脈が要るので常にハイ）はそれを優先する。
+    const forced = slashCommand ? getSkill(slashCommand).forceDepth : undefined;
+    if (forced) {
+      return forced;
     }
 
     return assistanceDepth;

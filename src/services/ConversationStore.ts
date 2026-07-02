@@ -12,6 +12,7 @@ import {
   SlashCommandScope,
   TokenUsage
 } from "../shared/types";
+import { isSlashCommand } from "../shared/skills";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -184,8 +185,8 @@ export class ConversationStore implements vscode.Disposable {
     normalizedEntries.forEach((entry, index) => {
       this.getDb().run(
         `INSERT INTO conversation_entries
-          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json, model_label)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         this.toEntryParams(nextRecord.id, index, entry)
       );
     });
@@ -265,7 +266,9 @@ export class ConversationStore implements vscode.Disposable {
         slash_command TEXT,
         slash_command_scope TEXT,
         request_plan_json TEXT,
-        guidance_context_json TEXT
+        guidance_context_json TEXT,
+        token_usage_json TEXT,
+        model_label TEXT
       );
 
       CREATE INDEX IF NOT EXISTS idx_conversation_stream_updated
@@ -285,6 +288,7 @@ export class ConversationStore implements vscode.Disposable {
     this.ensureColumn("conversation_entries", "slash_command", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
     this.ensureColumn("conversation_entries", "token_usage_json", "TEXT");
+    this.ensureColumn("conversation_entries", "model_label", "TEXT");
   }
 
   private deleteEmptyStreamsInMemory(): void {
@@ -325,7 +329,7 @@ export class ConversationStore implements vscode.Disposable {
 
   private selectEntries(streamId: string): StoredConversationEntry[] {
     const stmt = this.getDb().prepare(
-      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json
+      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json, model_label
          FROM conversation_entries
         WHERE stream_id = ?
         ORDER BY entry_order ASC`
@@ -370,7 +374,8 @@ export class ConversationStore implements vscode.Disposable {
       slashCommandScope: this.parseSlashCommandScope(row.slash_command_scope),
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
       guidanceContext: this.parseGuidanceContext(row.guidance_context_json),
-      tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json)
+      tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json),
+      modelLabel: this.normalizeOptionalText(row.model_label)
     };
   }
 
@@ -390,7 +395,8 @@ export class ConversationStore implements vscode.Disposable {
       entry.slashCommandScope ?? null,
       entry.requestPlan ? JSON.stringify(entry.requestPlan) : null,
       entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null,
-      entry.tokenUsage ? JSON.stringify(entry.tokenUsage) : null
+      entry.tokenUsage ? JSON.stringify(entry.tokenUsage) : null,
+      entry.modelLabel ?? null
     ];
   }
 
@@ -431,16 +437,7 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   private parseSlashCommand(value: unknown): SlashCommand | undefined {
-    switch (value) {
-      case "hint":
-      case "next":
-      case "flow":
-      case "risk":
-      case "test":
-        return value;
-      default:
-        return undefined;
-    }
+    return typeof value === "string" && isSlashCommand(value) ? value : undefined;
   }
 
   private parseSlashCommandScope(value: unknown): SlashCommandScope | undefined {

@@ -42,8 +42,20 @@
           "light": "media/activity-icon.svg",
           "dark": "media/activity-icon.svg"
         }
+      },
+      {
+        "command": "aiPairNavigator.runEvalLive",
+        "title": "NaviCom: Run Prompt Evals (Live)"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "aiPairNavigator.runEvalLive",
+          "when": "naviCom.devMode"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -82,11 +94,6 @@
           "maximum": 15000,
           "description": "Idle time before automatic feedback can be triggered."
         },
-        "aiPairNavigator.enableWorkspaceContext": {
-          "type": "boolean",
-          "default": false,
-          "description": "Include workspace directory structure and selected related files in guidance context."
-        },
         "aiPairNavigator.excludedGlobs": {
           "type": "array",
           "default": [],
@@ -102,6 +109,7 @@
     "compile": "npm run compile:ext && npm run build:webview",
     "compile:ext": "tsc -p ./",
     "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
+    "eval": "npm run compile:ext && node out/eval/run-static.js",
     "watch": "tsc -watch -p ./",
     "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
     "vscode:prepublish": "npm run compile"

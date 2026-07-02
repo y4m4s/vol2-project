@@ -1,57 +1,9 @@
-import type { SlashCommand } from "../../../shared/types";
+import { SLASH_COMMAND_SUGGESTIONS, type SlashCommandSuggestion } from "../../../shared/skills";
 
-export interface SlashCommandOption {
-  command: SlashCommand;
-  commandText: string;
-  title: string;
-  description: string;
-  icon: string;
-}
+// UI サジェスト候補はスキルレジストリ（skills.ts）から導出する（①: 単一の出所）。
+export type SlashCommandOption = SlashCommandSuggestion;
 
-export const SLASH_COMMAND_OPTIONS: SlashCommandOption[] = [
-  {
-    command: "hint",
-    commandText: "/hint",
-    title: "ヒント",
-    description: "詰まりをほどく短い確認ポイント",
-    icon: "lightbulb"
-  },
-  {
-    command: "next",
-    commandText: "/next",
-    title: "次の一手",
-    description: "一区切り後に見ることを整理",
-    icon: "arrow_forward"
-  },
-  {
-    command: "next",
-    commandText: "/next deep",
-    title: "次の一手 Deep",
-    description: "プロジェクトを広めに見て整理",
-    icon: "travel_explore"
-  },
-  {
-    command: "flow",
-    commandText: "/flow",
-    title: "流れ",
-    description: "処理やデータの流れを整理",
-    icon: "account_tree"
-  },
-  {
-    command: "risk",
-    commandText: "/risk",
-    title: "リスク",
-    description: "壊れやすい箇所や副作用を確認",
-    icon: "crisis_alert"
-  },
-  {
-    command: "test",
-    commandText: "/test",
-    title: "テスト",
-    description: "確認観点を整理",
-    icon: "fact_check"
-  }
-];
+export const SLASH_COMMAND_OPTIONS: SlashCommandOption[] = SLASH_COMMAND_SUGGESTIONS;
 
 interface SlashCommandButtonProps {
   open: boolean;

@@ -130,16 +130,20 @@ function ChatBubble(
     ? `/${entry.slashCommand}${entry.slashCommandScope === "deep" ? " deep" : ""}`
     : undefined;
   const depthLabel = entry.assistanceDepth === "high" ? "ハイ" : entry.assistanceDepth === "low" ? "ロウ" : undefined;
+  const modelLabel = !isUser ? entry.modelLabel : undefined;
 
   return (
     <div className={`s04-bubble-wrap ${isUser ? "user" : "assistant"}`}>
       <div className="s04-bubble-meta">
-        <span className="material-symbols-outlined s04-bubble-icon">
-          {isUser ? "person" : "smart_toy"}
-        </span>
+        {isUser ? (
+          <span className="material-symbols-outlined s04-bubble-icon">person</span>
+        ) : (
+          <img src={window.__ICON_URI__} alt="NaviCom" className="s04-bubble-icon s04-bubble-logo" />
+        )}
         <span className="s04-bubble-role">{label}</span>
         {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
         {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
+        {modelLabel && <span className="s04-meta-pill model" title={modelLabel}>{modelLabel}</span>}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 
@@ -474,7 +478,7 @@ function ThinkingIndicator() {
   return (
     <div className="s04-bubble-wrap assistant">
       <div className="s04-bubble-meta">
-        <span className="material-symbols-outlined s04-bubble-icon">smart_toy</span>
+        <img src={window.__ICON_URI__} alt="NaviCom" className="s04-bubble-icon s04-bubble-logo" />
         <span className="s04-bubble-role">NaviCom</span>
       </div>
       <div className="s04-bubble assistant">

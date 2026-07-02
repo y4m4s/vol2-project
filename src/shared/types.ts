@@ -10,7 +10,10 @@ export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
 
-export type SlashCommand = "hint" | "next" | "flow" | "risk" | "test";
+// SlashCommand の実体は skills.ts のレジストリ（SKILLS）から導出される。
+// 互換のためここから再エクスポートする。コマンドの追加は skills.ts のみで完結する。
+import type { SlashCommand } from "./skills";
+export type { SlashCommand };
 
 export type SlashCommandScope = "standard" | "deep";
 
@@ -111,12 +114,18 @@ export interface GuidanceContext {
 export interface NavigatorSettings {
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
+  copilotModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyBudgetUsd: number;
-  enableWorkspaceContext: boolean;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
+}
+
+export interface CopilotModelOption {
+  id: string;
+  label: string;
+  tokenLimitText: string;
 }
 
 export interface UsageTodayViewData {
@@ -165,6 +174,7 @@ export interface GuidanceCard {
   assistanceDepth: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   text: string;
   basedOn: NavigatorContextPreview;
   requestPlan: RequestPlanSnapshot;
@@ -187,6 +197,7 @@ export interface ConversationEntry {
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
 }
@@ -220,6 +231,7 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
+  modelLabel?: string;
   updatedAt: string;
 }
 
@@ -227,6 +239,7 @@ export interface KnowledgeDetailViewData extends KnowledgeListItem {
   body: string;
   createdAt: string;
   sourceConversation?: ConversationStreamListItem;
+  sourceConversationDeleted?: boolean;
 }
 
 export interface NavigatorSessionState {
@@ -264,6 +277,7 @@ export interface NavigatorViewModel {
   autoAdvice: AutoAdviceState;
   usageToday: UsageTodayViewData;
   modelLabel?: string;
+  copilotModelOptions: CopilotModelOption[];
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;

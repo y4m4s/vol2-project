@@ -178,10 +178,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   private isCompletePayload(payload: unknown): payload is {
     defaultMode: "manual" | "always";
     defaultAssistanceDepth: "low" | "high";
+    copilotModelId?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
-    enableWorkspaceContext: boolean;
     excludeGlobs: string;
   } {
     if (typeof payload !== "object" || payload === null) return false;
@@ -189,10 +189,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
       (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
+      (p.copilotModelId === undefined || typeof p.copilotModelId === "string") &&
       typeof p.idleDelaySec === "number" &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.dailyBudgetUsd === "number" &&
-      typeof p.enableWorkspaceContext === "boolean" &&
       typeof p.excludeGlobs === "string"
     );
   }

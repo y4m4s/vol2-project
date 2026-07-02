@@ -11,6 +11,7 @@ import {
   SlashCommand,
   SlashCommandScope
 } from "../shared/types";
+import { applySkillContextPreset, getSkillContextPreset } from "./contextPreset";
 
 export interface PreparedGuidanceRequest {
   context: GuidanceContext;
@@ -19,7 +20,7 @@ export interface PreparedGuidanceRequest {
 
 // ロウモード(常時モード含む)はトークン消費を抑えるため、送信する文脈を必要最小限に絞る。
 // docs/11 §11.1: ロウ = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
-// ハイ = 上記に加えて関連ファイル・ディレクトリ構造・プロジェクト概要
+// ハイ = 上記に加えて関連ファイル・ディレクトリ構造
 const LOW_DEPTH_CONTEXT_LIMITS = {
   excerptChars: 2000,
   diagnostics: 5,
@@ -40,13 +41,14 @@ export class RequestPlanner {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
+    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
       activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
       selectedText: !fileExcluded ? context.selectedText : undefined,
-      workspaceTree: settings.enableWorkspaceContext ? context.workspaceTree : undefined,
-      referencedFiles: settings.enableWorkspaceContext ? referencedFiles : [],
+      workspaceTree: effectiveDepth === "high" ? context.workspaceTree : undefined,
+      referencedFiles: effectiveDepth === "high" ? referencedFiles : [],
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
       relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
@@ -54,24 +56,48 @@ export class RequestPlanner {
       additionalContext: context.additionalContext
     };
 
-    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
     if (effectiveDepth === "low") {
       this.applyLowDepthContextLimits(filteredContext);
     }
 
+    // ① スキル別の文脈プリセットを適用し、このスキルに不要なカテゴリを落とす。
+    const presetAllow = getSkillContextPreset(slashCommand);
+    const finalContext = applySkillContextPreset(filteredContext, slashCommand);
+
     return {
-      context: filteredContext,
+      context: finalContext,
       requestPlan: {
         kind,
         assistanceDepth,
         slashCommand,
         slashCommandScope,
-        categories: this.buildCategories(context, filteredContext, fileExcluded),
-        targetFiles: this.buildTargetFiles(context, filteredContext, fileExcluded, excludedGlobs),
+        categories: this.applyPresetNotes(
+          this.buildCategories(context, finalContext, fileExcluded),
+          presetAllow,
+          slashCommand
+        ),
+        targetFiles: this.buildTargetFiles(context, finalContext, fileExcluded, excludedGlobs),
         excludedGlobs,
-        estimatedSizeText: this.estimateSizeText(filteredContext, preview)
+        estimatedSizeText: this.estimateSizeText(finalContext, preview)
       }
     };
+  }
+
+  // プリセットで除外されたカテゴリは、リクエストプラン上で理由を明示する（UI の整合）。
+  private applyPresetNotes(
+    categories: RequestPlanCategory[],
+    presetAllow: Set<ContextCategoryKey> | undefined,
+    slashCommand?: SlashCommand
+  ): RequestPlanCategory[] {
+    if (!presetAllow || !slashCommand) {
+      return categories;
+    }
+
+    return categories.map((category) =>
+      presetAllow.has(category.key) || category.key === "additionalContext"
+        ? category
+        : { ...category, included: false, note: `/${slashCommand} では送信しません` }
+    );
   }
 
   private applyLowDepthContextLimits(context: GuidanceContext): void {

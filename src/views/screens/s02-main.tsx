@@ -19,8 +19,14 @@ export function S02Main() {
     connectionState,
     canConnect,
     usageToday,
-    modelLabel
+    modelLabel,
+    settings
   } = viewModel;
+  const usageModelLabel = connectionState === "connected"
+    ? settings.copilotModelId
+      ? `モデル：${modelLabel ?? "指定モデル"}`
+      : "モデル：自動"
+    : undefined;
 
   return (
     <div className="s02-root">
@@ -100,7 +106,7 @@ export function S02Main() {
           <span className="s02-usage-text">
             今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（目安 {usageToday.estimatedCostText}）
           </span>
-          {modelLabel && <span className="s02-usage-model">{modelLabel}</span>}
+          {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>
       )}
 

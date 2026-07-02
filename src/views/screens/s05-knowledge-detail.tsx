@@ -22,6 +22,7 @@ export function S05KnowledgeDetail() {
   }
 
   const sourceConversation = detail.sourceConversation;
+  const showSourceConversationSection = Boolean(sourceConversation || detail.sourceConversationDeleted);
 
   return (
     <div className="knowledge-detail-root">
@@ -53,29 +54,46 @@ export function S05KnowledgeDetail() {
         <div className="knowledge-body-text">{detail.body}</div>
       </div>
 
-      {sourceConversation && (
+      <div className="knowledge-detail-section knowledge-meta-section">
+        <div className="knowledge-panel-title">作成モデル</div>
+        <div className="knowledge-meta-model" title={detail.modelLabel ?? undefined}>
+          {detail.modelLabel ?? "記録なし"}
+        </div>
+      </div>
+
+      {showSourceConversationSection && (
         <div className="knowledge-detail-section knowledge-source-section">
-          <div className="knowledge-panel-title">元の会話</div>
-          <button
-            type="button"
-            className="knowledge-source-conversation"
-            disabled={viewModel?.isBusy}
-            onClick={() => send({ type: "selectConversationStream", id: sourceConversation.id })}
-          >
-            <span className="knowledge-source-copy">
-              <span className="knowledge-source-title">{sourceConversation.title}</span>
-              {sourceConversation.additionalContext && (
-                <span className="knowledge-source-context" title={sourceConversation.additionalContext}>
-                  <span className="material-symbols-outlined">description</span>
-                  {getContextPreview(sourceConversation.additionalContext)}
-                </span>
-              )}
-            </span>
-            <span className="knowledge-source-meta">
-              <span className="knowledge-source-time">{formatRelativeTime(sourceConversation.updatedAt)}</span>
-              <span className="material-symbols-outlined knowledge-source-open-icon">chevron_right</span>
-            </span>
-          </button>
+          <div className="knowledge-panel-title">元になった会話履歴</div>
+          {sourceConversation ? (
+            <button
+              type="button"
+              className="knowledge-source-conversation"
+              disabled={viewModel?.isBusy}
+              onClick={() => send({ type: "selectConversationStream", id: sourceConversation.id })}
+            >
+              <span className="knowledge-source-copy">
+                <span className="knowledge-source-title">{sourceConversation.title}</span>
+                {sourceConversation.additionalContext && (
+                  <span className="knowledge-source-context" title={sourceConversation.additionalContext}>
+                    <span className="material-symbols-outlined">description</span>
+                    {getContextPreview(sourceConversation.additionalContext)}
+                  </span>
+                )}
+              </span>
+              <span className="knowledge-source-meta">
+                <span className="knowledge-source-time">{formatRelativeTime(sourceConversation.updatedAt)}</span>
+                <span className="material-symbols-outlined knowledge-source-open-icon">chevron_right</span>
+              </span>
+            </button>
+          ) : (
+            <div className="knowledge-source-missing">
+              <span className="material-symbols-outlined">history_off</span>
+              <span className="knowledge-source-copy">
+                <span className="knowledge-source-title">元の会話履歴は削除されています</span>
+                <span className="knowledge-source-context">このナレッジ自体は引き続き利用できます</span>
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>
