@@ -414,8 +414,8 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                   ? false
                   : !canAskForGuidance || !trimmedInputText || isBusy
               }
-              title={isGuidanceRequesting ? "回答生成を中断" : isEnterSendConfirmed ? "もう一度 Enter で送信" : "送信"}
-              aria-label={isGuidanceRequesting ? "回答生成を中断" : "送信"}
+              title={isGuidanceRequesting ? "回答生成を中断" : isEnterSendConfirmed ? "送信（Enter をもう一度で確定）" : "送信"}
+              aria-label={isGuidanceRequesting ? "回答生成を中断" : isEnterSendConfirmed ? "送信（Enter をもう一度で確定）" : "送信"}
               onClick={isGuidanceRequesting ? handleCancel : handleSend}
             >
               <span className="material-symbols-outlined">
