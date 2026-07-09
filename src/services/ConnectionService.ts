@@ -227,8 +227,8 @@ export class ConnectionService {
     const choice = await vscode.window.showQuickPick(
       loadedModels.map((model) => ({ label: model.label, description: model.key, model })),
       {
-        title: "NaviCom: Select an LM Studio model",
-        placeHolder: "Select one loaded LM Studio model to use"
+        title: "LM Studio のモデルを選択",
+        placeHolder: "使用するロード済みモデルを選択してください"
       }
     );
     if (!choice) {
