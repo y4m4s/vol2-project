@@ -1700,6 +1700,9 @@ export class NavigatorController implements vscode.Disposable {
             return { kind: "error", text: "LM Studio への接続に失敗しました。" };
         }
       }
+      if (connectionState === "disconnected") {
+        return { kind: "warning", text: "LM Studio に接続してください。" };
+      }
       if (connectionState === "connecting") {
         return { kind: "info", text: "LM Studio に接続しています..." };
       }
