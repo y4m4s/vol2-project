@@ -231,7 +231,7 @@ export function S06Settings() {
       <div className="setting-item">
         <div className="setting-label">使用モデル</div>
         <div className="setting-desc">
-          自動では低コストモデルを優先し、見つからない場合は警告つきで利用可能なモデルへ接続します
+          自動では GitHub Copilot の自動モデルルーティングを使用します
           <br />
           文脈上限は、一度に参照できる入力文脈量の目安です
         </div>
@@ -480,7 +480,7 @@ function ModelButtonGroup({
         onClick={() => onChange("auto")}
       >
         <span className="model-option-name">自動</span>
-        <span className="model-option-meta">低コスト優先</span>
+        <span className="model-option-meta">Copilot 自動</span>
       </button>
 
       {modelOptions.map((option) => {

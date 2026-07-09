@@ -68,6 +68,11 @@ export class NavigatorController implements vscode.Disposable {
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
+  private activeGuidanceRequest?: {
+    id: number;
+    tokenSource: vscode.CancellationTokenSource;
+  };
+  private nextGuidanceRequestId = 1;
   private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
@@ -333,6 +338,23 @@ export class NavigatorController implements vscode.Disposable {
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
     const parsed = this.parseSlashInput(userPrompt);
     await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, false, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
+  }
+
+  public cancelGuidanceRequest(): void {
+    const activeRequest = this.activeGuidanceRequest;
+    if (!activeRequest) {
+      return;
+    }
+
+    activeRequest.tokenSource.cancel();
+    this.activeGuidanceRequest = undefined;
+    this.patchSession({
+      requestState: "idle",
+      statusMessage: {
+        kind: "info",
+        text: "回答生成を中断しました。"
+      }
+    });
   }
 
 
@@ -1052,15 +1074,45 @@ export class NavigatorController implements vscode.Disposable {
 
     const responseModel = this.connectionService.getConnectedModel();
     const responseModelLabel = this.getCurrentModelLabel();
-    const result = await this.adviceService.requestGuidance({
-      context: prepared.context,
-      kind: options.kind,
-      userPrompt: options.userPrompt?.trim(),
-      assistanceDepth,
-      slashCommand: options.slashCommand,
-      slashCommandScope: options.slashCommandScope,
-      knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
-    });
+    const requestId = this.nextGuidanceRequestId++;
+    const tokenSource = new vscode.CancellationTokenSource();
+    this.activeGuidanceRequest = {
+      id: requestId,
+      tokenSource
+    };
+
+    const result = await this.adviceService.requestGuidance(
+      {
+        context: prepared.context,
+        kind: options.kind,
+        userPrompt: options.userPrompt?.trim(),
+        assistanceDepth,
+        slashCommand: options.slashCommand,
+        slashCommandScope: options.slashCommandScope,
+        knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
+      },
+      tokenSource.token
+    );
+    const activeRequestAfterResponse = this.activeGuidanceRequest;
+    const requestIsCurrent = activeRequestAfterResponse?.id === requestId;
+    const wasCancelled = tokenSource.token.isCancellationRequested || (!result.ok && result.cancelled);
+    if (activeRequestAfterResponse?.id === requestId) {
+      this.activeGuidanceRequest = undefined;
+    }
+    tokenSource.dispose();
+
+    if (wasCancelled || !requestIsCurrent) {
+      if (requestIsCurrent) {
+        this.patchSession({
+          requestState: "idle",
+          statusMessage: {
+            kind: "info",
+            text: "回答生成を中断しました。"
+          }
+        });
+      }
+      return { ok: false };
+    }
 
     const rawRefreshedPreview = this.contextCollector.collectPreview();
     const refreshedPreview =
@@ -1467,7 +1519,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private async refreshCopilotModelOptions(): Promise<void> {
-    await this.connectionService.refreshAvailableModels();
+    await this.connectionService.refreshAvailableModels(this.settingsService.getSettings().copilotModelId);
     this.didChangeStateEmitter.fire();
   }
 
@@ -1698,7 +1750,7 @@ export class NavigatorController implements vscode.Disposable {
 
     return {
       kind: "warning",
-      text: `低コストモデルが見つからなかったため、${this.getCurrentModelLabel() ?? "利用可能なモデル"} で接続しました。使用量に注意してください。`
+      text: `Copilot の自動モデルルーティングが見つからなかったため、${this.getCurrentModelLabel() ?? "利用可能なモデル"} で接続しました。`
     };
   }
 

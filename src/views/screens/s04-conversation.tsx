@@ -6,7 +6,6 @@ import { MermaidDiagram } from "../webview/components/MermaidDiagram";
 import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
-import { formatConnectionState } from "../webview/utils/formatState";
 import { formatCostUsd, formatTokenCount } from "../webview/utils/formatUsage";
 import { getSelectionLabel } from "../webview/utils/labelUtils";
 import type { ConversationEntry, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
@@ -34,8 +33,6 @@ export function S04Conversation() {
   }
 
   const {
-    connectionState,
-    canConnect,
     requestState,
     conversationStreams,
     activeConversationStreamId,
@@ -55,22 +52,6 @@ export function S04Conversation() {
           ? `${conversationHistory.length}件のメッセージ`
           : "この会話専用の画面です"}
         back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
-        status={connectionState !== "connected" ? (
-          <span className="status-pill">
-            <span className="status-dot" />
-            {formatConnectionState(connectionState)}
-          </span>
-        ) : null}
-        actions={connectionState !== "connected" ? (
-          <button
-            className="s04-connect-btn"
-            disabled={!canConnect}
-            onClick={() => send({ type: "connect" })}
-          >
-            <span className="material-symbols-outlined">power</span>
-            接続
-          </button>
-        ) : null}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },

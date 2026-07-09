@@ -1,7 +1,6 @@
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { useApp } from "../webview/state/AppContext";
-import { formatConnectionState } from "../webview/utils/formatState";
 import { formatTokenCount } from "../webview/utils/formatUsage";
 
 declare global {
@@ -17,7 +16,6 @@ export function S02Main() {
 
   const {
     connectionState,
-    canConnect,
     usageToday,
     providerId,
     modelLabel,
@@ -37,22 +35,6 @@ export function S02Main() {
         title="新しい相談"
         subtitle="最初の質問を送ると会話画面へ移動し、そのまま続けて相談できます"
         back={false}
-        status={connectionState !== "connected" ? (
-          <span className="status-pill">
-            <span className="status-dot" />
-            {formatConnectionState(connectionState)}
-          </span>
-        ) : null}
-        actions={connectionState !== "connected" ? (
-          <button
-            className="s02-connect-btn"
-            disabled={!canConnect}
-            onClick={() => send({ type: "connect" })}
-          >
-            <span className="material-symbols-outlined">power</span>
-            接続
-          </button>
-        ) : null}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },

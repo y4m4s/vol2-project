@@ -31,6 +31,7 @@ export interface GuidanceRequestFailure {
   ok: false;
   connectionState: ConnectionState;
   message: string;
+  cancelled?: boolean;
 }
 
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
@@ -81,8 +82,11 @@ export class AdviceService {
     private readonly usageMeter?: UsageMeter
   ) {}
 
-  public async requestGuidance(input: GuidanceRequestInput): Promise<GuidanceRequestResult> {
-    return this.requestText(this.buildPrompt(input));
+  public async requestGuidance(
+    input: GuidanceRequestInput,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<GuidanceRequestResult> {
+    return this.requestText(this.buildPrompt(input), cancellationToken);
   }
 
   public async createKnowledgeDraft(input: KnowledgeDraftInput): Promise<KnowledgeDraftResult> {
@@ -119,7 +123,10 @@ export class AdviceService {
     return this.normalizeConversationTitle(result.text);
   }
 
-  private async requestText(prompt: string): Promise<GuidanceRequestResult> {
+  private async requestText(
+    prompt: string,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<GuidanceRequestResult> {
     const model = this.connectionService.getConnectedModel();
 
     if (!model || this.connectionService.getState() !== "connected") {
@@ -131,12 +138,17 @@ export class AdviceService {
     }
 
     try {
-      const tokenSource = new vscode.CancellationTokenSource();
+      const tokenSource = cancellationToken ? undefined : new vscode.CancellationTokenSource();
+      const token = cancellationToken ?? tokenSource!.token;
       let response: ProviderTextResponse;
       try {
-        response = await model.requestText(prompt, tokenSource.token);
+        response = await model.requestText(prompt, token);
       } finally {
-        tokenSource.dispose();
+        tokenSource?.dispose();
+      }
+
+      if (token.isCancellationRequested) {
+        return this.cancelledResult();
       }
 
       const usage = await this.recordUsage(model, prompt, response);
@@ -147,6 +159,10 @@ export class AdviceService {
         usage
       };
     } catch (error) {
+      if (this.isCancellation(error, cancellationToken)) {
+        return this.cancelledResult();
+      }
+
       const connectionState = this.classifyGuidanceError(error);
 
       if (connectionState === "restricted") {
@@ -163,6 +179,31 @@ export class AdviceService {
         message: this.errorMessage(error)
       };
     }
+  }
+
+  private cancelledResult(): GuidanceRequestFailure {
+    return {
+      ok: false,
+      connectionState: this.connectionService.getState(),
+      message: "回答生成を中断しました。",
+      cancelled: true
+    };
+  }
+
+  private isCancellation(error: unknown, cancellationToken?: vscode.CancellationToken): boolean {
+    if (cancellationToken?.isCancellationRequested) {
+      return true;
+    }
+
+    if (error instanceof vscode.CancellationError) {
+      return true;
+    }
+
+    if (error instanceof Error) {
+      return error.name === "AbortError";
+    }
+
+    return false;
   }
 
   private async recordUsage(

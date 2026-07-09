@@ -4,13 +4,6 @@ import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } fro
 import { LmStudioSecretStore } from "./LmStudioSecretStore";
 import type { UsageMeter } from "./UsageMeter";
 
-const LOW_COST_COPILOT_MODEL_PRIORITY = [
-  { keys: ["gpt54nano"] },
-  { keys: ["gpt5mini"] },
-  { keys: ["raptormini"] },
-  { keys: ["gemini3flash"] }
-];
-
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "savedModelNotLoaded" | "selectionCancelled";
 
 export interface ProviderTextResponse {
@@ -34,14 +27,15 @@ export class ConnectionService {
   private connectedModel: ConnectedProviderModel | undefined;
   private availableModelOptions: CopilotModelOption[] = [];
   private pendingConnection: Promise<ConnectionState> | undefined;
-  private usedAutoFallbackModel = false;
+  private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
 
   public constructor(
     private readonly usageMeter: UsageMeter | undefined,
     private readonly lmStudioClient: LmStudioClient,
-    private readonly lmStudioSecretStore: LmStudioSecretStore
+    private readonly lmStudioSecretStore: LmStudioSecretStore,
+    private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
   ) {}
 
   public getState(): ConnectionState {
@@ -88,13 +82,13 @@ export class ConnectionService {
   }
 
   public didUseAutoFallbackModel(): boolean {
-    return this.usedAutoFallbackModel;
+    return this.usedAutomaticModelFallback;
   }
 
-  public async refreshAvailableModels(): Promise<CopilotModelOption[]> {
+  public async refreshAvailableModels(preferredModelId?: string): Promise<CopilotModelOption[]> {
     try {
       const models = await this.fetchCopilotModels(false);
-      this.availableModelOptions = this.getSelectableCopilotModels(models).map((model) => this.toModelOption(model));
+      this.availableModelOptions = this.getManualSelectableCopilotModels(models, preferredModelId).map((model) => this.toModelOption(model));
     } catch {
       this.availableModelOptions = [];
     }
@@ -127,7 +121,7 @@ export class ConnectionService {
   public resetToDisconnected(): ConnectionState {
     this.copilotModel = undefined;
     this.connectedModel = undefined;
-    this.usedAutoFallbackModel = false;
+    this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.connectionState = "disconnected";
     return this.connectionState;
@@ -135,7 +129,7 @@ export class ConnectionService {
 
   private async connectInternal(settings: NavigatorSettings): Promise<ConnectionState> {
     this.providerId = settings.providerId;
-    this.usedAutoFallbackModel = false;
+    this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
     this.copilotModel = undefined;
@@ -155,19 +149,19 @@ export class ConnectionService {
   private async connectCopilot(copilotModelId?: string): Promise<ConnectionState> {
     try {
       const models = await this.fetchCopilotModels(true);
-      const selectableModels = this.getSelectableCopilotModels(models);
-      this.availableModelOptions = selectableModels.map((model) => this.toModelOption(model));
-      const lowCostModel = copilotModelId ? undefined : this.selectLowCostCopilotModel(selectableModels);
+      const manualSelectableModels = this.getManualSelectableCopilotModels(models, copilotModelId);
+      this.availableModelOptions = manualSelectableModels.map((model) => this.toModelOption(model));
+      const automaticModel = copilotModelId ? undefined : this.selectAutoRoutingCopilotModel(models);
       const selectedModel = copilotModelId
-        ? selectableModels.find((model) => model.id === copilotModelId)
-        : lowCostModel ?? selectableModels[0];
+        ? manualSelectableModels.find((model) => model.id === copilotModelId)
+        : automaticModel ?? manualSelectableModels[0];
 
       if (!selectedModel) {
         this.connectionState = "unavailable";
         return this.connectionState;
       }
 
-      this.usedAutoFallbackModel = !copilotModelId && !lowCostModel;
+      this.usedAutomaticModelFallback = !copilotModelId && !automaticModel;
       this.copilotModel = selectedModel;
       this.connectedModel = this.createCopilotModel(selectedModel);
       this.connectionState = "consent_pending";
@@ -176,7 +170,7 @@ export class ConnectionService {
     } catch (error) {
       this.copilotModel = undefined;
       this.connectedModel = undefined;
-      this.usedAutoFallbackModel = false;
+      this.usedAutomaticModelFallback = false;
       this.connectionState = this.classifyCopilotConnectError(error);
     }
     return this.connectionState;
@@ -275,14 +269,6 @@ export class ConnectionService {
     };
   }
 
-  private selectLowCostCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
-    for (const preference of LOW_COST_COPILOT_MODEL_PRIORITY) {
-      const match = models.find((model) => this.matchesModelKeys(model, preference.keys));
-      if (match) return match;
-    }
-    return undefined;
-  }
-
   private async fetchCopilotModels(retryIfEmpty: boolean): Promise<vscode.LanguageModelChat[]> {
     let models = await vscode.lm.selectChatModels({ vendor: "copilot" });
     if (retryIfEmpty && models.length === 0) {
@@ -292,15 +278,41 @@ export class ConnectionService {
     return models;
   }
 
-  private getSelectableCopilotModels(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat[] {
-    const seen = new Set<string>();
+  private getManualSelectableCopilotModels(
+    models: vscode.LanguageModelChat[],
+    preferredModelId?: string
+  ): vscode.LanguageModelChat[] {
+    const seenIds = new Set<string>();
+    const seenLabelIndexes = new Map<string, number>();
     const selectable: vscode.LanguageModelChat[] = [];
     for (const model of models) {
-      if (!model.id || this.isAutoRoutingModel(model) || seen.has(model.id)) continue;
-      seen.add(model.id);
+      if (
+        !model.id ||
+        this.isAutoRoutingModel(model) ||
+        this.languageModelAccessInformation?.canSendRequest(model) === false ||
+        seenIds.has(model.id)
+      ) {
+        continue;
+      }
+
+      seenIds.add(model.id);
+      const labelKey = this.toModelLabelKey(model);
+      const existingIndex = seenLabelIndexes.get(labelKey);
+      if (existingIndex !== undefined) {
+        if (model.id === preferredModelId) {
+          selectable[existingIndex] = model;
+        }
+        continue;
+      }
+
+      seenLabelIndexes.set(labelKey, selectable.length);
       selectable.push(model);
     }
     return selectable.sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)));
+  }
+
+  private selectAutoRoutingCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
+    return models.find((model) => model.id && this.isAutoRoutingModel(model));
   }
 
   private isAutoRoutingModel(model: vscode.LanguageModelChat): boolean {
@@ -315,15 +327,14 @@ export class ConnectionService {
     return model.name || model.family || model.id;
   }
 
+  private toModelLabelKey(model: vscode.LanguageModelChat): string {
+    return normalizeModelIdentifier(this.toModelLabel(model));
+  }
+
   private toTokenLimitText(model: vscode.LanguageModelChat): string {
     return Number.isFinite(model.maxInputTokens) && model.maxInputTokens > 0
       ? `${Math.floor(model.maxInputTokens).toLocaleString()} tokens`
       : "Token limit unavailable";
-  }
-
-  private matchesModelKeys(model: vscode.LanguageModelChat, keys: string[]): boolean {
-    const searchable = normalizeModelIdentifier(`${model.id} ${model.name} ${model.family} ${model.version}`);
-    return keys.some((key) => searchable.includes(key));
   }
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {

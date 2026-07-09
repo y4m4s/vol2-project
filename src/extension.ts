@@ -24,7 +24,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const connectionService = new ConnectionService(
     usageMeter,
     new LmStudioClient(),
-    new LmStudioSecretStore(context.secrets)
+    new LmStudioSecretStore(context.secrets),
+    context.languageModelAccessInformation
   );
   const contextCollector = new ContextCollector();
   const controller = new NavigatorController(
