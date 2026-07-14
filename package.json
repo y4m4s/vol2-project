@@ -13,12 +13,7 @@
   ],
   "icon": "media/icon.png",
   "activationEvents": [
-    "onStartupFinished",
-    "onView:aiPairNavigator.sidebar",
-    "onCommand:aiPairNavigator.openView",
-    "onCommand:aiPairNavigator.connectCopilot",
-    "onCommand:aiPairNavigator.askForGuidance",
-    "onCommand:aiPairNavigator.askSelection"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -71,6 +66,7 @@
           "type": "webview",
           "id": "aiPairNavigator.sidebar",
           "name": "NaviCom",
+          "icon": "media/activity-icon.svg",
           "visibility": "visible"
         }
       ]
