@@ -6,6 +6,7 @@ import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
+import { FeedbackStore } from "./services/FeedbackStore";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
 import { UsageMeter } from "./services/UsageMeter";
@@ -30,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new SettingsService(context.workspaceState),
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
+    new FeedbackStore(context.globalStorageUri),
     usageMeter
   );
 

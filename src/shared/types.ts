@@ -26,6 +26,7 @@ export type NavigatorScreen =
   | "main"
   | "history"
   | "conversation"
+  | "feedback_form"
   | "error"
   | "advice_detail"
   | "knowledge"
@@ -39,6 +40,34 @@ export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hin
 export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
+
+export type FeedbackRating = "good" | "bad";
+
+export type BadFeedbackReason =
+  | "too_long"
+  | "off_topic"
+  | "gives_answer"
+  | "too_vague"
+  | "other";
+
+export interface AdviceFeedbackInput {
+  conversationEntryId: string;
+  rating: FeedbackRating;
+  reasons?: BadFeedbackReason[];
+  comment?: string;
+}
+
+export type FeedbackSummaryStatus = "ok" | "failed" | "skipped";
+
+export interface FeedbackSummaryResult {
+  status: FeedbackSummaryStatus;
+  summaryText?: string;
+}
+
+export interface FeedbackTendencySummary {
+  goodPatterns: string[];
+  badAvoidPatterns: string[];
+}
 
 export type ContextCategoryKey =
   | "activeFile"
@@ -200,6 +229,7 @@ export interface ConversationEntry {
   modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
+  feedback?: FeedbackRating;
 }
 
 export interface ConversationStreamListItem {
@@ -257,6 +287,7 @@ export interface NavigatorSessionState {
   activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
+  pendingFeedbackEntryId?: string;
   knowledgeQuery: string;
   selectedKnowledgeId?: string;
   activeAdditionalContext?: string;
@@ -285,6 +316,7 @@ export interface NavigatorViewModel {
   activeConversationStreamId?: string;
   activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
+  pendingFeedbackEntryId?: string;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];

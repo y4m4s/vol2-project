@@ -9,7 +9,7 @@ import { formatTime } from "../webview/utils/formatTime";
 import { formatConnectionState } from "../webview/utils/formatState";
 import { formatCostUsd, formatTokenCount } from "../webview/utils/formatUsage";
 import { getSelectionLabel } from "../webview/utils/labelUtils";
-import type { ConversationEntry, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
+import type { ConversationEntry, FeedbackRating, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -97,6 +97,7 @@ export function S04Conversation() {
             alreadySaved={savedKnowledgeSourceIds.includes(entry.id)}
             isSavingKnowledge={requestState === "saving_knowledge"}
             onSave={(id) => send({ type: "saveKnowledge", id })}
+            onRate={(id, rating) => send({ type: "rateAdvice", id, rating })}
           />
         ))}
 
@@ -114,12 +115,14 @@ function ChatBubble(
     entry,
     alreadySaved,
     isSavingKnowledge,
-    onSave
+    onSave,
+    onRate
   }: {
     entry: ConversationEntry;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     onSave: (id: string) => void;
+    onRate: (id: string, rating: FeedbackRating) => void;
   }
 ) {
   const isUser = entry.role === "user";
@@ -169,6 +172,8 @@ function ChatBubble(
           tokenUsage={entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
+          feedback={entry.feedback}
+          onRate={(rating) => onRate(entry.id, rating)}
           onSave={() => onSave(entry.id)}
         />
       )}
@@ -391,6 +396,8 @@ function ResponseActions(
     tokenUsage,
     alreadySaved,
     isSavingKnowledge,
+    feedback,
+    onRate,
     onSave
   }: {
     text: string;
@@ -398,6 +405,8 @@ function ResponseActions(
     tokenUsage?: TokenUsage;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
+    feedback?: FeedbackRating;
+    onRate: (rating: FeedbackRating) => void;
     onSave: () => void;
   }
 ) {
@@ -443,6 +452,24 @@ function ResponseActions(
             約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（目安 {formatCostUsd(tokenUsage.estimatedCostUsd)}）消費
           </span>
         )}
+
+        <button
+          className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
+          title={feedback ? "評価済み" : "Good"}
+          disabled={Boolean(feedback)}
+          onClick={() => onRate("good")}
+        >
+          <span className="material-symbols-outlined">thumb_up</span>
+        </button>
+
+        <button
+          className={`s04-response-action ${feedback === "bad" ? "active feedback-bad" : ""}`}
+          title={feedback ? "評価済み" : "Bad"}
+          disabled={Boolean(feedback)}
+          onClick={() => onRate("bad")}
+        >
+          <span className="material-symbols-outlined">thumb_down</span>
+        </button>
 
         <button
           className={`s04-response-action ${alreadySaved ? "active" : ""}`}

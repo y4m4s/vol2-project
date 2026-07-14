@@ -9,7 +9,11 @@ import {
   NavigatorContextPreview,
   RequestPlanSnapshot,
   SlashCommand,
-  SlashCommandScope
+  SlashCommandScope,
+  FeedbackRating,
+  BadFeedbackReason,
+  FeedbackSummaryResult,
+  FeedbackTendencySummary
 } from "../shared/types";
 import { ConnectionService } from "./ConnectionService";
 import { deriveModelProfile } from "./ModelProfile";
@@ -42,6 +46,7 @@ export interface GuidanceRequestInput {
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
   knowledgeItems?: KnowledgeRecord[];
+  feedbackTendency?: FeedbackTendencySummary;
 }
 
 export interface KnowledgeDraft {
@@ -72,6 +77,13 @@ export type KnowledgeDraftResult =
 
 export interface ConversationTitleInput {
   entries: ConversationEntry[];
+}
+
+export interface FeedbackSummarizeInput {
+  rating: FeedbackRating;
+  adviceTextExcerpt: string;
+  reasons?: BadFeedbackReason[];
+  comment?: string;
 }
 
 export class AdviceService {
@@ -116,6 +128,16 @@ export class AdviceService {
     }
 
     return this.normalizeConversationTitle(result.text);
+  }
+
+  public async summarizeFeedback(input: FeedbackSummarizeInput): Promise<FeedbackSummaryResult> {
+    const result = await this.requestText(this.buildFeedbackSummaryPrompt(input));
+    if (!result.ok) {
+      return { status: "failed" };
+    }
+
+    const summaryText = this.normalizeLine(result.text, 120);
+    return summaryText ? { status: "ok", summaryText } : { status: "failed" };
   }
 
   private async requestText(prompt: string): Promise<GuidanceRequestResult> {
@@ -320,6 +342,40 @@ export class AdviceService {
       // この情報から、後で同じ種類の問題に遭遇したときに再利用しやすいナレッジを作ってください。
       "From this information, create knowledge that is easy to reuse when the same kind of problem is encountered later."
     );
+
+    return lines.join("\n");
+  }
+
+  private buildFeedbackSummaryPrompt(input: FeedbackSummarizeInput): string {
+    const lines = [
+      "You summarize user feedback for a pair-programming navigator.",
+      "Return exactly one English instruction sentence, <= 120 characters.",
+      "No labels, bullets, quotes, markdown, or explanations.",
+      "",
+      `rating: ${input.rating}`,
+      "",
+      "## Assistant answer excerpt",
+      "```markdown",
+      this.truncate(input.adviceTextExcerpt, 700),
+      "```"
+    ];
+
+    if (input.rating === "good") {
+      lines.push(
+        "",
+        "The user marked this answer as Good. Infer the useful response tendency to keep next time."
+      );
+    } else {
+      lines.push(
+        "",
+        "The user marked this answer as Bad. Summarize what to avoid next time.",
+        `reasons: ${input.reasons?.length ? input.reasons.join(", ") : "none"}`
+      );
+      const comment = input.comment?.trim();
+      if (comment) {
+        lines.push("comment:", "```", this.truncate(comment, 500), "```");
+      }
+    }
 
     return lines.join("\n");
   }

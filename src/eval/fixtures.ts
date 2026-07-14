@@ -187,6 +187,49 @@ export const SCENARIOS: EvalScenario[] = [
     ]
   },
   {
+    id: "feedback-trends-injection",
+    description: "Good/Bad の評価傾向が manual/context のプロンプトへ注入される",
+    input: {
+      kind: "manual",
+      assistanceDepth: "low",
+      userPrompt: "次に見るべきポイントは？",
+      context: baseContext({ activeFilePath: "src/app.ts" }),
+      feedbackTendency: {
+        goodPatterns: [
+          "Keep explanations concise and point to specific code locations."
+        ],
+        badAvoidPatterns: [
+          "Avoid vague feedback; mention concrete places to inspect."
+        ]
+      }
+    },
+    promptChecks: [
+      includes("## Recent feedback trends (follow if possible)"),
+      includes("Keep explanations concise and point to specific code locations."),
+      includes("## Recent feedback trends (avoid)"),
+      includes("Avoid vague feedback; mention concrete places to inspect.")
+    ]
+  },
+  {
+    id: "feedback-trends-excluded-from-always",
+    description: "always には評価傾向を注入しない",
+    input: {
+      kind: "always",
+      assistanceDepth: "high",
+      context: baseContext({ activeFilePath: "src/app.ts" }),
+      feedbackTendency: {
+        goodPatterns: ["Keep explanations concise."],
+        badAvoidPatterns: ["Avoid vague feedback."]
+      }
+    },
+    promptChecks: [
+      excludes("## Recent feedback trends (follow if possible)"),
+      excludes("## Recent feedback trends (avoid)"),
+      excludes("Keep explanations concise."),
+      excludes("Avoid vague feedback.")
+    ]
+  },
+  {
     id: "always-mode",
     description: "常時モードは深さがロウ固定で、気になる点が無ければ何も返さない指示になる",
     input: {

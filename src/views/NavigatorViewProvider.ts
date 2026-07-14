@@ -75,6 +75,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "saveKnowledge":
             await this.controller.saveKnowledge(message.id);
             return;
+          case "rateAdvice":
+            await this.controller.rateAdvice(message.id, message.rating);
+            return;
+          case "submitBadFeedback":
+            await this.controller.submitBadFeedback(message.reasons, message.comment);
+            return;
+          case "cancelBadFeedback":
+            this.controller.cancelBadFeedback();
+            return;
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
             return;
@@ -138,6 +147,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "s05-knowledge.css",
       "s06-settings.css",
       "s08-history.css",
+      "s09-feedback-form.css",
       "s07-error.css"
     ];
 

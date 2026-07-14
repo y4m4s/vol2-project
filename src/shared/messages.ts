@@ -1,4 +1,11 @@
-import type { AdviceMode, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
+import type {
+  AdviceMode,
+  AssistanceDepth,
+  BadFeedbackReason,
+  FeedbackRating,
+  NavigatorScreen,
+  NavigatorViewModel
+} from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -13,6 +20,9 @@ export type WebviewToExtension =
   | { type: "navigate"; screen: NavigatorScreen }
   | { type: "navigateBack" }
   | { type: "saveKnowledge"; id?: string }
+  | { type: "rateAdvice"; id: string; rating: FeedbackRating }
+  | { type: "submitBadFeedback"; reasons: BadFeedbackReason[]; comment: string }
+  | { type: "cancelBadFeedback" }
   | { type: "selectKnowledge"; id: string }
   | {
       type: "updateKnowledge";

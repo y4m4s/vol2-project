@@ -7,6 +7,7 @@ import { S05KnowledgeDetail } from "../screens/s05-knowledge-detail";
 import { S06Settings } from "../screens/s06-settings";
 import { S07Error } from "../screens/s07-error";
 import { S08History } from "../screens/s08-history";
+import { S09FeedbackForm } from "../screens/s09-feedback-form";
 import { FloatingToast } from "./components/FloatingToast";
 import type { NavigatorScreen } from "../../shared/types";
 
@@ -42,6 +43,8 @@ function renderScreen(screen: NavigatorScreen) {
       return <S08History />;
     case "conversation":
       return <S04Conversation />;
+    case "feedback_form":
+      return <S09FeedbackForm />;
     case "advice_detail":
       return <S04Conversation />;
     case "knowledge":

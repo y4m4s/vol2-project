@@ -1,0 +1,110 @@
+.s09-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - 24px);
+  max-height: calc(100vh - 24px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.s09-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 14px;
+  padding: 14px 0;
+}
+
+.s09-preview,
+.s09-section {
+  display: grid;
+  gap: 8px;
+}
+
+.s09-section-title {
+  color: var(--vscode-foreground);
+  font-size: 0.84em;
+  font-weight: 700;
+}
+
+.s09-preview-text {
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+  line-height: 1.55;
+}
+
+.s09-reason-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.s09-reason-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 7px 9px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, transparent);
+  color: var(--vscode-foreground);
+  font-size: 0.9em;
+}
+
+.s09-reason-option input {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.s09-comment {
+  width: 100%;
+  min-height: 108px;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.s09-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+}
+
+.s09-secondary,
+.s09-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 7px 12px;
+  margin-top: 0;
+  border-radius: 8px;
+}
+
+.s09-secondary {
+  border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-foreground);
+}
+
+.s09-primary .material-symbols-outlined {
+  font-size: 16px;
+}
