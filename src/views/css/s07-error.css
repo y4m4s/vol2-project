@@ -1,10 +1,18 @@
 .s07-root {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 24px);
   padding: 24px 0;
+}
+
+.s07-back-slot {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  z-index: 1;
 }
 
 .s07-panel {

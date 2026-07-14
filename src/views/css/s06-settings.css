@@ -221,6 +221,23 @@
   border-color: var(--vscode-focusBorder);
 }
 
+.lmstudio-model-note {
+  margin: 0;
+}
+
+.lmstudio-model-options {
+  margin-top: 10px;
+}
+
+.lmstudio-model-empty {
+  margin-top: 10px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.lmstudio-refresh-models {
+  margin-top: 10px;
+}
+
 .s06-savebar {
   position: fixed;
   left: 50%;

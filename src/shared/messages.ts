@@ -1,12 +1,13 @@
-import type { AdviceMode, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
+import type { AdviceMode, AiProviderId, AssistanceDepth, NavigatorScreen, NavigatorViewModel } from "./types";
 
 export type WebviewToExtension =
   | { type: "ready" }
-  | { type: "connect" }
+  | { type: "connect"; providerId?: AiProviderId }
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
   | { type: "ask"; text: string; additionalContext?: string }
+  | { type: "cancelGuidanceRequest" }
   | { type: "setMode"; mode: AdviceMode; additionalContext?: string }
   | { type: "setAssistanceDepth"; assistanceDepth: AssistanceDepth }
   | { type: "toggleAutoPause" }
@@ -23,15 +24,18 @@ export type WebviewToExtension =
     }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
+  | { type: "refreshLmStudioModels" }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
   | { type: "setComposerActive"; active: boolean };
 
 export interface SaveSettingsPayload {
+  providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
+  lmStudioModelKey?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyBudgetUsd: number;

@@ -55,8 +55,10 @@ const PROTECTED_EXCLUDED_GLOBS = [
 ];
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
+  providerId: "copilot",
   defaultMode: "manual",
   defaultAssistanceDepth: "low",
+  lmStudioBaseUrl: "http://127.0.0.1:1234",
   requestIntervalMs: 60000,
   idleDelayMs: 10000,
   dailyBudgetUsd: 1.0,
@@ -91,9 +93,12 @@ export class SettingsService {
     const customExcludedGlobs = this.normalizeCustomExcludedGlobs(partial?.excludedGlobs ?? []);
 
     return {
+      providerId: this.normalizeProviderId(partial?.providerId),
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
       defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
       copilotModelId: this.normalizeCopilotModelId(partial?.copilotModelId),
+      lmStudioBaseUrl: this.normalizeLmStudioBaseUrl(partial?.lmStudioBaseUrl),
+      lmStudioModelKey: this.normalizeLmStudioModelKey(partial?.lmStudioModelKey),
       requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       dailyBudgetUsd: this.normalizeDailyBudgetUsd(partial?.dailyBudgetUsd ?? DEFAULT_SETTINGS.dailyBudgetUsd),
@@ -131,6 +136,28 @@ export class SettingsService {
 
     const normalized = value.trim();
     return normalized.length > 0 && normalized !== "auto" ? normalized : undefined;
+  }
+
+  private normalizeProviderId(value: unknown): NavigatorSettings["providerId"] {
+    return value === "lmStudio" ? "lmStudio" : "copilot";
+  }
+
+  private normalizeLmStudioBaseUrl(value: unknown): string {
+    if (typeof value !== "string") {
+      return DEFAULT_SETTINGS.lmStudioBaseUrl;
+    }
+
+    const normalized = value.trim().replace(/\/$/, "");
+    return normalized || DEFAULT_SETTINGS.lmStudioBaseUrl;
+  }
+
+  private normalizeLmStudioModelKey(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalized = value.trim();
+    return normalized || undefined;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {
