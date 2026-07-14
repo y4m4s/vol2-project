@@ -7,6 +7,7 @@ import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { LmStudioClient } from "./services/LmStudioClient";
+import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
 import { UsageMeter } from "./services/UsageMeter";
@@ -26,6 +27,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.languageModelAccessInformation
   );
   const contextCollector = new ContextCollector();
+  const lmStudioServerService = new LmStudioServerService();
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
@@ -33,6 +35,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
+    lmStudioServerService,
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
     usageMeter
@@ -41,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const viewProvider = new NavigatorViewProvider(context.extensionUri, controller);
 
   context.subscriptions.push(
+    lmStudioServerService,
     controller,
     viewProvider,
     vscode.window.registerWebviewViewProvider(NavigatorViewProvider.viewType, viewProvider),

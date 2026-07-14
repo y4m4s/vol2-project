@@ -1,4 +1,4 @@
-import { PageHeader } from "../webview/components/BackHeader";
+import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { formatDateTime, formatRelativeTime } from "../webview/utils/formatTime";
 
@@ -10,7 +10,7 @@ export function S05KnowledgeDetail() {
     return (
       <div className="knowledge-detail-root">
         <div className="s05-sticky-top">
-          <PageHeader title="ナレッジ詳細" />
+          <PageHeader title={<PageTitleWithIcon icon="auto_stories">ナレッジ詳細</PageTitleWithIcon>} />
         </div>
         <div className="empty-state">
           <span className="material-symbols-outlined empty-state-icon">auto_stories</span>
@@ -28,7 +28,7 @@ export function S05KnowledgeDetail() {
     <div className="knowledge-detail-root">
       <div className="s05-sticky-top">
         <PageHeader
-          title={detail.title}
+          title={<PageTitleWithIcon icon="auto_stories">{detail.title}</PageTitleWithIcon>}
           subtitle={formatDateTime(detail.updatedAt)}
           actions={(
             <button
@@ -104,4 +104,3 @@ function getContextPreview(value: string): string {
   const normalized = value.replace(/\s+/g, " ").trim();
   return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
 }
-

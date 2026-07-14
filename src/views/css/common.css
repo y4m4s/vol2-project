@@ -164,6 +164,25 @@ button.danger {
   margin-bottom: 4px;
 }
 
+.page-title-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page-title-with-icon > .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.page-title-with-icon > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .page-header .page-subtitle {
   margin-bottom: 0;
 }

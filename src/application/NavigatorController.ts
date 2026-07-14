@@ -14,6 +14,7 @@ import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
+import { LmStudioServerService } from "../services/LmStudioServerService";
 import { getSkill, isSlashCommand } from "../shared/skills";
 import {
   AdviceMode,
@@ -27,6 +28,7 @@ import {
   GuidanceContext,
   KnowledgeDetailViewData,
   KnowledgeListItem,
+  LmStudioServerViewData,
   NavigatorScreen,
   NavigatorSessionState,
   NavigatorSettings,
@@ -81,6 +83,13 @@ export class NavigatorController implements vscode.Disposable {
   private nextGuidanceRequestId = 1;
   private initialized = false;
   private settingsRevision = 0;
+  private lmStudioServer: LmStudioServerViewData = {
+    state: "checking",
+    canStart: false,
+    canStop: false,
+    message: "LM Studio サーバーの状態を確認しています…"
+  };
+  private pendingLmStudioServerOperation?: Promise<void>;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -91,6 +100,7 @@ export class NavigatorController implements vscode.Disposable {
     private readonly adviceScheduler: AdviceScheduler,
     private readonly requestPlanner: RequestPlanner,
     private readonly settingsService: SettingsService,
+    private readonly lmStudioServerService: LmStudioServerService,
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
     private readonly usageMeter: UsageMeter
@@ -202,6 +212,11 @@ export class NavigatorController implements vscode.Disposable {
       modelLabel: this.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
       lmStudioModelOptions: this.connectionService.getLmStudioModelOptions(),
+      lmStudioServer: {
+        ...this.lmStudioServer,
+        canStart: this.lmStudioServer.canStart && state.requestState === "idle",
+        canStop: this.lmStudioServer.canStop && state.requestState === "idle"
+      },
       settingsRevision: this.settingsRevision,
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
@@ -414,7 +429,7 @@ export class NavigatorController implements vscode.Disposable {
         return;
       case "settings":
         this.pushScreen(screen);
-        void this.refreshLmStudioModels(false);
+        void this.refreshLmStudioServerStatus(false);
         return;
       default:
         return;
@@ -1570,6 +1585,233 @@ export class NavigatorController implements vscode.Disposable {
         ? { kind: "info", text: `LM Studio のロード中モデルを ${options.length}件取得しました。` }
         : this.buildConnectionStatusMessageForProvider("lmStudio", "unavailable")
     });
+  }
+
+  public async refreshLmStudioServerStatus(announce = true): Promise<void> {
+    if (this.pendingLmStudioServerOperation) {
+      await this.pendingLmStudioServerOperation;
+      return;
+    }
+
+    if (!vscode.workspace.isTrusted) {
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message: "Workspace Trust を有効にしてください。"
+      });
+      return;
+    }
+
+    this.updateLmStudioServer({
+      state: "checking",
+      port: this.lmStudioServer.port,
+      canStart: false,
+      canStop: false,
+      message: "LM Studio サーバーの状態を確認しています…"
+    });
+
+    try {
+      const status = await this.lmStudioServerService.getStatus(
+        this.settingsService.getSettings().lmStudioBaseUrl
+      );
+      this.updateLmStudioServer(status);
+      if (status.state === "running") {
+        await this.connectionService.refreshAvailableLmStudioModels(
+          this.settingsService.getSettings().lmStudioBaseUrl
+        );
+      } else {
+        this.connectionService.clearLmStudioModelOptions();
+      }
+
+      if (announce) {
+        this.patchSession({
+          statusMessage: {
+            kind: status.state === "running" ? "info" : status.state === "stopped" ? "warning" : "error",
+            text: status.message ?? "LM Studio サーバーの状態を更新しました。"
+          }
+        });
+      } else {
+        this.didChangeStateEmitter.fire();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "LM Studio サーバーの状態を取得できませんでした。";
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message
+      });
+    }
+  }
+
+  public async startLmStudioServer(): Promise<void> {
+    if (this.pendingLmStudioServerOperation) {
+      await this.pendingLmStudioServerOperation;
+      return;
+    }
+    if (this.sessionStore.getState().requestState !== "idle") {
+      this.patchSession({
+        statusMessage: { kind: "warning", text: "現在の処理が完了してから LM Studio サーバーを起動してください。" }
+      });
+      return;
+    }
+    this.pendingLmStudioServerOperation = this.performStartLmStudioServer().finally(() => {
+      this.pendingLmStudioServerOperation = undefined;
+    });
+    await this.pendingLmStudioServerOperation;
+  }
+
+  public async stopLmStudioServer(): Promise<void> {
+    if (this.pendingLmStudioServerOperation) {
+      await this.pendingLmStudioServerOperation;
+      return;
+    }
+    if (this.sessionStore.getState().requestState !== "idle") {
+      this.patchSession({
+        statusMessage: { kind: "warning", text: "回答生成が完了してから LM Studio サーバーを停止してください。" }
+      });
+      return;
+    }
+    this.pendingLmStudioServerOperation = this.performStopLmStudioServer().finally(() => {
+      this.pendingLmStudioServerOperation = undefined;
+    });
+    await this.pendingLmStudioServerOperation;
+  }
+
+  private async performStartLmStudioServer(): Promise<void> {
+    if (!vscode.workspace.isTrusted) {
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message: "Workspace Trust を有効にしてください。"
+      });
+      return;
+    }
+
+    this.patchSession({ requestState: "connecting" });
+    this.updateLmStudioServer({
+      state: "starting",
+      port: this.lmStudioServer.port,
+      canStart: false,
+      canStop: false,
+      message: "LM Studio サーバーを起動しています…"
+    });
+
+    try {
+      const status = await this.lmStudioServerService.start(
+        this.settingsService.getSettings().lmStudioBaseUrl
+      );
+      this.updateLmStudioServer(status);
+      if (status.state !== "running") {
+        this.patchSession({
+          requestState: "idle",
+          statusMessage: { kind: "error", text: status.message ?? "LM Studio サーバーを起動できませんでした。" }
+        });
+        return;
+      }
+
+      const options = await this.connectionService.refreshAvailableLmStudioModels(
+        this.settingsService.getSettings().lmStudioBaseUrl
+      );
+      this.patchSession({
+        requestState: "idle",
+        statusMessage: options.length > 0
+          ? { kind: "info", text: `LM Studio サーバーを起動し、ロード中モデルを ${options.length}件取得しました。` }
+          : { kind: "warning", text: "LM Studio サーバーは起動しましたが、ロード中のモデルがありません。" }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "LM Studio サーバーを起動できませんでした。";
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: true,
+        canStop: false,
+        message
+      });
+      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
+    }
+  }
+
+  private async performStopLmStudioServer(): Promise<void> {
+    if (!vscode.workspace.isTrusted) {
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message: "Workspace Trust を有効にしてください。"
+      });
+      return;
+    }
+
+    this.patchSession({ requestState: "connecting" });
+    this.updateLmStudioServer({
+      state: "stopping",
+      port: this.lmStudioServer.port,
+      canStart: false,
+      canStop: false,
+      message: "LM Studio サーバーを停止しています…"
+    });
+
+    try {
+      const status = await this.lmStudioServerService.stop(
+        this.settingsService.getSettings().lmStudioBaseUrl
+      );
+      this.updateLmStudioServer(status);
+      if (status.state !== "stopped") {
+        this.patchSession({
+          requestState: "idle",
+          statusMessage: { kind: "error", text: status.message ?? "LM Studio サーバーを停止できませんでした。" }
+        });
+        return;
+      }
+
+      this.connectionService.clearLmStudioModelOptions();
+      const currentSettings = this.settingsService.getSettings();
+      const shouldRestoreCopilot =
+        currentSettings.providerId === "lmStudio" || this.connectionService.getProviderId() === "lmStudio";
+      if (!shouldRestoreCopilot) {
+        this.patchSession({
+          requestState: "idle",
+          statusMessage: { kind: "info", text: "LM Studio サーバーを停止しました。" }
+        });
+        return;
+      }
+
+      this.connectionService.resetToDisconnected();
+      const copilotSettings = await this.saveSettingsWithRevision({
+        ...currentSettings,
+        providerId: "copilot"
+      });
+      const connectionResult = await this.connectionService.connectAndActivate(copilotSettings);
+      const copilotConnected =
+        connectionResult.connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
+      this.patchSession({
+        connectionState: connectionResult.connectionState,
+        requestState: "idle",
+        mode: copilotConnected || copilotSettings.defaultMode !== "always"
+          ? copilotSettings.defaultMode
+          : this.sessionStore.getState().mode,
+        assistanceDepth: copilotSettings.defaultAssistanceDepth,
+        statusMessage: copilotConnected
+          ? { kind: "info", text: "LM Studio サーバーを停止し、Copilot に戻しました。" }
+          : { kind: "warning", text: "LM Studio サーバーは停止しましたが、Copilot にも接続できませんでした。" }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "LM Studio サーバーを停止できませんでした。";
+      this.updateLmStudioServer({
+        state: "error",
+        canStart: false,
+        canStop: true,
+        message
+      });
+      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
+    }
+  }
+
+  private updateLmStudioServer(value: LmStudioServerViewData): void {
+    this.lmStudioServer = value;
+    this.didChangeStateEmitter.fire();
   }
 
   private async applyLmStudioModelKeyChange(settings: NavigatorSettings): Promise<NavigatorSettings> {

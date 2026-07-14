@@ -85,6 +85,10 @@ export class ConnectionService {
     return this.availableLmStudioModelOptions;
   }
 
+  public clearLmStudioModelOptions(): void {
+    this.availableLmStudioModelOptions = [];
+  }
+
   public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
     return this.lastLmStudioIssue;
   }
