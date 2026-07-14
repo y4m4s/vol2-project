@@ -151,7 +151,7 @@ export function S06Settings() {
           <div className="setting-desc lmstudio-model-note">
             {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
               ? `接続中: ${viewModel.modelLabel ?? "ロード済みモデル"}`
-              : "LM Studio で現在ロード中のモデルから接続先を選択します。"}
+              : "LM Studio で現在ロード中のモデルをすべて表示し、使用する1つを選択します。"}
           </div>
           <LmStudioModelButtonGroup
             value={lmStudioModelKey}
@@ -527,15 +527,16 @@ function LmStudioModelButtonGroup({
   }
 
   return (
-    <div className="choice-options model-options lmstudio-model-options" role="group" aria-label="LM Studio の使用モデル">
+    <div className="choice-options model-options lmstudio-model-options" role="radiogroup" aria-label="LM Studio の使用モデルを1つ選択">
       {options.map((option) => {
         const selected = option.key === value;
         return (
           <button
             key={option.key}
             type="button"
+            role="radio"
             className={`choice-option ${selected ? "selected" : ""}`}
-            aria-pressed={selected}
+            aria-checked={selected}
             onClick={() => onChange(option.key)}
           >
             <span className="model-option-name">{option.label}</span>
