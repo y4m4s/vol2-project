@@ -1,10 +1,9 @@
 import * as vscode from "vscode";
-import { AiProviderId, ConnectionState, CopilotModelOption, NavigatorSettings } from "../shared/types";
+import { AiProviderId, ConnectionState, CopilotModelOption, LmStudioModelOption, NavigatorSettings } from "../shared/types";
 import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } from "./LmStudioClient";
-import { LmStudioSecretStore } from "./LmStudioSecretStore";
 import type { UsageMeter } from "./UsageMeter";
 
-export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "savedModelNotLoaded" | "selectionCancelled";
+export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
 
 export interface ProviderTextResponse {
   text: string;
@@ -12,12 +11,35 @@ export interface ProviderTextResponse {
   outputTokens?: number;
 }
 
+export interface ProviderRequestMetadata {
+  referencedFilePaths: string[];
+}
+
 export interface ConnectedProviderModel {
   providerId: AiProviderId;
   modelId: string;
   modelLabel: string;
-  requestText(prompt: string, token: vscode.CancellationToken): Promise<ProviderTextResponse>;
+  requestText(
+    prompt: string,
+    token: vscode.CancellationToken,
+    metadata?: ProviderRequestMetadata
+  ): Promise<ProviderTextResponse>;
   countTokens?(text: string): Promise<number>;
+}
+
+export interface ConnectionActivationResult {
+  connectionState: ConnectionState;
+  activated: boolean;
+  failureState?: ConnectionState;
+  previousProviderId?: AiProviderId;
+}
+
+interface ConnectionSnapshot {
+  connectionState: ConnectionState;
+  providerId: AiProviderId;
+  copilotModel: vscode.LanguageModelChat | undefined;
+  connectedModel: ConnectedProviderModel | undefined;
+  usedAutomaticModelFallback: boolean;
 }
 
 export class ConnectionService {
@@ -26,7 +48,8 @@ export class ConnectionService {
   private copilotModel: vscode.LanguageModelChat | undefined;
   private connectedModel: ConnectedProviderModel | undefined;
   private availableModelOptions: CopilotModelOption[] = [];
-  private pendingConnection: Promise<ConnectionState> | undefined;
+  private availableLmStudioModelOptions: LmStudioModelOption[] = [];
+  private pendingConnection: Promise<ConnectionActivationResult> | undefined;
   private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
@@ -34,7 +57,6 @@ export class ConnectionService {
   public constructor(
     private readonly usageMeter: UsageMeter | undefined,
     private readonly lmStudioClient: LmStudioClient,
-    private readonly lmStudioSecretStore: LmStudioSecretStore,
     private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
   ) {}
 
@@ -50,18 +72,6 @@ export class ConnectionService {
     return this.connectedModel;
   }
 
-  public normalizeLmStudioBaseUrl(value: string): string {
-    return this.lmStudioClient.normalizeBaseUrl(value);
-  }
-
-  public async saveLmStudioToken(value: string): Promise<void> {
-    await this.lmStudioSecretStore.saveToken(value);
-  }
-
-  public async deleteLmStudioToken(): Promise<void> {
-    await this.lmStudioSecretStore.deleteToken();
-  }
-
   // Kept temporarily for Copilot-specific callers during the provider migration.
   public getModel(): vscode.LanguageModelChat | undefined {
     return this.copilotModel;
@@ -69,6 +79,10 @@ export class ConnectionService {
 
   public getModelOptions(): CopilotModelOption[] {
     return this.availableModelOptions;
+  }
+
+  public getLmStudioModelOptions(): LmStudioModelOption[] {
+    return this.availableLmStudioModelOptions;
   }
 
   public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
@@ -95,7 +109,24 @@ export class ConnectionService {
     return this.availableModelOptions;
   }
 
+  public async refreshAvailableLmStudioModels(baseUrl: string): Promise<LmStudioModelOption[]> {
+    try {
+      const models = await this.lmStudioClient.listModels(baseUrl);
+      this.availableLmStudioModelOptions = this.toLmStudioModelOptions(models);
+      this.lastLmStudioIssue = this.availableLmStudioModelOptions.length > 0 ? undefined : "noLoadedModel";
+    } catch (error) {
+      this.availableLmStudioModelOptions = [];
+      this.lastLmStudioIssue = this.classifyLmStudioIssue(error);
+    }
+    return this.availableLmStudioModelOptions;
+  }
+
   public async connect(settings: NavigatorSettings): Promise<ConnectionState> {
+    const result = await this.connectAndActivate(settings);
+    return result.connectionState;
+  }
+
+  public async connectAndActivate(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
     if (this.pendingConnection) {
       return this.pendingConnection;
     }
@@ -127,23 +158,59 @@ export class ConnectionService {
     return this.connectionState;
   }
 
-  private async connectInternal(settings: NavigatorSettings): Promise<ConnectionState> {
+  private async connectInternal(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
+    const previous = this.createSnapshot();
     this.providerId = settings.providerId;
     this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
-    this.copilotModel = undefined;
-    this.connectedModel = undefined;
 
     if (!vscode.workspace.isTrusted) {
       this.connectionState = "unavailable";
-      return this.connectionState;
+      return this.finishFailedActivation(previous, this.connectionState);
     }
 
     this.connectionState = "connecting";
-    return settings.providerId === "lmStudio"
+    const connectionState = await (settings.providerId === "lmStudio"
       ? this.connectLmStudio(settings)
-      : this.connectCopilot(settings.copilotModelId);
+      : this.connectCopilot(settings.copilotModelId));
+
+    if (connectionState === "connected") {
+      return { connectionState, activated: true };
+    }
+
+    return this.finishFailedActivation(previous, connectionState);
+  }
+
+  private createSnapshot(): ConnectionSnapshot {
+    return {
+      connectionState: this.connectionState,
+      providerId: this.providerId,
+      copilotModel: this.copilotModel,
+      connectedModel: this.connectedModel,
+      usedAutomaticModelFallback: this.usedAutomaticModelFallback
+    };
+  }
+
+  private finishFailedActivation(
+    previous: ConnectionSnapshot,
+    failureState: ConnectionState
+  ): ConnectionActivationResult {
+    if (previous.connectionState === "connected" && previous.connectedModel) {
+      this.connectionState = previous.connectionState;
+      this.providerId = previous.providerId;
+      this.copilotModel = previous.copilotModel;
+      this.connectedModel = previous.connectedModel;
+      this.usedAutomaticModelFallback = previous.usedAutomaticModelFallback;
+      return {
+        connectionState: previous.connectionState,
+        activated: false,
+        failureState,
+        previousProviderId: previous.providerId
+      };
+    }
+
+    return { connectionState: failureState, activated: false, failureState };
   }
 
   private async connectCopilot(copilotModelId?: string): Promise<ConnectionState> {
@@ -178,8 +245,8 @@ export class ConnectionService {
 
   private async connectLmStudio(settings: NavigatorSettings): Promise<ConnectionState> {
     try {
-      const token = await this.lmStudioSecretStore.getToken();
-      const models = await this.lmStudioClient.listModels(settings.lmStudioBaseUrl, token);
+      const models = await this.lmStudioClient.listModels(settings.lmStudioBaseUrl);
+      this.availableLmStudioModelOptions = this.toLmStudioModelOptions(models);
       const selected = await this.resolveLmStudioModel(models, settings.lmStudioModelKey);
       if (!selected) {
         this.connectionState = "unavailable";
@@ -191,6 +258,7 @@ export class ConnectionService {
       this.connectionState = "connected";
     } catch (error) {
       this.connectedModel = undefined;
+      this.availableLmStudioModelOptions = [];
       this.lastLmStudioIssue = this.classifyLmStudioIssue(error);
       this.connectionState = "unavailable";
     }
@@ -202,19 +270,15 @@ export class ConnectionService {
     savedModelKey: string | undefined
   ): Promise<LmStudioModel | undefined> {
     const saved = savedModelKey ? models.find((model) => model.key === savedModelKey) : undefined;
-    if (savedModelKey && saved) {
-      if (saved.loadedInstanceCount > 0) {
-        return saved;
-      }
-      this.lastLmStudioIssue = "savedModelNotLoaded";
-      return undefined;
+    if (saved?.type === "llm" && saved.loadedInstanceCount > 0) {
+      return saved;
     }
 
-    if (savedModelKey && !saved) {
+    if (savedModelKey) {
       this.lmStudioModelKeyChange = null;
     }
 
-    const loadedModels = models.filter((model) => model.loadedInstanceCount > 0);
+    const loadedModels = this.getLoadedLmStudioModels(models);
     if (loadedModels.length === 0) {
       this.lastLmStudioIssue = "noLoadedModel";
       return undefined;
@@ -240,6 +304,14 @@ export class ConnectionService {
     return choice.model;
   }
 
+  private getLoadedLmStudioModels(models: LmStudioModel[]): LmStudioModel[] {
+    return models.filter((model) => model.type === "llm" && model.loadedInstanceCount > 0);
+  }
+
+  private toLmStudioModelOptions(models: LmStudioModel[]): LmStudioModelOption[] {
+    return this.getLoadedLmStudioModels(models).map((model) => ({ key: model.key, label: model.label }));
+  }
+
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
     return {
       providerId: "copilot",
@@ -262,9 +334,14 @@ export class ConnectionService {
       providerId: "lmStudio",
       modelId: model.key,
       modelLabel: model.label,
-      requestText: async (prompt, cancellationToken) => {
-        const token = await this.lmStudioSecretStore.getToken();
-        return this.lmStudioClient.createCompletion(baseUrl, model.key, prompt, token, cancellationToken);
+      requestText: async (prompt, cancellationToken, metadata) => {
+        return this.lmStudioClient.createCompletion(
+          baseUrl,
+          model.key,
+          prompt,
+          metadata?.referencedFilePaths,
+          cancellationToken
+        );
       }
     };
   }

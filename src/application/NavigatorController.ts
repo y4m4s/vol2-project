@@ -9,7 +9,7 @@ import {
   DEFAULT_CONVERSATION_STREAM_TITLE,
   StoredConversationEntry
 } from "../services/ConversationStore";
-import { ConnectionService } from "../services/ConnectionService";
+import { ConnectionActivationResult, ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
@@ -59,6 +59,12 @@ interface ParsedSlashInput {
   slashCommandScope?: SlashCommandScope;
 }
 
+interface CopilotFallbackResult {
+  connectionState: ConnectionState;
+  settings: NavigatorSettings;
+  statusMessage: NavigatorStatusMessage;
+}
+
 export class NavigatorController implements vscode.Disposable {
   private readonly sessionStore: SessionStore;
   private readonly disposables: vscode.Disposable[] = [];
@@ -74,6 +80,7 @@ export class NavigatorController implements vscode.Disposable {
   };
   private nextGuidanceRequestId = 1;
   private initialized = false;
+  private settingsRevision = 0;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -191,9 +198,11 @@ export class NavigatorController implements vscode.Disposable {
       isBusy: state.requestState !== "idle",
       autoAdvice: this.adviceScheduler.getState(),
       usageToday: this.buildUsageToday(settings),
-      providerId: settings.providerId,
+      providerId: this.connectionService.getProviderId(),
       modelLabel: this.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
+      lmStudioModelOptions: this.connectionService.getLmStudioModelOptions(),
+      settingsRevision: this.settingsRevision,
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       latestGuidance: state.latestGuidance,
@@ -223,14 +232,30 @@ export class NavigatorController implements vscode.Disposable {
 
     const currentSettings = this.settingsService.getSettings();
     const settings = providerId && providerId !== currentSettings.providerId
-      ? await this.settingsService.saveSettings({ ...currentSettings, providerId })
+      ? { ...currentSettings, providerId }
       : currentSettings;
-    const connectionState = await this.connectionService.connect(settings);
-    const effectiveSettings = await this.applyLmStudioModelKeyChange(settings);
+    const connectionResult = await this.connectionService.connectAndActivate(settings);
+    const connectionState = connectionResult.connectionState;
+    if (!connectionResult.activated && settings.providerId === "lmStudio") {
+      const fallback = await this.restoreCopilotAfterLmStudioFailure(settings, connectionResult);
+      this.patchSession({
+        connectionState: fallback.connectionState,
+        requestState: "idle",
+        screen: fallback.connectionState === "connected" ? "main" : this.resolveHomeScreen(fallback.connectionState),
+        mode: fallback.settings.defaultMode,
+        assistanceDepth: fallback.settings.defaultAssistanceDepth,
+        statusMessage: fallback.statusMessage,
+        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
+      });
+      return;
+    }
+    const effectiveSettings = connectionResult.activated
+      ? await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings))
+      : currentSettings;
     const nextMode = effectiveSettings.defaultMode;
     const nextAssistanceDepth = effectiveSettings.defaultAssistanceDepth;
 
-    if (connectionState === "connected") {
+    if (connectionResult.activated) {
       this.patchSession({
         connectionState,
         requestState: "idle",
@@ -247,7 +272,7 @@ export class NavigatorController implements vscode.Disposable {
       connectionState,
       requestState: "idle",
       screen: this.resolveHomeScreen(connectionState),
-      statusMessage: this.buildConnectionStatusMessage(connectionState)
+      statusMessage: this.buildConnectionAttemptStatusMessage(settings.providerId, connectionResult)
     });
   }
 
@@ -389,6 +414,7 @@ export class NavigatorController implements vscode.Disposable {
         return;
       case "settings":
         this.pushScreen(screen);
+        void this.refreshLmStudioModels(false);
         return;
       default:
         return;
@@ -417,37 +443,20 @@ export class NavigatorController implements vscode.Disposable {
     defaultMode: AdviceMode;
     defaultAssistanceDepth: AssistanceDepth;
     copilotModelId?: string;
-    lmStudioBaseUrl: string;
-    lmStudioToken?: string;
+    lmStudioModelKey?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
     excludeGlobs: string;
   }): Promise<void> {
     const previousSettings = this.settingsService.getSettings();
-    let lmStudioBaseUrl = previousSettings.lmStudioBaseUrl;
-    if (input.providerId === "lmStudio") {
-      try {
-        lmStudioBaseUrl = this.connectionService.normalizeLmStudioBaseUrl(input.lmStudioBaseUrl);
-      } catch {
-        this.patchSession({
-          statusMessage: { kind: "error", text: "LM Studio の接続先はローカルホストの URL を指定してください。" }
-        });
-        return;
-      }
-    }
-
-    if (input.lmStudioToken?.trim()) {
-      await this.connectionService.saveLmStudioToken(input.lmStudioToken);
-    }
-
     const nextSettings: NavigatorSettings = {
       ...previousSettings,
       providerId: input.providerId,
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
       copilotModelId: input.copilotModelId,
-      lmStudioBaseUrl,
+      lmStudioModelKey: input.lmStudioModelKey,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
       dailyBudgetUsd: input.dailyBudgetUsd,
@@ -457,29 +466,32 @@ export class NavigatorController implements vscode.Disposable {
         .filter((value) => value.length > 0)
     };
 
-    const savedSettings = await this.settingsService.saveSettings(nextSettings);
-
     const isConnected = this.connectionService.getState() === "connected";
     const canApplyAlways = input.defaultMode !== "always" || isConnected;
     const modelSettingChanged =
-      previousSettings.providerId !== savedSettings.providerId ||
-      previousSettings.copilotModelId !== savedSettings.copilotModelId ||
-      previousSettings.lmStudioBaseUrl !== savedSettings.lmStudioBaseUrl;
-    const connectionSettingChanged = modelSettingChanged || Boolean(input.lmStudioToken?.trim());
+      previousSettings.providerId !== nextSettings.providerId ||
+      previousSettings.copilotModelId !== nextSettings.copilotModelId ||
+      previousSettings.lmStudioModelKey !== nextSettings.lmStudioModelKey;
+    const connectionSettingChanged =
+      modelSettingChanged ||
+      this.connectionService.getProviderId() !== nextSettings.providerId ||
+      this.connectionService.getState() !== "connected";
 
     if (input.defaultMode === "always" && isConnected) {
       this.adviceScheduler.resetPause();
     }
 
-    if (connectionSettingChanged && isConnected && this.sessionStore.getState().requestState === "idle") {
+    if (connectionSettingChanged && this.sessionStore.getState().requestState === "idle") {
       this.patchSession({
         ...(canApplyAlways ? { mode: input.defaultMode } : {}),
         assistanceDepth: input.defaultAssistanceDepth,
         contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
       });
-      await this.reconnectCopilotForModelSetting(savedSettings);
+      await this.reconnectCopilotForModelSetting(nextSettings);
       return;
     }
+
+    await this.saveSettingsWithRevision(nextSettings);
 
     this.patchSession({
       ...(canApplyAlways ? { mode: input.defaultMode } : {}),
@@ -497,6 +509,7 @@ export class NavigatorController implements vscode.Disposable {
   public async resetSettings(): Promise<void> {
     const wasConnected = this.connectionService.getState() === "connected";
     const settings = await this.settingsService.resetSettings();
+    this.settingsRevision += 1;
     this.patchSession({
       mode: "manual",
       assistanceDepth: "low",
@@ -512,7 +525,6 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private async reconnectCopilotForModelSetting(settings: NavigatorSettings): Promise<void> {
-    this.connectionService.resetToDisconnected();
     this.patchSession({
       requestState: "connecting",
       connectionState: "connecting",
@@ -522,13 +534,16 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
 
-    const connectionState = await this.connectionService.connect(settings);
-    await this.applyLmStudioModelKeyChange(settings);
-    if (connectionState === "connected") {
+    const connectionResult = await this.connectionService.connectAndActivate(settings);
+    const connectionState = connectionResult.connectionState;
+    if (connectionResult.activated) {
+      const effectiveSettings = await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings));
       const fallbackStatusMessage = this.buildAutoModelFallbackStatusMessage();
       this.patchSession({
         connectionState,
         requestState: "idle",
+        mode: effectiveSettings.defaultMode,
+        assistanceDepth: effectiveSettings.defaultAssistanceDepth,
         contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
         statusMessage: fallbackStatusMessage ?? {
           kind: "info",
@@ -538,10 +553,25 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
+    if (settings.providerId === "lmStudio") {
+      const fallback = await this.restoreCopilotAfterLmStudioFailure(settings, connectionResult);
+      this.patchSession({
+        connectionState: fallback.connectionState,
+        requestState: "idle",
+        mode: fallback.connectionState === "connected" || fallback.settings.defaultMode !== "always"
+          ? fallback.settings.defaultMode
+          : this.sessionStore.getState().mode,
+        assistanceDepth: fallback.settings.defaultAssistanceDepth,
+        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
+        statusMessage: fallback.statusMessage
+      });
+      return;
+    }
+
     this.patchSession({
       connectionState,
       requestState: "idle",
-      statusMessage: this.buildConnectionStatusMessage(connectionState)
+      statusMessage: this.buildConnectionAttemptStatusMessage(settings.providerId, connectionResult)
     });
   }
 
@@ -550,7 +580,7 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    await this.settingsService.saveSettings({
+    await this.saveSettingsWithRevision({
       ...this.settingsService.getSettings(),
       defaultAssistanceDepth: assistanceDepth
     });
@@ -573,7 +603,7 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    await this.settingsService.saveSettings({
+    await this.saveSettingsWithRevision({
       ...this.settingsService.getSettings(),
       defaultMode: mode
     });
@@ -843,7 +873,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private getCurrentProviderId(): AiProviderId {
-    return this.settingsService.getSettings().providerId;
+    return this.connectionService.getProviderId();
   }
 
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
@@ -1084,6 +1114,9 @@ export class NavigatorController implements vscode.Disposable {
     const result = await this.adviceService.requestGuidance(
       {
         context: prepared.context,
+        referencedFilePaths: prepared.requestPlan.targetFiles
+          .filter((file) => file.included)
+          .map((file) => file.path),
         kind: options.kind,
         userPrompt: options.userPrompt?.trim(),
         assistanceDepth,
@@ -1523,10 +1556,19 @@ export class NavigatorController implements vscode.Disposable {
     this.didChangeStateEmitter.fire();
   }
 
-  public async deleteLmStudioToken(): Promise<void> {
-    await this.connectionService.deleteLmStudioToken();
+  public async refreshLmStudioModels(announce = true): Promise<void> {
+    const options = await this.connectionService.refreshAvailableLmStudioModels(
+      this.settingsService.getSettings().lmStudioBaseUrl
+    );
+    if (!announce) {
+      this.didChangeStateEmitter.fire();
+      return;
+    }
+
     this.patchSession({
-      statusMessage: { kind: "info", text: "LM Studio の API トークンを削除しました。" }
+      statusMessage: options.length > 0
+        ? { kind: "info", text: `LM Studio のロード中モデルを ${options.length}件取得しました。` }
+        : this.buildConnectionStatusMessageForProvider("lmStudio", "unavailable")
     });
   }
 
@@ -1541,10 +1583,16 @@ export class NavigatorController implements vscode.Disposable {
       return settings;
     }
 
-    return this.settingsService.saveSettings({
+    return this.saveSettingsWithRevision({
       ...settings,
       lmStudioModelKey: nextModelKey ?? undefined
     });
+  }
+
+  private async saveSettingsWithRevision(settings: NavigatorSettings): Promise<NavigatorSettings> {
+    const saved = await this.settingsService.saveSettings(settings);
+    this.settingsRevision += 1;
+    return saved;
   }
 
   private async collectGuidanceContextForDepth(
@@ -1678,20 +1726,82 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
-    if (this.settingsService.getSettings().providerId === "lmStudio") {
+    return this.buildConnectionStatusMessageForProvider(this.settingsService.getSettings().providerId, connectionState);
+  }
+
+  private async restoreCopilotAfterLmStudioFailure(
+    attemptedSettings: NavigatorSettings,
+    lmStudioResult: ConnectionActivationResult
+  ): Promise<CopilotFallbackResult> {
+    const lmStudioFailure = this.buildConnectionStatusMessageForProvider(
+      "lmStudio",
+      lmStudioResult.failureState ?? lmStudioResult.connectionState
+    );
+    const settings = await this.saveSettingsWithRevision({
+      ...attemptedSettings,
+      providerId: "copilot"
+    });
+
+    if (
+      this.connectionService.getProviderId() !== "copilot" ||
+      this.connectionService.getState() !== "connected"
+    ) {
+      this.connectionService.resetToDisconnected();
+      await this.connectionService.connectAndActivate(settings);
+    }
+
+    const connectionState = this.connectionService.getState();
+    const copilotConnected =
+      connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
+    return {
+      connectionState,
+      settings,
+      statusMessage: {
+        kind: lmStudioFailure.kind,
+        text: copilotConnected
+          ? `${lmStudioFailure.text} Copilotに戻し、接続先設定もCopilotとして保存しました。`
+          : `${lmStudioFailure.text} 接続先設定はCopilotに戻して保存しましたが、Copilotにも接続できませんでした。`
+      }
+    };
+  }
+
+  private buildConnectionAttemptStatusMessage(
+    providerId: AiProviderId,
+    result: ConnectionActivationResult
+  ): NavigatorStatusMessage {
+    if (result.activated) {
+      return this.buildConnectionStatusMessageForProvider(providerId, result.connectionState);
+    }
+
+    const failureMessage = this.buildConnectionStatusMessageForProvider(providerId, result.failureState ?? result.connectionState);
+    if (result.connectionState === "connected" && result.previousProviderId) {
+      return {
+        kind: failureMessage.kind,
+        text: `${failureMessage.text} 現在の接続は維持し、接続先設定は保存していません。`
+      };
+    }
+    return {
+      kind: failureMessage.kind,
+      text: `${failureMessage.text} 接続先設定は保存していません。`
+    };
+  }
+
+  private buildConnectionStatusMessageForProvider(
+    providerId: AiProviderId,
+    connectionState: ConnectionState
+  ): NavigatorStatusMessage {
+    if (providerId === "lmStudio") {
       if (!vscode.workspace.isTrusted) {
         return { kind: "error", text: "Workspace Trust を有効にしてから LM Studio に接続してください。" };
       }
       if (connectionState === "unavailable") {
         switch (this.connectionService.getLastLmStudioIssue()) {
           case "auth":
-            return { kind: "error", text: "LM Studio の API トークンを確認してください。" };
+            return { kind: "error", text: "LM Studio の認証設定を確認してください。" };
           case "unreachable":
             return { kind: "error", text: "LM Studio サーバーに接続できません。起動状態を確認してください。" };
           case "timeout":
             return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
-          case "savedModelNotLoaded":
-            return { kind: "warning", text: "保存済みモデルを LM Studio でロードしてください。" };
           case "noLoadedModel":
             return { kind: "warning", text: "LM Studio でモデルをロードしてから接続してください。" };
           case "selectionCancelled":

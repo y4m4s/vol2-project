@@ -3,7 +3,7 @@ import { PageHeader } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
-import type { AdviceMode, AiProviderId, AssistanceDepth, CopilotModelOption } from "../../shared/types";
+import type { AdviceMode, AiProviderId, AssistanceDepth, CopilotModelOption, LmStudioModelOption } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
 const REQUEST_INTERVAL_OPTIONS = [20, 60, 180];
@@ -30,7 +30,7 @@ export function S06Settings() {
   const savedDefaultMode = settings?.defaultMode ?? "manual";
   const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
   const savedCopilotModelId = settings?.copilotModelId ?? "auto";
-  const savedLmStudioBaseUrl = settings?.lmStudioBaseUrl ?? "http://127.0.0.1:1234";
+  const savedLmStudioModelKey = settings?.lmStudioModelKey ?? "";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedRequestIntervalSec = settings ? normalizeRequestIntervalSec(settings.requestIntervalMs / 1000) : 60;
   const savedDailyBudgetUsd = settings ? normalizeDailyBudgetUsd(settings.dailyBudgetUsd) : 1.0;
@@ -40,37 +40,46 @@ export function S06Settings() {
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
   const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
   const [copilotModelId, setCopilotModelId] = useState(savedCopilotModelId);
-  const [lmStudioBaseUrl, setLmStudioBaseUrl] = useState(savedLmStudioBaseUrl);
-  const [lmStudioToken, setLmStudioToken] = useState("");
+  const [lmStudioModelKey, setLmStudioModelKey] = useState(savedLmStudioModelKey);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
   const [dailyBudgetUsd, setDailyBudgetUsd] = useState(savedDailyBudgetUsd);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
+  const lmStudioModelOptions = viewModel?.lmStudioModelOptions ?? [];
 
   useEffect(() => {
     setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
-    setLmStudioBaseUrl(savedLmStudioBaseUrl);
+    setLmStudioModelKey(savedLmStudioModelKey);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyBudgetUsd(savedDailyBudgetUsd);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioBaseUrl, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedExcludeGlobs]);
+  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedExcludeGlobs, viewModel?.settingsRevision]);
+
+  useEffect(() => {
+    if (
+      providerId === "lmStudio" &&
+      lmStudioModelOptions.length > 0 &&
+      !lmStudioModelOptions.some((option) => option.key === lmStudioModelKey)
+    ) {
+      setLmStudioModelKey(lmStudioModelOptions[0].key);
+    }
+  }, [providerId, lmStudioModelKey, lmStudioModelOptions]);
 
   const hasPendingChanges =
     providerId !== savedProviderId ||
     defaultMode !== savedDefaultMode ||
     defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
     copilotModelId !== savedCopilotModelId ||
-    lmStudioBaseUrl.trim() !== savedLmStudioBaseUrl ||
+    lmStudioModelKey !== savedLmStudioModelKey ||
     idleDelaySec !== savedIdleDelaySec ||
     requestIntervalSec !== savedRequestIntervalSec ||
     dailyBudgetUsd !== savedDailyBudgetUsd ||
-    normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs) ||
-    Boolean(lmStudioToken.trim());
+    normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
 
   function handleSave() {
     send({
@@ -80,15 +89,13 @@ export function S06Settings() {
         defaultMode,
         defaultAssistanceDepth,
         copilotModelId: copilotModelId === "auto" ? undefined : copilotModelId,
-        lmStudioBaseUrl,
-        lmStudioToken: lmStudioToken.trim() || undefined,
+        lmStudioModelKey: lmStudioModelKey || undefined,
         idleDelaySec,
         requestIntervalSec,
         dailyBudgetUsd,
         excludeGlobs
       }
     });
-    setLmStudioToken("");
   }
 
   function handleRevertDraft() {
@@ -96,12 +103,22 @@ export function S06Settings() {
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
-    setLmStudioBaseUrl(savedLmStudioBaseUrl);
-    setLmStudioToken("");
+    setLmStudioModelKey(savedLmStudioModelKey);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyBudgetUsd(savedDailyBudgetUsd);
     setExcludeGlobs(savedExcludeGlobs);
+  }
+
+  function handleProviderChange(nextProviderId: AiProviderId) {
+    setProviderId(nextProviderId);
+    if (
+      nextProviderId === "lmStudio" &&
+      lmStudioModelOptions.length > 0 &&
+      !lmStudioModelOptions.some((option) => option.key === lmStudioModelKey)
+    ) {
+      setLmStudioModelKey(lmStudioModelOptions[0].key);
+    }
   }
 
   return (
@@ -125,45 +142,35 @@ export function S06Settings() {
       <div className="setting-item">
         <div className="setting-label">接続先</div>
         <div className="setting-desc">助言を生成する AI を選択します。</div>
-        <ProviderButtonGroup value={providerId} onChange={setProviderId} />
+        <ProviderButtonGroup value={providerId} onChange={handleProviderChange} />
       </div>
 
       {providerId === "lmStudio" && (
         <div className="setting-item">
-          <label className="setting-label" htmlFor="lmStudioBaseUrl">LM Studio の Base URL</label>
-          <div className="setting-desc">localhost、127.0.0.1、::1 だけを指定できます。</div>
-          <input
-            id="lmStudioBaseUrl"
-            className="lmstudio-input"
-            value={lmStudioBaseUrl}
-            placeholder="http://127.0.0.1:1234"
-            onChange={(event) => setLmStudioBaseUrl(event.target.value)}
+          <div className="setting-label">ロード中のモデル</div>
+          <div className="setting-desc lmstudio-model-note">
+            {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
+              ? `接続中: ${viewModel.modelLabel ?? "ロード済みモデル"}`
+              : "LM Studio で現在ロード中のモデルから接続先を選択します。"}
+          </div>
+          <LmStudioModelButtonGroup
+            value={lmStudioModelKey}
+            options={lmStudioModelOptions}
+            onChange={setLmStudioModelKey}
           />
-
-          <label className="setting-label lmstudio-token-label" htmlFor="lmStudioToken">API トークン（任意）</label>
-          <div className="setting-desc">空欄で保存しても、保存済みトークンは保持されます。</div>
-          <input
-            id="lmStudioToken"
-            className="lmstudio-input"
-            type="password"
-            autoComplete="new-password"
-            value={lmStudioToken}
-            onChange={(event) => setLmStudioToken(event.target.value)}
-          />
+          {lmStudioModelOptions.length === 0 && (
+            <div className="setting-desc lmstudio-model-empty">
+              ロード中のLLMがありません。LM Studioでモデルをロードしてから一覧を更新してください。
+            </div>
+          )}
           <button
             type="button"
-            className="btn-gray lmstudio-delete-token"
-            onClick={() => {
-              setLmStudioToken("");
-              send({ type: "deleteLmStudioToken" });
-            }}
+            className="btn-gray lmstudio-refresh-models"
+            onClick={() => send({ type: "refreshLmStudioModels" })}
           >
-            トークンを削除
+            <span className="material-symbols-outlined">refresh</span>
+            モデル一覧を更新
           </button>
-
-          <div className="setting-desc lmstudio-model-note">
-            使用モデルは LM Studio のロード済みモデルから自動検出します。
-          </div>
         </div>
       )}
 
@@ -205,42 +212,46 @@ export function S06Settings() {
         onChange={setRequestIntervalSec}
       />
 
-      <div className="settings-section">
-        <span className="material-symbols-outlined">data_usage</span> 利用量
-      </div>
+      {providerId === "copilot" && (
+        <>
+          <div className="settings-section">
+            <span className="material-symbols-outlined">data_usage</span> 利用量
+          </div>
 
-      <div className="setting-item">
-        <div className="setting-label">1日の使用上限</div>
-        <div className="setting-desc">
-          上限に達すると自動助言を一時停止します（手動相談は警告のみ）
-          {viewModel?.usageToday && (
-            <>
-              <br />
-              今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（目安 {viewModel.usageToday.estimatedCostText}）
-            </>
-          )}
-        </div>
-        <BudgetButtonGroup
-          value={dailyBudgetUsd}
-          onChange={setDailyBudgetUsd}
-          pricePerMTokenUsd={viewModel?.usageToday?.blendedPricePerMTokenUsd}
-        />
-      </div>
+          <div className="setting-item">
+            <div className="setting-label">1日の使用上限</div>
+            <div className="setting-desc">
+              上限に達すると自動助言を一時停止します（手動相談は警告のみ）
+              {viewModel?.providerId === "copilot" && viewModel.usageToday && (
+                <>
+                  <br />
+                  今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（目安 {viewModel.usageToday.estimatedCostText}）
+                </>
+              )}
+            </div>
+            <BudgetButtonGroup
+              value={dailyBudgetUsd}
+              onChange={setDailyBudgetUsd}
+              pricePerMTokenUsd={viewModel?.providerId === "copilot" ? viewModel.usageToday.blendedPricePerMTokenUsd : undefined}
+            />
+          </div>
+        </>
+      )}
 
       {providerId === "copilot" && (
-      <div className="setting-item">
-        <div className="setting-label">使用モデル</div>
-        <div className="setting-desc">
-          自動では GitHub Copilot の自動モデルルーティングを使用します
-          <br />
-          文脈上限は、一度に参照できる入力文脈量の目安です
+        <div className="setting-item">
+          <div className="setting-label">使用モデル</div>
+          <div className="setting-desc">
+            自動では GitHub Copilot の自動モデルルーティングを使用します
+            <br />
+            文脈上限は、一度に参照できる入力文脈量の目安です
+          </div>
+          <ModelButtonGroup
+            value={copilotModelId}
+            onChange={setCopilotModelId}
+            options={viewModel?.copilotModelOptions ?? []}
+          />
         </div>
-        <ModelButtonGroup
-          value={copilotModelId}
-          onChange={setCopilotModelId}
-          options={viewModel?.copilotModelOptions ?? []}
-        />
-      </div>
       )}
 
       <div className="settings-section">
@@ -495,6 +506,40 @@ function ModelButtonGroup({
           >
             <span className="model-option-name">{option.label}</span>
             <span className="model-option-meta">{option.tokenLimitText}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function LmStudioModelButtonGroup({
+  value,
+  options,
+  onChange
+}: {
+  value: string;
+  options: LmStudioModelOption[];
+  onChange: (value: string) => void;
+}) {
+  if (options.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="choice-options model-options lmstudio-model-options" role="group" aria-label="LM Studio の使用モデル">
+      {options.map((option) => {
+        const selected = option.key === value;
+        return (
+          <button
+            key={option.key}
+            type="button"
+            className={`choice-option ${selected ? "selected" : ""}`}
+            aria-pressed={selected}
+            onClick={() => onChange(option.key)}
+          >
+            <span className="model-option-name">{option.label}</span>
+            <span className="model-option-meta">{option.key}</span>
           </button>
         );
       })}

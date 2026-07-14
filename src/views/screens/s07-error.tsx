@@ -37,12 +37,8 @@ export function S07Error() {
           text: "LM Studio で使用するモデルがロードされていない"
         },
         {
-          icon: "link",
-          text: "接続先 URL が localhost、127.0.0.1、::1 以外になっている"
-        },
-        {
-          icon: "key",
-          text: "API トークンを設定している場合、保存済みトークンが一致していない"
+          icon: "key_off",
+          text: "LM Studio 側で API 認証が有効になっている"
         },
         {
           icon: "verified_user",

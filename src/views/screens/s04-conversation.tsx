@@ -147,7 +147,7 @@ function ChatBubble(
         <ResponseActions
           text={entry.text}
           referencedFiles={entry.requestPlan?.targetFiles}
-          tokenUsage={entry.tokenUsage}
+          tokenUsage={entry.providerId === "lmStudio" ? undefined : entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
           onSave={() => onSave(entry.id)}

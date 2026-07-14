@@ -19,6 +19,7 @@ export class LmStudioError extends Error {
 export interface LmStudioModel {
   key: string;
   label: string;
+  type: string;
   loadedInstanceCount: number;
 }
 
@@ -50,13 +51,12 @@ export class LmStudioClient {
 
   public async listModels(
     baseUrl: string,
-    token: string | undefined,
     cancellationToken?: vscode.CancellationToken
   ): Promise<LmStudioModel[]> {
     const normalizedBaseUrl = this.normalizeBaseUrl(baseUrl);
     const payload = await this.requestJson(
       `${normalizedBaseUrl}/api/v1/models`,
-      { method: "GET", headers: this.createHeaders(token) },
+      { method: "GET", headers: this.createHeaders() },
       LM_STUDIO_MODEL_LIST_TIMEOUT_MS,
       cancellationToken
     );
@@ -72,13 +72,14 @@ export class LmStudioClient {
       }
 
       const key = value.key.trim();
+      const type = typeof value.type === "string" ? value.type : "unknown";
       const label = typeof value.display_name === "string" && value.display_name.trim()
         ? value.display_name.trim()
         : typeof value.name === "string" && value.name.trim()
           ? value.name.trim()
           : key;
       const loadedInstanceCount = Array.isArray(value.loaded_instances) ? value.loaded_instances.length : 0;
-      return [{ key, label, loadedInstanceCount }];
+      return [{ key, label, type, loadedInstanceCount }];
     });
   }
 
@@ -86,7 +87,7 @@ export class LmStudioClient {
     baseUrl: string,
     modelKey: string,
     prompt: string,
-    token: string | undefined,
+    referencedFilePaths?: string[],
     cancellationToken?: vscode.CancellationToken
   ): Promise<LmStudioCompletion> {
     const normalizedBaseUrl = this.normalizeBaseUrl(baseUrl);
@@ -94,11 +95,12 @@ export class LmStudioClient {
       `${normalizedBaseUrl}/v1/chat/completions`,
       {
         method: "POST",
-        headers: this.createHeaders(token),
+        headers: this.createHeaders(),
         body: JSON.stringify({
           model: modelKey,
           messages: [{ role: "user", content: prompt }],
-          stream: false
+          stream: false,
+          ...(referencedFilePaths ? { navicom_referenced_files: referencedFilePaths } : {})
         })
       },
       LM_STUDIO_COMPLETION_TIMEOUT_MS,
@@ -121,11 +123,8 @@ export class LmStudioClient {
     };
   }
 
-  private createHeaders(token: string | undefined): Record<string, string> {
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
+  private createHeaders(): Record<string, string> {
+    return { "Content-Type": "application/json" };
   }
 
   private async requestJson(

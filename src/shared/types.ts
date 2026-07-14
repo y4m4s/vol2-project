@@ -133,6 +133,11 @@ export interface CopilotModelOption {
   tokenLimitText: string;
 }
 
+export interface LmStudioModelOption {
+  key: string;
+  label: string;
+}
+
 export interface UsageTodayViewData {
   date: string;
   requestCount: number;
@@ -290,6 +295,8 @@ export interface NavigatorViewModel {
   providerId: AiProviderId;
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
+  lmStudioModelOptions: LmStudioModelOption[];
+  settingsRevision: number;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;

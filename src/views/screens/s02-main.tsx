@@ -21,12 +21,10 @@ export function S02Main() {
     modelLabel,
     settings
   } = viewModel;
-  const usageModelLabel = connectionState === "connected"
-    ? providerId === "lmStudio"
-      ? `LM Studio：${modelLabel ?? "ロード済みモデル"}`
-      : settings.copilotModelId
-        ? `GitHub Copilot：${modelLabel ?? "指定モデル"}`
-        : "GitHub Copilot：自動"
+  const usageModelLabel = connectionState === "connected" && providerId === "copilot"
+    ? settings.copilotModelId
+      ? `GitHub Copilot：${modelLabel ?? "指定モデル"}`
+      : "GitHub Copilot：自動"
     : undefined;
 
   return (
@@ -85,7 +83,7 @@ export function S02Main() {
         </div>
       </div>
 
-      {usageToday && (
+      {providerId === "copilot" && usageToday && (
         <div className={`s02-usage ${usageToday.budgetExceeded ? "exceeded" : ""}`}>
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">

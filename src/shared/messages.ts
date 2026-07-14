@@ -24,7 +24,7 @@ export type WebviewToExtension =
     }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
-  | { type: "deleteLmStudioToken" }
+  | { type: "refreshLmStudioModels" }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
@@ -35,8 +35,7 @@ export interface SaveSettingsPayload {
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
-  lmStudioBaseUrl: string;
-  lmStudioToken?: string;
+  lmStudioModelKey?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyBudgetUsd: number;

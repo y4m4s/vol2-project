@@ -38,6 +38,7 @@ export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFail
 
 export interface GuidanceRequestInput {
   context: GuidanceContext;
+  referencedFilePaths?: string[];
   kind: GuidanceKind;
   userPrompt?: string;
   assistanceDepth?: AssistanceDepth;
@@ -86,7 +87,7 @@ export class AdviceService {
     input: GuidanceRequestInput,
     cancellationToken?: vscode.CancellationToken
   ): Promise<GuidanceRequestResult> {
-    return this.requestText(this.buildPrompt(input), cancellationToken);
+    return this.requestText(this.buildPrompt(input), cancellationToken, input.referencedFilePaths);
   }
 
   public async createKnowledgeDraft(input: KnowledgeDraftInput): Promise<KnowledgeDraftResult> {
@@ -125,7 +126,8 @@ export class AdviceService {
 
   private async requestText(
     prompt: string,
-    cancellationToken?: vscode.CancellationToken
+    cancellationToken?: vscode.CancellationToken,
+    referencedFilePaths?: string[]
   ): Promise<GuidanceRequestResult> {
     const model = this.connectionService.getConnectedModel();
 
@@ -142,7 +144,11 @@ export class AdviceService {
       const token = cancellationToken ?? tokenSource!.token;
       let response: ProviderTextResponse;
       try {
-        response = await model.requestText(prompt, token);
+        response = await model.requestText(
+          prompt,
+          token,
+          referencedFilePaths ? { referencedFilePaths } : undefined
+        );
       } finally {
         tokenSource?.dispose();
       }
@@ -574,7 +580,7 @@ export class AdviceService {
     if (error instanceof LmStudioError) {
       switch (error.kind) {
         case "auth":
-          return "LM Studio の API トークンを確認してください。";
+          return "LM Studio の認証設定を確認してください。";
         case "unreachable":
           return "LM Studio サーバーに接続できません。起動状態を確認してください。";
         case "timeout":

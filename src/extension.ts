@@ -7,7 +7,6 @@ import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { LmStudioClient } from "./services/LmStudioClient";
-import { LmStudioSecretStore } from "./services/LmStudioSecretStore";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
 import { UsageMeter } from "./services/UsageMeter";
@@ -24,7 +23,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const connectionService = new ConnectionService(
     usageMeter,
     new LmStudioClient(),
-    new LmStudioSecretStore(context.secrets),
     context.languageModelAccessInformation
   );
   const contextCollector = new ContextCollector();
