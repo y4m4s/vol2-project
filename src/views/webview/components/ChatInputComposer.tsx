@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import type { AutoAdviceState } from "../../../shared/types";
 import { useApp } from "../state/AppContext";
 import {
@@ -22,10 +22,12 @@ interface ChatInputComposerProps {
 export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const { viewModel, send, additionalContextDraft, setAdditionalContextDraft } = useApp();
   const [inputText, setInputText] = useState("");
+  const [enterSendConfirmation, setEnterSendConfirmation] = useState<string | undefined>();
   const [isAdditionalContextOpen, setAdditionalContextOpen] = useState(false);
   const [isSlashCommandOpen, setSlashCommandOpen] = useState(false);
   const [dismissedSlashInput, setDismissedSlashInput] = useState<string | undefined>();
   const [activeSlashCommandIndex, setActiveSlashCommandIndex] = useState(0);
+  const isComposingRef = useRef(false);
   const textareaRef = useAutoResizeTextarea(inputText);
   const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
   const isConversationComposer = viewModel?.screen === "conversation" || viewModel?.screen === "advice_detail";
@@ -40,6 +42,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setAdditionalContextOpen(false);
     setSlashCommandOpen(false);
     setDismissedSlashInput(undefined);
+    setEnterSendConfirmation(undefined);
     // activeAdditionalContext を deps に含めない:
     // main 画面で追加コンテキストを入力するたびにラウンドトリップで変化するため、
     // 入力中にメイン入力欄がクリアされたりパネルが閉じるのを防ぐ
@@ -53,6 +56,12 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   useEffect(() => {
     send({ type: "setComposerActive", active: Boolean(inputText.trim()) });
   }, [inputText, send]);
+
+  useEffect(() => {
+    if (enterSendConfirmation && inputText.trim() !== enterSendConfirmation) {
+      setEnterSendConfirmation(undefined);
+    }
+  }, [enterSendConfirmation, inputText]);
 
   useEffect(() => {
     if (inputText.trim() && getSlashCommandQuery(inputText) === undefined) {
@@ -88,6 +97,25 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     }
   }, [slashCommandMenuOpen]);
 
+  useEffect(() => {
+    if (
+      enterSendConfirmation &&
+      (
+        !viewModel ||
+        viewModel.requestState !== "idle" ||
+        viewModel.isBusy ||
+        !viewModel.canAskForGuidance
+      )
+    ) {
+      setEnterSendConfirmation(undefined);
+    }
+  }, [
+    enterSendConfirmation,
+    viewModel?.canAskForGuidance,
+    viewModel?.isBusy,
+    viewModel?.requestState
+  ]);
+
   if (!viewModel) {
     return null;
   }
@@ -103,9 +131,12 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     contextPreview
   } = viewModel;
 
+  const isGuidanceRequesting = viewModel.requestState === "requesting_guidance";
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
   const isHigh = assistanceDepth === "high";
+  const trimmedInputText = inputText.trim();
+  const isEnterSendConfirmed = enterSendConfirmation === trimmedInputText && trimmedInputText.length > 0;
   // いずれかのパネルが開いているか（背後をぼかすバックドロップの表示判定）。
   const hasOpenPanel = slashCommandMenuOpen || isAdditionalContextOpen;
 
@@ -113,22 +144,42 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     setAdditionalContextOpen(false);
     setSlashCommandOpen(false);
     setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+    setEnterSendConfirmation(undefined);
+  }
+
+  function resetComposer() {
+    setInputText("");
+    setSlashCommandOpen(false);
+    setDismissedSlashInput(undefined);
+    setEnterSendConfirmation(undefined);
+  }
+
+  function handleInputChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const nextValue = event.target.value;
+    setInputText(nextValue);
+
+    if (enterSendConfirmation && nextValue.trim() !== enterSendConfirmation) {
+      setEnterSendConfirmation(undefined);
+    }
   }
 
   function handleSend() {
-    const text = inputText.trim();
+    const text = trimmedInputText;
     if (!text) {
       return;
     }
 
+    resetComposer();
     send({
       type: "ask",
       text,
       additionalContext: additionalContextDraft
     });
-    setInputText("");
-    setSlashCommandOpen(false);
-    setDismissedSlashInput(undefined);
+  }
+
+  function handleCancel() {
+    resetComposer();
+    send({ type: "cancelGuidanceRequest" });
   }
 
   function handleRunSlashCommand(commandText: string) {
@@ -136,18 +187,25 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       return;
     }
 
+    resetComposer();
     send({
       type: "ask",
       text: commandText,
       additionalContext: additionalContextDraft
     });
-    setInputText("");
-    setSlashCommandOpen(false);
-    setDismissedSlashInput(undefined);
     textareaRef.current?.focus();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    const isComposing = isComposingRef.current || event.nativeEvent.isComposing || event.keyCode === 229;
+    if (event.key === "Enter" && isComposing) {
+      return;
+    }
+
+    if (isGuidanceRequesting) {
+      return;
+    }
+
     if (slashCommandMenuOpen) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
@@ -187,7 +245,17 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      handleSend();
+
+      if (!trimmedInputText || !canAskForGuidance || isBusy) {
+        return;
+      }
+
+      if (isEnterSendConfirmed) {
+        handleSend();
+        return;
+      }
+
+      setEnterSendConfirmation(trimmedInputText);
     }
   }
 
@@ -242,7 +310,13 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
           placeholder="質問を入力... (Shift+Enter で改行)"
           rows={1}
           value={inputText}
-          onChange={(event) => setInputText(event.target.value)}
+          onChange={handleInputChange}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false;
+          }}
           onKeyDown={handleKeyDown}
         />
 
@@ -261,6 +335,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                       // `/...` 入力中の自動オープンも抑止するため dismissed に積む。
                       setSlashCommandOpen(false);
                       setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+                      setEnterSendConfirmation(undefined);
                     }
                     return next;
                   })
@@ -279,6 +354,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
                   setDismissedSlashInput(undefined);
                 }
                 setAdditionalContextOpen(false);
+                setEnterSendConfirmation(undefined);
                 textareaRef.current?.focus();
               }}
             />
@@ -333,10 +409,18 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
             <button
               className="chat-send-btn"
-              disabled={!canAskForGuidance || !inputText.trim() || isBusy}
-              onClick={handleSend}
+              disabled={
+                isGuidanceRequesting
+                  ? false
+                  : !canAskForGuidance || !trimmedInputText || isBusy
+              }
+              title={isGuidanceRequesting ? "回答生成を中断" : isEnterSendConfirmed ? "送信（Enter をもう一度で確定）" : "送信"}
+              aria-label={isGuidanceRequesting ? "回答生成を中断" : isEnterSendConfirmed ? "送信（Enter をもう一度で確定）" : "送信"}
+              onClick={isGuidanceRequesting ? handleCancel : handleSend}
             >
-              <span className="material-symbols-outlined">arrow_upward</span>
+              <span className="material-symbols-outlined">
+                {isGuidanceRequesting ? "stop" : isEnterSendConfirmed ? "keyboard_return" : "arrow_upward"}
+              </span>
             </button>
           </div>
         </div>

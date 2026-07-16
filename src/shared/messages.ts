@@ -1,5 +1,6 @@
 import type {
   AdviceMode,
+  AiProviderId,
   AssistanceDepth,
   BadFeedbackReason,
   FeedbackRating,
@@ -9,11 +10,12 @@ import type {
 
 export type WebviewToExtension =
   | { type: "ready" }
-  | { type: "connect" }
+  | { type: "connect"; providerId?: AiProviderId }
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
   | { type: "ask"; text: string; additionalContext?: string }
+  | { type: "cancelGuidanceRequest" }
   | { type: "setMode"; mode: AdviceMode; additionalContext?: string }
   | { type: "setAssistanceDepth"; assistanceDepth: AssistanceDepth }
   | { type: "toggleAutoPause" }
@@ -33,15 +35,19 @@ export type WebviewToExtension =
     }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
+  | { type: "deleteLmStudioToken" }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
   | { type: "setComposerActive"; active: boolean };
 
 export interface SaveSettingsPayload {
+  providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
+  lmStudioBaseUrl: string;
+  lmStudioToken?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyBudgetUsd: number;

@@ -1,69 +1,108 @@
 import * as vscode from "vscode";
-import { ConnectionState, CopilotModelOption } from "../shared/types";
+import { AiProviderId, ConnectionState, CopilotModelOption, NavigatorSettings } from "../shared/types";
+import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } from "./LmStudioClient";
+import { LmStudioSecretStore } from "./LmStudioSecretStore";
 import type { UsageMeter } from "./UsageMeter";
 
-// 2026/6 の AI Credits 移行で無料モデルが廃止されたため、クレジット単価の安い順に選ぶ
-// (GPT-4.1 / GPT-4o は廃止済み)
-const LOW_COST_COPILOT_MODEL_PRIORITY = [
-  {
-    keys: ["gpt54nano"]
-  },
-  {
-    keys: ["gpt5mini"]
-  },
-  {
-    keys: ["raptormini"]
-  },
-  {
-    keys: ["gemini3flash"]
-  }
-];
+export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "savedModelNotLoaded" | "selectionCancelled";
+
+export interface ProviderTextResponse {
+  text: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
+export interface ConnectedProviderModel {
+  providerId: AiProviderId;
+  modelId: string;
+  modelLabel: string;
+  requestText(prompt: string, token: vscode.CancellationToken): Promise<ProviderTextResponse>;
+  countTokens?(text: string): Promise<number>;
+}
 
 export class ConnectionService {
   private connectionState: ConnectionState = "disconnected";
-  private model: vscode.LanguageModelChat | undefined;
+  private providerId: AiProviderId = "copilot";
+  private copilotModel: vscode.LanguageModelChat | undefined;
+  private connectedModel: ConnectedProviderModel | undefined;
   private availableModelOptions: CopilotModelOption[] = [];
   private pendingConnection: Promise<ConnectionState> | undefined;
-  private usedAutoFallbackModel = false;
+  private usedAutomaticModelFallback = false;
+  private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
+  private lmStudioModelKeyChange: string | null | undefined;
 
-  public constructor(private readonly usageMeter?: UsageMeter) {}
+  public constructor(
+    private readonly usageMeter: UsageMeter | undefined,
+    private readonly lmStudioClient: LmStudioClient,
+    private readonly lmStudioSecretStore: LmStudioSecretStore,
+    private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
+  ) {}
 
   public getState(): ConnectionState {
     return this.connectionState;
   }
 
+  public getProviderId(): AiProviderId {
+    return this.providerId;
+  }
+
+  public getConnectedModel(): ConnectedProviderModel | undefined {
+    return this.connectedModel;
+  }
+
+  public normalizeLmStudioBaseUrl(value: string): string {
+    return this.lmStudioClient.normalizeBaseUrl(value);
+  }
+
+  public async saveLmStudioToken(value: string): Promise<void> {
+    await this.lmStudioSecretStore.saveToken(value);
+  }
+
+  public async deleteLmStudioToken(): Promise<void> {
+    await this.lmStudioSecretStore.deleteToken();
+  }
+
+  // Kept temporarily for Copilot-specific callers during the provider migration.
   public getModel(): vscode.LanguageModelChat | undefined {
-    return this.model;
+    return this.copilotModel;
   }
 
   public getModelOptions(): CopilotModelOption[] {
     return this.availableModelOptions;
   }
 
-  public didUseAutoFallbackModel(): boolean {
-    return this.usedAutoFallbackModel;
+  public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
+    return this.lastLmStudioIssue;
   }
 
-  public async refreshAvailableModels(): Promise<CopilotModelOption[]> {
+  public consumeLmStudioModelKeyChange(): string | null | undefined {
+    const value = this.lmStudioModelKeyChange;
+    this.lmStudioModelKeyChange = undefined;
+    return value;
+  }
+
+  public didUseAutoFallbackModel(): boolean {
+    return this.usedAutomaticModelFallback;
+  }
+
+  public async refreshAvailableModels(preferredModelId?: string): Promise<CopilotModelOption[]> {
     try {
       const models = await this.fetchCopilotModels(false);
-      this.availableModelOptions = this.getSelectableCopilotModels(models).map((model) => this.toModelOption(model));
+      this.availableModelOptions = this.getManualSelectableCopilotModels(models, preferredModelId).map((model) => this.toModelOption(model));
     } catch {
       this.availableModelOptions = [];
     }
-
     return this.availableModelOptions;
   }
 
-  public async connect(copilotModelId?: string): Promise<ConnectionState> {
+  public async connect(settings: NavigatorSettings): Promise<ConnectionState> {
     if (this.pendingConnection) {
       return this.pendingConnection;
     }
 
-    this.pendingConnection = this.connectInternal(copilotModelId).finally(() => {
+    this.pendingConnection = this.connectInternal(settings).finally(() => {
       this.pendingConnection = undefined;
     });
-
     return this.pendingConnection;
   }
 
@@ -72,166 +111,270 @@ export class ConnectionService {
     return this.connectionState;
   }
 
+  public markUnavailable(): ConnectionState {
+    this.copilotModel = undefined;
+    this.connectedModel = undefined;
+    this.connectionState = "unavailable";
+    return this.connectionState;
+  }
+
   public resetToDisconnected(): ConnectionState {
-    this.model = undefined;
-    this.usedAutoFallbackModel = false;
+    this.copilotModel = undefined;
+    this.connectedModel = undefined;
+    this.usedAutomaticModelFallback = false;
+    this.lastLmStudioIssue = undefined;
     this.connectionState = "disconnected";
     return this.connectionState;
   }
 
-  private async connectInternal(copilotModelId?: string): Promise<ConnectionState> {
-    this.usedAutoFallbackModel = false;
+  private async connectInternal(settings: NavigatorSettings): Promise<ConnectionState> {
+    this.providerId = settings.providerId;
+    this.usedAutomaticModelFallback = false;
+    this.lastLmStudioIssue = undefined;
+    this.lmStudioModelKeyChange = undefined;
+    this.copilotModel = undefined;
+    this.connectedModel = undefined;
 
     if (!vscode.workspace.isTrusted) {
-      this.model = undefined;
       this.connectionState = "unavailable";
       return this.connectionState;
     }
 
     this.connectionState = "connecting";
+    return settings.providerId === "lmStudio"
+      ? this.connectLmStudio(settings)
+      : this.connectCopilot(settings.copilotModelId);
+  }
 
+  private async connectCopilot(copilotModelId?: string): Promise<ConnectionState> {
     try {
       const models = await this.fetchCopilotModels(true);
-      const selectableModels = this.getSelectableCopilotModels(models);
-      this.availableModelOptions = selectableModels.map((model) => this.toModelOption(model));
-      const lowCostModel = copilotModelId ? undefined : this.selectLowCostCopilotModel(selectableModels);
+      const manualSelectableModels = this.getManualSelectableCopilotModels(models, copilotModelId);
+      this.availableModelOptions = manualSelectableModels.map((model) => this.toModelOption(model));
+      const automaticModel = copilotModelId ? undefined : this.selectAutoRoutingCopilotModel(models);
       const selectedModel = copilotModelId
-        ? selectableModels.find((model) => model.id === copilotModelId)
-        : lowCostModel ?? selectableModels[0];
+        ? manualSelectableModels.find((model) => model.id === copilotModelId)
+        : automaticModel ?? manualSelectableModels[0];
 
       if (!selectedModel) {
-        this.model = undefined;
         this.connectionState = "unavailable";
         return this.connectionState;
       }
 
-      this.usedAutoFallbackModel = !copilotModelId && !lowCostModel;
-      this.model = selectedModel;
+      this.usedAutomaticModelFallback = !copilotModelId && !automaticModel;
+      this.copilotModel = selectedModel;
+      this.connectedModel = this.createCopilotModel(selectedModel);
       this.connectionState = "consent_pending";
-
-      await this.runProbe(this.model);
-
+      await this.runProbe(selectedModel);
       this.connectionState = "connected";
     } catch (error) {
-      this.model = undefined;
-      this.usedAutoFallbackModel = false;
-      this.connectionState = this.classifyConnectError(error);
+      this.copilotModel = undefined;
+      this.connectedModel = undefined;
+      this.usedAutomaticModelFallback = false;
+      this.connectionState = this.classifyCopilotConnectError(error);
     }
-
     return this.connectionState;
   }
 
-  private selectLowCostCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
-    for (const preference of LOW_COST_COPILOT_MODEL_PRIORITY) {
-      const match = models.find((model) => this.matchesModelKeys(model, preference.keys));
-      if (match) {
-        return match;
+  private async connectLmStudio(settings: NavigatorSettings): Promise<ConnectionState> {
+    try {
+      const token = await this.lmStudioSecretStore.getToken();
+      const models = await this.lmStudioClient.listModels(settings.lmStudioBaseUrl, token);
+      const selected = await this.resolveLmStudioModel(models, settings.lmStudioModelKey);
+      if (!selected) {
+        this.connectionState = "unavailable";
+        return this.connectionState;
       }
+
+      const normalizedBaseUrl = this.lmStudioClient.normalizeBaseUrl(settings.lmStudioBaseUrl);
+      this.connectedModel = this.createLmStudioModel(normalizedBaseUrl, selected);
+      this.connectionState = "connected";
+    } catch (error) {
+      this.connectedModel = undefined;
+      this.lastLmStudioIssue = this.classifyLmStudioIssue(error);
+      this.connectionState = "unavailable";
+    }
+    return this.connectionState;
+  }
+
+  private async resolveLmStudioModel(
+    models: LmStudioModel[],
+    savedModelKey: string | undefined
+  ): Promise<LmStudioModel | undefined> {
+    const saved = savedModelKey ? models.find((model) => model.key === savedModelKey) : undefined;
+    if (savedModelKey && saved) {
+      if (saved.loadedInstanceCount > 0) {
+        return saved;
+      }
+      this.lastLmStudioIssue = "savedModelNotLoaded";
+      return undefined;
     }
 
-    return undefined;
+    if (savedModelKey && !saved) {
+      this.lmStudioModelKeyChange = null;
+    }
+
+    const loadedModels = models.filter((model) => model.loadedInstanceCount > 0);
+    if (loadedModels.length === 0) {
+      this.lastLmStudioIssue = "noLoadedModel";
+      return undefined;
+    }
+    if (loadedModels.length === 1) {
+      this.lmStudioModelKeyChange = loadedModels[0].key;
+      return loadedModels[0];
+    }
+
+    const choice = await vscode.window.showQuickPick(
+      loadedModels.map((model) => ({ label: model.label, description: model.key, model })),
+      {
+        title: "LM Studio のモデルを選択",
+        placeHolder: "使用するロード済みモデルを選択してください"
+      }
+    );
+    if (!choice) {
+      this.lastLmStudioIssue = "selectionCancelled";
+      return undefined;
+    }
+
+    this.lmStudioModelKeyChange = choice.model.key;
+    return choice.model;
+  }
+
+  private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
+    return {
+      providerId: "copilot",
+      modelId: model.id,
+      modelLabel: this.toModelLabel(model),
+      requestText: async (prompt, token) => {
+        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, token);
+        let text = "";
+        for await (const chunk of response.text) {
+          text += chunk;
+        }
+        return { text };
+      },
+      countTokens: async (text) => model.countTokens(text)
+    };
+  }
+
+  private createLmStudioModel(baseUrl: string, model: LmStudioModel): ConnectedProviderModel {
+    return {
+      providerId: "lmStudio",
+      modelId: model.key,
+      modelLabel: model.label,
+      requestText: async (prompt, cancellationToken) => {
+        const token = await this.lmStudioSecretStore.getToken();
+        return this.lmStudioClient.createCompletion(baseUrl, model.key, prompt, token, cancellationToken);
+      }
+    };
   }
 
   private async fetchCopilotModels(retryIfEmpty: boolean): Promise<vscode.LanguageModelChat[]> {
     let models = await vscode.lm.selectChatModels({ vendor: "copilot" });
-
-    // Copilot Chat がまだ起動中の場合があるため 1.5 秒待ってリトライ
     if (retryIfEmpty && models.length === 0) {
       await new Promise<void>((resolve) => setTimeout(resolve, 1500));
       models = await vscode.lm.selectChatModels({ vendor: "copilot" });
     }
-
     return models;
   }
 
-  private getSelectableCopilotModels(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat[] {
-    const seen = new Set<string>();
-    const selectableModels: vscode.LanguageModelChat[] = [];
-
+  private getManualSelectableCopilotModels(
+    models: vscode.LanguageModelChat[],
+    preferredModelId?: string
+  ): vscode.LanguageModelChat[] {
+    const seenIds = new Set<string>();
+    const seenLabelIndexes = new Map<string, number>();
+    const selectable: vscode.LanguageModelChat[] = [];
     for (const model of models) {
-      if (!model.id || this.isAutoRoutingModel(model) || seen.has(model.id)) {
+      if (
+        !model.id ||
+        this.isAutoRoutingModel(model) ||
+        this.languageModelAccessInformation?.canSendRequest(model) === false ||
+        seenIds.has(model.id)
+      ) {
         continue;
       }
 
-      seen.add(model.id);
-      selectableModels.push(model);
-    }
+      seenIds.add(model.id);
+      const labelKey = this.toModelLabelKey(model);
+      const existingIndex = seenLabelIndexes.get(labelKey);
+      if (existingIndex !== undefined) {
+        if (model.id === preferredModelId) {
+          selectable[existingIndex] = model;
+        }
+        continue;
+      }
 
-    return selectableModels.sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)));
+      seenLabelIndexes.set(labelKey, selectable.length);
+      selectable.push(model);
+    }
+    return selectable.sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)));
+  }
+
+  private selectAutoRoutingCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
+    return models.find((model) => model.id && this.isAutoRoutingModel(model));
   }
 
   private isAutoRoutingModel(model: vscode.LanguageModelChat): boolean {
-    const searchable = normalizeModelIdentifier(
-      `${model.id} ${model.name} ${model.family} ${model.version} ${this.toModelLabel(model)}`
-    );
-    return searchable.includes("auto");
+    return normalizeModelIdentifier(`${model.id} ${model.name} ${model.family} ${model.version} ${this.toModelLabel(model)}`).includes("auto");
   }
 
   private toModelOption(model: vscode.LanguageModelChat): CopilotModelOption {
-    return {
-      id: model.id,
-      label: this.toModelLabel(model),
-      tokenLimitText: this.toTokenLimitText(model)
-    };
+    return { id: model.id, label: this.toModelLabel(model), tokenLimitText: this.toTokenLimitText(model) };
   }
 
   private toModelLabel(model: vscode.LanguageModelChat): string {
     return model.name || model.family || model.id;
   }
 
-  private toTokenLimitText(model: vscode.LanguageModelChat): string {
-    return Number.isFinite(model.maxInputTokens) && model.maxInputTokens > 0
-      ? `文脈上限：${Math.floor(model.maxInputTokens).toLocaleString()} tokens`
-      : "文脈上限：未提供";
+  private toModelLabelKey(model: vscode.LanguageModelChat): string {
+    return normalizeModelIdentifier(this.toModelLabel(model));
   }
 
-  private matchesModelKeys(model: vscode.LanguageModelChat, keys: string[]): boolean {
-    const searchable = normalizeModelIdentifier(
-      `${model.id} ${model.name} ${model.family} ${model.version}`
-    );
-
-    return keys.some((key) => searchable.includes(key));
+  private toTokenLimitText(model: vscode.LanguageModelChat): string {
+    return Number.isFinite(model.maxInputTokens) && model.maxInputTokens > 0
+      ? `${Math.floor(model.maxInputTokens).toLocaleString()} tokens`
+      : "Token limit unavailable";
   }
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {
     const tokenSource = new vscode.CancellationTokenSource();
-    const probePrompt = "Respond with exactly: ready";
-    const messages = [vscode.LanguageModelChatMessage.User(probePrompt)];
-    const response = await model.sendRequest(messages, {}, tokenSource.token);
-
-    let text = "";
-    for await (const chunk of response.text) {
-      text += chunk;
+    try {
+      const prompt = "Respond with exactly: ready";
+      const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, tokenSource.token);
+      let text = "";
+      for await (const chunk of response.text) text += chunk;
+      await this.recordProbeUsage(model, prompt, text);
+    } finally {
+      tokenSource.dispose();
     }
-
-    await this.recordProbeUsage(model, probePrompt, text);
   }
 
   private async recordProbeUsage(model: vscode.LanguageModelChat, prompt: string, responseText: string): Promise<void> {
-    if (!this.usageMeter) {
-      return;
-    }
-
+    if (!this.usageMeter) return;
     try {
       const [inputTokens, outputTokens] = await Promise.all([
         model.countTokens(prompt),
         responseText ? model.countTokens(responseText) : Promise.resolve(0)
       ]);
-      await this.usageMeter.record({ inputTokens, outputTokens });
+      await this.usageMeter.record({ providerId: "copilot", modelId: model.id, inputTokens, outputTokens });
     } catch {
       await this.usageMeter.record({
+        providerId: "copilot",
+        modelId: model.id,
         inputTokens: Math.ceil(prompt.length / 3),
         outputTokens: Math.ceil(responseText.length / 3)
       });
     }
   }
 
-  private classifyConnectError(error: unknown): ConnectionState {
-    if (error instanceof vscode.LanguageModelError && error.code === "NoPermissions") {
-      return "disconnected";
-    }
+  private classifyCopilotConnectError(error: unknown): ConnectionState {
+    return error instanceof vscode.LanguageModelError && error.code === "NoPermissions" ? "disconnected" : "unavailable";
+  }
 
-    return "unavailable";
+  private classifyLmStudioIssue(error: unknown): LmStudioConnectionIssue {
+    if (this.lastLmStudioIssue) return this.lastLmStudioIssue;
+    return error instanceof LmStudioError ? error.kind : "other";
   }
 }
 

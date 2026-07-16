@@ -79,12 +79,20 @@ export function S01Connection() {
           <button
             className={`s01-connect-btn${isBusy ? " busy" : ""}`}
             disabled={!canConnect}
-            onClick={() => send({ type: "connect" })}
+            onClick={() => send({ type: "connect", providerId: "copilot" })}
           >
             <span className={`material-symbols-outlined${isBusy ? " s01-spin" : ""}`}>
               {isBusy ? "sync" : "power"}
             </span>
             {isBusy ? "接続を確認しています..." : "Copilot に接続"}
+          </button>
+          <button
+            className="s01-local-connect-btn"
+            disabled={!canConnect || isBusy}
+            onClick={() => send({ type: "connect", providerId: "lmStudio" })}
+          >
+            <span className="material-symbols-outlined">memory</span>
+            ローカル LLM に接続
           </button>
         </div>
       </div>

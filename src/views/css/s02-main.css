@@ -8,14 +8,6 @@
   overflow: hidden;
 }
 
-.s02-connect-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-}
-
 .s02-empty-point .material-symbols-outlined {
   font-size: 17px;
   flex-shrink: 0;

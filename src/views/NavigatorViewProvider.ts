@@ -40,7 +40,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.postViewModel();
             return;
           case "connect":
-            await this.controller.connectCopilot();
+            await this.controller.connectCopilot(message.providerId);
             return;
           case "createConversationStream":
             await this.controller.createConversationStream();
@@ -53,6 +53,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
+            return;
+          case "cancelGuidanceRequest":
+            this.controller.cancelGuidanceRequest();
             return;
           case "setMode":
             await this.controller.setMode(message.mode, message.additionalContext);
@@ -104,6 +107,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             if (this.isCompletePayload(message.payload)) {
               await this.controller.saveSettings(message.payload);
             }
+            return;
+          case "deleteLmStudioToken":
+            await this.controller.deleteLmStudioToken();
             return;
           case "resetSettings":
             await this.controller.resetSettings();
@@ -186,9 +192,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   private isCompletePayload(payload: unknown): payload is {
+    providerId: "copilot" | "lmStudio";
     defaultMode: "manual" | "always";
     defaultAssistanceDepth: "low" | "high";
     copilotModelId?: string;
+    lmStudioBaseUrl: string;
+    lmStudioToken?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
@@ -199,7 +208,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
       (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
+      (p.providerId === "copilot" || p.providerId === "lmStudio") &&
       (p.copilotModelId === undefined || typeof p.copilotModelId === "string") &&
+      typeof p.lmStudioBaseUrl === "string" &&
+      (p.lmStudioToken === undefined || typeof p.lmStudioToken === "string") &&
       typeof p.idleDelaySec === "number" &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.dailyBudgetUsd === "number" &&
