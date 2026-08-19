@@ -8,7 +8,8 @@ import {
   GuidanceKind,
   SlashCommand
 } from "../shared/types";
-import { validateFeedbackSummary } from "./FeedbackSummaryPolicy";
+import { collectValidFeedbackSummaries, validateFeedbackSummary } from "./FeedbackSummaryPolicy";
+import { SerialTaskQueue } from "./SerialTaskQueue";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -45,6 +46,7 @@ export interface AdviceFeedbackMeta {
 export class FeedbackStore implements vscode.Disposable {
   private db?: SqlJsDatabase;
   private dbUri?: vscode.Uri;
+  private readonly mutationQueue = new SerialTaskQueue();
 
   public constructor(private readonly storageUri: vscode.Uri) {}
 
@@ -67,20 +69,14 @@ export class FeedbackStore implements vscode.Disposable {
     meta: AdviceFeedbackMeta,
     summary: FeedbackSummaryResult
   ): Promise<string> {
-    const existingId = this.findFeedbackId(input.conversationEntryId);
-    if (existingId) {
-      return existingId;
-    }
-
-    const now = new Date().toISOString();
-    const id = this.createId();
-    this.getDb().run(
-      `INSERT INTO advice_feedback
-        (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        input.conversationEntryId,
+    return this.mutationQueue.run(async () => {
+      const existingId = this.findFeedbackId(input.conversationEntryId);
+      const now = new Date().toISOString();
+      const summaryText = summary.status === "ok"
+        ? validateFeedbackSummary(summary.summaryText, input.rating)
+        : undefined;
+      const summaryStatus = summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed";
+      const values: SqlValue[] = [
         input.rating,
         meta.kind,
         meta.assistanceDepth ?? null,
@@ -88,13 +84,35 @@ export class FeedbackStore implements vscode.Disposable {
         this.truncateOneLine(meta.adviceText, 400),
         input.reasons?.length ? JSON.stringify(input.reasons) : null,
         this.normalizeOptionalText(input.comment) ?? null,
-        summary.status === "ok" ? summary.summaryText ?? null : null,
-        summary.status,
+        summaryText ?? null,
+        summaryStatus,
         now
-      ]
-    );
-    await this.persist();
-    return id;
+      ];
+
+      if (existingId) {
+        const id = this.createId();
+        this.getDb().run(
+          `UPDATE advice_feedback
+              SET id = ?, rating = ?, advice_kind = ?, assistance_depth = ?, slash_command = ?,
+                  advice_text_excerpt = ?, reasons_json = ?, comment = ?, summary_text = ?,
+                  summary_status = ?, created_at = ?
+            WHERE id = ?`,
+          [id, ...values, existingId]
+        );
+        await this.persist();
+        return id;
+      }
+
+      const id = this.createId();
+      this.getDb().run(
+        `INSERT INTO advice_feedback
+          (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, input.conversationEntryId, ...values]
+      );
+      await this.persist();
+      return id;
+    });
   }
 
   public async updateFeedbackSummary(
@@ -102,20 +120,23 @@ export class FeedbackStore implements vscode.Disposable {
     rating: FeedbackRating,
     summary: FeedbackSummaryResult
   ): Promise<void> {
-    const summaryText = summary.status === "ok"
-      ? validateFeedbackSummary(summary.summaryText, rating)
-      : undefined;
-    this.getDb().run(
-      `UPDATE advice_feedback
-          SET summary_text = ?, summary_status = ?
-        WHERE id = ?`,
-      [
-        summaryText ?? null,
-        summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed",
-        id
-      ]
-    );
-    await this.persist();
+    await this.mutationQueue.run(async () => {
+      const summaryText = summary.status === "ok"
+        ? validateFeedbackSummary(summary.summaryText, rating)
+        : undefined;
+      this.getDb().run(
+        `UPDATE advice_feedback
+            SET summary_text = ?, summary_status = ?
+          WHERE id = ? AND rating = ?`,
+        [
+          summaryText ?? null,
+          summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed",
+          id,
+          rating
+        ]
+      );
+      await this.persist();
+    });
   }
 
   public getTendencySummary(limit = 5): FeedbackTendencySummary {
@@ -152,35 +173,44 @@ export class FeedbackStore implements vscode.Disposable {
 
       CREATE INDEX IF NOT EXISTS idx_advice_feedback_rating_created
         ON advice_feedback(rating, created_at);
+
+      DELETE FROM advice_feedback
+       WHERE rowid NOT IN (
+         SELECT MAX(rowid)
+           FROM advice_feedback
+          GROUP BY conversation_entry_id
+       );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_advice_feedback_entry_unique
+        ON advice_feedback(conversation_entry_id);
     `);
   }
 
   private selectSummaryTexts(rating: "good" | "bad", limit: number): string[] {
+    if (!Number.isInteger(limit) || limit <= 0) {
+      return [];
+    }
     const stmt = this.getDb().prepare(
       `SELECT summary_text
          FROM advice_feedback
         WHERE rating = ?
           AND summary_status = 'ok'
           AND summary_text IS NOT NULL
-        ORDER BY created_at DESC
-        LIMIT ?`
+        ORDER BY created_at DESC`
     );
-    const summaries: string[] = [];
+    const candidates: unknown[] = [];
 
     try {
-      stmt.bind([rating, limit]);
+      stmt.bind([rating]);
       while (stmt.step()) {
         const row = stmt.getAsObject();
-        const summary = validateFeedbackSummary(row.summary_text, rating);
-        if (summary) {
-          summaries.push(summary);
-        }
+        candidates.push(row.summary_text);
       }
     } finally {
       stmt.free();
     }
 
-    return summaries;
+    return collectValidFeedbackSummaries(candidates, rating, limit);
   }
 
   private findFeedbackId(conversationEntryId: string): string | undefined {

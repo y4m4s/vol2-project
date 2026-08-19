@@ -7,6 +7,7 @@ type BackButtonProps = {
   ariaLabel?: string;
   className?: string;
   onClick?: () => void;
+  disabled?: boolean;
 };
 
 export type NavIconDef = {
@@ -35,7 +36,8 @@ export function BackButton({
   title = "戻る",
   ariaLabel = title,
   className,
-  onClick
+  onClick,
+  disabled = false
 }: BackButtonProps) {
   const { send } = useApp();
   const classes = ["back-button", className].filter(Boolean).join(" ");
@@ -46,6 +48,7 @@ export function BackButton({
       className={classes}
       title={title}
       aria-label={ariaLabel}
+      disabled={disabled}
       onClick={onClick ?? (() => send({ type: "navigateBack" }))}
     >
       <span className="material-symbols-outlined">arrow_back</span>

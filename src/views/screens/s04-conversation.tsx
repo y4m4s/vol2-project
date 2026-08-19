@@ -77,6 +77,7 @@ export function S04Conversation() {
             entry={entry}
             alreadySaved={savedKnowledgeSourceIds.includes(entry.id)}
             isSavingKnowledge={requestState === "saving_knowledge"}
+            isFeedbackDisabled={requestState !== "idle"}
             onSave={(id) => send({ type: "saveKnowledge", id })}
             onRate={(id, rating) => send({ type: "rateAdvice", id, rating })}
           />
@@ -96,12 +97,14 @@ function ChatBubble(
     entry,
     alreadySaved,
     isSavingKnowledge,
+    isFeedbackDisabled,
     onSave,
     onRate
   }: {
     entry: ConversationEntry;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
+    isFeedbackDisabled: boolean;
     onSave: (id: string) => void;
     onRate: (id: string, rating: FeedbackRating) => void;
   }
@@ -153,6 +156,7 @@ function ChatBubble(
           tokenUsage={entry.providerId === "lmStudio" ? undefined : entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
+          isFeedbackDisabled={isFeedbackDisabled}
           feedback={entry.feedback}
           onRate={(rating) => onRate(entry.id, rating)}
           onSave={() => onSave(entry.id)}
@@ -377,6 +381,7 @@ function ResponseActions(
     tokenUsage,
     alreadySaved,
     isSavingKnowledge,
+    isFeedbackDisabled,
     feedback,
     onRate,
     onSave
@@ -386,6 +391,7 @@ function ResponseActions(
     tokenUsage?: TokenUsage;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
+    isFeedbackDisabled: boolean;
     feedback?: FeedbackRating;
     onRate: (rating: FeedbackRating) => void;
     onSave: () => void;
@@ -436,8 +442,8 @@ function ResponseActions(
 
         <button
           className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
-          title={feedback ? "評価済み" : "Good"}
-          disabled={Boolean(feedback)}
+          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Good"}
+          disabled={Boolean(feedback) || isFeedbackDisabled}
           onClick={() => onRate("good")}
         >
           <span className="material-symbols-outlined">thumb_up</span>
@@ -445,8 +451,8 @@ function ResponseActions(
 
         <button
           className={`s04-response-action ${feedback === "bad" ? "active feedback-bad" : ""}`}
-          title={feedback ? "評価済み" : "Bad"}
-          disabled={Boolean(feedback)}
+          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Bad"}
+          disabled={Boolean(feedback) || isFeedbackDisabled}
           onClick={() => onRate("bad")}
         >
           <span className="material-symbols-outlined">thumb_down</span>

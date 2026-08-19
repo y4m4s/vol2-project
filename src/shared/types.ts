@@ -35,7 +35,7 @@ export type NavigatorScreen =
   | "knowledge_detail"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
+export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge" | "saving_feedback";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 

@@ -1,4 +1,4 @@
-import type { FeedbackRating } from "../shared/types";
+import type { BadFeedbackReason, FeedbackRating } from "../shared/types";
 
 const MAX_SUMMARY_LENGTH = 120;
 const META_INSTRUCTION_PATTERN =
@@ -24,4 +24,40 @@ export function validateFeedbackSummary(value: unknown, rating: FeedbackRating):
   }
 
   return summary;
+}
+
+export function collectValidFeedbackSummaries(
+  values: unknown[],
+  rating: FeedbackRating,
+  limit: number
+): string[] {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    return [];
+  }
+
+  const summaries: string[] = [];
+  for (const value of values) {
+    const summary = validateFeedbackSummary(value, rating);
+    if (summary) {
+      summaries.push(summary);
+      if (summaries.length === limit) {
+        break;
+      }
+    }
+  }
+  return summaries;
+}
+
+export function serializeFeedbackSummaryInput(input: {
+  rating: FeedbackRating;
+  adviceTextExcerpt: string;
+  reasons?: BadFeedbackReason[];
+  comment?: string;
+}): string {
+  return JSON.stringify({
+    rating: input.rating,
+    assistantAnswerExcerpt: input.adviceTextExcerpt,
+    reasons: input.rating === "bad" ? input.reasons ?? [] : [],
+    comment: input.rating === "bad" ? input.comment?.trim() || null : null
+  });
 }

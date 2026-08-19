@@ -13,9 +13,11 @@
   },
   "include": [
     "src/services/FeedbackSummaryPolicy.ts",
+    "src/services/SerialTaskQueue.ts",
     "src/services/LmStudioClient.ts",
     "src/services/LmStudioServerProtocol.ts",
     "test/FeedbackSummaryPolicy.test.ts",
+    "test/SerialTaskQueue.test.ts",
     "test/LmStudioClient.test.ts",
     "test/LmStudioServerProtocol.test.ts"
   ]

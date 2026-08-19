@@ -409,6 +409,9 @@ export class NavigatorController implements vscode.Disposable {
 
   public navigate(screen: NavigatorScreen): void {
     const state = this.sessionStore.getState();
+    if (state.requestState === "saving_feedback") {
+      return;
+    }
 
     switch (screen) {
       case "onboarding":
@@ -447,6 +450,9 @@ export class NavigatorController implements vscode.Disposable {
 
   public navigateBack(): void {
     const state = this.sessionStore.getState();
+    if (state.requestState === "saving_feedback") {
+      return;
+    }
     if (state.screenHistory.length === 0) {
       this.patchSession({
         screen: this.resolveHomeScreen(state.connectionState)
@@ -840,6 +846,9 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return;
+    }
     const entry = this.findAssistantEntry(state, conversationEntryId);
     if (!entry || entry.feedback) {
       return;
@@ -857,6 +866,7 @@ export class NavigatorController implements vscode.Disposable {
     const input = { conversationEntryId, rating: "good" } satisfies AdviceFeedbackInput;
     const feedbackId = await this.persistFeedbackAndMark(input, entry);
     if (feedbackId) {
+      this.patchSession({ requestState: "idle" });
       void this.summarizeAndUpdateFeedback(feedbackId, input, entry)
         .catch((error) => console.error("Failed to summarize good feedback", error));
     }
@@ -864,6 +874,9 @@ export class NavigatorController implements vscode.Disposable {
 
   public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
     const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return;
+    }
     const conversationEntryId = state.pendingFeedbackEntryId;
     if (!conversationEntryId) {
       this.navigateBack();
@@ -893,6 +906,9 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public cancelBadFeedback(): void {
+    if (this.sessionStore.getState().requestState === "saving_feedback") {
+      return;
+    }
     this.returnFromFeedbackForm();
   }
 
@@ -1269,7 +1285,7 @@ export class NavigatorController implements vscode.Disposable {
         };
       }
       this.guidanceContextByConversationId.set(assistantEntry.id, prepared.context);
-      const updatedHistory = [...nextHistory, assistantEntry];
+      const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
       this.patchSession({
         connectionState: this.connectionService.getState(),
@@ -1306,7 +1322,7 @@ export class NavigatorController implements vscode.Disposable {
       ),
       mode: nextMode,
       contextPreview: refreshedPreview,
-      conversationHistory: nextHistory,
+      conversationHistory: latestState.conversationHistory,
       activeAdditionalContext: nextActiveAdditionalContext,
       statusMessage: {
         kind: "error",
@@ -1434,7 +1450,7 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  private async persistActiveConversationState(): Promise<void> {
+  private async persistActiveConversationState(options: { summarizeTitle?: boolean } = {}): Promise<void> {
     const record = this.buildActiveConversationRecord();
     if (!record) {
       return;
@@ -1453,7 +1469,9 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    const recordToSave = await this.withSummarizedConversationTitle(record);
+    const recordToSave = options.summarizeTitle === false
+      ? record
+      : await this.withSummarizedConversationTitle(record);
     const saved = await this.conversationStore.saveStream(recordToSave);
     this.patchSession({
       activeConversationStreamId: saved.id,
@@ -2306,6 +2324,8 @@ export class NavigatorController implements vscode.Disposable {
 
   private async markAdviceFeedback(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
     const state = this.sessionStore.getState();
+    const previousHistory = state.conversationHistory;
+    const previousLatestGuidance = state.latestGuidance;
     const conversationHistory = state.conversationHistory.map((entry) =>
       entry.id === conversationEntryId && entry.role === "assistant"
         ? { ...entry, feedback: rating }
@@ -2318,7 +2338,18 @@ export class NavigatorController implements vscode.Disposable {
       latestGuidance: updatedAssistant ? this.createGuidanceCard(updatedAssistant) : state.latestGuidance,
       statusMessage: undefined
     });
-    await this.persistActiveConversationState();
+    try {
+      await this.persistActiveConversationState({ summarizeTitle: false });
+    } catch (error) {
+      const current = this.sessionStore.getState();
+      if (current.activeConversationStreamId === state.activeConversationStreamId) {
+        this.patchSession({
+          conversationHistory: previousHistory,
+          latestGuidance: previousLatestGuidance
+        });
+      }
+      throw error;
+    }
   }
 
   private async persistFeedbackAndMark(
@@ -2330,6 +2361,7 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     this.feedbackPersistingEntryIds.add(input.conversationEntryId);
+    this.patchSession({ requestState: "saving_feedback", statusMessage: undefined });
     try {
       const feedbackId = await this.feedbackStore.saveFeedback(
         input,
@@ -2346,6 +2378,7 @@ export class NavigatorController implements vscode.Disposable {
     } catch (error) {
       console.error("Failed to persist feedback", error);
       this.patchSession({
+        requestState: "idle",
         statusMessage: {
           kind: "error",
           text: "フィードバックを保存できませんでした。もう一度お試しください。"
@@ -2387,6 +2420,7 @@ export class NavigatorController implements vscode.Disposable {
 
     this.patchSession({
       pendingFeedbackEntryId: undefined,
+      requestState: "idle",
       screen: previousScreen,
       screenHistory: nextHistory,
       statusMessage: undefined
