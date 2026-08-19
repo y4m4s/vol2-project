@@ -51,7 +51,7 @@ NaviCom の設定画面から LM Studio Local Server を起動・停止できる
 - 接続先
 - ロード中のモデル
 - 初期モード
-- 既定の深さ
+- 推論強度
 - 待ち時間
 - インターバル
 - 1日の使用上限
@@ -59,6 +59,8 @@ NaviCom の設定画面から LM Studio Local Server を起動・停止できる
 - 保護済みパターン
 - 追加除外パターン
 - 初期化
+
+「1日の使用上限」は NaviCom がローカルで概算する自動助言用の停止基準であり、GitHub 公式の月次 AI Credits 残高や請求上限ではない。
 
 ### 3.3 実行環境
 
@@ -148,7 +150,7 @@ Material Symbols を使用し、次の割り当てを基本とする。
 | LM Studio サーバー | `dns` |
 | ロード中のモデル | `memory` |
 | 初期モード | `toggle_on` |
-| 既定の深さ | `travel_explore` |
+| 推論強度 | `travel_explore` |
 | 待ち時間 | `timer` |
 | インターバル | `schedule` |
 | 1日の使用上限 | `data_usage` |
