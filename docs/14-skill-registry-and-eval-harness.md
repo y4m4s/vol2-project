@@ -185,7 +185,7 @@ npm run eval
 | `maxApproxTokens` | 概算トークン数の上限（コスト回帰の歯止め）|
 | `hasMermaidBlock` | 応答に ` ```mermaid ` を含む（/flow）|
 | `hasNoFencedCode` | 応答にコードフェンスを含まない（/hint 等）|
-| `maxBulletLines` | 箇条書き行数の上限（ロウ深さの簡潔さ）|
+| `maxBulletLines` | 箇条書き行数の上限（推論強度が低の場合の簡潔さ）|
 
 概算トークンは「日本語+コード混在を想定した粗い係数 `length / 3`」で、`AdviceService` の実測フォールバックと同じ係数を用いる。
 
@@ -194,12 +194,12 @@ npm run eval
 | id | 検証内容 |
 |---|---|
 | `flow` | /flow が深さに関わらずフロー整理に専念し Mermaid を指示する |
-| `hint-low` | /hint ロウは短いヒントのみ・コードを出さない |
-| `hint-high` | /hint ハイは確認順をやや厚めに出す |
+| `hint-low` | /hint の推論強度「低」では短いヒントのみ・コードを出さない |
+| `hint-high` | /hint の推論強度「高」では確認順をやや厚めに出す |
 | `next-deep` | /next deep がプロジェクト概要を根拠に薄く広く整理する |
 | `additional-context-question` | 問題文（追加コンテキスト）への質問を最優先で扱う |
 | `knowledge-injection` | 再利用ナレッジが控えめに注入される |
-| `always-mode` | 常時モードは深さロウ固定・何も無ければ何も返さない |
+| `always-mode` | 常時モードは推論強度「低」で固定・何も無ければ何も返さない |
 | `preset-flow-trims-irrelevant` | /flow プリセットが構造系を残し診断・編集履歴を落とす（①）|
 | `preset-hint-keeps-local` | /hint プリセットが手元の文脈を残し構造系を落とす（①）|
 | `data-instruction-separation` | 文脈がタグで囲われ、データ内の閉じタグが無効化される（②）|

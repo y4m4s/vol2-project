@@ -25,8 +25,8 @@ const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
   { value: "always", label: "常時" }
 ];
 const DEPTH_OPTIONS: Array<{ value: AssistanceDepth; label: string }> = [
-  { value: "low", label: "ロウ" },
-  { value: "high", label: "ハイ" }
+  { value: "low", label: "低" },
+  { value: "high", label: "高" }
 ];
 
 export function S06Settings() {
@@ -215,8 +215,8 @@ export function S06Settings() {
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="travel_explore">既定の深さ</SettingTitle>
-        <div className="setting-desc">手動相談で最初に使う助言の深さです。ハイでは関連ファイルとディレクトリ構造も参照します</div>
+        <SettingTitle icon="travel_explore">推論強度</SettingTitle>
+        <div className="setting-desc">手動相談で使う調査範囲と助言の詳しさです。高では関連ファイルとディレクトリ構造も参照します</div>
         <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
       </div>
 
@@ -437,7 +437,7 @@ function DepthButtonGroup({
   onChange: (value: AssistanceDepth) => void;
 }) {
   return (
-    <div className="choice-options mode-options" role="group" aria-label="既定の深さ">
+    <div className="choice-options mode-options" role="group" aria-label="推論強度">
       {DEPTH_OPTIONS.map((option) => {
         const selected = option.value === value;
         return (

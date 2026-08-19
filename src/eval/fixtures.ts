@@ -70,7 +70,7 @@ export const SCENARIOS: EvalScenario[] = [
     input: {
       kind: "context",
       slashCommand: "flow",
-      // /flow は上流で常にハイへ固定される挙動を反映
+      // /flow は上流で推論強度「高」へ固定される挙動を反映
       assistanceDepth: "high",
       context: baseContext({
         activeFilePath: "src/services/AdviceService.ts",
@@ -89,7 +89,7 @@ export const SCENARIOS: EvalScenario[] = [
   },
   {
     id: "hint-low",
-    description: "/hint ロウは短いヒントのみ・コードを出さない",
+    description: "/hint の推論強度「低」では短いヒントのみ・コードを出さない",
     input: {
       kind: "manual",
       slashCommand: "hint",
@@ -109,7 +109,7 @@ export const SCENARIOS: EvalScenario[] = [
   },
   {
     id: "hint-high",
-    description: "/hint ハイは確認順をやや厚めに出す",
+    description: "/hint の推論強度「高」では確認順をやや厚めに出す",
     input: {
       kind: "manual",
       slashCommand: "hint",
@@ -234,7 +234,7 @@ export const SCENARIOS: EvalScenario[] = [
   },
   {
     id: "always-mode",
-    description: "常時モードは深さがロウ固定で、気になる点が無ければ何も返さない指示になる",
+    description: "常時モードは推論強度「低」で固定され、気になる点が無ければ何も返さない指示になる",
     input: {
       kind: "always",
       // always では assistanceDepth は無視され low に固定される

@@ -76,7 +76,7 @@ export function hasMermaidBlock(name?: string): Check {
   };
 }
 
-// 箇条書き行が max 個以下（ロウ深さの簡潔さを担保する）。
+// 箇条書き行が max 個以下（推論強度が低の場合の簡潔さを担保する）。
 export function maxBulletLines(max: number, name?: string): Check {
   return {
     name: name ?? `maxBulletLines(${max})`,

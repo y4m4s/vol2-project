@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_advice_feedback_rating_created ON advice_feedback
 - 本文は全文ではなく抜粋のみ保存する（要約リクエストの入力として使うのみで、それ以上保持する必要がないため）。
 - `summary_text` は **評価時点（FB送信時）で1回だけ LLM 要約を実行した結果**を保存する。アドバイス生成時には再要約せず、ここに保存された文字列をそのまま読む（13.5）。
 - `summary_status` で要約の成否を区別する。`ok`: 要約成功。`failed`: LLM呼び出し失敗（Copilot未接続・エラー等）。`skipped`: 何らかの理由で要約自体を試行しなかった場合。`failed` / `skipped` の場合は `getTendencySummary()` 側でルールベースのフォールバック文言に切り替える（13.5）。
-- `assistance_depth` / `slash_command` も保存しておくことで、将来「ハイモードでは too_long が多い」のような分析ができる余地を残す（今回はこの分析自体は実装しない）。
+- `assistance_depth` / `slash_command` も保存しておくことで、将来「推論強度が高では too_long が多い」のような分析ができる余地を残す（今回はこの分析自体は実装しない）。
 
 ## 型定義の追加（`src/shared/types.ts`）
 
@@ -246,7 +246,7 @@ LLM 要約方式を採用したことで、トークン消費は **「評価時�
 
 #### `assistanceDepth` との関係
 
-- ロウモード（`always` 含む）は `RequestPlanner.applyLowDepthContextLimits`（[RequestPlanner.ts:77](../src/services/RequestPlanner.ts#L77)）で文脈を強く絞っているが、`feedbackTendency` はこの圧縮対象（`GuidanceContext`）の外側で `buildPrompt` に直接追加される。(B) の上乗せ分は (B) 自体の上限（直近5件・1文ずつ）で抑えているため、ロウモードでも実害は小さいと判断し、`always` のみ除外（13.6 既述）、`manual`/`context` はロウ/ハイ問わず注入する。
+- 推論強度が低（`always` 含む）の場合は `RequestPlanner.applyLowDepthContextLimits`（[RequestPlanner.ts:77](../src/services/RequestPlanner.ts#L77)）で文脈を強く絞っているが、`feedbackTendency` はこの圧縮対象（`GuidanceContext`）の外側で `buildPrompt` に直接追加される。(B) の上乗せ分は (B) 自体の上限（直近5件・1文ずつ）で抑えているため、推論強度が低でも実害は小さいと判断し、`always` のみ除外（13.6 既述）、`manual`/`context` は推論強度を問わず注入する。
 
 #### 言語選択によるトークン削減
 

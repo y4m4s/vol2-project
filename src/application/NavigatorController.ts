@@ -2548,7 +2548,7 @@ export class NavigatorController implements vscode.Disposable {
       return "low";
     }
 
-    // スキルが深さを固定している場合（例: /flow は厚い文脈が要るので常にハイ）はそれを優先する。
+    // スキルが深さを固定している場合（例: /flow は厚い文脈が要るので推論強度を常に高にする）はそれを優先する。
     const forced = slashCommand ? getSkill(slashCommand).forceDepth : undefined;
     if (forced) {
       return forced;

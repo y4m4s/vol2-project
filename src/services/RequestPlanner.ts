@@ -18,9 +18,9 @@ export interface PreparedGuidanceRequest {
   requestPlan: RequestPlanSnapshot;
 }
 
-// ロウモード(常時モード含む)はトークン消費を抑えるため、送信する文脈を必要最小限に絞る。
-// docs/11 §11.1: ロウ = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
-// ハイ = 上記に加えて関連ファイル・ディレクトリ構造
+// 推論強度が低の場合（常時モードを含む）は、トークン消費を抑えるため送信文脈を必要最小限に絞る。
+// docs/11 §11.1: 推論強度が低 = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
+// 推論強度が高 = 上記に加えて関連ファイル・ディレクトリ構造
 const LOW_DEPTH_CONTEXT_LIMITS = {
   excerptChars: 2000,
   diagnostics: 5,

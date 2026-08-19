@@ -116,7 +116,7 @@ function ChatBubble(
   const slashCommandLabel = entry.slashCommand
     ? `/${entry.slashCommand}${entry.slashCommandScope === "deep" ? " deep" : ""}`
     : undefined;
-  const depthLabel = entry.assistanceDepth === "high" ? "ハイ" : entry.assistanceDepth === "low" ? "ロウ" : undefined;
+  const depthLabel = entry.assistanceDepth === "high" ? "推論強度: 高" : entry.assistanceDepth === "low" ? "推論強度: 低" : undefined;
   const modelLabel = !isUser ? entry.modelLabel : undefined;
 
   return (

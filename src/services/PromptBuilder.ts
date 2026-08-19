@@ -295,11 +295,11 @@ export function getDepthRule(depth: AssistanceDepth, slashCommand?: SlashCommand
   }
 
   if (depth === "high") {
-    // ハイモード: 次の確認事項・トレードオフ・境界を含む構造化された説明を行う。簡潔に、ただしヒントより踏み込む。
+    // 推論強度が高: 次の確認事項・トレードオフ・境界を含む構造化された説明を行う。簡潔に、ただしヒントより踏み込む。
     return "- High mode: give a structured explanation with the next checks, tradeoffs, and boundaries. Keep it compact, but go deeper than hints.";
   }
 
-  // ロウモード: 短いヒントと確認ポイントのみ。長い説明を避け、最終的な答えへ飛ばない。
+  // 推論強度が低: 短いヒントと確認ポイントのみ。長い説明を避け、最終的な答えへ飛ばない。
   return "- Low mode: give short hints and checking points only. Avoid long explanations and avoid jumping to the final answer.";
 }
 
