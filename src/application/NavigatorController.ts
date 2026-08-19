@@ -11,6 +11,7 @@ import {
 } from "../services/ConversationStore";
 import { ConnectionActivationResult, ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
+import { FeedbackStore } from "../services/FeedbackStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
@@ -37,7 +38,10 @@ import {
   ProjectContextScope,
   SlashCommand,
   SlashCommandScope,
-  UsageTodayViewData
+  UsageTodayViewData,
+  FeedbackRating,
+  BadFeedbackReason,
+  AdviceFeedbackInput
 } from "../shared/types";
 
 const HOME_SCREENS: NavigatorScreen[] = ["onboarding", "main", "error"];
@@ -103,6 +107,7 @@ export class NavigatorController implements vscode.Disposable {
     private readonly lmStudioServerService: LmStudioServerService,
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
+    private readonly feedbackStore: FeedbackStore,
     private readonly usageMeter: UsageMeter
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
@@ -112,6 +117,7 @@ export class NavigatorController implements vscode.Disposable {
       this.adviceScheduler,
       this.conversationStore,
       this.knowledgeStore,
+      this.feedbackStore,
       this.didChangeStateEmitter,
       this.sessionStore.onDidChangeState(() => {
         this.didChangeStateEmitter.fire();
@@ -128,6 +134,7 @@ export class NavigatorController implements vscode.Disposable {
   public async initialize(): Promise<void> {
     await this.conversationStore.initialize();
     await this.knowledgeStore.initialize();
+    await this.feedbackStore.initialize();
     await this.restoreConversationState();
 
     const settings = this.settingsService.getSettings();
@@ -225,6 +232,7 @@ export class NavigatorController implements vscode.Disposable {
       activeConversationStreamId: state.activeConversationStreamId,
       activeAdditionalContext: this.getVisibleAdditionalContext(state),
       conversationHistory: state.conversationHistory,
+      pendingFeedbackEntryId: state.pendingFeedbackEntryId,
       currentRequestPlan,
       settings,
       knowledgeItems: this.initialized ? this.buildKnowledgeItems(state) : [],
@@ -824,6 +832,60 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
+  public async rateAdvice(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
+    const state = this.sessionStore.getState();
+    const entry = this.findAssistantEntry(state, conversationEntryId);
+    if (!entry || entry.feedback) {
+      return;
+    }
+
+    if (rating === "bad") {
+      this.patchSession({
+        pendingFeedbackEntryId: conversationEntryId,
+        statusMessage: undefined
+      });
+      this.pushScreen("feedback_form");
+      return;
+    }
+
+    await this.markAdviceFeedback(conversationEntryId, "good");
+    void this.summarizeAndSaveFeedback(
+      { conversationEntryId, rating: "good" },
+      entry
+    ).catch((error) => console.error("Failed to save good feedback", error));
+  }
+
+  public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
+    const state = this.sessionStore.getState();
+    const conversationEntryId = state.pendingFeedbackEntryId;
+    if (!conversationEntryId) {
+      this.navigateBack();
+      return;
+    }
+
+    const entry = this.findAssistantEntry(state, conversationEntryId);
+    if (!entry || entry.feedback) {
+      this.cancelBadFeedback();
+      return;
+    }
+
+    await this.markAdviceFeedback(conversationEntryId, "bad");
+    this.returnFromFeedbackForm();
+    void this.summarizeAndSaveFeedback(
+      {
+        conversationEntryId,
+        rating: "bad",
+        reasons,
+        comment
+      },
+      entry
+    ).catch((error) => console.error("Failed to save bad feedback", error));
+  }
+
+  public cancelBadFeedback(): void {
+    this.returnFromFeedbackForm();
+  }
+
   public dispose(): void {
     for (const disposable of this.disposables) {
       disposable.dispose();
@@ -1137,7 +1199,8 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         slashCommand: options.slashCommand,
         slashCommandScope: options.slashCommandScope,
-        knowledgeItems: this.knowledgeStore.findReusable(prepared.context)
+        knowledgeItems: this.knowledgeStore.findReusable(prepared.context),
+        feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary()
       },
       tokenSource.token
     );
@@ -1964,7 +2027,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private shouldKeepUtilityScreen(screen: NavigatorScreen): boolean {
-    return screen === "history" || screen === "knowledge" || screen === "knowledge_detail" || screen === "settings";
+    return screen === "history" || screen === "knowledge" || screen === "knowledge_detail" || screen === "settings" || screen === "feedback_form";
   }
 
   private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
@@ -2225,6 +2288,65 @@ export class NavigatorController implements vscode.Disposable {
 
   private findLatestAssistant(history: ConversationEntry[]): ConversationEntry | undefined {
     return [...history].reverse().find((item) => item.role === "assistant");
+  }
+
+  private findAssistantEntry(state: NavigatorSessionState, id: string): ConversationEntry | undefined {
+    return state.conversationHistory.find((item) => item.id === id && item.role === "assistant");
+  }
+
+  private async markAdviceFeedback(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
+    const state = this.sessionStore.getState();
+    const conversationHistory = state.conversationHistory.map((entry) =>
+      entry.id === conversationEntryId && entry.role === "assistant"
+        ? { ...entry, feedback: rating }
+        : entry
+    );
+    const updatedAssistant = conversationHistory.find((entry) => entry.id === conversationEntryId && entry.role === "assistant");
+
+    this.patchSession({
+      conversationHistory,
+      latestGuidance: updatedAssistant ? this.createGuidanceCard(updatedAssistant) : state.latestGuidance,
+      statusMessage: undefined
+    });
+    await this.persistActiveConversationState();
+  }
+
+  private async summarizeAndSaveFeedback(input: AdviceFeedbackInput, entry: ConversationEntry): Promise<void> {
+    const summary = await this.adviceService.summarizeFeedback({
+      rating: input.rating,
+      adviceTextExcerpt: this.truncateForFeedback(entry.text, 400),
+      reasons: input.reasons,
+      comment: input.comment
+    });
+
+    await this.feedbackStore.saveFeedback(
+      input,
+      {
+        kind: entry.kind,
+        assistanceDepth: entry.assistanceDepth,
+        slashCommand: entry.slashCommand,
+        adviceText: entry.text
+      },
+      summary
+    );
+  }
+
+  private returnFromFeedbackForm(): void {
+    const state = this.sessionStore.getState();
+    const nextHistory = [...state.screenHistory];
+    const previousScreen = nextHistory.pop() ?? "conversation";
+
+    this.patchSession({
+      pendingFeedbackEntryId: undefined,
+      screen: previousScreen,
+      screenHistory: nextHistory,
+      statusMessage: undefined
+    });
+  }
+
+  private truncateForFeedback(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
   }
 
   private buildKnowledgeConversationWindow(

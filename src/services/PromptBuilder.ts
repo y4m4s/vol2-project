@@ -4,7 +4,8 @@ import {
   GuidanceKind,
   ReferencedFileReason,
   SlashCommand,
-  SlashCommandScope
+  SlashCommandScope,
+  FeedbackTendencySummary
 } from "../shared/types";
 import { getSkill } from "../shared/skills";
 import { DEFAULT_MODEL_PROFILE } from "./ModelProfile";
@@ -26,11 +27,12 @@ export interface GuidancePromptInput {
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
   knowledgeItems?: { title: string; summary: string }[];
+  feedbackTendency?: FeedbackTendencySummary;
   modelProfile?: ModelProfile;
 }
 
 export function buildGuidancePrompt(input: GuidancePromptInput): string {
-  const { context, kind, userPrompt, knowledgeItems, slashCommand, slashCommandScope } = input;
+  const { context, kind, userPrompt, knowledgeItems, feedbackTendency, slashCommand, slashCommandScope } = input;
   const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
   const modelProfile = input.modelProfile ?? DEFAULT_MODEL_PROFILE;
   const delimiters = getPromptDelimiters(modelProfile.delimiter);
@@ -173,6 +175,22 @@ export function buildGuidancePrompt(input: GuidancePromptInput): string {
     }
     // これらは過去の学びとして参考にし、現在の文脈に合う場合だけ控えめに活用してください。
     lines.push("Treat these as past lessons; draw on them sparingly and only when they fit the current context.");
+  }
+
+  if (kind !== "always" && feedbackTendency?.goodPatterns.length) {
+    lines.push(
+      "",
+      "## Recent feedback trends (follow if possible)",
+      ...feedbackTendency.goodPatterns.map((pattern) => `- ${pattern}`)
+    );
+  }
+
+  if (kind !== "always" && feedbackTendency?.badAvoidPatterns.length) {
+    lines.push(
+      "",
+      "## Recent feedback trends (avoid)",
+      ...feedbackTendency.badAvoidPatterns.map((pattern) => `- ${pattern}`)
+    );
   }
 
   if (userPrompt?.trim()) {

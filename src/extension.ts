@@ -6,6 +6,7 @@ import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
+import { FeedbackStore } from "./services/FeedbackStore";
 import { LmStudioClient } from "./services/LmStudioClient";
 import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
@@ -38,6 +39,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     lmStudioServerService,
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
+    new FeedbackStore(context.globalStorageUri),
     usageMeter
   );
 
