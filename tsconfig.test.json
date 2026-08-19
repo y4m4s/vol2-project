@@ -12,7 +12,11 @@
     "skipLibCheck": true
   },
   "include": [
+    "src/services/FeedbackSummaryPolicy.ts",
+    "src/services/LmStudioClient.ts",
     "src/services/LmStudioServerProtocol.ts",
+    "test/FeedbackSummaryPolicy.test.ts",
+    "test/LmStudioClient.test.ts",
     "test/LmStudioServerProtocol.test.ts"
   ]
 }

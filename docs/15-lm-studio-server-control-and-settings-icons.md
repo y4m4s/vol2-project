@@ -120,6 +120,7 @@ Copilot 選択時は「LM Studio サーバー」と「ロード中のモデル�
 | `starting` | 起動しています… | ボタン無効 |
 | `running` | 起動中・ポート番号 | 停止可能 |
 | `stopping` | 停止しています… | ボタン無効 |
+| `authRequired` | 起動中だがAPI認証が有効です | 停止可能（CLI利用時） |
 | `cliUnavailable` | LM Studio CLI が見つかりません | 起動・停止不可 |
 | `portConflict` | ポートが別のプロセスに使用されています | 起動不可 |
 | `error` | 状態確認または操作に失敗しました | 状況に応じて再試行 |
@@ -276,7 +277,8 @@ stop(baseUrl: string): Promise<LmStudioServerStatus>
 2. `{ running: boolean, port: number }` を検証して解析する
 3. `running: true` の場合、`GET /api/v1/models` で LM Studio API が応答するか確認する
 4. CLI が停止中と返した場合でも、対象ポートへ LM Studio 形式の HTTP 応答があれば `running` とする
-5. 対象ポートが応答するが LM Studio のレスポンス形式でなければ `portConflict` とする
+5. HTTP 401/403 は `authRequired` とし、ポート競合と区別する
+6. 対象ポートが応答するが LM Studio のレスポンス形式でなければ `portConflict` とする
 
 CLI の状態と実際の HTTP 待受を照合し、GUI 側で起動されたサーバーも正しく表示する。
 
@@ -496,6 +498,7 @@ src/views/css/s06-settings.css
 | 起動タイムアウト | サーバーの起動を確認できませんでした | LM Studioログを確認して再試行 |
 | 停止タイムアウト | サーバーの停止を確認できませんでした | LM Studio側の状態を確認して再試行 |
 | 1234番ポート競合 | ポート1234が別のアプリで使用されています | 使用中プロセスを確認する |
+| API認証が有効 | LM Studio 側で API 認証が有効です | LM Studio 側の認証設定を確認する |
 | CLI JSON不正 | LM Studioの状態を取得できませんでした | CLI更新またはログ確認 |
 | サーバー起動・モデル0件 | サーバーは起動しましたが、ロード中のモデルがありません | LM Studioでモデルをロードする |
 | 停止時Copilot接続失敗 | サーバーは停止しましたが、Copilotにも接続できません | Copilotのサインイン状態を確認する |

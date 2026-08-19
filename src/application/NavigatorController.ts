@@ -77,6 +77,7 @@ export class NavigatorController implements vscode.Disposable {
   private readonly didChangeStateEmitter = new vscode.EventEmitter<void>();
   private readonly guidanceContextByConversationId = new Map<string, GuidanceContext>();
   private readonly summarizedConversationTitleStreamIds = new Set<string>();
+  private readonly feedbackPersistingEntryIds = new Set<string>();
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
@@ -620,7 +621,7 @@ export class NavigatorController implements vscode.Disposable {
       this.patchSession({
         statusMessage: {
           kind: "warning",
-          text: "常時モードは Copilot 接続後に利用できます。"
+          text: "常時モードは AI 接続後に利用できます。"
         }
       });
       return;
@@ -752,11 +753,12 @@ export class NavigatorController implements vscode.Disposable {
       requestState: "saving_knowledge",
       statusMessage: {
         kind: "info",
-        text: "Copilot でアドバイスをナレッジ用に整理しています..."
+        text: "接続中の AI でアドバイスをナレッジ用に整理しています..."
       }
     });
 
-    const knowledgeModelLabel = source.modelLabel ?? this.getCurrentModelLabel();
+    const knowledgeModel = this.connectionService.getConnectedModel();
+    const knowledgeModelLabel = this.getCurrentModelLabel();
     const draftResult = await this.adviceService.createKnowledgeDraft({
       source: {
         ...source,
@@ -782,8 +784,8 @@ export class NavigatorController implements vscode.Disposable {
       summary: draftResult.draft.summary,
       body: draftResult.draft.body,
       sourceAdviceId: source.id,
-      providerId: source.providerId,
-      modelId: source.modelId,
+      providerId: knowledgeModel?.providerId,
+      modelId: knowledgeModel?.modelId,
       modelLabel: knowledgeModelLabel
     });
 
@@ -833,6 +835,10 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async rateAdvice(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
+    if (rating !== "good" && rating !== "bad") {
+      return;
+    }
+
     const state = this.sessionStore.getState();
     const entry = this.findAssistantEntry(state, conversationEntryId);
     if (!entry || entry.feedback) {
@@ -848,11 +854,12 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    await this.markAdviceFeedback(conversationEntryId, "good");
-    void this.summarizeAndSaveFeedback(
-      { conversationEntryId, rating: "good" },
-      entry
-    ).catch((error) => console.error("Failed to save good feedback", error));
+    const input = { conversationEntryId, rating: "good" } satisfies AdviceFeedbackInput;
+    const feedbackId = await this.persistFeedbackAndMark(input, entry);
+    if (feedbackId) {
+      void this.summarizeAndUpdateFeedback(feedbackId, input, entry)
+        .catch((error) => console.error("Failed to summarize good feedback", error));
+    }
   }
 
   public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
@@ -869,17 +876,20 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
 
-    await this.markAdviceFeedback(conversationEntryId, "bad");
+    const input: AdviceFeedbackInput = {
+      conversationEntryId,
+      rating: "bad",
+      reasons: [...new Set(reasons.filter((reason) => this.isBadFeedbackReason(reason)))],
+      comment: comment.trim().slice(0, 1000)
+    };
+    const feedbackId = await this.persistFeedbackAndMark(input, entry);
+    if (!feedbackId) {
+      return;
+    }
+
     this.returnFromFeedbackForm();
-    void this.summarizeAndSaveFeedback(
-      {
-        conversationEntryId,
-        rating: "bad",
-        reasons,
-        comment
-      },
-      entry
-    ).catch((error) => console.error("Failed to save bad feedback", error));
+    void this.summarizeAndUpdateFeedback(feedbackId, input, entry)
+      .catch((error) => console.error("Failed to summarize bad feedback", error));
   }
 
   public cancelBadFeedback(): void {
@@ -1086,7 +1096,7 @@ export class NavigatorController implements vscode.Disposable {
           connectionState: this.connectionService.getState(),
           statusMessage: {
             kind: "warning",
-            text: "先に Copilot へ接続してください。"
+            text: "先に AI へ接続してください。"
           }
         });
       }
@@ -2311,7 +2321,47 @@ export class NavigatorController implements vscode.Disposable {
     await this.persistActiveConversationState();
   }
 
-  private async summarizeAndSaveFeedback(input: AdviceFeedbackInput, entry: ConversationEntry): Promise<void> {
+  private async persistFeedbackAndMark(
+    input: AdviceFeedbackInput,
+    entry: ConversationEntry
+  ): Promise<string | undefined> {
+    if (this.feedbackPersistingEntryIds.has(input.conversationEntryId)) {
+      return undefined;
+    }
+
+    this.feedbackPersistingEntryIds.add(input.conversationEntryId);
+    try {
+      const feedbackId = await this.feedbackStore.saveFeedback(
+        input,
+        {
+          kind: entry.kind,
+          assistanceDepth: entry.assistanceDepth,
+          slashCommand: entry.slashCommand,
+          adviceText: entry.text
+        },
+        { status: "skipped" }
+      );
+      await this.markAdviceFeedback(input.conversationEntryId, input.rating);
+      return feedbackId;
+    } catch (error) {
+      console.error("Failed to persist feedback", error);
+      this.patchSession({
+        statusMessage: {
+          kind: "error",
+          text: "フィードバックを保存できませんでした。もう一度お試しください。"
+        }
+      });
+      return undefined;
+    } finally {
+      this.feedbackPersistingEntryIds.delete(input.conversationEntryId);
+    }
+  }
+
+  private async summarizeAndUpdateFeedback(
+    feedbackId: string,
+    input: AdviceFeedbackInput,
+    entry: ConversationEntry
+  ): Promise<void> {
     const summary = await this.adviceService.summarizeFeedback({
       rating: input.rating,
       adviceTextExcerpt: this.truncateForFeedback(entry.text, 400),
@@ -2319,16 +2369,15 @@ export class NavigatorController implements vscode.Disposable {
       comment: input.comment
     });
 
-    await this.feedbackStore.saveFeedback(
-      input,
-      {
-        kind: entry.kind,
-        assistanceDepth: entry.assistanceDepth,
-        slashCommand: entry.slashCommand,
-        adviceText: entry.text
-      },
-      summary
-    );
+    await this.feedbackStore.updateFeedbackSummary(feedbackId, input.rating, summary);
+  }
+
+  private isBadFeedbackReason(value: unknown): value is BadFeedbackReason {
+    return value === "too_long" ||
+      value === "off_topic" ||
+      value === "gives_answer" ||
+      value === "too_vague" ||
+      value === "other";
   }
 
   private returnFromFeedbackForm(): void {

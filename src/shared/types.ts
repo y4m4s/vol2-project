@@ -173,6 +173,7 @@ export type LmStudioServerState =
   | "starting"
   | "running"
   | "stopping"
+  | "authRequired"
   | "cliUnavailable"
   | "portConflict"
   | "error";

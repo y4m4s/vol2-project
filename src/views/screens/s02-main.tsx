@@ -23,7 +23,7 @@ export function S02Main() {
   } = viewModel;
   const usageModelLabel = connectionState === "connected" && providerId === "copilot"
     ? settings.copilotModelId
-      ? `GitHub Copilot：${modelLabel ?? "指定モデル"}`
+      ? modelLabel ?? "GitHub Copilot · 指定モデル"
       : "GitHub Copilot：自動"
     : undefined;
 

@@ -308,6 +308,11 @@
   color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
 }
 
+.lmstudio-server-status.state-authRequired {
+  color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
+  border-color: color-mix(in srgb, currentColor 42%, var(--vscode-panel-border));
+}
+
 .lmstudio-server-status-icon {
   flex-shrink: 0;
   font-size: 18px;

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { AiProviderId, ConnectionState, CopilotModelOption, LmStudioModelOption, NavigatorSettings } from "../shared/types";
 import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } from "./LmStudioClient";
+import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
@@ -19,6 +20,7 @@ export interface ConnectedProviderModel {
   providerId: AiProviderId;
   modelId: string;
   modelLabel: string;
+  profileSource: ModelProfileSource;
   requestText(
     prompt: string,
     token: vscode.CancellationToken,
@@ -258,6 +260,7 @@ export class ConnectionService {
       }
 
       const normalizedBaseUrl = this.lmStudioClient.normalizeBaseUrl(settings.lmStudioBaseUrl);
+      this.copilotModel = undefined;
       this.connectedModel = this.createLmStudioModel(normalizedBaseUrl, selected);
       this.connectionState = "connected";
     } catch (error) {
@@ -327,6 +330,7 @@ export class ConnectionService {
       providerId: "copilot",
       modelId: model.id,
       modelLabel: this.toModelLabel(model),
+      profileSource: model,
       requestText: async (prompt, token) => {
         const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, token);
         let text = "";
@@ -344,6 +348,11 @@ export class ConnectionService {
       providerId: "lmStudio",
       modelId: model.key,
       modelLabel: model.label,
+      profileSource: {
+        id: model.key,
+        name: model.label,
+        vendor: "lmstudio"
+      },
       requestText: async (prompt, cancellationToken, metadata) => {
         return this.lmStudioClient.createCompletion(
           baseUrl,

@@ -16,6 +16,7 @@ import {
   FeedbackTendencySummary
 } from "../shared/types";
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
+import { validateFeedbackSummary } from "./FeedbackSummaryPolicy";
 import { LmStudioError } from "./LmStudioClient";
 import { deriveModelProfile } from "./ModelProfile";
 import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
@@ -113,7 +114,7 @@ export class AdviceService {
       return {
         ok: false,
         connectionState: this.connectionService.getState(),
-        message: "Copilot の応答をナレッジ形式に変換できませんでした。もう一度保存を試してください。"
+        message: "AI の応答をナレッジ形式に変換できませんでした。もう一度保存を試してください。"
       };
     }
 
@@ -137,19 +138,20 @@ export class AdviceService {
   }
 
   public async summarizeFeedback(input: FeedbackSummarizeInput): Promise<FeedbackSummaryResult> {
-    const result = await this.requestText(this.buildFeedbackSummaryPrompt(input));
+    const result = await this.requestText(this.buildFeedbackSummaryPrompt(input), undefined, undefined, false);
     if (!result.ok) {
       return { status: "failed" };
     }
 
-    const summaryText = this.normalizeLine(result.text, 120);
+    const summaryText = validateFeedbackSummary(result.text, input.rating);
     return summaryText ? { status: "ok", summaryText } : { status: "failed" };
   }
 
   private async requestText(
     prompt: string,
     cancellationToken?: vscode.CancellationToken,
-    referencedFilePaths?: string[]
+    referencedFilePaths?: string[],
+    mutateConnectionState = true
   ): Promise<GuidanceRequestResult> {
     const model = this.connectionService.getConnectedModel();
 
@@ -157,7 +159,7 @@ export class AdviceService {
       return {
         ok: false,
         connectionState: "disconnected",
-        message: "Copilot に接続されていません。先に接続してください。"
+        message: "AI に接続されていません。先に接続してください。"
       };
     }
 
@@ -193,12 +195,14 @@ export class AdviceService {
 
       const connectionState = this.classifyGuidanceError(error);
 
-      if (connectionState === "restricted") {
-        this.connectionService.markRestricted();
-      } else if (connectionState === "disconnected") {
-        this.connectionService.resetToDisconnected();
-      } else if (model.providerId === "lmStudio") {
-        this.connectionService.markUnavailable();
+      if (mutateConnectionState) {
+        if (connectionState === "restricted") {
+          this.connectionService.markRestricted();
+        } else if (connectionState === "disconnected") {
+          this.connectionService.resetToDisconnected();
+        } else if (model.providerId === "lmStudio") {
+          this.connectionService.markUnavailable();
+        }
       }
 
       return {
@@ -275,7 +279,7 @@ export class AdviceService {
     // プロンプト組み立ては純粋ロジック（PromptBuilder）に委譲する（評価ハーネスから直接計測可能）。
     return buildGuidancePrompt({
       ...input,
-      modelProfile: deriveModelProfile(this.connectionService.getModel())
+      modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource)
     });
   }
 

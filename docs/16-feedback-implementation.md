@@ -11,13 +11,14 @@
    └─ Bad  → 理由入力フォームへ遷移 → 送信で確定
    │
    ▼
-NavigatorController.markAdviceFeedback()
-   会話履歴（ConversationEntry.feedback）に評価を記録・永続化
+NavigatorController.persistFeedbackAndMark()
+   ├─ FeedbackStore.saveFeedback() … 生の評価を先に feedback.sqlite へ永続化
+   └─ 会話履歴（ConversationEntry.feedback）に評価済み状態を記録・永続化
    │
    ▼
-NavigatorController.summarizeAndSaveFeedback()
-   ├─ AdviceService.summarizeFeedback() … LLM呼び出しで英語1文に要約
-   └─ FeedbackStore.saveFeedback()     … feedback.sqlite に永続化
+NavigatorController.summarizeAndUpdateFeedback()
+   ├─ AdviceService.summarizeFeedback()       … LLM呼び出しで英語1文に要約・検証
+   └─ FeedbackStore.updateFeedbackSummary()   … 要約結果だけを非同期更新
    │
    ▼（次回以降の manual / context アドバイス生成時）
 NavigatorController.executeGuidanceRequest()
@@ -38,20 +39,22 @@ PromptBuilder.buildGuidancePrompt()
 - **[src/services/FeedbackStore.ts](../src/services/FeedbackStore.ts)**（新規）
   評価データの永続化を担当する sql.js ベースのストア。`ConversationStore` / `KnowledgeStore` と同じ構成に倣い、責務ごとに DB ファイルを分離する方針で `feedback.sqlite` を単独管理する。
   - `advice_feedback` テーブル：評価（good/bad）、理由（JSON配列）、自由記述コメント、LLM要約結果、要約ステータスを保持
-  - `saveFeedback()`：1件のFBをINSERT
-  - `getTendencySummary(limit=5)`：`summary_status='ok'` のレコードを rating別に直近N件取得し、`{ goodPatterns, badAvoidPatterns }` として返す。DB読み取りのみでLLM呼び出しは発生しない
+  - `saveFeedback()`：1件のFBをINSERT。同じ会話エントリは既存レコードを返して再保存を防ぐ
+  - `updateFeedbackSummary()`：保存済みレコードの要約結果だけを更新する
+  - `getTendencySummary(limit=5)`：`summary_status='ok'` かつ検証を通過したレコードを rating別に直近N件取得し、`{ goodPatterns, badAvoidPatterns }` として返す。DB読み取りのみでLLM呼び出しは発生しない
   - 保存先は `context.globalStorageUri/feedback.sqlite`（[extension.ts:41](../src/extension.ts#L41)）
 
 ### LLM連携層
 
 - **[src/services/AdviceService.ts](../src/services/AdviceService.ts)**（変更）
   - `summarizeFeedback(input)` を追加。評価対象のアシスタント回答抜粋・理由・コメントから、英語1文（120文字以内）の要約をLLMに生成させる（`buildFeedbackSummaryPrompt`）
-  - 要約に失敗した場合は `FeedbackSummaryResult.status = "failed"` を返し、`FeedbackStore` 側で `goodPatterns`/`badAvoidPatterns` に含めない
+  - 要約に失敗した場合、または文字数・改行・文字種・メタ指示・Bad接頭辞の検証に失敗した場合は `FeedbackSummaryResult.status = "failed"` を返し、`FeedbackStore` 側で `goodPatterns`/`badAvoidPatterns` に含めない
   - 要約プロンプトは日本語コメントも英語に正規化して1文で返すよう指示している
 
 - **[src/services/PromptBuilder.ts](../src/services/PromptBuilder.ts)**（変更）
   - `buildGuidancePrompt` の入力に `feedbackTendency?: FeedbackTendencySummary` を追加
-  - `kind !== "always"` かつ `goodPatterns`/`badAvoidPatterns` が存在する場合、それぞれ `## Recent feedback trends (follow if possible)` / `(avoid)` セクションとして箇条書きでプロンプトに注入（[PromptBuilder.ts:180-194](../src/services/PromptBuilder.ts#L180-L194)）
+  - `kind !== "always"` かつ `goodPatterns`/`badAvoidPatterns` が存在する場合、それぞれ `## Recent feedback trends (follow if possible)` / `(avoid)` セクションとして箇条書きでプロンプトに注入する
+  - 評価傾向は `<feedback-preferences>` 境界内の信頼しない参照データとして明示し、Guidanceや現在の質問を上書きさせない
   - 見出しは英語固定（トークン削減とLLMの指示追従性のため。13.10参照）
 
 ### アプリケーション層（状態管理・フロー制御）
@@ -60,7 +63,8 @@ PromptBuilder.buildGuidancePrompt()
   - `rateAdvice(conversationEntryId, rating)`：Good/Badボタン押下のエントリポイント。Goodは即時確定、Badは `feedback_form` 画面に遷移してから確定
   - `submitBadFeedback(reasons, comment)` / `cancelBadFeedback()`：Bad評価フォームの送信・キャンセル
   - `markAdviceFeedback()`：`ConversationEntry.feedback` を更新し会話履歴に永続化（二重評価防止のガードあり：`entry.feedback` が既にあれば無視）
-  - `summarizeAndSaveFeedback()`：`AdviceService.summarizeFeedback()` → `FeedbackStore.saveFeedback()` を呼ぶ橋渡し。UIをブロックしないよう `void` で非同期実行し、失敗時は `console.error` のみ
+  - `persistFeedbackAndMark()`：生の評価をDBへ保存してから会話履歴を評価済みにする。保存失敗時は再試行でき、回答ID単位の処理中ガードで連打による重複を防ぐ
+  - `summarizeAndUpdateFeedback()`：評価確定後に `AdviceService.summarizeFeedback()` → `FeedbackStore.updateFeedbackSummary()` を非同期実行する。要約失敗でも生の評価は残る
   - `executeGuidanceRequest()` 内で `feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary()` を組み立て、`AdviceService.requestGuidance()` に渡す（[NavigatorController.ts:1155](../src/application/NavigatorController.ts#L1155)）
 
 - **[src/services/ConversationStore.ts](../src/services/ConversationStore.ts)**（変更）
@@ -144,6 +148,6 @@ CREATE INDEX IF NOT EXISTS idx_advice_feedback_rating_created ON advice_feedback
 
 確認用のデバッグコードはコミットに含めず、確認後に元へ戻し済み（作業ツリーは変更なし）。
 
-### 既知の懸念
+### 要約結果の防御
 
-- 要約プロンプト（`buildFeedbackSummaryPrompt`）がLLMに指示を守らせきれず、指示文自体（"Summarize code feedback for a pair-programming navigator in English, <= 120 characters."）がそのまま `summary_text` として保存されてしまうケースを実データで確認した。この場合 `summary_status` は `"ok"` のまま保存されるため、`goodPatterns`/`badAvoidPatterns` に無意味な要約が混入しうる。要約結果のバリデーション（例: 元の指示文とほぼ一致する場合は `failed` 扱いにする等）は未実装。
+要約結果は `FeedbackSummaryPolicy` で保存前と読取時の両方に検証する。メタ指示、複数行、120文字超過、不許可文字、形式不正なBad要約は `failed` 扱いにし、過去DBに残っている不正な `summary_text` もプロンプトへ注入しない。

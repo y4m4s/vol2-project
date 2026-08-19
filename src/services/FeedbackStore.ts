@@ -4,9 +4,11 @@ import {
   AssistanceDepth,
   FeedbackSummaryResult,
   FeedbackTendencySummary,
+  FeedbackRating,
   GuidanceKind,
   SlashCommand
 } from "../shared/types";
+import { validateFeedbackSummary } from "./FeedbackSummaryPolicy";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -64,14 +66,20 @@ export class FeedbackStore implements vscode.Disposable {
     input: AdviceFeedbackInput,
     meta: AdviceFeedbackMeta,
     summary: FeedbackSummaryResult
-  ): Promise<void> {
+  ): Promise<string> {
+    const existingId = this.findFeedbackId(input.conversationEntryId);
+    if (existingId) {
+      return existingId;
+    }
+
     const now = new Date().toISOString();
+    const id = this.createId();
     this.getDb().run(
       `INSERT INTO advice_feedback
         (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        this.createId(),
+        id,
         input.conversationEntryId,
         input.rating,
         meta.kind,
@@ -83,6 +91,28 @@ export class FeedbackStore implements vscode.Disposable {
         summary.status === "ok" ? summary.summaryText ?? null : null,
         summary.status,
         now
+      ]
+    );
+    await this.persist();
+    return id;
+  }
+
+  public async updateFeedbackSummary(
+    id: string,
+    rating: FeedbackRating,
+    summary: FeedbackSummaryResult
+  ): Promise<void> {
+    const summaryText = summary.status === "ok"
+      ? validateFeedbackSummary(summary.summaryText, rating)
+      : undefined;
+    this.getDb().run(
+      `UPDATE advice_feedback
+          SET summary_text = ?, summary_status = ?
+        WHERE id = ?`,
+      [
+        summaryText ?? null,
+        summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed",
+        id
       ]
     );
     await this.persist();
@@ -141,8 +171,9 @@ export class FeedbackStore implements vscode.Disposable {
       stmt.bind([rating, limit]);
       while (stmt.step()) {
         const row = stmt.getAsObject();
-        if (row.summary_text) {
-          summaries.push(String(row.summary_text));
+        const summary = validateFeedbackSummary(row.summary_text, rating);
+        if (summary) {
+          summaries.push(summary);
         }
       }
     } finally {
@@ -150,6 +181,23 @@ export class FeedbackStore implements vscode.Disposable {
     }
 
     return summaries;
+  }
+
+  private findFeedbackId(conversationEntryId: string): string | undefined {
+    const stmt = this.getDb().prepare(
+      `SELECT id
+         FROM advice_feedback
+        WHERE conversation_entry_id = ?
+        ORDER BY created_at ASC
+        LIMIT 1`
+    );
+
+    try {
+      stmt.bind([conversationEntryId]);
+      return stmt.step() ? String(stmt.getAsObject().id) : undefined;
+    } finally {
+      stmt.free();
+    }
   }
 
   private normalizeOptionalText(value?: string): string | undefined {

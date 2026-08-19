@@ -12,7 +12,7 @@ import { ConnectionActivity } from "./components/ConnectionActivity";
 import { FloatingToast } from "./components/FloatingToast";
 import type { NavigatorScreen } from "../../shared/types";
 
-const KNOWLEDGE_SAVE_PENDING_TEXT = "Copilot でアドバイスをナレッジ用に整理しています...";
+const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレッジ用に整理しています...";
 const KNOWLEDGE_SAVE_DONE_TEXT = "アドバイスを整理してナレッジとして保存しました。";
 
 export function App() {
@@ -73,7 +73,7 @@ function KnowledgeSaveToast() {
     ? "ナレッジに整理しています"
     : "ナレッジとして保存しました";
   const description = isSaving
-    ? "Copilot がアドバイスを再利用しやすい形にまとめています。"
+    ? "接続中の AI がアドバイスを再利用しやすい形にまとめています。"
     : "あとからナレッジ管理で見返せます。";
 
   return (

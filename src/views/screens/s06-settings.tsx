@@ -624,7 +624,9 @@ function LmStudioServerControl({
   onStop: () => void;
 }) {
   const isTransitioning = server.state === "checking" || server.state === "starting" || server.state === "stopping";
-  const showStop = server.state === "running" || (server.state === "error" && server.canStop);
+  const showStop = server.state === "running" ||
+    server.state === "authRequired" ||
+    (server.state === "error" && server.canStop);
   const actionDisabled = showStop
     ? !server.canStop || stopBlockedByPendingChanges
     : !server.canStart;
@@ -700,6 +702,8 @@ function getLmStudioServerStatusIcon(state: LmStudioServerViewData["state"]): st
       return "progress_activity";
     case "cliUnavailable":
       return "terminal_off";
+    case "authRequired":
+      return "lock";
     case "portConflict":
       return "device_unknown";
     case "error":
@@ -722,6 +726,8 @@ function getLmStudioServerStatusText(server: LmStudioServerViewData): string {
       return "LM Studio サーバーの状態を確認しています…";
     case "cliUnavailable":
       return "LM Studio CLI が見つかりません。";
+    case "authRequired":
+      return "LM Studio 側で API 認証が有効です。";
     case "portConflict":
       return "接続ポートが別のアプリで使用されています。";
     case "error":
