@@ -6,6 +6,8 @@ export type ConnectionState =
   | "restricted"
   | "unavailable";
 
+export type AiProviderId = "copilot" | "lmStudio";
+
 export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
@@ -26,6 +28,7 @@ export type NavigatorScreen =
   | "main"
   | "history"
   | "conversation"
+  | "feedback_form"
   | "error"
   | "advice_detail"
   | "knowledge"
@@ -39,6 +42,34 @@ export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hin
 export type GuidanceKind = "manual" | "context" | "always";
 
 export type ConversationRole = "user" | "assistant";
+
+export type FeedbackRating = "good" | "bad";
+
+export type BadFeedbackReason =
+  | "too_long"
+  | "off_topic"
+  | "gives_answer"
+  | "too_vague"
+  | "other";
+
+export interface AdviceFeedbackInput {
+  conversationEntryId: string;
+  rating: FeedbackRating;
+  reasons?: BadFeedbackReason[];
+  comment?: string;
+}
+
+export type FeedbackSummaryStatus = "ok" | "failed" | "skipped";
+
+export interface FeedbackSummaryResult {
+  status: FeedbackSummaryStatus;
+  summaryText?: string;
+}
+
+export interface FeedbackTendencySummary {
+  goodPatterns: string[];
+  badAvoidPatterns: string[];
+}
 
 export type ContextCategoryKey =
   | "activeFile"
@@ -112,9 +143,12 @@ export interface GuidanceContext {
 }
 
 export interface NavigatorSettings {
+  providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
+  lmStudioBaseUrl: string;
+  lmStudioModelKey?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyBudgetUsd: number;
@@ -126,6 +160,29 @@ export interface CopilotModelOption {
   id: string;
   label: string;
   tokenLimitText: string;
+}
+
+export interface LmStudioModelOption {
+  key: string;
+  label: string;
+}
+
+export type LmStudioServerState =
+  | "checking"
+  | "stopped"
+  | "starting"
+  | "running"
+  | "stopping"
+  | "cliUnavailable"
+  | "portConflict"
+  | "error";
+
+export interface LmStudioServerViewData {
+  state: LmStudioServerState;
+  port?: number;
+  message?: string;
+  canStart: boolean;
+  canStop: boolean;
 }
 
 export interface UsageTodayViewData {
@@ -174,6 +231,8 @@ export interface GuidanceCard {
   assistanceDepth: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  providerId?: AiProviderId;
+  modelId?: string;
   modelLabel?: string;
   text: string;
   basedOn: NavigatorContextPreview;
@@ -197,9 +256,12 @@ export interface ConversationEntry {
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  providerId?: AiProviderId;
+  modelId?: string;
   modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
+  feedback?: FeedbackRating;
 }
 
 export interface ConversationStreamListItem {
@@ -231,6 +293,8 @@ export interface KnowledgeListItem {
   id: string;
   title: string;
   summary: string;
+  providerId?: AiProviderId;
+  modelId?: string;
   modelLabel?: string;
   updatedAt: string;
 }
@@ -257,6 +321,7 @@ export interface NavigatorSessionState {
   activeConversationStreamId?: string;
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
+  pendingFeedbackEntryId?: string;
   knowledgeQuery: string;
   selectedKnowledgeId?: string;
   activeAdditionalContext?: string;
@@ -276,8 +341,12 @@ export interface NavigatorViewModel {
   isBusy: boolean;
   autoAdvice: AutoAdviceState;
   usageToday: UsageTodayViewData;
+  providerId: AiProviderId;
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
+  lmStudioModelOptions: LmStudioModelOption[];
+  lmStudioServer: LmStudioServerViewData;
+  settingsRevision: number;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
   latestGuidance?: GuidanceCard;
@@ -285,6 +354,7 @@ export interface NavigatorViewModel {
   activeConversationStreamId?: string;
   activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
+  pendingFeedbackEntryId?: string;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];

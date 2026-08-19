@@ -1,4 +1,4 @@
-import { PageHeader } from "../webview/components/BackHeader";
+import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { formatDateTime } from "../webview/utils/formatTime";
 import { SearchBar } from "../webview/components/SearchBar";
@@ -16,7 +16,7 @@ export function S05Knowledge() {
     <div className="knowledge-root">
       <div className="s05-sticky-top">
         <PageHeader
-          title="ナレッジ管理"
+          title={<PageTitleWithIcon icon="auto_stories">ナレッジ管理</PageTitleWithIcon>}
           subtitle="保存したナレッジを開いて、内容を確認できます。"
           navIcons={[
             { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },

@@ -14,6 +14,11 @@ export type NavIconDef = {
   onClick: () => void;
 };
 
+type PageTitleWithIconProps = {
+  icon: string;
+  children: ReactNode;
+};
+
 type PageHeaderProps = {
   title: ReactNode;
   subtitle?: ReactNode;
@@ -44,6 +49,15 @@ export function BackButton({
     >
       <span className="material-symbols-outlined">arrow_back</span>
     </button>
+  );
+}
+
+export function PageTitleWithIcon({ icon, children }: PageTitleWithIconProps) {
+  return (
+    <span className="page-title-with-icon">
+      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+      <span>{children}</span>
+    </span>
   );
 }
 

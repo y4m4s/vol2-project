@@ -6,6 +6,9 @@ import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
+import { FeedbackStore } from "./services/FeedbackStore";
+import { LmStudioClient } from "./services/LmStudioClient";
+import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
 import { UsageMeter } from "./services/UsageMeter";
@@ -19,8 +22,13 @@ import { runEvalLiveCommand } from "./eval/live";
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
   const usageMeter = new UsageMeter(context.globalState);
-  const connectionService = new ConnectionService(usageMeter);
+  const connectionService = new ConnectionService(
+    usageMeter,
+    new LmStudioClient(),
+    context.languageModelAccessInformation
+  );
   const contextCollector = new ContextCollector();
+  const lmStudioServerService = new LmStudioServerService();
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
@@ -28,14 +36,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
+    lmStudioServerService,
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
+    new FeedbackStore(context.globalStorageUri),
     usageMeter
   );
 
   const viewProvider = new NavigatorViewProvider(context.extensionUri, controller);
 
   context.subscriptions.push(
+    lmStudioServerService,
     controller,
     viewProvider,
     vscode.window.registerWebviewViewProvider(NavigatorViewProvider.viewType, viewProvider),

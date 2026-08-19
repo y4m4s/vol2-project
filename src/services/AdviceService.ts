@@ -9,9 +9,14 @@ import {
   NavigatorContextPreview,
   RequestPlanSnapshot,
   SlashCommand,
-  SlashCommandScope
+  SlashCommandScope,
+  FeedbackRating,
+  BadFeedbackReason,
+  FeedbackSummaryResult,
+  FeedbackTendencySummary
 } from "../shared/types";
-import { ConnectionService } from "./ConnectionService";
+import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
+import { LmStudioError } from "./LmStudioClient";
 import { deriveModelProfile } from "./ModelProfile";
 import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
@@ -30,18 +35,21 @@ export interface GuidanceRequestFailure {
   ok: false;
   connectionState: ConnectionState;
   message: string;
+  cancelled?: boolean;
 }
 
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
 
 export interface GuidanceRequestInput {
   context: GuidanceContext;
+  referencedFilePaths?: string[];
   kind: GuidanceKind;
   userPrompt?: string;
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
   knowledgeItems?: KnowledgeRecord[];
+  feedbackTendency?: FeedbackTendencySummary;
 }
 
 export interface KnowledgeDraft {
@@ -74,14 +82,24 @@ export interface ConversationTitleInput {
   entries: ConversationEntry[];
 }
 
+export interface FeedbackSummarizeInput {
+  rating: FeedbackRating;
+  adviceTextExcerpt: string;
+  reasons?: BadFeedbackReason[];
+  comment?: string;
+}
+
 export class AdviceService {
   public constructor(
     private readonly connectionService: ConnectionService,
     private readonly usageMeter?: UsageMeter
   ) {}
 
-  public async requestGuidance(input: GuidanceRequestInput): Promise<GuidanceRequestResult> {
-    return this.requestText(this.buildPrompt(input));
+  public async requestGuidance(
+    input: GuidanceRequestInput,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<GuidanceRequestResult> {
+    return this.requestText(this.buildPrompt(input), cancellationToken, input.referencedFilePaths);
   }
 
   public async createKnowledgeDraft(input: KnowledgeDraftInput): Promise<KnowledgeDraftResult> {
@@ -118,8 +136,22 @@ export class AdviceService {
     return this.normalizeConversationTitle(result.text);
   }
 
-  private async requestText(prompt: string): Promise<GuidanceRequestResult> {
-    const model = this.connectionService.getModel();
+  public async summarizeFeedback(input: FeedbackSummarizeInput): Promise<FeedbackSummaryResult> {
+    const result = await this.requestText(this.buildFeedbackSummaryPrompt(input));
+    if (!result.ok) {
+      return { status: "failed" };
+    }
+
+    const summaryText = this.normalizeLine(result.text, 120);
+    return summaryText ? { status: "ok", summaryText } : { status: "failed" };
+  }
+
+  private async requestText(
+    prompt: string,
+    cancellationToken?: vscode.CancellationToken,
+    referencedFilePaths?: string[]
+  ): Promise<GuidanceRequestResult> {
+    const model = this.connectionService.getConnectedModel();
 
     if (!model || this.connectionService.getState() !== "connected") {
       return {
@@ -130,29 +162,43 @@ export class AdviceService {
     }
 
     try {
-      const tokenSource = new vscode.CancellationTokenSource();
-      const messages = [vscode.LanguageModelChatMessage.User(prompt)];
-      const response = await model.sendRequest(messages, {}, tokenSource.token);
-
-      let text = "";
-      for await (const chunk of response.text) {
-        text += chunk;
+      const tokenSource = cancellationToken ? undefined : new vscode.CancellationTokenSource();
+      const token = cancellationToken ?? tokenSource!.token;
+      let response: ProviderTextResponse;
+      try {
+        response = await model.requestText(
+          prompt,
+          token,
+          referencedFilePaths ? { referencedFilePaths } : undefined
+        );
+      } finally {
+        tokenSource?.dispose();
       }
 
-      const usage = await this.recordUsage(model, prompt, text);
+      if (token.isCancellationRequested) {
+        return this.cancelledResult();
+      }
+
+      const usage = await this.recordUsage(model, prompt, response);
 
       return {
         ok: true,
-        text,
+        text: response.text,
         usage
       };
     } catch (error) {
+      if (this.isCancellation(error, cancellationToken)) {
+        return this.cancelledResult();
+      }
+
       const connectionState = this.classifyGuidanceError(error);
 
       if (connectionState === "restricted") {
         this.connectionService.markRestricted();
       } else if (connectionState === "disconnected") {
         this.connectionService.resetToDisconnected();
+      } else if (model.providerId === "lmStudio") {
+        this.connectionService.markUnavailable();
       }
 
       return {
@@ -163,30 +209,62 @@ export class AdviceService {
     }
   }
 
+  private cancelledResult(): GuidanceRequestFailure {
+    return {
+      ok: false,
+      connectionState: this.connectionService.getState(),
+      message: "回答生成を中断しました。",
+      cancelled: true
+    };
+  }
+
+  private isCancellation(error: unknown, cancellationToken?: vscode.CancellationToken): boolean {
+    if (cancellationToken?.isCancellationRequested) {
+      return true;
+    }
+
+    if (error instanceof vscode.CancellationError) {
+      return true;
+    }
+
+    if (error instanceof Error) {
+      return error.name === "AbortError";
+    }
+
+    return false;
+  }
+
   private async recordUsage(
-    model: vscode.LanguageModelChat,
+    model: ConnectedProviderModel,
     prompt: string,
-    responseText: string
+    response: ProviderTextResponse
   ): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
     if (!this.usageMeter) {
       return undefined;
     }
 
-    const [inputTokens, outputTokens] = await Promise.all([
-      this.countTokensSafe(model, prompt),
-      this.countTokensSafe(model, responseText)
-    ]);
-    await this.usageMeter.record({ inputTokens, outputTokens });
+    const [inputTokens, outputTokens] = response.inputTokens !== undefined && response.outputTokens !== undefined
+      ? [response.inputTokens, response.outputTokens]
+      : await Promise.all([
+          this.countTokensSafe(model, prompt),
+          this.countTokensSafe(model, response.text)
+        ]);
+    await this.usageMeter.record({
+      providerId: model.providerId,
+      modelId: model.modelId,
+      inputTokens,
+      outputTokens
+    });
     return { inputTokens, outputTokens };
   }
 
-  private async countTokensSafe(model: vscode.LanguageModelChat, text: string): Promise<number> {
+  private async countTokensSafe(model: ConnectedProviderModel, text: string): Promise<number> {
     if (!text) {
       return 0;
     }
 
     try {
-      return await model.countTokens(text);
+      return model.countTokens ? await model.countTokens(text) : Math.ceil(text.length / 3);
     } catch {
       // 日本語とコードの混在を想定した粗い推定
       return Math.ceil(text.length / 3);
@@ -320,6 +398,40 @@ export class AdviceService {
       // この情報から、後で同じ種類の問題に遭遇したときに再利用しやすいナレッジを作ってください。
       "From this information, create knowledge that is easy to reuse when the same kind of problem is encountered later."
     );
+
+    return lines.join("\n");
+  }
+
+  private buildFeedbackSummaryPrompt(input: FeedbackSummarizeInput): string {
+    const lines = [
+      "You summarize user feedback for a pair-programming navigator.",
+      "Return exactly one English instruction sentence, <= 120 characters.",
+      "No labels, bullets, quotes, markdown, or explanations.",
+      "",
+      `rating: ${input.rating}`,
+      "",
+      "## Assistant answer excerpt",
+      "```markdown",
+      this.truncate(input.adviceTextExcerpt, 700),
+      "```"
+    ];
+
+    if (input.rating === "good") {
+      lines.push(
+        "",
+        "The user marked this answer as Good. Infer the useful response tendency to keep next time."
+      );
+    } else {
+      lines.push(
+        "",
+        "The user marked this answer as Bad. Summarize what to avoid next time.",
+        `reasons: ${input.reasons?.length ? input.reasons.join(", ") : "none"}`
+      );
+      const comment = input.comment?.trim();
+      if (comment) {
+        lines.push("comment:", "```", this.truncate(comment, 500), "```");
+      }
+    }
 
     return lines.join("\n");
   }
@@ -505,6 +617,9 @@ export class AdviceService {
   }
 
   private classifyGuidanceError(error: unknown): ConnectionState {
+    if (error instanceof LmStudioError) {
+      return "unavailable";
+    }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked" || error.code === "NoPermissions") {
         return "restricted";
@@ -518,6 +633,18 @@ export class AdviceService {
   }
 
   private errorMessage(error: unknown): string {
+    if (error instanceof LmStudioError) {
+      switch (error.kind) {
+        case "auth":
+          return "LM Studio の認証設定を確認してください。";
+        case "unreachable":
+          return "LM Studio サーバーに接続できません。起動状態を確認してください。";
+        case "timeout":
+          return "LM Studio の応答がタイムアウトしました。";
+        default:
+          return "LM Studio へのリクエストに失敗しました。";
+      }
+    }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked") {
         return "Copilot にブロックされました。利用上限に達したか、ポリシーで制限されています。";

@@ -6,10 +6,9 @@ import { MermaidDiagram } from "../webview/components/MermaidDiagram";
 import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
 import { formatTime } from "../webview/utils/formatTime";
-import { formatConnectionState } from "../webview/utils/formatState";
 import { formatCostUsd, formatTokenCount } from "../webview/utils/formatUsage";
 import { getSelectionLabel } from "../webview/utils/labelUtils";
-import type { ConversationEntry, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
+import type { ConversationEntry, FeedbackRating, RequestPlanSnapshot, TokenUsage } from "../../shared/types";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -34,8 +33,6 @@ export function S04Conversation() {
   }
 
   const {
-    connectionState,
-    canConnect,
     requestState,
     conversationStreams,
     activeConversationStreamId,
@@ -55,22 +52,6 @@ export function S04Conversation() {
           ? `${conversationHistory.length}件のメッセージ`
           : "この会話専用の画面です"}
         back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
-        status={connectionState !== "connected" ? (
-          <span className="status-pill">
-            <span className="status-dot" />
-            {formatConnectionState(connectionState)}
-          </span>
-        ) : null}
-        actions={connectionState !== "connected" ? (
-          <button
-            className="s04-connect-btn"
-            disabled={!canConnect}
-            onClick={() => send({ type: "connect" })}
-          >
-            <span className="material-symbols-outlined">power</span>
-            接続
-          </button>
-        ) : null}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
           { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
@@ -97,6 +78,7 @@ export function S04Conversation() {
             alreadySaved={savedKnowledgeSourceIds.includes(entry.id)}
             isSavingKnowledge={requestState === "saving_knowledge"}
             onSave={(id) => send({ type: "saveKnowledge", id })}
+            onRate={(id, rating) => send({ type: "rateAdvice", id, rating })}
           />
         ))}
 
@@ -114,12 +96,14 @@ function ChatBubble(
     entry,
     alreadySaved,
     isSavingKnowledge,
-    onSave
+    onSave,
+    onRate
   }: {
     entry: ConversationEntry;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     onSave: (id: string) => void;
+    onRate: (id: string, rating: FeedbackRating) => void;
   }
 ) {
   const isUser = entry.role === "user";
@@ -166,9 +150,11 @@ function ChatBubble(
         <ResponseActions
           text={entry.text}
           referencedFiles={entry.requestPlan?.targetFiles}
-          tokenUsage={entry.tokenUsage}
+          tokenUsage={entry.providerId === "lmStudio" ? undefined : entry.tokenUsage}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
+          feedback={entry.feedback}
+          onRate={(rating) => onRate(entry.id, rating)}
           onSave={() => onSave(entry.id)}
         />
       )}
@@ -391,6 +377,8 @@ function ResponseActions(
     tokenUsage,
     alreadySaved,
     isSavingKnowledge,
+    feedback,
+    onRate,
     onSave
   }: {
     text: string;
@@ -398,6 +386,8 @@ function ResponseActions(
     tokenUsage?: TokenUsage;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
+    feedback?: FeedbackRating;
+    onRate: (rating: FeedbackRating) => void;
     onSave: () => void;
   }
 ) {
@@ -443,6 +433,24 @@ function ResponseActions(
             約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（目安 {formatCostUsd(tokenUsage.estimatedCostUsd)}）消費
           </span>
         )}
+
+        <button
+          className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
+          title={feedback ? "評価済み" : "Good"}
+          disabled={Boolean(feedback)}
+          onClick={() => onRate("good")}
+        >
+          <span className="material-symbols-outlined">thumb_up</span>
+        </button>
+
+        <button
+          className={`s04-response-action ${feedback === "bad" ? "active feedback-bad" : ""}`}
+          title={feedback ? "評価済み" : "Bad"}
+          disabled={Boolean(feedback)}
+          onClick={() => onRate("bad")}
+        >
+          <span className="material-symbols-outlined">thumb_down</span>
+        </button>
 
         <button
           className={`s04-response-action ${alreadySaved ? "active" : ""}`}

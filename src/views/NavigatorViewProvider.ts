@@ -40,7 +40,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.postViewModel();
             return;
           case "connect":
-            await this.controller.connectCopilot();
+            await this.controller.connectCopilot(message.providerId);
             return;
           case "createConversationStream":
             await this.controller.createConversationStream();
@@ -53,6 +53,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
+            return;
+          case "cancelGuidanceRequest":
+            this.controller.cancelGuidanceRequest();
             return;
           case "setMode":
             await this.controller.setMode(message.mode, message.additionalContext);
@@ -75,6 +78,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "saveKnowledge":
             await this.controller.saveKnowledge(message.id);
             return;
+          case "rateAdvice":
+            await this.controller.rateAdvice(message.id, message.rating);
+            return;
+          case "submitBadFeedback":
+            await this.controller.submitBadFeedback(message.reasons, message.comment);
+            return;
+          case "cancelBadFeedback":
+            this.controller.cancelBadFeedback();
+            return;
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
             return;
@@ -95,6 +107,18 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             if (this.isCompletePayload(message.payload)) {
               await this.controller.saveSettings(message.payload);
             }
+            return;
+          case "refreshLmStudioServerStatus":
+            await this.controller.refreshLmStudioServerStatus();
+            return;
+          case "startLmStudioServer":
+            await this.controller.startLmStudioServer();
+            return;
+          case "stopLmStudioServer":
+            await this.controller.stopLmStudioServer();
+            return;
+          case "refreshLmStudioModels":
+            await this.controller.refreshLmStudioModels();
             return;
           case "resetSettings":
             await this.controller.resetSettings();
@@ -138,6 +162,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       "s05-knowledge.css",
       "s06-settings.css",
       "s08-history.css",
+      "s09-feedback-form.css",
       "s07-error.css"
     ];
 
@@ -176,9 +201,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   private isCompletePayload(payload: unknown): payload is {
+    providerId: "copilot" | "lmStudio";
     defaultMode: "manual" | "always";
     defaultAssistanceDepth: "low" | "high";
     copilotModelId?: string;
+    lmStudioModelKey?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
     dailyBudgetUsd: number;
@@ -189,7 +216,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     return (
       (p.defaultMode === "manual" || p.defaultMode === "always") &&
       (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
+      (p.providerId === "copilot" || p.providerId === "lmStudio") &&
       (p.copilotModelId === undefined || typeof p.copilotModelId === "string") &&
+      (p.lmStudioModelKey === undefined || typeof p.lmStudioModelKey === "string") &&
       typeof p.idleDelaySec === "number" &&
       typeof p.requestIntervalSec === "number" &&
       typeof p.dailyBudgetUsd === "number" &&

@@ -1,10 +1,13 @@
 import { useRef } from "react";
+import { BackButton } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 
 export function S07Error() {
   const { viewModel, send } = useApp();
 
   const isBusy = viewModel?.isBusy ?? false;
+  const providerId = viewModel?.providerId ?? "copilot";
+  const isLmStudio = providerId === "lmStudio";
 
   // connecting 中は直前の安定した state を保持して表示が変わらないようにする
   const stableStateRef = useRef(viewModel?.connectionState);
@@ -13,12 +16,37 @@ export function S07Error() {
   }
 
   const isUnavailable = stableStateRef.current === "unavailable";
-  const title = isUnavailable ? "Copilotに接続できません" : "現在は利用が制限されています";
-  const description = isUnavailable
-    ? "次の項目が完了していない可能性があります。"
-    : "Copilot へのリクエストが一時的に制限されている可能性があります。";
-  const possibleCauses = isUnavailable
+  const title = isLmStudio
+    ? "ローカル LLM に接続できません"
+    : isUnavailable
+      ? "Copilotに接続できません"
+      : "現在は利用が制限されています";
+  const description = isLmStudio
+    ? "LM Studio 側で次の項目を確認してください。"
+    : isUnavailable
+      ? "次の項目が完了していない可能性があります。"
+      : "Copilot へのリクエストが一時的に制限されている可能性があります。";
+  const possibleCauses = isLmStudio
     ? [
+        {
+          icon: "dns",
+          text: "LM Studio の Local Server が起動していない"
+        },
+        {
+          icon: "memory",
+          text: "LM Studio で使用するモデルがロードされていない"
+        },
+        {
+          icon: "key_off",
+          text: "LM Studio 側で API 認証が有効になっている"
+        },
+        {
+          icon: "verified_user",
+          text: "ワークスペースが信頼済みになっていない"
+        }
+      ]
+    : isUnavailable
+      ? [
         {
           icon: "extension",
           text: "GitHub Copilotがインストールされていない"
@@ -29,7 +57,7 @@ export function S07Error() {
         },
         {
           icon: "speed",
-          text: "低コストモデル（GPT-5.4 nano / GPT-5 mini / Raptor mini / Gemini 3 Flash）が利用できない"
+          text: "Copilot の自動モデルルーティング、または設定で指定したモデルが利用できない"
         },
         {
           icon: "verified_user",
@@ -49,6 +77,13 @@ export function S07Error() {
 
   return (
     <div className="s07-root">
+      <div className="s07-back-slot">
+        <BackButton
+          title="接続選択へ戻る"
+          ariaLabel="接続選択へ戻る"
+          onClick={() => send({ type: "navigate", screen: "onboarding" })}
+        />
+      </div>
       <div className={`s07-panel ${isUnavailable ? "unavailable" : "restricted"}`}>
         <div className="s07-icon-wrap">
           <span className="material-symbols-outlined s07-icon">

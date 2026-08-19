@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PageHeader } from "../webview/components/BackHeader";
+import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { formatRelativeTime } from "../webview/utils/formatTime";
 import { SearchBar } from "../webview/components/SearchBar";
@@ -24,7 +24,7 @@ export function S08History() {
     <div className="s08-root">
       <div className="s08-sticky-top">
         <PageHeader
-          title="相談履歴"
+          title={<PageTitleWithIcon icon="history">相談履歴</PageTitleWithIcon>}
           subtitle="過去の相談を開いて、続きから質問できます。"
           navIcons={[
             { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },

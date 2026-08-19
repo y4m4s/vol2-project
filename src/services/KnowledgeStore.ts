@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import { GuidanceContext } from "../shared/types";
+import { AiProviderId, GuidanceContext } from "../shared/types";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -35,6 +35,8 @@ export interface KnowledgeRecord {
   body: string;
   status: KnowledgeStatus;
   sourceAdviceId?: string;
+  providerId?: AiProviderId;
+  modelId?: string;
   modelLabel?: string;
   createdAt: string;
   updatedAt: string;
@@ -45,6 +47,8 @@ export interface KnowledgeCreateInput {
   summary: string;
   body: string;
   sourceAdviceId?: string;
+  providerId?: AiProviderId;
+  modelId?: string;
   modelLabel?: string;
 }
 
@@ -127,6 +131,8 @@ export class KnowledgeStore implements vscode.Disposable {
       body: input.body.trim(),
       status: "active",
       sourceAdviceId: input.sourceAdviceId,
+      providerId: input.providerId,
+      modelId: input.modelId,
       modelLabel: input.modelLabel,
       createdAt: now,
       updatedAt: now
@@ -134,8 +140,8 @@ export class KnowledgeStore implements vscode.Disposable {
 
     this.getDb().run(
       `INSERT INTO knowledge
-        (id, title, summary, body, status, source_advice_id, model_label, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       this.toSqlParams(record)
     );
     await this.persist();
@@ -217,6 +223,8 @@ export class KnowledgeStore implements vscode.Disposable {
         body TEXT NOT NULL,
         status TEXT NOT NULL CHECK (status IN ('active', 'disabled')),
         source_advice_id TEXT,
+        provider_id TEXT,
+        model_id TEXT,
         model_label TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -230,6 +238,8 @@ export class KnowledgeStore implements vscode.Disposable {
     `);
 
     this.ensureColumn("knowledge", "model_label", "TEXT");
+    this.ensureColumn("knowledge", "provider_id", "TEXT");
+    this.ensureColumn("knowledge", "model_id", "TEXT");
   }
 
   private selectRecords(sql: string, params: SqlValue[]): KnowledgeRecord[] {
@@ -256,6 +266,8 @@ export class KnowledgeStore implements vscode.Disposable {
       body: String(row.body),
       status: row.status === "disabled" ? "disabled" : "active",
       sourceAdviceId: row.source_advice_id ? String(row.source_advice_id) : undefined,
+      providerId: row.provider_id === "copilot" || row.provider_id === "lmStudio" ? row.provider_id : undefined,
+      modelId: row.model_id ? String(row.model_id) : undefined,
       modelLabel: row.model_label ? String(row.model_label) : undefined,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at)
@@ -270,6 +282,8 @@ export class KnowledgeStore implements vscode.Disposable {
       record.body,
       record.status,
       record.sourceAdviceId ?? null,
+      record.providerId ?? null,
+      record.modelId ?? null,
       record.modelLabel ?? null,
       record.createdAt,
       record.updatedAt

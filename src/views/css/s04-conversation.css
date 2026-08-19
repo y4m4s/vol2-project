@@ -19,14 +19,6 @@
   white-space: nowrap;
 }
 
-.s04-connect-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-}
-
 .s04-chat {
   flex: 1;
   min-height: 0;
