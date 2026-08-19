@@ -24,6 +24,9 @@ export type WebviewToExtension =
     }
   | { type: "deleteKnowledge"; id: string }
   | { type: "saveSettings"; payload: SaveSettingsPayload }
+  | { type: "refreshLmStudioServerStatus" }
+  | { type: "startLmStudioServer" }
+  | { type: "stopLmStudioServer" }
   | { type: "refreshLmStudioModels" }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }

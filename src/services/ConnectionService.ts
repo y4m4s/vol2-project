@@ -85,6 +85,10 @@ export class ConnectionService {
     return this.availableLmStudioModelOptions;
   }
 
+  public clearLmStudioModelOptions(): void {
+    this.availableLmStudioModelOptions = [];
+  }
+
   public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
     return this.lastLmStudioIssue;
   }
@@ -309,7 +313,13 @@ export class ConnectionService {
   }
 
   private toLmStudioModelOptions(models: LmStudioModel[]): LmStudioModelOption[] {
-    return this.getLoadedLmStudioModels(models).map((model) => ({ key: model.key, label: model.label }));
+    const options = new Map<string, LmStudioModelOption>();
+    for (const model of this.getLoadedLmStudioModels(models)) {
+      if (!options.has(model.key)) {
+        options.set(model.key, { key: model.key, label: model.label });
+      }
+    }
+    return [...options.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
 
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {

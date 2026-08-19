@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": ".test-out",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/services/LmStudioServerProtocol.ts",
+    "test/LmStudioServerProtocol.test.ts"
+  ]
+}

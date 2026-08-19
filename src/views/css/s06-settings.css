@@ -34,6 +34,29 @@
   margin-top: 4px;
 }
 
+.setting-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.setting-title {
+  max-width: 100%;
+}
+
+.setting-title-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 400;
+}
+
+.setting-title > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .setting-item {
   padding: 12px;
   border: 1px solid var(--vscode-panel-border);
@@ -88,6 +111,21 @@
 
 .btn-gray:hover {
   background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.15));
+}
+
+.s06-root button:focus-visible,
+.s06-root textarea:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.s06-root button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.s06-root button:disabled:hover {
+  background: var(--vscode-input-background);
 }
 
 .schedule-group {
@@ -222,7 +260,7 @@
 }
 
 .lmstudio-model-note {
-  margin: 0;
+  margin-top: 3px;
 }
 
 .lmstudio-model-options {
@@ -236,6 +274,102 @@
 
 .lmstudio-refresh-models {
   margin-top: 10px;
+}
+
+.lmstudio-server-card {
+  overflow: hidden;
+}
+
+.lmstudio-server-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 9px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
+  border-radius: 8px;
+  color: var(--vscode-descriptionForeground);
+  background: color-mix(in srgb, var(--vscode-input-background) 90%, var(--vscode-editorWidget-background));
+}
+
+.lmstudio-server-status.state-running {
+  color: var(--vscode-testing-iconPassed, var(--vscode-textLink-foreground));
+  border-color: color-mix(in srgb, currentColor 42%, var(--vscode-panel-border));
+}
+
+.lmstudio-server-status.state-error,
+.lmstudio-server-status.state-portConflict {
+  color: var(--vscode-errorForeground);
+  border-color: color-mix(in srgb, var(--vscode-errorForeground) 42%, var(--vscode-panel-border));
+}
+
+.lmstudio-server-status.state-cliUnavailable {
+  color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
+}
+
+.lmstudio-server-status-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.lmstudio-server-status-copy {
+  min-width: 0;
+  color: currentColor;
+  font-size: 0.84em;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.lmstudio-server-action {
+  margin-top: 10px;
+}
+
+.lmstudio-server-action .material-symbols-outlined,
+.lmstudio-server-refresh .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.lmstudio-server-help {
+  margin-top: 7px;
+}
+
+.lmstudio-server-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 32px;
+  margin-top: 9px;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  font-size: 0.84em;
+}
+
+.lmstudio-server-refresh:hover:not(:disabled) {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.is-spinning {
+  animation: s06-spin 0.9s linear infinite;
+}
+
+@keyframes s06-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-spinning {
+    animation: none;
+  }
 }
 
 .s06-savebar {

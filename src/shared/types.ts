@@ -138,6 +138,24 @@ export interface LmStudioModelOption {
   label: string;
 }
 
+export type LmStudioServerState =
+  | "checking"
+  | "stopped"
+  | "starting"
+  | "running"
+  | "stopping"
+  | "cliUnavailable"
+  | "portConflict"
+  | "error";
+
+export interface LmStudioServerViewData {
+  state: LmStudioServerState;
+  port?: number;
+  message?: string;
+  canStart: boolean;
+  canStop: boolean;
+}
+
 export interface UsageTodayViewData {
   date: string;
   requestCount: number;
@@ -296,6 +314,7 @@ export interface NavigatorViewModel {
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
   lmStudioModelOptions: LmStudioModelOption[];
+  lmStudioServer: LmStudioServerViewData;
   settingsRevision: number;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;

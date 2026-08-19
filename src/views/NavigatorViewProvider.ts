@@ -99,6 +99,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
               await this.controller.saveSettings(message.payload);
             }
             return;
+          case "refreshLmStudioServerStatus":
+            await this.controller.refreshLmStudioServerStatus();
+            return;
+          case "startLmStudioServer":
+            await this.controller.startLmStudioServer();
+            return;
+          case "stopLmStudioServer":
+            await this.controller.stopLmStudioServer();
+            return;
           case "refreshLmStudioModels":
             await this.controller.refreshLmStudioModels();
             return;
