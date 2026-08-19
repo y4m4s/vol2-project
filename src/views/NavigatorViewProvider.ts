@@ -181,6 +181,14 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     const iconUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "media", "icon.png")
     );
+    const providerLogoUris = JSON.stringify({
+      copilot: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-logo.png")
+      ).toString(),
+      lmStudio: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-logo.svg")
+      ).toString()
+    });
 
     return `<!DOCTYPE html>
 <html lang="ja">
@@ -194,7 +202,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   </head>
   <body>
     <div id="root"></div>
-    <script nonce="${nonce}">window.__ICON_URI__ = "${iconUri}";</script>
+    <script nonce="${nonce}">window.__ICON_URI__ = "${iconUri}"; window.__PROVIDER_LOGO_URIS__ = ${providerLogoUris};</script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>`;

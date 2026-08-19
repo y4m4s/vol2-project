@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useApp } from "../state/AppContext";
+import { ConnectionActivity } from "./ConnectionActivity";
 
 type BackButtonProps = {
   title?: string;
@@ -72,7 +73,6 @@ export function PageHeader({
   className
 }: PageHeaderProps) {
   const classes = ["page-header", className].filter(Boolean).join(" ");
-  const hasActions = actions != null || (navIcons && navIcons.length > 0);
 
   return (
     <div className={classes}>
@@ -85,22 +85,21 @@ export function PageHeader({
         {subtitle && <div className="page-subtitle">{subtitle}</div>}
         {extraContent}
       </div>
-      {hasActions && (
-        <div className="page-header-actions">
-          {actions}
-          {navIcons?.map((item) => (
-            <button
-              key={item.icon}
-              type="button"
-              className="page-header-icon-btn"
-              title={item.title}
-              onClick={item.onClick}
-            >
-              <span className="material-symbols-outlined">{item.icon}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="page-header-actions">
+        {actions}
+        {navIcons?.map((item) => (
+          <button
+            key={item.icon}
+            type="button"
+            className="page-header-icon-btn"
+            title={item.title}
+            onClick={item.onClick}
+          >
+            <span className="material-symbols-outlined">{item.icon}</span>
+          </button>
+        ))}
+        <ConnectionActivity />
+      </div>
     </div>
   );
 }
