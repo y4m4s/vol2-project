@@ -11,6 +11,8 @@ interface AppContextValue {
   send: (msg: WebviewToExtension) => void;
   additionalContextDraft: string;
   setAdditionalContextDraft: (value: string) => void;
+  operationError?: string;
+  operationErrorRevision: number;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -24,6 +26,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const msg = event.data as ExtensionToWebview;
       if (msg.type === "updateViewModel") {
         dispatch({ type: "UPDATE_VIEW_MODEL", payload: msg.payload });
+      } else if (msg.type === "operationError") {
+        dispatch({ type: "SET_OPERATION_ERROR", message: msg.message });
       }
     };
     window.addEventListener("message", handler);
@@ -34,7 +38,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const currentScreen = state.viewModel?.screen ?? null;
 
   return (
-    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage, additionalContextDraft, setAdditionalContextDraft }}>
+    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage, additionalContextDraft, setAdditionalContextDraft, operationError: state.operationError, operationErrorRevision: state.operationErrorRevision }}>
       {children}
     </AppContext.Provider>
   );

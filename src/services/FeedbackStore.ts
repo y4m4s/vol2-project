@@ -10,6 +10,7 @@ import {
 } from "../shared/types";
 import { collectValidFeedbackSummaries, validateFeedbackSummary } from "./FeedbackSummaryPolicy";
 import { SerialTaskQueue } from "./SerialTaskQueue";
+import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -58,8 +59,7 @@ export class FeedbackStore implements vscode.Disposable {
       locateFile: (file) => require.resolve(`sql.js/dist/${file}`)
     });
 
-    const existingBytes = await this.readExistingDatabase();
-    this.db = existingBytes ? new SQL.Database(existingBytes) : new SQL.Database();
+    this.db = await openDatabaseWithBackup(this.dbUri, SQL.Database);
     this.migrate();
     await this.persist();
   }
@@ -240,27 +240,12 @@ export class FeedbackStore implements vscode.Disposable {
     return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
   }
 
-  private async readExistingDatabase(): Promise<Uint8Array | undefined> {
-    if (!this.dbUri) {
-      return undefined;
-    }
-
-    try {
-      return await vscode.workspace.fs.readFile(this.dbUri);
-    } catch (error) {
-      if (error instanceof vscode.FileSystemError) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-
   private async persist(): Promise<void> {
     if (!this.dbUri) {
       throw new Error("FeedbackStore is not initialized.");
     }
 
-    await vscode.workspace.fs.writeFile(this.dbUri, this.getDb().export());
+    await writeFileAtomically(this.dbUri, this.getDb().export());
   }
 
   private getDb(): SqlJsDatabase {

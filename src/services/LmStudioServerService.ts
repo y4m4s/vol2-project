@@ -61,6 +61,23 @@ export class LmStudioServerService implements vscode.Disposable {
     }
 
     if (
+      cliResult.available &&
+      cliResult.status?.running &&
+      cliResult.status.port !== undefined &&
+      cliResult.status.port !== target.port
+    ) {
+      this.log(`Server port mismatch: configured ${target.port}, running ${cliResult.status.port}.`);
+      return {
+        state: "portMismatch",
+        port: cliResult.status.port,
+        configuredPort: target.port,
+        canStart: false,
+        canStop: true,
+        message: `設定は localhost:${target.port} ですが、サーバーは localhost:${cliResult.status.port} で起動中です。`
+      };
+    }
+
+    if (
       probe === "occupied" &&
       cliResult.available &&
       cliResult.status?.running &&

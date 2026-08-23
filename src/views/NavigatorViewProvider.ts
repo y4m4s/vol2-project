@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { NavigatorController } from "../application/NavigatorController";
-import type { WebviewToExtension } from "../shared/messages";
+import { parseWebviewMessage } from "../shared/messages";
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "aiPairNavigator.sidebar";
@@ -34,7 +34,13 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
     this.clearViewDisposables();
     this.viewDisposables.push(
-      webviewView.webview.onDidReceiveMessage(async (message: WebviewToExtension) => {
+      webviewView.webview.onDidReceiveMessage(async (rawMessage: unknown) => {
+        const message = parseWebviewMessage(rawMessage);
+        if (!message) {
+          await this.postOperationError("Webview から不正な操作データを受信しました。入力内容を確認してください。");
+          return;
+        }
+        try {
         switch (message.type) {
           case "ready":
             await this.postViewModel();
@@ -91,22 +97,18 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             this.controller.selectKnowledge(message.id);
             return;
           case "updateKnowledge":
-            if (this.isCompleteKnowledgeMessage(message)) {
-              await this.controller.updateKnowledge({
-                id: message.id,
-                title: message.title,
-                summary: message.summary,
-                body: message.body
-              });
-            }
+            await this.controller.updateKnowledge({
+              id: message.id,
+              title: message.title,
+              summary: message.summary,
+              body: message.body
+            });
             return;
           case "deleteKnowledge":
             await this.controller.deleteKnowledge(message.id);
             return;
           case "saveSettings":
-            if (this.isCompletePayload(message.payload)) {
-              await this.controller.saveSettings(message.payload);
-            }
+            await this.controller.saveSettings(message.payload);
             return;
           case "refreshLmStudioServerStatus":
             await this.controller.refreshLmStudioServerStatus();
@@ -116,6 +118,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "stopLmStudioServer":
             await this.controller.stopLmStudioServer();
+            return;
+          case "useLmStudioRunningPort":
+            await this.controller.useLmStudioRunningPort();
+            return;
+          case "restartLmStudioOnConfiguredPort":
+            await this.controller.restartLmStudioOnConfiguredPort();
             return;
           case "refreshLmStudioModels":
             await this.controller.refreshLmStudioModels();
@@ -132,6 +140,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           default:
             return;
         }
+        } catch (error) {
+          console.error(`NaviCom webview operation failed: ${message.type}`, error);
+          await this.postOperationError("操作を完了できませんでした。データは変更されていない可能性があります。再試行してください。");
+          await this.postViewModel().catch(() => undefined);
+        }
       })
     );
 
@@ -142,6 +155,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
     if (!this.view) return;
     const payload = this.controller.getViewModel();
     await this.view.webview.postMessage({ type: "updateViewModel", payload });
+  }
+
+  private async postOperationError(message: string): Promise<void> {
+    await this.view?.webview.postMessage({ type: "operationError", message });
   }
 
   public dispose(): void {
@@ -174,6 +191,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
         return `<link rel="stylesheet" href="${uri}" />`;
       })
       .join("\n    ");
+    const materialSymbolsFontUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "media", "material-symbols-outlined.woff2")
+    );
 
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "out", "webview", "main.js")
@@ -195,57 +215,40 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}';" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}';" />
+    <style>
+      @font-face {
+        font-family: "Material Symbols Outlined";
+        font-style: normal;
+        font-weight: 100 700;
+        src: url("${materialSymbolsFontUri}") format("woff2");
+      }
+      .material-symbols-outlined {
+        font-family: "Material Symbols Outlined";
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        font-feature-settings: "liga";
+        -webkit-font-feature-settings: "liga";
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
     ${cssLinks}
     <title>NaviCom</title>
   </head>
   <body>
     <div id="root"></div>
     <script nonce="${nonce}">window.__ICON_URI__ = "${iconUri}"; window.__PROVIDER_LOGO_URIS__ = ${providerLogoUris};</script>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
   </body>
 </html>`;
-  }
-
-  private isCompletePayload(payload: unknown): payload is {
-    providerId: "copilot" | "lmStudio";
-    defaultMode: "manual" | "always";
-    defaultAssistanceDepth: "low" | "high";
-    copilotModelId?: string;
-    lmStudioModelKey?: string;
-    idleDelaySec: number;
-    requestIntervalSec: number;
-    dailyBudgetUsd: number;
-    excludeGlobs: string;
-  } {
-    if (typeof payload !== "object" || payload === null) return false;
-    const p = payload as Record<string, unknown>;
-    return (
-      (p.defaultMode === "manual" || p.defaultMode === "always") &&
-      (p.defaultAssistanceDepth === "low" || p.defaultAssistanceDepth === "high") &&
-      (p.providerId === "copilot" || p.providerId === "lmStudio") &&
-      (p.copilotModelId === undefined || typeof p.copilotModelId === "string") &&
-      (p.lmStudioModelKey === undefined || typeof p.lmStudioModelKey === "string") &&
-      typeof p.idleDelaySec === "number" &&
-      typeof p.requestIntervalSec === "number" &&
-      typeof p.dailyBudgetUsd === "number" &&
-      typeof p.excludeGlobs === "string"
-    );
-  }
-
-  private isCompleteKnowledgeMessage(
-    message: unknown
-  ): message is Extract<WebviewToExtension, { type: "updateKnowledge" }> {
-    if (typeof message !== "object" || message === null) return false;
-    const p = message as Record<string, unknown>;
-    return (
-      p.type === "updateKnowledge" &&
-      typeof p.id === "string" &&
-      typeof p.title === "string" &&
-      typeof p.summary === "string" &&
-      typeof p.body === "string"
-    );
   }
 
   private clearViewDisposables(): void {

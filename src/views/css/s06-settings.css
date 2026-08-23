@@ -356,6 +356,13 @@
   font-size: 0.84em;
 }
 
+.lmstudio-server-mismatch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .lmstudio-server-refresh:hover:not(:disabled) {
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground);

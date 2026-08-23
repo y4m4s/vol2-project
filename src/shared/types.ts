@@ -151,7 +151,7 @@ export interface NavigatorSettings {
   lmStudioModelKey?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
-  dailyBudgetUsd: number;
+  dailyTokenLimit: number;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
 }
@@ -172,6 +172,7 @@ export type LmStudioServerState =
   | "stopped"
   | "starting"
   | "running"
+  | "portMismatch"
   | "stopping"
   | "authRequired"
   | "cliUnavailable"
@@ -181,6 +182,7 @@ export type LmStudioServerState =
 export interface LmStudioServerViewData {
   state: LmStudioServerState;
   port?: number;
+  configuredPort?: number;
   message?: string;
   canStart: boolean;
   canStop: boolean;
@@ -194,8 +196,8 @@ export interface UsageTodayViewData {
   totalTokens: number;
   estimatedCostText: string;
   blendedPricePerMTokenUsd: number;
-  budgetUsd: number;
-  budgetExceeded: boolean;
+  tokenLimit: number;
+  tokenLimitExceeded: boolean;
 }
 
 export interface RequestPlanCategory {

@@ -1,6 +1,8 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { AiProviderId, GuidanceContext } from "../shared/types";
+import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
+import { SerialTaskQueue } from "./SerialTaskQueue";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -65,6 +67,7 @@ export interface KnowledgeSearchInput {
 export class KnowledgeStore implements vscode.Disposable {
   private db?: SqlJsDatabase;
   private dbUri?: vscode.Uri;
+  private readonly mutationQueue = new SerialTaskQueue();
 
   public constructor(private readonly storageUri: vscode.Uri) {}
 
@@ -76,8 +79,7 @@ export class KnowledgeStore implements vscode.Disposable {
       locateFile: (file) => require.resolve(`sql.js/dist/${file}`)
     });
 
-    const existingBytes = await this.readExistingDatabase();
-    this.db = existingBytes ? new SQL.Database(existingBytes) : new SQL.Database();
+    this.db = await openDatabaseWithBackup(this.dbUri, SQL.Database);
     this.migrate();
     await this.persist();
   }
@@ -123,47 +125,50 @@ export class KnowledgeStore implements vscode.Disposable {
   }
 
   public async create(input: KnowledgeCreateInput): Promise<KnowledgeRecord> {
-    const now = new Date().toISOString();
-    const record: KnowledgeRecord = {
-      id: this.createId(),
-      title: this.normalizeTitle(input.title),
-      summary: this.normalizeSummary(input.summary, input.body),
-      body: input.body.trim(),
-      status: "active",
-      sourceAdviceId: input.sourceAdviceId,
-      providerId: input.providerId,
-      modelId: input.modelId,
-      modelLabel: input.modelLabel,
-      createdAt: now,
-      updatedAt: now
-    };
+    return this.mutationQueue.run(async () => {
+      const now = new Date().toISOString();
+      const record: KnowledgeRecord = {
+        id: this.createId(),
+        title: this.normalizeTitle(input.title),
+        summary: this.normalizeSummary(input.summary, input.body),
+        body: input.body.trim(),
+        status: "active",
+        sourceAdviceId: input.sourceAdviceId,
+        providerId: input.providerId,
+        modelId: input.modelId,
+        modelLabel: input.modelLabel,
+        createdAt: now,
+        updatedAt: now
+      };
 
-    this.getDb().run(
-      `INSERT INTO knowledge
+      this.getDb().run(
+        `INSERT INTO knowledge
         (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      this.toSqlParams(record)
-    );
-    await this.persist();
-    return record;
+        this.toSqlParams(record)
+      );
+      await this.persist();
+      return record;
+    });
   }
 
   public async update(id: string, input: KnowledgeUpdateInput): Promise<KnowledgeRecord | undefined> {
-    const existing = this.get(id);
-    if (!existing) {
-      return undefined;
-    }
+    return this.mutationQueue.run(async () => {
+      const existing = this.get(id);
+      if (!existing) {
+        return undefined;
+      }
 
-    const updated: KnowledgeRecord = {
-      ...existing,
-      title: this.normalizeTitle(input.title),
-      summary: this.normalizeSummary(input.summary, input.body),
-      body: input.body.trim(),
-      status: existing.status,
-      updatedAt: new Date().toISOString()
-    };
+      const updated: KnowledgeRecord = {
+        ...existing,
+        title: this.normalizeTitle(input.title),
+        summary: this.normalizeSummary(input.summary, input.body),
+        body: input.body.trim(),
+        status: existing.status,
+        updatedAt: new Date().toISOString()
+      };
 
-    this.getDb().run(
+      this.getDb().run(
       `UPDATE knowledge
        SET title = ?, summary = ?, body = ?, status = ?, updated_at = ?
        WHERE id = ?`,
@@ -176,19 +181,22 @@ export class KnowledgeStore implements vscode.Disposable {
         id
       ]
     );
-    await this.persist();
-    return updated;
+      await this.persist();
+      return updated;
+    });
   }
 
   public async delete(id: string): Promise<boolean> {
-    const existing = this.get(id);
-    if (!existing) {
-      return false;
-    }
+    return this.mutationQueue.run(async () => {
+      const existing = this.get(id);
+      if (!existing) {
+        return false;
+      }
 
-    this.getDb().run("DELETE FROM knowledge WHERE id = ?", [id]);
-    await this.persist();
-    return true;
+      this.getDb().run("DELETE FROM knowledge WHERE id = ?", [id]);
+      await this.persist();
+      return true;
+    });
   }
 
   public findReusable(context: GuidanceContext, limit = 3): KnowledgeRecord[] {
@@ -314,27 +322,12 @@ export class KnowledgeStore implements vscode.Disposable {
     }
   }
 
-  private async readExistingDatabase(): Promise<Uint8Array | undefined> {
-    if (!this.dbUri) {
-      return undefined;
-    }
-
-    try {
-      return await vscode.workspace.fs.readFile(this.dbUri);
-    } catch (error) {
-      if (error instanceof vscode.FileSystemError) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-
   private async persist(): Promise<void> {
     if (!this.dbUri) {
       throw new Error("KnowledgeStore is not initialized.");
     }
 
-    await vscode.workspace.fs.writeFile(this.dbUri, this.getDb().export());
+    await writeFileAtomically(this.dbUri, this.getDb().export());
   }
 
   private getDb(): SqlJsDatabase {

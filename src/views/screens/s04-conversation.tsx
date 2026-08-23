@@ -436,7 +436,7 @@ function ResponseActions(
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
-            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（目安 {formatCostUsd(tokenUsage.estimatedCostUsd)}）消費
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（参考料金概算 {formatCostUsd(tokenUsage.estimatedCostUsd)}、請求額ではありません）
           </span>
         )}
 
@@ -445,6 +445,8 @@ function ResponseActions(
           title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Good"}
           disabled={Boolean(feedback) || isFeedbackDisabled}
           onClick={() => onRate("good")}
+          aria-label="この回答をGoodと評価"
+          aria-pressed={feedback === "good"}
         >
           <span className="material-symbols-outlined">thumb_up</span>
         </button>
@@ -454,6 +456,8 @@ function ResponseActions(
           title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Bad"}
           disabled={Boolean(feedback) || isFeedbackDisabled}
           onClick={() => onRate("bad")}
+          aria-label="この回答をBadと評価"
+          aria-pressed={feedback === "bad"}
         >
           <span className="material-symbols-outlined">thumb_down</span>
         </button>
@@ -469,6 +473,8 @@ function ResponseActions(
           }
           disabled={saveDisabled}
           onClick={handleSave}
+          aria-label={alreadySaved ? "ナレッジに保存済み" : "ナレッジとして保存"}
+          aria-pressed={alreadySaved}
         >
           <span className="material-symbols-outlined">
             {alreadySaved ? "bookmark_added" : pendingSave ? "hourglass_empty" : "bookmark_add"}
@@ -479,6 +485,7 @@ function ResponseActions(
           className={`s04-response-action ${copied ? "active" : ""}`}
           title={copied ? "コピーしました" : "内容をコピー"}
           onClick={() => void handleCopy()}
+          aria-label={copied ? "内容をコピーしました" : "内容をコピー"}
         >
           <span className="material-symbols-outlined">{copied ? "done" : "content_copy"}</span>
         </button>
@@ -490,7 +497,7 @@ function ResponseActions(
 
 function ThinkingIndicator() {
   return (
-    <div className="s04-bubble-wrap assistant">
+    <div className="s04-bubble-wrap assistant" role="status" aria-live="polite" aria-label="NaviComが回答を生成しています">
       <div className="s04-bubble-meta">
         <img src={window.__ICON_URI__} alt="NaviCom" className="s04-bubble-icon s04-bubble-logo" />
         <span className="s04-bubble-role">NaviCom</span>

@@ -5,6 +5,7 @@ import { AdviceService } from "../services/AdviceService";
 import { AdviceScheduler } from "../services/AdviceScheduler";
 import {
   ConversationStore,
+  ConversationRevisionConflictError,
   ConversationStreamRecord,
   DEFAULT_CONVERSATION_STREAM_TITLE,
   StoredConversationEntry
@@ -476,7 +477,7 @@ export class NavigatorController implements vscode.Disposable {
     lmStudioModelKey?: string;
     idleDelaySec: number;
     requestIntervalSec: number;
-    dailyBudgetUsd: number;
+    dailyTokenLimit: number;
     excludeGlobs: string;
   }): Promise<void> {
     const previousSettings = this.settingsService.getSettings();
@@ -489,7 +490,7 @@ export class NavigatorController implements vscode.Disposable {
       lmStudioModelKey: input.lmStudioModelKey,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
-      dailyBudgetUsd: input.dailyBudgetUsd,
+      dailyTokenLimit: input.dailyTokenLimit,
       excludedGlobs: input.excludeGlobs
         .split(/\r?\n/)
         .map((value) => value.trim())
@@ -922,8 +923,8 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
 
-    if (this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), settings.dailyBudgetUsd)) {
-      this.pauseAutoAdviceForBudget();
+    if (this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), settings.dailyTokenLimit)) {
+      this.pauseAutoAdviceForTokenLimit();
       return;
     }
 
@@ -992,12 +993,12 @@ export class NavigatorController implements vscode.Disposable {
       totalTokens: usage.inputTokens + usage.outputTokens,
       estimatedCostText: cost > 0 && cost < 0.001 ? "$0.001未満" : `$${cost.toFixed(3)}`,
       blendedPricePerMTokenUsd: this.usageMeter.estimateBlendedPricePerMTokUsd(providerId),
-      budgetUsd: settings.dailyBudgetUsd,
-      budgetExceeded: this.usageMeter.isBudgetExceeded(providerId, settings.dailyBudgetUsd)
+      tokenLimit: settings.dailyTokenLimit,
+      tokenLimitExceeded: this.usageMeter.isTokenLimitExceeded(providerId, settings.dailyTokenLimit)
     };
   }
 
-  private pauseAutoAdviceForBudget(): void {
+  private pauseAutoAdviceForTokenLimit(): void {
     if (!this.adviceScheduler.getState().paused) {
       this.adviceScheduler.togglePaused();
     }
@@ -1005,7 +1006,7 @@ export class NavigatorController implements vscode.Disposable {
     this.patchSession({
       statusMessage: {
         kind: "warning",
-        text: "本日の利用額が上限に達したため、自動助言を一時停止しました。設定から上限を変更できます。"
+        text: "NaviCom内の本日の概算トークン数が上限に達したため、自動助言を一時停止しました。設定から上限を変更できます。"
       }
     });
   }
@@ -1297,10 +1298,10 @@ export class NavigatorController implements vscode.Disposable {
         activeAdditionalContext: nextActiveAdditionalContext,
         pendingAdditionalContext: undefined,
         selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
-        statusMessage: this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), settings.dailyBudgetUsd)
+        statusMessage: this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), settings.dailyTokenLimit)
           ? {
               kind: "warning",
-              text: "本日の利用額が設定上限を超えています。設定から上限を確認できます。"
+              text: "NaviCom内の本日の概算トークン数が設定上限を超えています。設定から上限を確認できます。"
             }
           : undefined
       });
@@ -1472,7 +1473,26 @@ export class NavigatorController implements vscode.Disposable {
     const recordToSave = options.summarizeTitle === false
       ? record
       : await this.withSummarizedConversationTitle(record);
-    const saved = await this.conversationStore.saveStream(recordToSave);
+    let saved: ConversationStreamRecord;
+    try {
+      saved = await this.conversationStore.saveStream(recordToSave);
+    } catch (error) {
+      if (!(error instanceof ConversationRevisionConflictError)) {
+        throw error;
+      }
+
+      // A newer request or feedback update won the race. Rebuild from the live
+      // session and save against the latest store revision instead of allowing
+      // the older snapshot to replace it.
+      const latestRecord = this.buildActiveConversationRecord();
+      if (!latestRecord || latestRecord.id !== record.id) {
+        return;
+      }
+      saved = await this.conversationStore.saveStream({
+        ...latestRecord,
+        title: recordToSave.title
+      });
+    }
     this.patchSession({
       activeConversationStreamId: saved.id,
       activeAdditionalContext: saved.additionalContext,
@@ -1517,8 +1537,8 @@ export class NavigatorController implements vscode.Disposable {
       return record;
     }
 
-    // 予算超過時はタイトル生成のリクエストを行わずフォールバック名を使う
-    if (this.usageMeter.isBudgetExceeded(this.getCurrentProviderId(), this.settingsService.getSettings().dailyBudgetUsd)) {
+    // 概算トークン上限超過時はタイトル生成を行わずフォールバック名を使う
+    if (this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), this.settingsService.getSettings().dailyTokenLimit)) {
       return record;
     }
 
@@ -1561,7 +1581,8 @@ export class NavigatorController implements vscode.Disposable {
       createdAt: existing?.createdAt ?? now,
       updatedAt: existing?.updatedAt ?? now,
       entries,
-      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext)
+      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext),
+      revision: existing?.revision ?? 0
     };
   }
 
@@ -1768,6 +1789,63 @@ export class NavigatorController implements vscode.Disposable {
       this.pendingLmStudioServerOperation = undefined;
     });
     await this.pendingLmStudioServerOperation;
+  }
+
+  public async useLmStudioRunningPort(): Promise<void> {
+    const port = this.lmStudioServer.state === "portMismatch" ? this.lmStudioServer.port : undefined;
+    if (!port || this.sessionStore.getState().requestState !== "idle") return;
+
+    const settings = await this.saveSettingsWithRevision({
+      ...this.settingsService.getSettings(),
+      lmStudioBaseUrl: `http://127.0.0.1:${port}`
+    });
+    const result = settings.providerId === "lmStudio"
+      ? await this.connectionService.connectAndActivate(settings)
+      : undefined;
+    await this.refreshLmStudioServerStatus(false);
+    this.patchSession({
+      ...(result ? { connectionState: result.connectionState } : {}),
+      statusMessage: {
+        kind: result && !result.activated ? "warning" : "info",
+        text: result && !result.activated
+          ? `接続先を localhost:${port} に変更しましたが、モデルへの接続を確認できませんでした。`
+          : `接続先を実行中の localhost:${port} に切り替えました。`
+      }
+    });
+  }
+
+  public async restartLmStudioOnConfiguredPort(): Promise<void> {
+    if (this.lmStudioServer.state !== "portMismatch" || this.sessionStore.getState().requestState !== "idle") return;
+    this.patchSession({ requestState: "connecting" });
+    try {
+      const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
+      const stopped = await this.lmStudioServerService.stop(baseUrl);
+      if (stopped.state !== "stopped") {
+        throw new Error(stopped.message ?? "LM Studio サーバーを停止できませんでした。");
+      }
+      const started = await this.lmStudioServerService.start(baseUrl);
+      this.updateLmStudioServer(started);
+      const settings = this.settingsService.getSettings();
+      const result = started.state === "running" && settings.providerId === "lmStudio"
+        ? await this.connectionService.connectAndActivate(settings)
+        : undefined;
+      this.patchSession({
+        ...(result ? { connectionState: result.connectionState } : {}),
+        requestState: "idle",
+        statusMessage: {
+          kind: started.state === "running" && (!result || result.activated) ? "info" : "error",
+          text: started.state === "running" && result && !result.activated
+            ? "設定ポートで再起動しましたが、モデルへの接続を確認できませんでした。"
+            : started.state === "running"
+            ? `設定ポート localhost:${started.port} で再起動しました。`
+            : started.message ?? "設定ポートで再起動できませんでした。"
+        }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "設定ポートで再起動できませんでした。";
+      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
+      await this.refreshLmStudioServerStatus(false);
+    }
   }
 
   private async performStartLmStudioServer(): Promise<void> {
@@ -2163,7 +2241,9 @@ export class NavigatorController implements vscode.Disposable {
       case "unavailable":
         return {
           kind: "error",
-          text: vscode.workspace.isTrusted
+          text: this.connectionService.getLastCopilotIssue() === "timeout"
+            ? "Copilot の接続確認が15秒でタイムアウトしました。通信状態を確認して再試行してください。"
+            : vscode.workspace.isTrusted
             ? this.settingsService.getSettings().copilotModelId
               ? "Copilot に接続できません。設定で指定したモデルが現在利用可能か確認するか、使用モデルを自動に戻してください。"
               : "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、利用可能な Copilot モデルがあるか確認してください。"

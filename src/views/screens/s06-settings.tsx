@@ -14,10 +14,10 @@ import type {
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
 const REQUEST_INTERVAL_OPTIONS = [20, 60, 180];
-const DAILY_BUDGET_USD_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 0.5, label: "節約 $0.50" },
-  { value: 1.0, label: "標準 $1.00" },
-  { value: 2.0, label: "多め $2.00" },
+const DAILY_TOKEN_LIMIT_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 50_000, label: "節約 5万" },
+  { value: 100_000, label: "標準 10万" },
+  { value: 200_000, label: "多め 20万" },
   { value: 0, label: "無制限" }
 ];
 const MODE_OPTIONS: Array<{ value: AdviceMode; label: string }> = [
@@ -40,7 +40,7 @@ export function S06Settings() {
   const savedLmStudioModelKey = settings?.lmStudioModelKey ?? "";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedRequestIntervalSec = settings ? normalizeRequestIntervalSec(settings.requestIntervalMs / 1000) : 60;
-  const savedDailyBudgetUsd = settings ? normalizeDailyBudgetUsd(settings.dailyBudgetUsd) : 1.0;
+  const savedDailyTokenLimit = settings ? normalizeDailyTokenLimit(settings.dailyTokenLimit) : 100_000;
   const savedExcludeGlobs = settings?.excludedGlobs.join("\n") ?? "";
 
   const [providerId, setProviderId] = useState<AiProviderId>(savedProviderId);
@@ -50,7 +50,7 @@ export function S06Settings() {
   const [lmStudioModelKey, setLmStudioModelKey] = useState(savedLmStudioModelKey);
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
-  const [dailyBudgetUsd, setDailyBudgetUsd] = useState(savedDailyBudgetUsd);
+  const [dailyTokenLimit, setDailyTokenLimit] = useState(savedDailyTokenLimit);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
   const lmStudioModelOptions = viewModel?.lmStudioModelOptions ?? [];
@@ -69,9 +69,9 @@ export function S06Settings() {
     setLmStudioModelKey(savedLmStudioModelKey);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
-    setDailyBudgetUsd(savedDailyBudgetUsd);
+    setDailyTokenLimit(savedDailyTokenLimit);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedIdleDelaySec, savedRequestIntervalSec, savedDailyBudgetUsd, savedExcludeGlobs, viewModel?.settingsRevision]);
+  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedIdleDelaySec, savedRequestIntervalSec, savedDailyTokenLimit, savedExcludeGlobs, viewModel?.settingsRevision]);
 
   useEffect(() => {
     if (
@@ -91,7 +91,7 @@ export function S06Settings() {
     lmStudioModelKey !== savedLmStudioModelKey ||
     idleDelaySec !== savedIdleDelaySec ||
     requestIntervalSec !== savedRequestIntervalSec ||
-    dailyBudgetUsd !== savedDailyBudgetUsd ||
+    dailyTokenLimit !== savedDailyTokenLimit ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
   const stopBlockedByPendingChanges =
     hasPendingChanges && savedProviderId === "lmStudio" && lmStudioServer.canStop;
@@ -108,7 +108,7 @@ export function S06Settings() {
         lmStudioModelKey: lmStudioModelKey || undefined,
         idleDelaySec,
         requestIntervalSec,
-        dailyBudgetUsd,
+        dailyTokenLimit,
         excludeGlobs
       }
     });
@@ -122,7 +122,7 @@ export function S06Settings() {
     setLmStudioModelKey(savedLmStudioModelKey);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
-    setDailyBudgetUsd(savedDailyBudgetUsd);
+    setDailyTokenLimit(savedDailyTokenLimit);
     setExcludeGlobs(savedExcludeGlobs);
   }
 
@@ -169,6 +169,8 @@ export function S06Settings() {
             onRefresh={() => send({ type: "refreshLmStudioServerStatus" })}
             onStart={() => send({ type: "startLmStudioServer" })}
             onStop={() => send({ type: "stopLmStudioServer" })}
+            onUseRunningPort={() => send({ type: "useLmStudioRunningPort" })}
+            onRestartConfiguredPort={() => send({ type: "restartLmStudioOnConfiguredPort" })}
           />
 
           <div className="setting-item">
@@ -251,20 +253,19 @@ export function S06Settings() {
           </div>
 
           <div className="setting-item">
-            <SettingTitle icon="data_usage">1日の使用上限</SettingTitle>
+            <SettingTitle icon="data_usage">NaviCom内の概算使用量ガード</SettingTitle>
             <div className="setting-desc">
-              上限に達すると自動助言を一時停止します（手動相談は警告のみ）
+              NaviComが数えた入出力トークンの合計です。上限に達すると自動助言を一時停止します（手動相談は警告のみ）。Copilotの請求額やAI Creditsとは一致しません
               {viewModel?.providerId === "copilot" && viewModel.usageToday && (
                 <>
                   <br />
-                  今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（目安 {viewModel.usageToday.estimatedCostText}）
+                  今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（参考料金概算 {viewModel.usageToday.estimatedCostText}、請求額ではありません）
                 </>
               )}
             </div>
-            <BudgetButtonGroup
-              value={dailyBudgetUsd}
-              onChange={setDailyBudgetUsd}
-              pricePerMTokenUsd={viewModel?.providerId === "copilot" ? viewModel.usageToday.blendedPricePerMTokenUsd : undefined}
+            <TokenLimitButtonGroup
+              value={dailyTokenLimit}
+              onChange={setDailyTokenLimit}
             />
           </div>
         </>
@@ -367,10 +368,10 @@ function normalizeRequestIntervalSec(value: number): number {
   );
 }
 
-function normalizeDailyBudgetUsd(value: number): number {
-  return DAILY_BUDGET_USD_OPTIONS.reduce((nearest, option) =>
+function normalizeDailyTokenLimit(value: number): number {
+  return DAILY_TOKEN_LIMIT_OPTIONS.reduce((nearest, option) =>
     Math.abs(option.value - value) < Math.abs(nearest.value - value) ? option : nearest
-  , DAILY_BUDGET_USD_OPTIONS[0]).value;
+  , DAILY_TOKEN_LIMIT_OPTIONS[0]).value;
 }
 
 function ProviderButtonGroup({
@@ -615,16 +616,21 @@ function LmStudioServerControl({
   stopBlockedByPendingChanges,
   onRefresh,
   onStart,
-  onStop
+  onStop,
+  onUseRunningPort,
+  onRestartConfiguredPort
 }: {
   server: LmStudioServerViewData;
   stopBlockedByPendingChanges: boolean;
   onRefresh: () => void;
   onStart: () => void;
   onStop: () => void;
+  onUseRunningPort: () => void;
+  onRestartConfiguredPort: () => void;
 }) {
   const isTransitioning = server.state === "checking" || server.state === "starting" || server.state === "stopping";
   const showStop = server.state === "running" ||
+    server.state === "portMismatch" ||
     server.state === "authRequired" ||
     (server.state === "error" && server.canStop);
   const actionDisabled = showStop
@@ -680,6 +686,16 @@ function LmStudioServerControl({
           停止すると、ほかのアプリからの LM Studio 接続も切断されます。
         </div>
       )}
+      {server.state === "portMismatch" && (
+        <div className="lmstudio-server-mismatch-actions">
+          <button type="button" className="lmstudio-server-refresh" onClick={onUseRunningPort}>
+            実行中ポートへ切替
+          </button>
+          <button type="button" className="lmstudio-server-refresh" onClick={onRestartConfiguredPort}>
+            設定ポートで再起動
+          </button>
+        </div>
+      )}
       {showRefresh && (
         <button type="button" className="lmstudio-server-refresh" onClick={onRefresh}>
           <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
@@ -706,6 +722,8 @@ function getLmStudioServerStatusIcon(state: LmStudioServerViewData["state"]): st
       return "lock";
     case "portConflict":
       return "device_unknown";
+    case "portMismatch":
+      return "sync_problem";
     case "error":
     default:
       return "error";
@@ -730,26 +748,25 @@ function getLmStudioServerStatusText(server: LmStudioServerViewData): string {
       return "LM Studio 側で API 認証が有効です。";
     case "portConflict":
       return "接続ポートが別のアプリで使用されています。";
+    case "portMismatch":
+      return "設定ポートと実行中ポートが一致していません。";
     case "error":
     default:
       return "LM Studio サーバーを操作できませんでした。";
   }
 }
 
-function BudgetButtonGroup({
+function TokenLimitButtonGroup({
   value,
-  onChange,
-  pricePerMTokenUsd
+  onChange
 }: {
   value: number;
   onChange: (value: number) => void;
-  pricePerMTokenUsd?: number;
 }) {
   return (
-    <div className="choice-options mode-options" role="group" aria-label="1日の使用上限">
-      {DAILY_BUDGET_USD_OPTIONS.map((option) => {
+    <div className="choice-options mode-options" role="group" aria-label="NaviCom内の1日の概算トークン上限">
+      {DAILY_TOKEN_LIMIT_OPTIONS.map((option) => {
         const selected = option.value === value;
-        const tokenText = formatBudgetTokenEquivalent(option.value, pricePerMTokenUsd);
         return (
           <button
             key={option.value}
@@ -759,19 +776,10 @@ function BudgetButtonGroup({
             onClick={() => onChange(option.value)}
           >
             <span>{option.label}</span>
-            {tokenText && <span className="choice-option-sub">{tokenText}</span>}
+            {option.value > 0 && <span className="choice-option-sub">トークン</span>}
           </button>
         );
       })}
     </div>
   );
-}
-
-function formatBudgetTokenEquivalent(budgetUsd: number, pricePerMTokenUsd?: number): string | undefined {
-  if (budgetUsd <= 0 || pricePerMTokenUsd === undefined || pricePerMTokenUsd <= 0) {
-    return undefined;
-  }
-
-  const tokens = (budgetUsd / pricePerMTokenUsd) * 1_000_000;
-  return `約${formatTokenCount(Math.round(tokens))}トークン相当`;
 }

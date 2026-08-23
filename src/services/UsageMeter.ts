@@ -69,8 +69,9 @@ export class UsageMeter {
     await this.storage.update(STORAGE_KEY, { ...total, buckets } satisfies StoredDailyUsage);
   }
 
-  public isBudgetExceeded(providerId: AiProviderId, budgetUsd: number): boolean {
-    return providerId === "copilot" && budgetUsd > 0 && this.estimateCostUsd(providerId) >= budgetUsd;
+  public isTokenLimitExceeded(providerId: AiProviderId, tokenLimit: number): boolean {
+    const usage = this.getToday(providerId);
+    return providerId === "copilot" && tokenLimit > 0 && usage.inputTokens + usage.outputTokens >= tokenLimit;
   }
 
   public estimateCostUsd(

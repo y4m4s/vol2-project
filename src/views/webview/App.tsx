@@ -15,7 +15,7 @@ const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレ
 const KNOWLEDGE_SAVE_DONE_TEXT = "アドバイスを整理してナレッジとして保存しました。";
 
 export function App() {
-  const { viewModel } = useApp();
+  const { viewModel, operationError, operationErrorRevision } = useApp();
 
   if (!viewModel) {
     return <div style={{ padding: 16, opacity: 0.5 }}>読み込み中...</div>;
@@ -29,6 +29,7 @@ export function App() {
       <StatusMessageToast />
       <KnowledgeSaveToast />
       <AlwaysModeRequestingToast />
+      <FloatingToast key={operationErrorRevision} open={Boolean(operationError)} kind="error" message={operationError ?? ""} />
     </>
   );
 }
