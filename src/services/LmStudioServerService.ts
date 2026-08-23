@@ -5,6 +5,7 @@ import { join } from "node:path";
 import * as vscode from "vscode";
 import type { LmStudioServerViewData } from "../shared/types";
 import {
+  classifyLmStudioModelsHttpResponse,
   parseLmStudioCliStatus,
   parseLmStudioLocalServerUrl,
   type LmStudioCliStatus
@@ -21,7 +22,7 @@ interface CliResult {
   stderr: string;
 }
 
-type HttpProbe = "lmStudio" | "occupied" | "unreachable";
+type HttpProbe = "lmStudio" | "auth" | "occupied" | "unreachable";
 
 export class LmStudioServerService implements vscode.Disposable {
   private readonly output = vscode.window.createOutputChannel("NaviCom LM Studio");
@@ -45,6 +46,34 @@ export class LmStudioServerService implements vscode.Disposable {
         message: cliResult.available
           ? `起動中 · localhost:${port}`
           : `起動中 · localhost:${port}（停止操作には LM Studio CLI が必要です）`
+      };
+    }
+
+    if (probe === "auth") {
+      this.log(`LM Studio is running on port ${target.port}, but API authentication is enabled.`);
+      return {
+        state: "authRequired",
+        port: target.port,
+        canStart: false,
+        canStop: cliResult.available,
+        message: "起動中ですが、LM Studio 側で API 認証が有効です。"
+      };
+    }
+
+    if (
+      cliResult.available &&
+      cliResult.status?.running &&
+      cliResult.status.port !== undefined &&
+      cliResult.status.port !== target.port
+    ) {
+      this.log(`Server port mismatch: configured ${target.port}, running ${cliResult.status.port}.`);
+      return {
+        state: "portMismatch",
+        port: cliResult.status.port,
+        configuredPort: target.port,
+        canStart: false,
+        canStop: true,
+        message: `設定は localhost:${target.port} ですが、サーバーは localhost:${cliResult.status.port} で起動中です。`
       };
     }
 
@@ -122,7 +151,7 @@ export class LmStudioServerService implements vscode.Disposable {
   public async start(baseUrl: string): Promise<LmStudioServerViewData> {
     const target = parseLmStudioLocalServerUrl(baseUrl);
     const current = await this.getStatus(baseUrl);
-    if (current.state === "running" || current.state === "portConflict") {
+    if (current.state === "running" || current.state === "authRequired" || current.state === "portConflict") {
       return current;
     }
     if (current.state === "cliUnavailable") {
@@ -162,6 +191,15 @@ export class LmStudioServerService implements vscode.Disposable {
         canStart: false,
         canStop: true,
         message: `起動中 · localhost:${target.port}`
+      };
+    }
+    if (probe === "auth") {
+      return {
+        state: "authRequired",
+        port: target.port,
+        canStart: false,
+        canStop: true,
+        message: "サーバーは起動しましたが、LM Studio 側で API 認証が有効です。"
       };
     }
 
@@ -218,13 +256,15 @@ export class LmStudioServerService implements vscode.Disposable {
 
     this.log("Server stop timed out while waiting for the HTTP API to close.");
     return {
-      state: probe === "occupied" ? "portConflict" : "error",
+      state: probe === "occupied" ? "portConflict" : probe === "auth" ? "authRequired" : "error",
       port: target.port,
       canStart: false,
-      canStop: probe === "lmStudio",
+      canStop: probe === "lmStudio" || probe === "auth",
       message: probe === "occupied"
         ? `LM Studio は停止しましたが、ポート${target.port}が別のアプリで使用されています。`
-        : "サーバーの停止を確認できませんでした。"
+        : probe === "auth"
+          ? "LM Studio サーバーはまだ起動中で、API 認証が有効です。"
+          : "サーバーの停止を確認できませんでした。"
     };
   }
 
@@ -294,15 +334,7 @@ export class LmStudioServerService implements vscode.Disposable {
     try {
       const response = await fetch(`${origin}/api/v1/models`, { signal: controller.signal });
       const text = await response.text();
-      if (!response.ok) {
-        return "occupied";
-      }
-      try {
-        const payload = JSON.parse(text) as unknown;
-        return isRecord(payload) && Array.isArray(payload.models) ? "lmStudio" : "occupied";
-      } catch {
-        return "occupied";
-      }
+      return classifyLmStudioModelsHttpResponse(response.status, response.ok, text);
     } catch {
       return await this.isTcpPortOpen(origin) ? "occupied" : "unreachable";
     } finally {
@@ -334,6 +366,9 @@ export class LmStudioServerService implements vscode.Disposable {
     const deadline = Date.now() + TRANSITION_TIMEOUT_MS;
     let latest = await this.probeHttp(origin);
     while (latest !== expected && Date.now() < deadline) {
+      if (expected === "lmStudio" && latest === "auth") {
+        return latest;
+      }
       await delay(TRANSITION_POLL_MS);
       latest = await this.probeHttp(origin);
     }

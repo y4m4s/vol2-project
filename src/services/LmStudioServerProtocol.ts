@@ -8,6 +8,28 @@ export interface LmStudioLocalServerTarget {
   port: number;
 }
 
+export type LmStudioModelsHttpResponseKind = "lmStudio" | "auth" | "occupied";
+
+export function classifyLmStudioModelsHttpResponse(
+  status: number,
+  ok: boolean,
+  responseText: string
+): LmStudioModelsHttpResponseKind {
+  if (status === 401 || status === 403) {
+    return "auth";
+  }
+  if (!ok) {
+    return "occupied";
+  }
+
+  try {
+    const payload = JSON.parse(responseText) as unknown;
+    return isRecord(payload) && Array.isArray(payload.models) ? "lmStudio" : "occupied";
+  } catch {
+    return "occupied";
+  }
+}
+
 export function parseLmStudioCliStatus(output: string): LmStudioCliStatus {
   const lines = output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   for (let index = lines.length - 1; index >= 0; index -= 1) {

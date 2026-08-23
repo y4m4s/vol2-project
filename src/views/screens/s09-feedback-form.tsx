@@ -24,6 +24,7 @@ export function S09FeedbackForm() {
     (entry) => entry.id === viewModel.pendingFeedbackEntryId && entry.role === "assistant"
   );
   const preview = target?.text.replace(/\s+/g, " ").trim() ?? "";
+  const isSaving = viewModel.requestState === "saving_feedback";
 
   function toggleReason(reason: BadFeedbackReason): void {
     setSelectedReasons((current) =>
@@ -34,11 +35,11 @@ export function S09FeedbackForm() {
   }
 
   return (
-    <div className="s09-root">
+    <div className="s09-root" aria-busy={isSaving}>
       <PageHeader
         title="回答へのフィードバック"
         subtitle="次回以降の助言の傾向に反映します。"
-        back={{ title: "会話へ戻る", ariaLabel: "会話へ戻る", onClick: () => send({ type: "cancelBadFeedback" }) }}
+        back={{ title: "会話へ戻る", ariaLabel: "会話へ戻る", disabled: isSaving, onClick: () => send({ type: "cancelBadFeedback" }) }}
       />
 
       <div className="s09-content">
@@ -55,6 +56,7 @@ export function S09FeedbackForm() {
                 <input
                   type="checkbox"
                   checked={selectedReasons.includes(option.value)}
+                  disabled={isSaving}
                   onChange={() => toggleReason(option.value)}
                 />
                 <span>{option.label}</span>
@@ -69,6 +71,7 @@ export function S09FeedbackForm() {
             id="s09-comment"
             className="s09-comment"
             value={comment}
+            disabled={isSaving}
             onChange={(event) => setComment(event.target.value)}
             placeholder="任意で、気になった点を短く書けます"
             rows={5}
@@ -77,16 +80,18 @@ export function S09FeedbackForm() {
       </div>
 
       <div className="s09-actions">
-        <button className="s09-secondary" onClick={() => send({ type: "cancelBadFeedback" })}>
+        <button className="s09-secondary" disabled={isSaving} onClick={() => send({ type: "cancelBadFeedback" })}>
           キャンセル
         </button>
         <button
           className="s09-primary"
-          disabled={!target}
+          disabled={!target || isSaving}
           onClick={() => send({ type: "submitBadFeedback", reasons: selectedReasons, comment })}
         >
-          <span className="material-symbols-outlined">send</span>
-          送信
+          <span className={`material-symbols-outlined${isSaving ? " s09-is-spinning" : ""}`}>
+            {isSaving ? "progress_activity" : "send"}
+          </span>
+          {isSaving ? "保存中…" : "送信"}
         </button>
       </div>
     </div>

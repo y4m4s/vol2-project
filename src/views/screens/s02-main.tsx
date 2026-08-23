@@ -23,7 +23,7 @@ export function S02Main() {
   } = viewModel;
   const usageModelLabel = connectionState === "connected" && providerId === "copilot"
     ? settings.copilotModelId
-      ? `GitHub Copilot：${modelLabel ?? "指定モデル"}`
+      ? modelLabel ?? "GitHub Copilot · 指定モデル"
       : "GitHub Copilot：自動"
     : undefined;
 
@@ -84,10 +84,10 @@ export function S02Main() {
       </div>
 
       {providerId === "copilot" && usageToday && (
-        <div className={`s02-usage ${usageToday.budgetExceeded ? "exceeded" : ""}`}>
+        <div className={`s02-usage ${usageToday.tokenLimitExceeded ? "exceeded" : ""}`}>
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">
-            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（目安 {usageToday.estimatedCostText}）
+            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（参考料金概算 {usageToday.estimatedCostText}、請求額ではありません）
           </span>
           {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>

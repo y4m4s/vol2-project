@@ -75,8 +75,10 @@ src/
 ## 前提条件
 
 - **VS Code Desktop** 1.99 以上（`vscode.dev` 等の Web 版は非対応）
-- **GitHub Copilot** サブスクリプションおよび **GitHub Copilot Chat** 拡張機能のインストール・サインイン済みであること
-　※学生用のGitHub Educationというプランに入っていると、無料で利用できます
+- GitHub Copilot を利用する場合は、VS Code で GitHub にサインインし、Copilot の AI 機能を有効にしていること
+  - [Copilot Free](https://docs.github.com/en/copilot/concepts/billing/individual-plans) でも月次上限の範囲で利用できます
+  - 認証済みの学生は [Copilot Student](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students) を無料で利用できます
+- LM Studio を利用する場合は、LM Studio と対象モデルをローカルで起動していること
 - Node.js / npm
 
 ---

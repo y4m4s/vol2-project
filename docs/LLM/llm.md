@@ -66,7 +66,7 @@ NaviCom の助言生成先として、既存の GitHub Copilot に加え、ロ�
 ### 2.5 利用量・履歴・設定の保存先
 
 - プロバイダー、LM Studio Base URL、LM Studio モデル ID、Copilot モデル ID はワークスペース単位で保存する。
-- Copilot は従来どおりトークン数・推定料金を記録し、日次予算の対象とする。
+- Copilot は NaviCom 内でトークン数・推定料金を記録し、NaviCom 独自の日次予算の対象とする。この値は GitHub の AI Credits 残高や請求額ではない。
 - LM Studio はトークン数・リクエスト数を内部記録しても、消費トークンと日次上限を画面に表示せず、日次予算の対象外とする。
 - LM Studio の chat completions リクエストには、実際に送信対象となったファイルパスを `navicom_referenced_files` 配列として付加する。これは LM Studio のサーバーログ確認用であり、ファイル本文は従来どおり `messages[].content` 内の文脈として送る。
 - 会話・ナレッジには任意の `providerId` と `modelId` を追加する。画面上は `GitHub Copilot · モデル名`、`LM Studio · モデル名` の形式で表示する。
@@ -170,7 +170,7 @@ LM Studio ではモデル一覧取得の成功を接続確認とする。接続�
 - Copilot 選択時: 現在の Copilot モデル選択 UI を表示
 - LM Studio 選択時: ロード中モデルの一覧と現在接続中のモデル名を表示し、選択したモデルを接続先として保存する。Base URL と API トークンの入力UIは表示しない
 - LM Studio モデル ID の手入力欄は表示しない
-- 消費トークンと「1日の使用上限」は Copilot 選択時だけ表示する
+- NaviCom が概算した消費トークンと「1日の使用上限」は Copilot 選択時だけ表示する。GitHub 公式の月次 AI Credits 使用量とは区別する
 - 「保存」時は設定を保存後、ただちに再接続する
 - 接続ボタン、状態文言、メイン画面のモデル表示から Copilot 固有の名称を外す
 
@@ -189,9 +189,9 @@ LM Studio ではモデル一覧取得の成功を接続確認とする。接続�
 
 ### 3.7 利用量・予算
 
-現在の `UsageMeter` は単一の当日合計を現在モデルの価格で換算するため、複数プロバイダーでは正しい料金にならない。プロバイダー・モデルをキーにした当日集計へ拡張する。
+`UsageMeter` は、NaviCom が送ったリクエストの当日合計をモデル価格表で概算するローカル機能である。GitHub の課金 API や AI Credits 残高とは連携せず、Auto 選択の実モデル、キャッシュ済み入力などの課金要素も完全には反映できない。複数プロバイダーでは単一の概算がさらに不正確になるため、プロバイダー・モデルをキーにした当日集計へ拡張する。
 
-- Copilot の日次料金は、その日の全 Copilot モデル分を合計して判定する。
+- Copilot の日次概算額は、その日の全 Copilot モデル分を合計して NaviCom 内の自動助言停止判定にだけ使う。
 - LM Studio の料金率は常に `0` とし、`isBudgetExceeded` の対象から除外する。
 - LM Studio のトークン数とリクエスト数は必要に応じて内部記録するが、Webview には表示しない。
 - 旧形式の単一日次集計は Copilot の旧データとして読み込み、データを失わない。
@@ -225,5 +225,5 @@ LM Studio ではモデル一覧取得の成功を接続確認とする。接続�
 | LM Studio 推論失敗 | Copilot へ切り替えず `unavailable` |
 | LM Studio を選択 | Base URL・APIトークン・日次上限を表示しない |
 | LM Studio の回答 | 消費トークンを表示しない |
-| Copilot を選択 | 消費トークンと日次上限を従来どおり表示 |
+| Copilot を選択 | NaviCom 内の概算トークンと独自の日次上限を表示し、GitHub 公式の AI Credits 残高ではないことを区別 |
 | 既存の会話・ナレッジ DB | 既存レコードを問題なく表示 |

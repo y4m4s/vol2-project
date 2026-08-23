@@ -382,7 +382,8 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
             <button
               className={`chat-depth-btn ${isHigh ? "high" : ""}`}
-              title={isHigh ? "ロウモードへ切り替え" : "ハイモードへ切り替え"}
+              title={isHigh ? "推論強度を低に切り替え" : "推論強度を高に切り替え"}
+              aria-label={isHigh ? "推論強度を低に切り替え" : "推論強度を高に切り替え"}
               disabled={!canSwitchAssistanceDepth}
               onClick={() => send({
                 type: "setAssistanceDepth",
@@ -390,7 +391,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
               })}
             >
               <span className="material-symbols-outlined">{isHigh ? "travel_explore" : "lightbulb"}</span>
-              {isHigh ? "ハイ" : "ロウ"}
+              推論強度 {isHigh ? "高" : "低"}
             </button>
 
             <button

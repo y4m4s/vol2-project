@@ -15,6 +15,8 @@ import {
   FeedbackRating
 } from "../shared/types";
 import { isSlashCommand } from "../shared/skills";
+import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
+import { SerialTaskQueue } from "./SerialTaskQueue";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -59,11 +61,20 @@ export interface ConversationStreamRecord {
   updatedAt: string;
   entries: StoredConversationEntry[];
   additionalContext?: string;
+  revision: number;
+}
+
+export class ConversationRevisionConflictError extends Error {
+  public constructor(public readonly streamId: string) {
+    super(`Conversation stream ${streamId} was updated by another operation.`);
+    this.name = "ConversationRevisionConflictError";
+  }
 }
 
 export class ConversationStore implements vscode.Disposable {
   private db?: SqlJsDatabase;
   private dbUri?: vscode.Uri;
+  private readonly mutationQueue = new SerialTaskQueue();
 
   public constructor(private readonly storageUri: vscode.Uri) {}
 
@@ -75,8 +86,7 @@ export class ConversationStore implements vscode.Disposable {
       locateFile: (file) => require.resolve(`sql.js/dist/${file}`)
     });
 
-    const existingBytes = await this.readExistingDatabase();
-    this.db = existingBytes ? new SQL.Database(existingBytes) : new SQL.Database();
+    this.db = await openDatabaseWithBackup(this.dbUri, SQL.Database);
     this.migrate();
     this.deleteEmptyStreamsInMemory();
     await this.persist();
@@ -114,7 +124,8 @@ export class ConversationStore implements vscode.Disposable {
       createdAt: summary.createdAt,
       updatedAt: summary.updatedAt,
       entries: this.selectEntries(id),
-      additionalContext: summary.additionalContext
+      additionalContext: summary.additionalContext,
+      revision: this.selectRevision(id) ?? 0
     };
   }
 
@@ -130,48 +141,59 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   public async createStream(title = DEFAULT_CONVERSATION_STREAM_TITLE): Promise<ConversationStreamRecord> {
-    const now = new Date().toISOString();
-    const record: ConversationStreamRecord = {
-      id: this.createId(),
-      title: this.normalizeTitle(title),
-      createdAt: now,
-      updatedAt: now,
-      entries: [],
-      additionalContext: undefined
-    };
+    return this.mutationQueue.run(async () => {
+      const now = new Date().toISOString();
+      const record: ConversationStreamRecord = {
+        id: this.createId(),
+        title: this.normalizeTitle(title),
+        createdAt: now,
+        updatedAt: now,
+        entries: [],
+        additionalContext: undefined,
+        revision: 0
+      };
 
-    this.getDb().run(
-      `INSERT INTO conversation_streams
-        (id, title, created_at, updated_at, message_count, last_message_preview, additional_context)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [record.id, record.title, record.createdAt, record.updatedAt, 0, null, null]
-    );
-    await this.persist();
-    return record;
+      this.getDb().run(
+        `INSERT INTO conversation_streams
+          (id, title, created_at, updated_at, message_count, last_message_preview, additional_context, revision)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [record.id, record.title, record.createdAt, record.updatedAt, 0, null, null, record.revision]
+      );
+      await this.persist();
+      return record;
+    });
   }
 
   public async saveStream(record: ConversationStreamRecord): Promise<ConversationStreamRecord> {
-    const normalizedEntries = record.entries.map((entry) => ({ ...entry }));
-    const nextRecord: ConversationStreamRecord = {
-      ...record,
-      title: this.normalizeTitle(record.title),
-      updatedAt: this.resolveUpdatedAt(record.updatedAt, normalizedEntries),
-      entries: normalizedEntries,
-      additionalContext: this.normalizeOptionalText(record.additionalContext)
-    };
-    const lastMessagePreview = this.buildLastMessagePreview(normalizedEntries);
+    return this.mutationQueue.run(async () => {
+      const currentRevision = this.selectRevision(record.id);
+      if (currentRevision !== record.revision) {
+        throw new ConversationRevisionConflictError(record.id);
+      }
+      const normalizedEntries = record.entries.map((entry) => ({ ...entry }));
+      const nextRecord: ConversationStreamRecord = {
+        ...record,
+        title: this.normalizeTitle(record.title),
+        updatedAt: this.resolveUpdatedAt(record.updatedAt, normalizedEntries),
+        entries: normalizedEntries,
+        additionalContext: this.normalizeOptionalText(record.additionalContext),
+        revision: record.revision + 1
+      };
+      const lastMessagePreview = this.buildLastMessagePreview(normalizedEntries);
 
-    this.getDb().run(
-      `INSERT INTO conversation_streams
-        (id, title, created_at, updated_at, message_count, last_message_preview, additional_context)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      this.inTransaction(() => {
+        this.getDb().run(
+          `INSERT INTO conversation_streams
+        (id, title, created_at, updated_at, message_count, last_message_preview, additional_context, revision)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          title = excluded.title,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
          message_count = excluded.message_count,
          last_message_preview = excluded.last_message_preview,
-         additional_context = excluded.additional_context`,
+         additional_context = excluded.additional_context,
+         revision = excluded.revision`,
       [
         nextRecord.id,
         nextRecord.title,
@@ -179,36 +201,45 @@ export class ConversationStore implements vscode.Disposable {
         nextRecord.updatedAt,
         nextRecord.entries.length,
         lastMessagePreview ?? null,
-        nextRecord.additionalContext ?? null
-      ]
-    );
+        nextRecord.additionalContext ?? null,
+        nextRecord.revision
+          ]
+        );
 
-    this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [nextRecord.id]);
-    normalizedEntries.forEach((entry, index) => {
-      this.getDb().run(
-        `INSERT INTO conversation_entries
+        this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [nextRecord.id]);
+        normalizedEntries.forEach((entry, index) => {
+          this.getDb().run(
+            `INSERT INTO conversation_entries
           (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json, provider_id, model_id, model_label, feedback)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        this.toEntryParams(nextRecord.id, index, entry)
-      );
-    });
+            this.toEntryParams(nextRecord.id, index, entry)
+          );
+        });
+      });
 
-    await this.persist();
-    return nextRecord;
+      await this.persist();
+      return nextRecord;
+    });
   }
 
   public async deleteStream(id: string): Promise<boolean> {
-    const existed = Boolean(this.get(id));
-    this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [id]);
-    this.getDb().run("DELETE FROM conversation_streams WHERE id = ?", [id]);
-    this.getDb().run("DELETE FROM conversation_metadata WHERE key = ? AND value = ?", [ACTIVE_STREAM_KEY, id]);
-    await this.persist();
-    return existed;
+    return this.mutationQueue.run(async () => {
+      const existed = Boolean(this.get(id));
+      this.inTransaction(() => {
+        this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [id]);
+        this.getDb().run("DELETE FROM conversation_streams WHERE id = ?", [id]);
+        this.getDb().run("DELETE FROM conversation_metadata WHERE key = ? AND value = ?", [ACTIVE_STREAM_KEY, id]);
+      });
+      await this.persist();
+      return existed;
+    });
   }
 
   public async deleteEmptyStreams(): Promise<void> {
-    this.deleteEmptyStreamsInMemory();
-    await this.persist();
+    await this.mutationQueue.run(async () => {
+      this.deleteEmptyStreamsInMemory();
+      await this.persist();
+    });
   }
 
   public getActiveStreamId(): string | undefined {
@@ -228,13 +259,15 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   public async setActiveStream(id: string): Promise<void> {
-    this.getDb().run(
-      `INSERT INTO conversation_metadata (key, value)
-       VALUES (?, ?)
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-      [ACTIVE_STREAM_KEY, id]
-    );
-    await this.persist();
+    await this.mutationQueue.run(async () => {
+      this.getDb().run(
+        `INSERT INTO conversation_metadata (key, value)
+         VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+        [ACTIVE_STREAM_KEY, id]
+      );
+      await this.persist();
+    });
   }
 
   public dispose(): void {
@@ -251,7 +284,8 @@ export class ConversationStore implements vscode.Disposable {
         updated_at TEXT NOT NULL,
         message_count INTEGER NOT NULL DEFAULT 0,
         last_message_preview TEXT,
-        additional_context TEXT
+        additional_context TEXT,
+        revision INTEGER NOT NULL DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS conversation_entries (
@@ -289,6 +323,7 @@ export class ConversationStore implements vscode.Disposable {
     `);
 
     this.ensureColumn("conversation_streams", "additional_context", "TEXT");
+    this.ensureColumn("conversation_streams", "revision", "INTEGER NOT NULL DEFAULT 0");
     this.ensureColumn("conversation_entries", "assistance_depth", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
@@ -354,6 +389,28 @@ export class ConversationStore implements vscode.Disposable {
     }
 
     return entries;
+  }
+
+  private selectRevision(streamId: string): number | undefined {
+    const stmt = this.getDb().prepare("SELECT revision FROM conversation_streams WHERE id = ? LIMIT 1");
+    try {
+      stmt.bind([streamId]);
+      return stmt.step() ? Number(stmt.getAsObject().revision ?? 0) : undefined;
+    } finally {
+      stmt.free();
+    }
+  }
+
+  private inTransaction(task: () => void): void {
+    const db = this.getDb();
+    db.run("BEGIN IMMEDIATE");
+    try {
+      task();
+      db.run("COMMIT");
+    } catch (error) {
+      db.run("ROLLBACK");
+      throw error;
+    }
   }
 
   private summaryFromRow(row: Record<string, unknown>): ConversationStreamSummary {
@@ -535,27 +592,12 @@ export class ConversationStore implements vscode.Disposable {
     return normalized.length > 0 ? normalized : undefined;
   }
 
-  private async readExistingDatabase(): Promise<Uint8Array | undefined> {
-    if (!this.dbUri) {
-      return undefined;
-    }
-
-    try {
-      return await vscode.workspace.fs.readFile(this.dbUri);
-    } catch (error) {
-      if (error instanceof vscode.FileSystemError) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-
   private async persist(): Promise<void> {
     if (!this.dbUri) {
       throw new Error("ConversationStore is not initialized.");
     }
 
-    await vscode.workspace.fs.writeFile(this.dbUri, this.getDb().export());
+    await writeFileAtomically(this.dbUri, this.getDb().export());
   }
 
   private getDb(): SqlJsDatabase {

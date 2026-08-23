@@ -35,7 +35,7 @@ export type NavigatorScreen =
   | "knowledge_detail"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge";
+export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge" | "saving_feedback";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
@@ -151,7 +151,7 @@ export interface NavigatorSettings {
   lmStudioModelKey?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
-  dailyBudgetUsd: number;
+  dailyTokenLimit: number;
   protectedExcludedGlobs: string[];
   excludedGlobs: string[];
 }
@@ -172,7 +172,9 @@ export type LmStudioServerState =
   | "stopped"
   | "starting"
   | "running"
+  | "portMismatch"
   | "stopping"
+  | "authRequired"
   | "cliUnavailable"
   | "portConflict"
   | "error";
@@ -180,6 +182,7 @@ export type LmStudioServerState =
 export interface LmStudioServerViewData {
   state: LmStudioServerState;
   port?: number;
+  configuredPort?: number;
   message?: string;
   canStart: boolean;
   canStop: boolean;
@@ -193,8 +196,8 @@ export interface UsageTodayViewData {
   totalTokens: number;
   estimatedCostText: string;
   blendedPricePerMTokenUsd: number;
-  budgetUsd: number;
-  budgetExceeded: boolean;
+  tokenLimit: number;
+  tokenLimitExceeded: boolean;
 }
 
 export interface RequestPlanCategory {

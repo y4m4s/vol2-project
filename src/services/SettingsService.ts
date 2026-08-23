@@ -61,14 +61,14 @@ const DEFAULT_SETTINGS: NavigatorSettings = {
   lmStudioBaseUrl: "http://127.0.0.1:1234",
   requestIntervalMs: 60000,
   idleDelayMs: 10000,
-  dailyBudgetUsd: 1.0,
+  dailyTokenLimit: 100_000,
   protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
   excludedGlobs: []
 };
 
 const IDLE_DELAY_OPTIONS_MS = [5000, 10000, 15000] as const;
 const REQUEST_INTERVAL_OPTIONS_MS = [20000, 60000, 180000] as const;
-const DAILY_BUDGET_USD_OPTIONS = [0.5, 1.0, 2.0, 0] as const;
+const DAILY_TOKEN_LIMIT_OPTIONS = [50_000, 100_000, 200_000, 0] as const;
 
 export class SettingsService {
   public constructor(private readonly storage: vscode.Memento) {}
@@ -91,6 +91,7 @@ export class SettingsService {
 
   private mergeSettings(partial?: Partial<NavigatorSettings>): NavigatorSettings {
     const customExcludedGlobs = this.normalizeCustomExcludedGlobs(partial?.excludedGlobs ?? []);
+    const legacy = partial as (Partial<NavigatorSettings> & { dailyBudgetUsd?: number }) | undefined;
 
     return {
       providerId: this.normalizeProviderId(partial?.providerId),
@@ -101,7 +102,9 @@ export class SettingsService {
       lmStudioModelKey: this.normalizeLmStudioModelKey(partial?.lmStudioModelKey),
       requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
-      dailyBudgetUsd: this.normalizeDailyBudgetUsd(partial?.dailyBudgetUsd ?? DEFAULT_SETTINGS.dailyBudgetUsd),
+      dailyTokenLimit: this.normalizeDailyTokenLimit(
+        partial?.dailyTokenLimit ?? (legacy?.dailyBudgetUsd === 0 ? 0 : DEFAULT_SETTINGS.dailyTokenLimit)
+      ),
       protectedExcludedGlobs: PROTECTED_EXCLUDED_GLOBS,
       excludedGlobs: customExcludedGlobs
     };
@@ -119,8 +122,8 @@ export class SettingsService {
     );
   }
 
-  private normalizeDailyBudgetUsd(value: number): number {
-    return DAILY_BUDGET_USD_OPTIONS.reduce((nearest, option) =>
+  private normalizeDailyTokenLimit(value: number): number {
+    return DAILY_TOKEN_LIMIT_OPTIONS.reduce((nearest, option) =>
       Math.abs(option - value) < Math.abs(nearest - value) ? option : nearest
     );
   }

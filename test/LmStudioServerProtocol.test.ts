@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  classifyLmStudioModelsHttpResponse,
   parseLmStudioCliStatus,
   parseLmStudioLocalServerUrl
 } from "../src/services/LmStudioServerProtocol";
@@ -41,4 +42,12 @@ test("ローカルのLM Studio URLだけを許可する", () => {
   );
   assert.throws(() => parseLmStudioLocalServerUrl("https://example.com:1234"));
   assert.throws(() => parseLmStudioLocalServerUrl("http://127.0.0.1:1234/v1"));
+});
+
+test("LM Studio APIの認証エラーをポート競合と区別する", () => {
+  assert.equal(classifyLmStudioModelsHttpResponse(401, false, "{}"), "auth");
+  assert.equal(classifyLmStudioModelsHttpResponse(403, false, "{}"), "auth");
+  assert.equal(classifyLmStudioModelsHttpResponse(200, true, '{"models":[]}'), "lmStudio");
+  assert.equal(classifyLmStudioModelsHttpResponse(200, true, "not-json"), "occupied");
+  assert.equal(classifyLmStudioModelsHttpResponse(500, false, "{}"), "occupied");
 });

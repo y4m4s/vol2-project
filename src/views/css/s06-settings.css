@@ -308,6 +308,11 @@
   color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
 }
 
+.lmstudio-server-status.state-authRequired {
+  color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
+  border-color: color-mix(in srgb, currentColor 42%, var(--vscode-panel-border));
+}
+
 .lmstudio-server-status-icon {
   flex-shrink: 0;
   font-size: 18px;
@@ -349,6 +354,13 @@
   color: var(--vscode-descriptionForeground);
   background: transparent;
   font-size: 0.84em;
+}
+
+.lmstudio-server-mismatch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .lmstudio-server-refresh:hover:not(:disabled) {

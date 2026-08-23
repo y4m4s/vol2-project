@@ -24,11 +24,11 @@ AI が出したアドバイス（`ConversationEntry`, role: `assistant`）に対
 ## 機能要件
 
 1. チャットバブル（[s04-conversation.tsx](../src/views/screens/s04-conversation.tsx) の `ResponseActions`）の assistant 回答に Good / Bad ボタンを追加する。
-2. Good を押すと、その場で Copilot に1回要約リクエストを送り、「何が良かったか」を短い指示文に要約してから DB に保存する。再評価防止のためボタンは押下後 disabled になる。
+2. Good を押すと、生の評価をDBへ保存して回答を評価済みにした後、接続中のAIへ要約リクエストを送り、「何が良かったか」を短い指示文として非同期更新する。
 3. Bad を押すと、新規画面「フィードバック入力画面」に遷移する。入力項目:
    - 理由チェックボックス（複数選択可）: `too_long`（長すぎる）/ `off_topic`（的外れ）/ `gives_answer`（答えを代行しすぎ）/ `too_vague`（観点が曖昧）/ `other`（その他）
    - 自由記述（任意）
-4. Bad のフィードバック送信時も、その場で Copilot に1回要約リクエストを送り、「何が悪かったか」を短い指示文に要約してから DB に保存する。送信完了後は元の画面に戻る。キャンセルすると何も保存せず戻る（要約リクエストも発生しない）。
+4. Bad のフィードバック送信時も、生の評価をDBへ保存してから元の画面に戻り、接続中のAIによる短い要約を非同期更新する。キャンセルすると何も保存せず戻る（要約リクエストも発生しない）。
 5. 評価データ（生の評価・理由・自由記述・要約結果）はローカル `sql.js` ベースの DB に保存する（既存2ストアと同様、`globalStorageUri` 配下）。
 6. 次回以降のアドバイス生成時、直近の要約済み評価傾向をプロンプトに注入する。蓄積が無い場合は何も注入しない。アドバイス生成時には追加の LLM 呼び出しは発生させない（要約は評価時点で済ませてあるものを読むだけ）。
 
@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_advice_feedback_rating_created ON advice_feedback
 - 本文は全文ではなく抜粋のみ保存する（要約リクエストの入力として使うのみで、それ以上保持する必要がないため）。
 - `summary_text` は **評価時点（FB送信時）で1回だけ LLM 要約を実行した結果**を保存する。アドバイス生成時には再要約せず、ここに保存された文字列をそのまま読む（13.5）。
 - `summary_status` で要約の成否を区別する。`ok`: 要約成功。`failed`: LLM呼び出し失敗（Copilot未接続・エラー等）。`skipped`: 何らかの理由で要約自体を試行しなかった場合。`failed` / `skipped` の場合は `getTendencySummary()` 側でルールベースのフォールバック文言に切り替える（13.5）。
-- `assistance_depth` / `slash_command` も保存しておくことで、将来「ハイモードでは too_long が多い」のような分析ができる余地を残す（今回はこの分析自体は実装しない）。
+- `assistance_depth` / `slash_command` も保存しておくことで、将来「推論強度が高では too_long が多い」のような分析ができる余地を残す（今回はこの分析自体は実装しない）。
 
 ## 型定義の追加（`src/shared/types.ts`）
 
@@ -138,8 +138,10 @@ export interface NavigatorSessionState {
 責務:
 
 - DB ファイルの初期化（`globalStorageUri/feedback.sqlite`）
-- `saveFeedback(input: AdviceFeedbackInput, meta: { kind: GuidanceKind; assistanceDepth?: AssistanceDepth; slashCommand?: SlashCommand; adviceText: string }, summary: FeedbackSummaryResult): Promise<void>`
-  - 要約は呼び出し側（`NavigatorController`）が先に実行し、結果（`FeedbackSummaryResult`）をこのメソッドに渡す。`FeedbackStore` 自身は LLM を呼ばず、DB への書き込みのみ行う。
+- `saveFeedback(input: AdviceFeedbackInput, meta: AdviceFeedbackMeta, summary: FeedbackSummaryResult): Promise<string>`
+  - 生の評価を先に保存し、保存済みレコードIDを返す。同じ会話エントリの再実行時は既存IDを返す。
+- `updateFeedbackSummary(id: string, rating: FeedbackRating, summary: FeedbackSummaryResult): Promise<void>`
+  - 非同期で得た要約を検証して保存済みレコードへ反映する。
 - `getTendencySummary(): FeedbackTendencySummary`
   - 直近 good 5件 / bad 5件程度の `summary_text`（`summary_status = 'ok'` のもののみ）を読み出して配列に詰めるだけ。**ここでは LLM 呼び出しを行わない**（13.5）。
 
@@ -153,12 +155,12 @@ export interface NavigatorSessionState {
 
 ```ts
 public async summarizeFeedback(input: FeedbackSummarizeInput): Promise<FeedbackSummaryResult> {
-  const result = await this.requestText(this.buildFeedbackSummaryPrompt(input));
+  const result = await this.requestText(this.buildFeedbackSummaryPrompt(input), undefined, undefined, false);
   if (!result.ok) {
     return { status: "failed" };
   }
 
-  const summaryText = this.normalizeLine(result.text, 120);
+  const summaryText = validateFeedbackSummary(result.text, input.rating);
   return summaryText ? { status: "ok", summaryText } : { status: "failed" };
 }
 
@@ -175,9 +177,9 @@ export interface FeedbackSummarizeInput {
 - **Good**: 「保存対象の回答」と「ユーザーが Good と評価した」事実だけを渡し、何が良かったと推測できるかを1文（英語、120文字以内）の指示文として返させる。例: `"Keep the explanation short and point to specific code locations rather than general advice."`
 - **Bad**: 「保存対象の回答」「選択された理由（`too_long` 等）」「自由記述コメント」を渡し、次回以降に避けるべきことを1文（英語、120文字以内）の指示文として返させる。理由ラベルと自由記述の両方をLLMに渡すことで、定型理由だけでは表現できないニュアンス（自由記述側）も1文に圧縮できる。
 - 出力は **`Rules:` ブロックと同じ言語ポリシーに揃えて英語で1文のみ**を返すよう指示する（前回検討した「指示文は英語にしてトークン効率を上げる」方針をここでも採用）。これは英語化によるトークン削減目的に加えて、要約自体を短い1文に強制してプロンプト肥大化を防ぐ目的も兼ねる。
-- LLM が複数文・説明・前置きを返した場合は、`createConversationTitle` の `normalizeConversationTitle` と同様の方法で1行目だけを取り出し、120文字で切り詰める。
+- LLM出力は120文字以内・単一行・許可文字・メタ指示除外・Bad接頭辞を検証し、違反時は切り詰めず `failed` とする。
 
-`getTendencySummary()`（`FeedbackStore` 側）はこの `summary_text` を直近件数分だけ配列にして返すだけになる。要約に失敗した（`summary_status = 'failed'`）レコードは `goodPatterns` / `badAvoidPatterns` に含めない。
+`getTendencySummary()`（`FeedbackStore` 側）は保存済み `summary_text` を再検証して直近件数分だけ返す。要約に失敗したレコードや、過去DBに残る不正な要約は `goodPatterns` / `badAvoidPatterns` に含めない。
 
 #### 要約に失敗した場合のフォールバック
 
@@ -244,7 +246,7 @@ LLM 要約方式を採用したことで、トークン消費は **「評価時�
 
 #### `assistanceDepth` との関係
 
-- ロウモード（`always` 含む）は `RequestPlanner.applyLowDepthContextLimits`（[RequestPlanner.ts:77](../src/services/RequestPlanner.ts#L77)）で文脈を強く絞っているが、`feedbackTendency` はこの圧縮対象（`GuidanceContext`）の外側で `buildPrompt` に直接追加される。(B) の上乗せ分は (B) 自体の上限（直近5件・1文ずつ）で抑えているため、ロウモードでも実害は小さいと判断し、`always` のみ除外（13.6 既述）、`manual`/`context` はロウ/ハイ問わず注入する。
+- 推論強度が低（`always` 含む）の場合は `RequestPlanner.applyLowDepthContextLimits`（[RequestPlanner.ts:77](../src/services/RequestPlanner.ts#L77)）で文脈を強く絞っているが、`feedbackTendency` はこの圧縮対象（`GuidanceContext`）の外側で `buildPrompt` に直接追加される。(B) の上乗せ分は (B) 自体の上限（直近5件・1文ずつ）で抑えているため、推論強度が低でも実害は小さいと判断し、`always` のみ除外（13.6 既述）、`manual`/`context` は推論強度を問わず注入する。
 
 #### 言語選択によるトークン削減
 

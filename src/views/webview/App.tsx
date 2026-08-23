@@ -8,15 +8,14 @@ import { S06Settings } from "../screens/s06-settings";
 import { S07Error } from "../screens/s07-error";
 import { S08History } from "../screens/s08-history";
 import { S09FeedbackForm } from "../screens/s09-feedback-form";
-import { ConnectionActivity } from "./components/ConnectionActivity";
 import { FloatingToast } from "./components/FloatingToast";
 import type { NavigatorScreen } from "../../shared/types";
 
-const KNOWLEDGE_SAVE_PENDING_TEXT = "Copilot でアドバイスをナレッジ用に整理しています...";
+const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレッジ用に整理しています...";
 const KNOWLEDGE_SAVE_DONE_TEXT = "アドバイスを整理してナレッジとして保存しました。";
 
 export function App() {
-  const { viewModel } = useApp();
+  const { viewModel, operationError, operationErrorRevision } = useApp();
 
   if (!viewModel) {
     return <div style={{ padding: 16, opacity: 0.5 }}>読み込み中...</div>;
@@ -26,11 +25,11 @@ export function App() {
 
   return (
     <>
-      <ConnectionActivity />
       {renderScreen(screen)}
       <StatusMessageToast />
       <KnowledgeSaveToast />
       <AlwaysModeRequestingToast />
+      <FloatingToast key={operationErrorRevision} open={Boolean(operationError)} kind="error" message={operationError ?? ""} />
     </>
   );
 }
@@ -73,7 +72,7 @@ function KnowledgeSaveToast() {
     ? "ナレッジに整理しています"
     : "ナレッジとして保存しました";
   const description = isSaving
-    ? "Copilot がアドバイスを再利用しやすい形にまとめています。"
+    ? "接続中の AI がアドバイスを再利用しやすい形にまとめています。"
     : "あとからナレッジ管理で見返せます。";
 
   return (
