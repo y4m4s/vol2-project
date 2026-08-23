@@ -3,49 +3,61 @@ import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
 import { AdviceService } from "../services/AdviceService";
 import { AdviceScheduler } from "../services/AdviceScheduler";
-import {
-  ConversationStore,
-  ConversationRevisionConflictError,
-  ConversationStreamRecord,
-  DEFAULT_CONVERSATION_STREAM_TITLE,
-  StoredConversationEntry
-} from "../services/ConversationStore";
-import { ConnectionActivationResult, ConnectionService } from "../services/ConnectionService";
+import { ConversationStore } from "../services/ConversationStore";
+import { ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
 import { FeedbackStore } from "../services/FeedbackStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
 import { UsageMeter } from "../services/UsageMeter";
 import { LmStudioServerService } from "../services/LmStudioServerService";
-import { getSkill, isSlashCommand } from "../shared/skills";
+import { LmStudioCoordinator } from "./coordinators/LmStudioCoordinator";
+import { ConversationCoordinator } from "./coordinators/ConversationCoordinator";
+import {
+  NavigationCoordinator,
+  resolveHomeScreen,
+  resolveScreenAfterFailure,
+  resolveScreenAfterSuccess,
+  resolveSelectedConversationIdAfterSuccess
+} from "./coordinators/NavigationCoordinator";
+import { FeedbackCoordinator } from "./coordinators/FeedbackCoordinator";
+import { KnowledgeCoordinator } from "./coordinators/KnowledgeCoordinator";
+import {
+  ConnectionSettingsCoordinator,
+  SettingsInput
+} from "./coordinators/ConnectionSettingsCoordinator";
+import {
+  createAutomaticFingerprint,
+  hasMeaningfulContext,
+  normalizeAdditionalContext,
+  parseSlashInput,
+  resolveAdditionalContext,
+  resolveEffectiveAssistanceDepth,
+  resolveNextProjectScope,
+  resolveUserEntryText,
+  withAdditionalContext
+} from "./GuidanceInput";
+import { getSkill } from "../shared/skills";
 import {
   AdviceMode,
   AiProviderId,
   AdviceTriggerReason,
   AssistanceDepth,
-  ConnectionState,
   ConversationEntry,
   GuidanceCard,
   GuidanceKind,
   GuidanceContext,
-  KnowledgeDetailViewData,
-  KnowledgeListItem,
-  LmStudioServerViewData,
   NavigatorScreen,
   NavigatorSessionState,
   NavigatorSettings,
-  NavigatorStatusMessage,
   NavigatorViewModel,
-  ProjectContextScope,
   SlashCommand,
   SlashCommandScope,
   UsageTodayViewData,
   FeedbackRating,
-  BadFeedbackReason,
-  AdviceFeedbackInput
+  BadFeedbackReason
 } from "../shared/types";
 
-const HOME_SCREENS: NavigatorScreen[] = ["onboarding", "main", "error"];
 const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 
 interface GuidanceExecutionOptions {
@@ -60,25 +72,16 @@ interface GuidanceExecutionOptions {
   slashCommandScope?: SlashCommandScope;
 }
 
-interface ParsedSlashInput {
-  userPrompt?: string;
-  slashCommand?: SlashCommand;
-  slashCommandScope?: SlashCommandScope;
-}
-
-interface CopilotFallbackResult {
-  connectionState: ConnectionState;
-  settings: NavigatorSettings;
-  statusMessage: NavigatorStatusMessage;
-}
-
 export class NavigatorController implements vscode.Disposable {
   private readonly sessionStore: SessionStore;
+  private readonly connectionSettingsCoordinator: ConnectionSettingsCoordinator;
+  private readonly lmStudioCoordinator: LmStudioCoordinator;
+  private readonly conversationCoordinator: ConversationCoordinator;
+  private readonly navigationCoordinator: NavigationCoordinator;
+  private readonly feedbackCoordinator: FeedbackCoordinator;
+  private readonly knowledgeCoordinator: KnowledgeCoordinator;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly didChangeStateEmitter = new vscode.EventEmitter<void>();
-  private readonly guidanceContextByConversationId = new Map<string, GuidanceContext>();
-  private readonly summarizedConversationTitleStreamIds = new Set<string>();
-  private readonly feedbackPersistingEntryIds = new Set<string>();
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
@@ -88,14 +91,6 @@ export class NavigatorController implements vscode.Disposable {
   };
   private nextGuidanceRequestId = 1;
   private initialized = false;
-  private settingsRevision = 0;
-  private lmStudioServer: LmStudioServerViewData = {
-    state: "checking",
-    canStart: false,
-    canStop: false,
-    message: "LM Studio サーバーの状態を確認しています…"
-  };
-  private pendingLmStudioServerOperation?: Promise<void>;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -106,13 +101,82 @@ export class NavigatorController implements vscode.Disposable {
     private readonly adviceScheduler: AdviceScheduler,
     private readonly requestPlanner: RequestPlanner,
     private readonly settingsService: SettingsService,
-    private readonly lmStudioServerService: LmStudioServerService,
+    lmStudioServerService: LmStudioServerService,
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
     private readonly feedbackStore: FeedbackStore,
     private readonly usageMeter: UsageMeter
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
+    this.connectionSettingsCoordinator = new ConnectionSettingsCoordinator(
+      this.connectionService,
+      this.settingsService,
+      this.adviceScheduler,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        collectContextPreview: () => this.rememberSelectionContext(this.contextCollector.collectPreview()),
+        notifyStateChanged: () => this.didChangeStateEmitter.fire()
+      }
+    );
+    this.lmStudioCoordinator = new LmStudioCoordinator(
+      this.connectionService,
+      lmStudioServerService,
+      this.settingsService,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        notifyStateChanged: () => this.didChangeStateEmitter.fire(),
+        saveSettings: (settings) => this.connectionSettingsCoordinator.saveSettingsWithRevision(settings),
+        buildConnectionStatus: (providerId, state) =>
+          this.connectionSettingsCoordinator.buildConnectionStatusMessageForProvider(providerId, state)
+      }
+    );
+    this.conversationCoordinator = new ConversationCoordinator(
+      this.conversationStore,
+      this.adviceService,
+      this.connectionService,
+      this.settingsService,
+      this.usageMeter,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        resolveHomeScreen: () => resolveHomeScreen(this.sessionStore.getState().connectionState),
+        resetAutomaticFingerprint: () => { this.lastAutomaticContextFingerprint = undefined; },
+        createGuidanceCard: (entry) => this.createGuidanceCard(entry),
+        getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state),
+        getCurrentProviderId: () => this.connectionSettingsCoordinator.getCurrentProviderId()
+      }
+    );
+    this.navigationCoordinator = new NavigationCoordinator({
+      getState: () => this.sessionStore.getState(),
+      patchSession: (partial) => this.patchSession(partial),
+      onSettingsOpened: () => { void this.lmStudioCoordinator.refreshServerStatus(false); }
+    });
+    this.feedbackCoordinator = new FeedbackCoordinator(
+      this.feedbackStore,
+      this.adviceService,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        pushFeedbackForm: () => this.navigationCoordinator.pushScreen("feedback_form"),
+        navigateBack: () => this.navigationCoordinator.navigateBack(),
+        createGuidanceCard: (entry) => this.createGuidanceCard(entry),
+        persistConversation: () => this.conversationCoordinator.persist({ summarizeTitle: false })
+      }
+    );
+    this.knowledgeCoordinator = new KnowledgeCoordinator(
+      this.knowledgeStore,
+      this.conversationStore,
+      this.connectionService,
+      this.adviceService,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        getCurrentModelLabel: () => this.connectionSettingsCoordinator.getCurrentModelLabel(),
+        getGuidanceContext: (entryId) => this.conversationCoordinator.getGuidanceContext(entryId)
+      }
+    );
 
     this.disposables.push(
       this.sessionStore,
@@ -137,7 +201,7 @@ export class NavigatorController implements vscode.Disposable {
     await this.conversationStore.initialize();
     await this.knowledgeStore.initialize();
     await this.feedbackStore.initialize();
-    await this.restoreConversationState();
+    await this.conversationCoordinator.restore();
 
     const settings = this.settingsService.getSettings();
     this.contextCollector.primeDocuments(vscode.workspace.textDocuments);
@@ -179,29 +243,29 @@ export class NavigatorController implements vscode.Disposable {
         }
       }),
       vscode.lm.onDidChangeChatModels(() => {
-        void this.refreshCopilotModelOptions();
+        void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
       })
     );
 
     this.initialized = true;
     this.patchSession({
-      screen: this.resolveHomeScreen(this.connectionService.getState()),
+      screen: resolveHomeScreen(this.connectionService.getState()),
       mode: settings.defaultMode,
       assistanceDepth: settings.defaultAssistanceDepth
     });
     this.refreshContextPreview();
-    void this.refreshCopilotModelOptions();
+    void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
   }
 
   public getViewModel(): NavigatorViewModel {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const currentRequestPlan = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
+      withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
       state.contextPreview,
       settings,
       state.mode === "always" ? "always" : "context",
-      this.resolveEffectiveAssistanceDepth(state.mode === "always" ? "always" : "context", state.assistanceDepth)
+      resolveEffectiveAssistanceDepth(state.mode === "always" ? "always" : "context", state.assistanceDepth)
     ).requestPlan;
 
     return {
@@ -218,15 +282,11 @@ export class NavigatorController implements vscode.Disposable {
       autoAdvice: this.adviceScheduler.getState(),
       usageToday: this.buildUsageToday(settings),
       providerId: this.connectionService.getProviderId(),
-      modelLabel: this.getCurrentModelLabel(),
+      modelLabel: this.connectionSettingsCoordinator.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
       lmStudioModelOptions: this.connectionService.getLmStudioModelOptions(),
-      lmStudioServer: {
-        ...this.lmStudioServer,
-        canStart: this.lmStudioServer.canStart && state.requestState === "idle",
-        canStop: this.lmStudioServer.canStop && state.requestState === "idle"
-      },
-      settingsRevision: this.settingsRevision,
+      lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
+      settingsRevision: this.connectionSettingsCoordinator.revision,
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       latestGuidance: state.latestGuidance,
@@ -237,137 +297,31 @@ export class NavigatorController implements vscode.Disposable {
       pendingFeedbackEntryId: state.pendingFeedbackEntryId,
       currentRequestPlan,
       settings,
-      knowledgeItems: this.initialized ? this.buildKnowledgeItems(state) : [],
-      selectedKnowledge: this.initialized ? this.buildSelectedKnowledge(state) : undefined,
+      knowledgeItems: this.initialized ? this.knowledgeCoordinator.buildItems(state) : [],
+      selectedKnowledge: this.initialized ? this.knowledgeCoordinator.buildSelected(state) : undefined,
       savedKnowledgeSourceIds: this.initialized ? this.knowledgeStore.listSourceAdviceIds() : [],
       knowledgeQuery: state.knowledgeQuery
     };
   }
 
   public async connectCopilot(providerId?: AiProviderId): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-
-    this.patchSession({
-      requestState: "connecting",
-      connectionState: "connecting"
-    });
-
-    const currentSettings = this.settingsService.getSettings();
-    const settings = providerId && providerId !== currentSettings.providerId
-      ? { ...currentSettings, providerId }
-      : currentSettings;
-    const connectionResult = await this.connectionService.connectAndActivate(settings);
-    const connectionState = connectionResult.connectionState;
-    if (!connectionResult.activated && settings.providerId === "lmStudio") {
-      const fallback = await this.restoreCopilotAfterLmStudioFailure(settings, connectionResult);
-      this.patchSession({
-        connectionState: fallback.connectionState,
-        requestState: "idle",
-        screen: fallback.connectionState === "connected" ? "main" : this.resolveHomeScreen(fallback.connectionState),
-        mode: fallback.settings.defaultMode,
-        assistanceDepth: fallback.settings.defaultAssistanceDepth,
-        statusMessage: fallback.statusMessage,
-        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
-      });
-      return;
-    }
-    const effectiveSettings = connectionResult.activated
-      ? await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings))
-      : currentSettings;
-    const nextMode = effectiveSettings.defaultMode;
-    const nextAssistanceDepth = effectiveSettings.defaultAssistanceDepth;
-
-    if (connectionResult.activated) {
-      this.patchSession({
-        connectionState,
-        requestState: "idle",
-        screen: "main",
-        mode: nextMode,
-        assistanceDepth: nextAssistanceDepth,
-        statusMessage: this.buildAutoModelFallbackStatusMessage(),
-        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
-      });
-      return;
-    }
-
-    this.patchSession({
-      connectionState,
-      requestState: "idle",
-      screen: this.resolveHomeScreen(connectionState),
-      statusMessage: this.buildConnectionAttemptStatusMessage(settings.providerId, connectionResult)
-    });
+    await this.connectionSettingsCoordinator.connect(providerId);
   }
 
   public async createConversationStream(): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-
-    await this.discardActiveConversationIfEmpty();
-    const record = await this.conversationStore.createStream();
-    await this.conversationStore.setActiveStream(record.id);
-    this.lastAutomaticContextFingerprint = undefined;
-    this.hydrateConversationStream(record, { screen: "conversation", resetNavigation: true, clearStatusMessage: true });
+    await this.conversationCoordinator.createStream();
   }
 
   public async selectConversationStream(streamId: string): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle" || (state.activeConversationStreamId === streamId && state.screen === "conversation")) {
-      return;
-    }
-
-    const record = this.conversationStore.get(streamId);
-    if (!record) {
-      return;
-    }
-
-    await this.conversationStore.setActiveStream(record.id);
-    this.lastAutomaticContextFingerprint = undefined;
-    this.hydrateConversationStream(record, { screen: "conversation", resetNavigation: true, clearStatusMessage: true });
+    await this.conversationCoordinator.selectStream(streamId);
   }
 
   public async deleteConversationStream(streamId: string): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-
-    const deletingActiveStream = state.activeConversationStreamId === streamId;
-    const deleted = await this.conversationStore.deleteStream(streamId);
-    if (!deleted) {
-      this.patchSession({
-        conversationStreams: this.conversationStore.list()
-      });
-      return;
-    }
-
-    this.summarizedConversationTitleStreamIds.delete(streamId);
-    if (deletingActiveStream) {
-      this.guidanceContextByConversationId.clear();
-    }
-    this.patchSession({
-      conversationStreams: this.conversationStore.list(),
-      statusMessage: undefined,
-      ...(deletingActiveStream
-        ? {
-            activeConversationStreamId: undefined,
-            activeAdditionalContext: undefined,
-            latestGuidance: undefined,
-            conversationHistory: [],
-            selectedConversationId: undefined,
-            screenHistory: state.screenHistory.filter(s => s !== "conversation" && s !== "advice_detail"),
-            screen: state.screen === "conversation" ? this.resolveHomeScreen(state.connectionState) : state.screen
-          }
-        : {})
-    });
+    await this.conversationCoordinator.deleteStream(streamId);
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
-    const parsed = this.parseSlashInput(userPrompt);
+    const parsed = parseSlashInput(userPrompt);
     const guidanceKind = kind ?? (parsed.userPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
       await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, true, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
@@ -379,14 +333,14 @@ export class NavigatorController implements vscode.Disposable {
       userPrompt: parsed.userPrompt,
       additionalContext: additionalContext !== undefined
         ? additionalContext
-        : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState())),
+        : resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState())),
       slashCommand: parsed.slashCommand,
       slashCommandScope: parsed.slashCommandScope
     });
   }
 
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
-    const parsed = this.parseSlashInput(userPrompt);
+    const parsed = parseSlashInput(userPrompt);
     await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, false, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
   }
 
@@ -409,257 +363,27 @@ export class NavigatorController implements vscode.Disposable {
 
 
   public navigate(screen: NavigatorScreen): void {
-    const state = this.sessionStore.getState();
-    if (state.requestState === "saving_feedback") {
-      return;
-    }
-
-    switch (screen) {
-      case "onboarding":
-        this.patchSession({ screen: "onboarding" });
-        return;
-      case "main":
-        this.patchSession({
-          screen: this.resolveHomeScreen(state.connectionState),
-          selectedConversationId: undefined,
-          activeAdditionalContext: undefined,
-          pendingAdditionalContext: undefined
-        });
-        return;
-      case "history":
-        this.pushScreen("history");
-        return;
-      case "conversation":
-        this.patchSession({
-          screen: state.activeConversationStreamId ? "conversation" : this.resolveHomeScreen(state.connectionState)
-        });
-        return;
-      case "knowledge":
-        this.pushScreen("knowledge");
-        this.patchSession({
-          selectedKnowledgeId: undefined
-        });
-        return;
-      case "settings":
-        this.pushScreen(screen);
-        void this.refreshLmStudioServerStatus(false);
-        return;
-      default:
-        return;
-    }
+    this.navigationCoordinator.navigate(screen);
   }
 
   public navigateBack(): void {
-    const state = this.sessionStore.getState();
-    if (state.requestState === "saving_feedback") {
-      return;
-    }
-    if (state.screenHistory.length === 0) {
-      this.patchSession({
-        screen: this.resolveHomeScreen(state.connectionState)
-      });
-      return;
-    }
-
-    const nextHistory = [...state.screenHistory];
-    const previousScreen = nextHistory.pop() ?? this.resolveHomeScreen(state.connectionState);
-    this.patchSession({
-      screen: previousScreen,
-      screenHistory: nextHistory
-    });
+    this.navigationCoordinator.navigateBack();
   }
 
-  public async saveSettings(input: {
-    providerId: AiProviderId;
-    defaultMode: AdviceMode;
-    defaultAssistanceDepth: AssistanceDepth;
-    copilotModelId?: string;
-    lmStudioModelKey?: string;
-    idleDelaySec: number;
-    requestIntervalSec: number;
-    dailyTokenLimit: number;
-    excludeGlobs: string;
-  }): Promise<void> {
-    const previousSettings = this.settingsService.getSettings();
-    const nextSettings: NavigatorSettings = {
-      ...previousSettings,
-      providerId: input.providerId,
-      defaultMode: input.defaultMode,
-      defaultAssistanceDepth: input.defaultAssistanceDepth,
-      copilotModelId: input.copilotModelId,
-      lmStudioModelKey: input.lmStudioModelKey,
-      idleDelayMs: input.idleDelaySec * 1000,
-      requestIntervalMs: input.requestIntervalSec * 1000,
-      dailyTokenLimit: input.dailyTokenLimit,
-      excludedGlobs: input.excludeGlobs
-        .split(/\r?\n/)
-        .map((value) => value.trim())
-        .filter((value) => value.length > 0)
-    };
-
-    const isConnected = this.connectionService.getState() === "connected";
-    const canApplyAlways = input.defaultMode !== "always" || isConnected;
-    const modelSettingChanged =
-      previousSettings.providerId !== nextSettings.providerId ||
-      previousSettings.copilotModelId !== nextSettings.copilotModelId ||
-      previousSettings.lmStudioModelKey !== nextSettings.lmStudioModelKey;
-    const connectionSettingChanged =
-      modelSettingChanged ||
-      this.connectionService.getProviderId() !== nextSettings.providerId ||
-      this.connectionService.getState() !== "connected";
-
-    if (input.defaultMode === "always" && isConnected) {
-      this.adviceScheduler.resetPause();
-    }
-
-    if (connectionSettingChanged && this.sessionStore.getState().requestState === "idle") {
-      this.patchSession({
-        ...(canApplyAlways ? { mode: input.defaultMode } : {}),
-        assistanceDepth: input.defaultAssistanceDepth,
-        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
-      });
-      await this.reconnectCopilotForModelSetting(nextSettings);
-      return;
-    }
-
-    await this.saveSettingsWithRevision(nextSettings);
-
-    this.patchSession({
-      ...(canApplyAlways ? { mode: input.defaultMode } : {}),
-      assistanceDepth: input.defaultAssistanceDepth,
-      contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
-      statusMessage: {
-        kind: connectionSettingChanged && isConnected ? "warning" : "info",
-        text: connectionSettingChanged && isConnected
-          ? "設定を保存しました。使用モデルは現在のリクエスト完了後、次回接続時に反映されます。"
-          : "設定を保存しました。"
-      }
-    });
+  public async saveSettings(input: SettingsInput): Promise<void> {
+    await this.connectionSettingsCoordinator.save(input);
   }
 
   public async resetSettings(): Promise<void> {
-    const wasConnected = this.connectionService.getState() === "connected";
-    const settings = await this.settingsService.resetSettings();
-    this.settingsRevision += 1;
-    this.patchSession({
-      mode: "manual",
-      assistanceDepth: "low",
-      statusMessage: {
-        kind: "info",
-        text: "設定を初期値に戻しました。"
-      }
-    });
-
-    if (wasConnected && this.sessionStore.getState().requestState === "idle") {
-      await this.reconnectCopilotForModelSetting(settings);
-    }
-  }
-
-  private async reconnectCopilotForModelSetting(settings: NavigatorSettings): Promise<void> {
-    this.patchSession({
-      requestState: "connecting",
-      connectionState: "connecting",
-      statusMessage: {
-        kind: "info",
-        text: "設定を保存し、使用モデルを切り替えています..."
-      }
-    });
-
-    const connectionResult = await this.connectionService.connectAndActivate(settings);
-    const connectionState = connectionResult.connectionState;
-    if (connectionResult.activated) {
-      const effectiveSettings = await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings));
-      const fallbackStatusMessage = this.buildAutoModelFallbackStatusMessage();
-      this.patchSession({
-        connectionState,
-        requestState: "idle",
-        mode: effectiveSettings.defaultMode,
-        assistanceDepth: effectiveSettings.defaultAssistanceDepth,
-        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
-        statusMessage: fallbackStatusMessage ?? {
-          kind: "info",
-          text: `設定を保存し、使用モデルを ${this.getCurrentModelLabel() ?? "指定モデル"} に切り替えました。`
-        }
-      });
-      return;
-    }
-
-    if (settings.providerId === "lmStudio") {
-      const fallback = await this.restoreCopilotAfterLmStudioFailure(settings, connectionResult);
-      this.patchSession({
-        connectionState: fallback.connectionState,
-        requestState: "idle",
-        mode: fallback.connectionState === "connected" || fallback.settings.defaultMode !== "always"
-          ? fallback.settings.defaultMode
-          : this.sessionStore.getState().mode,
-        assistanceDepth: fallback.settings.defaultAssistanceDepth,
-        contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview()),
-        statusMessage: fallback.statusMessage
-      });
-      return;
-    }
-
-    this.patchSession({
-      connectionState,
-      requestState: "idle",
-      statusMessage: this.buildConnectionAttemptStatusMessage(settings.providerId, connectionResult)
-    });
+    await this.connectionSettingsCoordinator.reset();
   }
 
   public async setAssistanceDepth(assistanceDepth: AssistanceDepth): Promise<void> {
-    if (this.sessionStore.getState().requestState !== "idle") {
-      return;
-    }
-
-    await this.saveSettingsWithRevision({
-      ...this.settingsService.getSettings(),
-      defaultAssistanceDepth: assistanceDepth
-    });
-
-    this.patchSession({
-      assistanceDepth,
-      statusMessage: undefined
-    });
+    await this.connectionSettingsCoordinator.setAssistanceDepth(assistanceDepth);
   }
 
   public async setMode(mode: AdviceMode, additionalContext?: string): Promise<void> {
-    const isConnected = this.connectionService.getState() === "connected";
-    if (mode === "always" && !isConnected) {
-      this.patchSession({
-        statusMessage: {
-          kind: "warning",
-          text: "常時モードは AI 接続後に利用できます。"
-        }
-      });
-      return;
-    }
-
-    await this.saveSettingsWithRevision({
-      ...this.settingsService.getSettings(),
-      defaultMode: mode
-    });
-
-    if (mode === "always") {
-      this.adviceScheduler.resetPause();
-    }
-
-    const state = this.sessionStore.getState();
-    const receivedAdditionalContext = additionalContext !== undefined;
-    const normalizedAdditionalContext = this.normalizeAdditionalContext(additionalContext);
-
-    this.patchSession({
-      mode,
-      ...(receivedAdditionalContext && state.screen === "main" && mode === "always"
-        ? {
-            activeAdditionalContext: normalizedAdditionalContext,
-            pendingAdditionalContext: normalizedAdditionalContext
-          }
-        : {}),
-      ...(receivedAdditionalContext && state.screen !== "main"
-        ? { activeAdditionalContext: normalizedAdditionalContext }
-        : {}),
-      statusMessage: undefined
-    });
+    await this.connectionSettingsCoordinator.setMode(mode, additionalContext);
   }
 
   public setComposerActive(active: boolean): void {
@@ -690,121 +414,20 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
     this.patchSession({
-      pendingAdditionalContext: this.normalizeAdditionalContext(additionalContext)
+      pendingAdditionalContext: normalizeAdditionalContext(additionalContext)
     });
   }
 
   public searchKnowledge(query: string): void {
-    this.patchSession({
-      knowledgeQuery: query,
-      selectedKnowledgeId: undefined
-    });
+    this.knowledgeCoordinator.search(query);
   }
 
   public selectKnowledge(id: string): void {
-    const record = this.knowledgeStore.get(id);
-    if (!record) {
-      this.patchSession({
-        selectedKnowledgeId: undefined,
-        statusMessage: {
-          kind: "warning",
-          text: "表示するナレッジが見つかりません。"
-        }
-      });
-      return;
-    }
-
-    const state = this.sessionStore.getState();
-    this.patchSession({
-      screen: "knowledge_detail",
-      screenHistory: state.screen === "knowledge_detail" ? state.screenHistory : [...state.screenHistory, state.screen],
-      selectedKnowledgeId: id,
-      statusMessage: undefined
-    });
+    this.knowledgeCoordinator.select(id);
   }
 
   public async saveKnowledge(conversationId?: string): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-
-    const selected = conversationId
-      ? state.conversationHistory.find((item) => item.id === conversationId && item.role === "assistant")
-      : this.findSelectedConversation(state) ?? this.findLatestAssistant(state.conversationHistory);
-    const source = selected;
-
-    if (!source) {
-      this.patchSession({
-        statusMessage: {
-          kind: "warning",
-          text: "保存できるアドバイスがまだありません。"
-        }
-      });
-      return;
-    }
-
-    const existingKnowledge = this.knowledgeStore.getBySourceAdviceId(source.id);
-    if (existingKnowledge) {
-      this.patchSession({
-        selectedKnowledgeId: existingKnowledge.id,
-        statusMessage: {
-          kind: "info",
-          text: "このアドバイスはすでにナレッジ化されています。"
-        }
-      });
-      return;
-    }
-
-    this.patchSession({
-      requestState: "saving_knowledge",
-      statusMessage: {
-        kind: "info",
-        text: "接続中の AI でアドバイスをナレッジ用に整理しています..."
-      }
-    });
-
-    const knowledgeModel = this.connectionService.getConnectedModel();
-    const knowledgeModelLabel = this.getCurrentModelLabel();
-    const draftResult = await this.adviceService.createKnowledgeDraft({
-      source: {
-        ...source,
-        context: this.guidanceContextByConversationId.get(source.id)
-      },
-      conversation: this.buildKnowledgeConversationWindow(state, source)
-    });
-
-    if (!draftResult.ok) {
-      this.patchSession({
-        requestState: "idle",
-        connectionState: draftResult.connectionState,
-        statusMessage: {
-          kind: draftResult.connectionState === "restricted" || draftResult.connectionState === "unavailable" ? "error" : "warning",
-          text: draftResult.message
-        }
-      });
-      return;
-    }
-
-    const record = await this.knowledgeStore.create({
-      title: draftResult.draft.title,
-      summary: draftResult.draft.summary,
-      body: draftResult.draft.body,
-      sourceAdviceId: source.id,
-      providerId: knowledgeModel?.providerId,
-      modelId: knowledgeModel?.modelId,
-      modelLabel: knowledgeModelLabel
-    });
-
-    this.patchSession({
-      requestState: "idle",
-      ...(conversationId ? {} : { screen: "knowledge" as const }),
-      selectedKnowledgeId: record.id,
-      statusMessage: {
-        kind: "info",
-        text: "アドバイスを整理してナレッジとして保存しました。"
-      }
-    });
+    await this.knowledgeCoordinator.save(conversationId);
   }
 
   public async updateKnowledge(input: {
@@ -813,104 +436,23 @@ export class NavigatorController implements vscode.Disposable {
     summary: string;
     body: string;
   }): Promise<void> {
-    const updated = await this.knowledgeStore.update(input.id, {
-      title: input.title,
-      summary: input.summary,
-      body: input.body
-    });
-
-    this.patchSession({
-      selectedKnowledgeId: updated?.id,
-      statusMessage: {
-        kind: updated ? "info" : "warning",
-        text: updated ? "ナレッジを保存しました。" : "更新対象のナレッジが見つかりません。"
-      }
-    });
+    await this.knowledgeCoordinator.update(input);
   }
 
   public async deleteKnowledge(id: string): Promise<void> {
-    const state = this.sessionStore.getState();
-    const deleted = await this.knowledgeStore.delete(id);
-    this.patchSession({
-      selectedKnowledgeId: state.selectedKnowledgeId === id ? undefined : state.selectedKnowledgeId,
-      ...(state.screen === "knowledge_detail" && state.selectedKnowledgeId === id ? { screen: "knowledge" as const } : {}),
-      statusMessage: {
-        kind: deleted ? "info" : "warning",
-        text: deleted ? "ナレッジを削除しました。" : "削除対象のナレッジが見つかりません。"
-      }
-    });
+    await this.knowledgeCoordinator.delete(id);
   }
 
   public async rateAdvice(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
-    if (rating !== "good" && rating !== "bad") {
-      return;
-    }
-
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-    const entry = this.findAssistantEntry(state, conversationEntryId);
-    if (!entry || entry.feedback) {
-      return;
-    }
-
-    if (rating === "bad") {
-      this.patchSession({
-        pendingFeedbackEntryId: conversationEntryId,
-        statusMessage: undefined
-      });
-      this.pushScreen("feedback_form");
-      return;
-    }
-
-    const input = { conversationEntryId, rating: "good" } satisfies AdviceFeedbackInput;
-    const feedbackId = await this.persistFeedbackAndMark(input, entry);
-    if (feedbackId) {
-      this.patchSession({ requestState: "idle" });
-      void this.summarizeAndUpdateFeedback(feedbackId, input, entry)
-        .catch((error) => console.error("Failed to summarize good feedback", error));
-    }
+    await this.feedbackCoordinator.rateAdvice(conversationEntryId, rating);
   }
 
   public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
-    const state = this.sessionStore.getState();
-    if (state.requestState !== "idle") {
-      return;
-    }
-    const conversationEntryId = state.pendingFeedbackEntryId;
-    if (!conversationEntryId) {
-      this.navigateBack();
-      return;
-    }
-
-    const entry = this.findAssistantEntry(state, conversationEntryId);
-    if (!entry || entry.feedback) {
-      this.cancelBadFeedback();
-      return;
-    }
-
-    const input: AdviceFeedbackInput = {
-      conversationEntryId,
-      rating: "bad",
-      reasons: [...new Set(reasons.filter((reason) => this.isBadFeedbackReason(reason)))],
-      comment: comment.trim().slice(0, 1000)
-    };
-    const feedbackId = await this.persistFeedbackAndMark(input, entry);
-    if (!feedbackId) {
-      return;
-    }
-
-    this.returnFromFeedbackForm();
-    void this.summarizeAndUpdateFeedback(feedbackId, input, entry)
-      .catch((error) => console.error("Failed to summarize bad feedback", error));
+    await this.feedbackCoordinator.submitBadFeedback(reasons, comment);
   }
 
   public cancelBadFeedback(): void {
-    if (this.sessionStore.getState().requestState === "saving_feedback") {
-      return;
-    }
-    this.returnFromFeedbackForm();
+    this.feedbackCoordinator.cancelBadFeedback();
   }
 
   public dispose(): void {
@@ -923,7 +465,10 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
 
-    if (this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), settings.dailyTokenLimit)) {
+    if (this.usageMeter.isTokenLimitExceeded(
+      this.connectionSettingsCoordinator.getCurrentProviderId(),
+      settings.dailyTokenLimit
+    )) {
       this.pauseAutoAdviceForTokenLimit();
       return;
     }
@@ -932,21 +477,21 @@ export class NavigatorController implements vscode.Disposable {
     const additionalContext = this.getGuidanceAdditionalContext(state);
     const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(guidanceContext, additionalContext),
+      withAdditionalContext(guidanceContext, additionalContext),
       preview,
       settings,
       "always",
       "low"
     );
 
-    if (!this.hasMeaningfulContext(prepared.context)) {
+    if (!hasMeaningfulContext(prepared.context)) {
       this.patchSession({
         contextPreview: preview
       });
       return;
     }
 
-    const fingerprint = this.createAutomaticFingerprint(prepared.context);
+    const fingerprint = createAutomaticFingerprint(prepared.context);
     if (SUPPRESS_DUPLICATE_AUTO_ADVICE && fingerprint === this.lastAutomaticContextFingerprint) {
       this.patchSession({
         contextPreview: preview,
@@ -972,16 +517,8 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private getModelIdentifier(): string | undefined {
-    return this.connectionService.getConnectedModel()?.modelId;
-  }
-
-  private getCurrentProviderId(): AiProviderId {
-    return this.connectionService.getProviderId();
-  }
-
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
-    const providerId = this.getCurrentProviderId();
+    const providerId = this.connectionSettingsCoordinator.getCurrentProviderId();
     const usage = this.usageMeter.getToday(providerId);
     const cost = this.usageMeter.estimateCostUsd(providerId);
 
@@ -1022,8 +559,8 @@ export class NavigatorController implements vscode.Disposable {
     const settings = this.settingsService.getSettings();
     const receivedAdditionalContext = additionalContext !== undefined;
     const effectiveAdditionalContext = receivedAdditionalContext
-      ? this.normalizeAdditionalContext(additionalContext)
-      : this.resolveAdditionalContext(undefined, this.getStreamAdditionalContext(state));
+      ? normalizeAdditionalContext(additionalContext)
+      : resolveAdditionalContext(undefined, this.getStreamAdditionalContext(state));
     const livePreview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const liveContext = this.contextCollector.collectGuidanceContext();
     const stickySelectionAvailable = Boolean(
@@ -1033,15 +570,15 @@ export class NavigatorController implements vscode.Disposable {
     );
     const hasSelection = Boolean(liveContext.selectedText) || stickySelectionAvailable;
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
-    const assistanceDepth = this.resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
+    const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
     const projectScope = slashCommand && getSkill(slashCommand).usesProjectScope
-      ? this.resolveNextProjectScope(assistanceDepth, slashCommandScope)
+      ? resolveNextProjectScope(assistanceDepth, slashCommandScope)
       : undefined;
 
     if (kind !== "context") {
       const prepared = projectScope
         ? this.requestPlanner.prepareGuidanceRequest(
-            this.withAdditionalContext(
+            withAdditionalContext(
               await this.contextCollector.collectNextActionContext(settings, projectScope, liveContext),
               effectiveAdditionalContext
             ),
@@ -1080,7 +617,7 @@ export class NavigatorController implements vscode.Disposable {
       ? await this.contextCollector.collectNextActionContext(settings, projectScope, rawContext)
       : await this.collectGuidanceContextForDepth(settings, assistanceDepth, rawContext);
     const prepared = this.requestPlanner.prepareGuidanceRequest(
-      this.withAdditionalContext(requestContext, effectiveAdditionalContext),
+      withAdditionalContext(requestContext, effectiveAdditionalContext),
       preview,
       settings,
       kind,
@@ -1124,10 +661,10 @@ export class NavigatorController implements vscode.Disposable {
 
     const fallbackAdditionalContext = this.getGuidanceAdditionalContext(state);
     const receivedAdditionalContext = options.additionalContext !== undefined;
-    const incomingAdditionalContext = this.normalizeAdditionalContext(options.additionalContext);
+    const incomingAdditionalContext = normalizeAdditionalContext(options.additionalContext);
     const effectiveAdditionalContext = receivedAdditionalContext
       ? incomingAdditionalContext
-      : this.resolveAdditionalContext(undefined, fallbackAdditionalContext);
+      : resolveAdditionalContext(undefined, fallbackAdditionalContext);
     const nextActiveAdditionalContext = receivedAdditionalContext
       ? incomingAdditionalContext
       : state.screen === "main"
@@ -1142,7 +679,7 @@ export class NavigatorController implements vscode.Disposable {
 
     const settings = this.settingsService.getSettings();
     const preview = options.preview ?? this.rememberSelectionContext(this.contextCollector.collectPreview());
-    const assistanceDepth = this.resolveEffectiveAssistanceDepth(
+    const assistanceDepth = resolveEffectiveAssistanceDepth(
       options.kind,
       options.assistanceDepth ?? state.assistanceDepth,
       options.slashCommand
@@ -1155,13 +692,13 @@ export class NavigatorController implements vscode.Disposable {
       : usesProjectScope
         ? await this.contextCollector.collectNextActionContext(
             settings,
-            this.resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
+            resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
           )
         : await this.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared =
       options.prepared ??
       this.requestPlanner.prepareGuidanceRequest(
-        this.withAdditionalContext(
+        withAdditionalContext(
           fallbackContext!,
           effectiveAdditionalContext
         ),
@@ -1179,7 +716,12 @@ export class NavigatorController implements vscode.Disposable {
         : preview;
 
     const nextHistory = [...state.conversationHistory];
-    const userEntryText = this.resolveUserEntryText(options.kind, options.userPrompt, options.slashCommand, options.slashCommandScope);
+    const userEntryText = resolveUserEntryText(
+      options.kind,
+      options.userPrompt,
+      options.slashCommand,
+      options.slashCommandScope
+    );
     if (userEntryText) {
       nextHistory.push(this.createConversationEntry(
         "user",
@@ -1207,7 +749,7 @@ export class NavigatorController implements vscode.Disposable {
     });
 
     const responseModel = this.connectionService.getConnectedModel();
-    const responseModelLabel = this.getCurrentModelLabel();
+    const responseModelLabel = this.connectionSettingsCoordinator.getCurrentModelLabel();
     const requestId = this.nextGuidanceRequestId++;
     const tokenSource = new vscode.CancellationTokenSource();
     this.activeGuidanceRequest = {
@@ -1279,26 +821,29 @@ export class NavigatorController implements vscode.Disposable {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
           estimatedCostUsd: this.usageMeter.estimateCostUsd(
-            this.getCurrentProviderId(),
-            this.getModelIdentifier(),
+            this.connectionSettingsCoordinator.getCurrentProviderId(),
+            this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
             result.usage
           )
         };
       }
-      this.guidanceContextByConversationId.set(assistantEntry.id, prepared.context);
+      this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
       const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
       this.patchSession({
         connectionState: this.connectionService.getState(),
         requestState: "idle",
-        screen: this.resolveScreenAfterSuccess(options.kind, latestState.screen),
+        screen: resolveScreenAfterSuccess(options.kind, latestState.screen),
         contextPreview: refreshedPreview,
         latestGuidance: this.createGuidanceCard(assistantEntry),
         conversationHistory: updatedHistory,
         activeAdditionalContext: nextActiveAdditionalContext,
         pendingAdditionalContext: undefined,
-        selectedConversationId: this.resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
-        statusMessage: this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), settings.dailyTokenLimit)
+        selectedConversationId: resolveSelectedConversationIdAfterSuccess(options.kind, latestState, assistantEntry.id),
+        statusMessage: this.usageMeter.isTokenLimitExceeded(
+          this.connectionSettingsCoordinator.getCurrentProviderId(),
+          settings.dailyTokenLimit
+        )
           ? {
               kind: "warning",
               text: "NaviCom内の本日の概算トークン数が設定上限を超えています。設定から上限を確認できます。"
@@ -1315,7 +860,7 @@ export class NavigatorController implements vscode.Disposable {
     this.patchSession({
       connectionState: nextConnectionState,
       requestState: "idle",
-      screen: this.resolveScreenAfterFailure(
+      screen: resolveScreenAfterFailure(
         options.kind,
         latestState.screen,
         nextConnectionState,
@@ -1343,318 +888,15 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  private async restoreConversationState(): Promise<void> {
-    const existingStream = this.resolveInitialConversationStream();
-    if (!existingStream) {
-      this.patchSession({
-        conversationStreams: this.conversationStore.list(),
-        activeConversationStreamId: undefined,
-        latestGuidance: undefined,
-        conversationHistory: [],
-        selectedConversationId: undefined
-      });
-      return;
-    }
-
-    this.hydrateConversationStream({ ...existingStream, additionalContext: undefined });
-  }
-
-  private resolveInitialConversationStream(): ConversationStreamRecord | undefined {
-    const activeStreamId = this.conversationStore.getActiveStreamId();
-    if (activeStreamId) {
-      const activeStream = this.conversationStore.get(activeStreamId);
-      if (activeStream) {
-        return activeStream;
-      }
-    }
-
-    const latestStream = this.conversationStore.list()[0];
-    return latestStream ? this.conversationStore.get(latestStream.id) : undefined;
-  }
-
   private async prepareConversationForGuidance(
     state: NavigatorSessionState,
     kind: GuidanceKind
   ): Promise<NavigatorSessionState> {
-    if (kind === "always") {
-      if (state.screen === "main") {
-        return this.createNewActiveConversationStream();
-      }
-
-      return this.ensureActiveConversationStream();
-    }
-
-    if (state.screen === "main") {
-      return this.createNewActiveConversationStream();
-    }
-
-    if (state.activeConversationStreamId) {
-      return state;
-    }
-
-    return this.ensureActiveConversationStream();
-  }
-
-  private async createNewActiveConversationStream(): Promise<NavigatorSessionState> {
-    const currentState = this.sessionStore.getState();
-    const additionalContext = this.getGuidanceAdditionalContext(currentState);
-    await this.discardActiveConversationIfEmpty();
-    const record = await this.conversationStore.createStream();
-    await this.conversationStore.setActiveStream(record.id);
-    this.lastAutomaticContextFingerprint = undefined;
-    this.hydrateConversationStream({ ...record, additionalContext });
-    return this.sessionStore.getState();
-  }
-
-  private async ensureActiveConversationStream(): Promise<NavigatorSessionState> {
-    const state = this.sessionStore.getState();
-    if (state.activeConversationStreamId) {
-      return state;
-    }
-
-    const existingStream = this.resolveInitialConversationStream();
-    if (existingStream) {
-      await this.conversationStore.setActiveStream(existingStream.id);
-      this.hydrateConversationStream(existingStream);
-      return this.sessionStore.getState();
-    }
-
-    const record = await this.conversationStore.createStream();
-    await this.conversationStore.setActiveStream(record.id);
-    this.lastAutomaticContextFingerprint = undefined;
-    this.hydrateConversationStream(record);
-    return this.sessionStore.getState();
-  }
-
-  private hydrateConversationStream(
-    record: ConversationStreamRecord,
-    options: {
-      screen?: NavigatorScreen;
-      resetNavigation?: boolean;
-      clearStatusMessage?: boolean;
-    } = {}
-  ): void {
-    this.guidanceContextByConversationId.clear();
-    const conversationHistory = this.toConversationHistory(record.entries);
-    const latestAssistant = this.findLatestAssistant(conversationHistory);
-
-    this.patchSession({
-      conversationStreams: this.conversationStore.list(),
-      activeConversationStreamId: record.id,
-      activeAdditionalContext: record.additionalContext,
-      latestGuidance: latestAssistant ? this.createGuidanceCard(latestAssistant) : undefined,
-      conversationHistory,
-      selectedConversationId: undefined,
-      ...(options.screen ? { screen: options.screen } : {}),
-      ...(options.resetNavigation ? { screenHistory: [] } : {}),
-      ...(options.clearStatusMessage ? { statusMessage: undefined } : {})
-    });
+    return this.conversationCoordinator.prepareForGuidance(state, kind);
   }
 
   private async persistActiveConversationState(options: { summarizeTitle?: boolean } = {}): Promise<void> {
-    const record = this.buildActiveConversationRecord();
-    if (!record) {
-      return;
-    }
-
-    if (record.entries.length === 0) {
-      await this.conversationStore.deleteStream(record.id);
-      this.patchSession({
-        activeConversationStreamId: undefined,
-        activeAdditionalContext: undefined,
-        conversationStreams: this.conversationStore.list(),
-        latestGuidance: undefined,
-        conversationHistory: [],
-        selectedConversationId: undefined
-      });
-      return;
-    }
-
-    const recordToSave = options.summarizeTitle === false
-      ? record
-      : await this.withSummarizedConversationTitle(record);
-    let saved: ConversationStreamRecord;
-    try {
-      saved = await this.conversationStore.saveStream(recordToSave);
-    } catch (error) {
-      if (!(error instanceof ConversationRevisionConflictError)) {
-        throw error;
-      }
-
-      // A newer request or feedback update won the race. Rebuild from the live
-      // session and save against the latest store revision instead of allowing
-      // the older snapshot to replace it.
-      const latestRecord = this.buildActiveConversationRecord();
-      if (!latestRecord || latestRecord.id !== record.id) {
-        return;
-      }
-      saved = await this.conversationStore.saveStream({
-        ...latestRecord,
-        title: recordToSave.title
-      });
-    }
-    this.patchSession({
-      activeConversationStreamId: saved.id,
-      activeAdditionalContext: saved.additionalContext,
-      conversationStreams: this.conversationStore.list()
-    });
-  }
-
-  private async discardActiveConversationIfEmpty(): Promise<void> {
-    const state = this.sessionStore.getState();
-    const streamId = state.activeConversationStreamId ?? this.conversationStore.getActiveStreamId();
-    if (!streamId) {
-      return;
-    }
-
-    const existing = this.conversationStore.get(streamId);
-    if (!existing || existing.entries.length > 0) {
-      return;
-    }
-
-    if (state.activeConversationStreamId === streamId && state.conversationHistory.length > 0) {
-      return;
-    }
-
-    await this.conversationStore.deleteStream(streamId);
-    if (state.activeConversationStreamId === streamId) {
-      this.patchSession({
-        activeConversationStreamId: undefined,
-        activeAdditionalContext: undefined,
-        conversationStreams: this.conversationStore.list(),
-        latestGuidance: undefined,
-        conversationHistory: [],
-        selectedConversationId: undefined
-      });
-    }
-  }
-
-  private async withSummarizedConversationTitle(record: ConversationStreamRecord): Promise<ConversationStreamRecord> {
-    if (
-      this.summarizedConversationTitleStreamIds.has(record.id) ||
-      this.connectionService.getState() !== "connected"
-    ) {
-      return record;
-    }
-
-    // 概算トークン上限超過時はタイトル生成を行わずフォールバック名を使う
-    if (this.usageMeter.isTokenLimitExceeded(this.getCurrentProviderId(), this.settingsService.getSettings().dailyTokenLimit)) {
-      return record;
-    }
-
-    const fallbackTitle = this.resolveConversationStreamTitle(undefined, record.entries);
-    const shouldSummarize =
-      !record.title ||
-      record.title === DEFAULT_CONVERSATION_STREAM_TITLE ||
-      record.title === fallbackTitle;
-
-    if (!shouldSummarize) {
-      return record;
-    }
-
-    const title = await this.adviceService.createConversationTitle({ entries: record.entries });
-    if (!title) {
-      return record;
-    }
-
-    this.summarizedConversationTitleStreamIds.add(record.id);
-    return {
-      ...record,
-      title
-    };
-  }
-
-  private buildActiveConversationRecord(): ConversationStreamRecord | undefined {
-    const state = this.sessionStore.getState();
-    const streamId = state.activeConversationStreamId;
-    if (!streamId) {
-      return undefined;
-    }
-
-    const existing = this.conversationStore.get(streamId);
-    const now = new Date().toISOString();
-    const entries = this.toStoredConversationEntries(state.conversationHistory);
-
-    return {
-      id: streamId,
-      title: this.resolveConversationStreamTitle(existing?.title, state.conversationHistory),
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: existing?.updatedAt ?? now,
-      entries,
-      additionalContext: this.normalizeAdditionalContext(state.activeAdditionalContext),
-      revision: existing?.revision ?? 0
-    };
-  }
-
-  private toConversationHistory(entries: StoredConversationEntry[]): ConversationEntry[] {
-    return entries.map((entry) => {
-      if (entry.guidanceContext) {
-        this.guidanceContextByConversationId.set(entry.id, entry.guidanceContext);
-      }
-
-      const { guidanceContext, ...conversationEntry } = entry;
-      return conversationEntry;
-    });
-  }
-
-  private toStoredConversationEntries(entries: ConversationEntry[]): StoredConversationEntry[] {
-    return entries.map((entry) => ({
-      ...entry,
-      guidanceContext: this.guidanceContextByConversationId.get(entry.id)
-    }));
-  }
-
-  private resolveConversationStreamTitle(currentTitle: string | undefined, history: ConversationEntry[]): string {
-    if (currentTitle && currentTitle !== DEFAULT_CONVERSATION_STREAM_TITLE) {
-      return currentTitle;
-    }
-
-    for (const entry of history) {
-      const candidate = this.buildConversationStreamTitleCandidate(entry);
-      if (candidate) {
-        return candidate;
-      }
-    }
-
-    return currentTitle ?? DEFAULT_CONVERSATION_STREAM_TITLE;
-  }
-
-  private buildConversationStreamTitleCandidate(entry: ConversationEntry): string | undefined {
-    if (entry.role === "user") {
-      if (entry.kind === "manual") {
-        return this.normalizeConversationStreamTitle(entry.text);
-      }
-
-      if (entry.kind === "context") {
-        return this.normalizeConversationStreamTitle(entry.basedOn?.selectedTextPreview);
-      }
-    }
-
-    if (entry.role === "assistant") {
-      return this.normalizeConversationStreamTitle(entry.text);
-    }
-
-    return undefined;
-  }
-
-  private normalizeConversationStreamTitle(value: string | undefined): string | undefined {
-    if (!value) {
-      return undefined;
-    }
-
-    const firstMeaningfulLine = value
-      .replace(/\r\n/g, "\n")
-      .split("\n")
-      .map((line) => line.replace(/^#{1,6}\s+/, "").replace(/^[-*+]\s+/, "").trim())
-      .find((line) => line.length > 0);
-
-    if (!firstMeaningfulLine) {
-      return undefined;
-    }
-
-    return firstMeaningfulLine.length <= 60
-      ? firstMeaningfulLine
-      : `${firstMeaningfulLine.slice(0, 60)}...`;
+    await this.conversationCoordinator.persist(options);
   }
 
   private patchSession(partial: Partial<NavigatorSessionState>): void {
@@ -1678,332 +920,28 @@ export class NavigatorController implements vscode.Disposable {
     );
   }
 
-  private async refreshCopilotModelOptions(): Promise<void> {
-    await this.connectionService.refreshAvailableModels(this.settingsService.getSettings().copilotModelId);
-    this.didChangeStateEmitter.fire();
-  }
-
   public async refreshLmStudioModels(announce = true): Promise<void> {
-    const options = await this.connectionService.refreshAvailableLmStudioModels(
-      this.settingsService.getSettings().lmStudioBaseUrl
-    );
-    if (!announce) {
-      this.didChangeStateEmitter.fire();
-      return;
-    }
-
-    this.patchSession({
-      statusMessage: options.length > 0
-        ? { kind: "info", text: `LM Studio のロード中モデルを ${options.length}件取得しました。` }
-        : this.buildConnectionStatusMessageForProvider("lmStudio", "unavailable")
-    });
+    await this.lmStudioCoordinator.refreshModels(announce);
   }
 
   public async refreshLmStudioServerStatus(announce = true): Promise<void> {
-    if (this.pendingLmStudioServerOperation) {
-      await this.pendingLmStudioServerOperation;
-      return;
-    }
-
-    if (!vscode.workspace.isTrusted) {
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: false,
-        canStop: false,
-        message: "Workspace Trust を有効にしてください。"
-      });
-      return;
-    }
-
-    this.updateLmStudioServer({
-      state: "checking",
-      port: this.lmStudioServer.port,
-      canStart: false,
-      canStop: false,
-      message: "LM Studio サーバーの状態を確認しています…"
-    });
-
-    try {
-      const status = await this.lmStudioServerService.getStatus(
-        this.settingsService.getSettings().lmStudioBaseUrl
-      );
-      this.updateLmStudioServer(status);
-      if (status.state === "running") {
-        await this.connectionService.refreshAvailableLmStudioModels(
-          this.settingsService.getSettings().lmStudioBaseUrl
-        );
-      } else {
-        this.connectionService.clearLmStudioModelOptions();
-      }
-
-      if (announce) {
-        this.patchSession({
-          statusMessage: {
-            kind: status.state === "running" ? "info" : status.state === "stopped" ? "warning" : "error",
-            text: status.message ?? "LM Studio サーバーの状態を更新しました。"
-          }
-        });
-      } else {
-        this.didChangeStateEmitter.fire();
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "LM Studio サーバーの状態を取得できませんでした。";
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: false,
-        canStop: false,
-        message
-      });
-    }
+    await this.lmStudioCoordinator.refreshServerStatus(announce);
   }
 
   public async startLmStudioServer(): Promise<void> {
-    if (this.pendingLmStudioServerOperation) {
-      await this.pendingLmStudioServerOperation;
-      return;
-    }
-    if (this.sessionStore.getState().requestState !== "idle") {
-      this.patchSession({
-        statusMessage: { kind: "warning", text: "現在の処理が完了してから LM Studio サーバーを起動してください。" }
-      });
-      return;
-    }
-    this.pendingLmStudioServerOperation = this.performStartLmStudioServer().finally(() => {
-      this.pendingLmStudioServerOperation = undefined;
-    });
-    await this.pendingLmStudioServerOperation;
+    await this.lmStudioCoordinator.startServer();
   }
 
   public async stopLmStudioServer(): Promise<void> {
-    if (this.pendingLmStudioServerOperation) {
-      await this.pendingLmStudioServerOperation;
-      return;
-    }
-    if (this.sessionStore.getState().requestState !== "idle") {
-      this.patchSession({
-        statusMessage: { kind: "warning", text: "回答生成が完了してから LM Studio サーバーを停止してください。" }
-      });
-      return;
-    }
-    this.pendingLmStudioServerOperation = this.performStopLmStudioServer().finally(() => {
-      this.pendingLmStudioServerOperation = undefined;
-    });
-    await this.pendingLmStudioServerOperation;
+    await this.lmStudioCoordinator.stopServer();
   }
 
   public async useLmStudioRunningPort(): Promise<void> {
-    const port = this.lmStudioServer.state === "portMismatch" ? this.lmStudioServer.port : undefined;
-    if (!port || this.sessionStore.getState().requestState !== "idle") return;
-
-    const settings = await this.saveSettingsWithRevision({
-      ...this.settingsService.getSettings(),
-      lmStudioBaseUrl: `http://127.0.0.1:${port}`
-    });
-    const result = settings.providerId === "lmStudio"
-      ? await this.connectionService.connectAndActivate(settings)
-      : undefined;
-    await this.refreshLmStudioServerStatus(false);
-    this.patchSession({
-      ...(result ? { connectionState: result.connectionState } : {}),
-      statusMessage: {
-        kind: result && !result.activated ? "warning" : "info",
-        text: result && !result.activated
-          ? `接続先を localhost:${port} に変更しましたが、モデルへの接続を確認できませんでした。`
-          : `接続先を実行中の localhost:${port} に切り替えました。`
-      }
-    });
+    await this.lmStudioCoordinator.useRunningPort();
   }
 
   public async restartLmStudioOnConfiguredPort(): Promise<void> {
-    if (this.lmStudioServer.state !== "portMismatch" || this.sessionStore.getState().requestState !== "idle") return;
-    this.patchSession({ requestState: "connecting" });
-    try {
-      const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
-      const stopped = await this.lmStudioServerService.stop(baseUrl);
-      if (stopped.state !== "stopped") {
-        throw new Error(stopped.message ?? "LM Studio サーバーを停止できませんでした。");
-      }
-      const started = await this.lmStudioServerService.start(baseUrl);
-      this.updateLmStudioServer(started);
-      const settings = this.settingsService.getSettings();
-      const result = started.state === "running" && settings.providerId === "lmStudio"
-        ? await this.connectionService.connectAndActivate(settings)
-        : undefined;
-      this.patchSession({
-        ...(result ? { connectionState: result.connectionState } : {}),
-        requestState: "idle",
-        statusMessage: {
-          kind: started.state === "running" && (!result || result.activated) ? "info" : "error",
-          text: started.state === "running" && result && !result.activated
-            ? "設定ポートで再起動しましたが、モデルへの接続を確認できませんでした。"
-            : started.state === "running"
-            ? `設定ポート localhost:${started.port} で再起動しました。`
-            : started.message ?? "設定ポートで再起動できませんでした。"
-        }
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "設定ポートで再起動できませんでした。";
-      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
-      await this.refreshLmStudioServerStatus(false);
-    }
-  }
-
-  private async performStartLmStudioServer(): Promise<void> {
-    if (!vscode.workspace.isTrusted) {
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: false,
-        canStop: false,
-        message: "Workspace Trust を有効にしてください。"
-      });
-      return;
-    }
-
-    this.patchSession({ requestState: "connecting" });
-    this.updateLmStudioServer({
-      state: "starting",
-      port: this.lmStudioServer.port,
-      canStart: false,
-      canStop: false,
-      message: "LM Studio サーバーを起動しています…"
-    });
-
-    try {
-      const status = await this.lmStudioServerService.start(
-        this.settingsService.getSettings().lmStudioBaseUrl
-      );
-      this.updateLmStudioServer(status);
-      if (status.state !== "running") {
-        this.patchSession({
-          requestState: "idle",
-          statusMessage: { kind: "error", text: status.message ?? "LM Studio サーバーを起動できませんでした。" }
-        });
-        return;
-      }
-
-      const options = await this.connectionService.refreshAvailableLmStudioModels(
-        this.settingsService.getSettings().lmStudioBaseUrl
-      );
-      this.patchSession({
-        requestState: "idle",
-        statusMessage: options.length > 0
-          ? { kind: "info", text: `LM Studio サーバーを起動し、ロード中モデルを ${options.length}件取得しました。` }
-          : { kind: "warning", text: "LM Studio サーバーは起動しましたが、ロード中のモデルがありません。" }
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "LM Studio サーバーを起動できませんでした。";
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: true,
-        canStop: false,
-        message
-      });
-      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
-    }
-  }
-
-  private async performStopLmStudioServer(): Promise<void> {
-    if (!vscode.workspace.isTrusted) {
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: false,
-        canStop: false,
-        message: "Workspace Trust を有効にしてください。"
-      });
-      return;
-    }
-
-    this.patchSession({ requestState: "connecting" });
-    this.updateLmStudioServer({
-      state: "stopping",
-      port: this.lmStudioServer.port,
-      canStart: false,
-      canStop: false,
-      message: "LM Studio サーバーを停止しています…"
-    });
-
-    try {
-      const status = await this.lmStudioServerService.stop(
-        this.settingsService.getSettings().lmStudioBaseUrl
-      );
-      this.updateLmStudioServer(status);
-      if (status.state !== "stopped") {
-        this.patchSession({
-          requestState: "idle",
-          statusMessage: { kind: "error", text: status.message ?? "LM Studio サーバーを停止できませんでした。" }
-        });
-        return;
-      }
-
-      this.connectionService.clearLmStudioModelOptions();
-      const currentSettings = this.settingsService.getSettings();
-      const shouldRestoreCopilot =
-        currentSettings.providerId === "lmStudio" || this.connectionService.getProviderId() === "lmStudio";
-      if (!shouldRestoreCopilot) {
-        this.patchSession({
-          requestState: "idle",
-          statusMessage: { kind: "info", text: "LM Studio サーバーを停止しました。" }
-        });
-        return;
-      }
-
-      this.connectionService.resetToDisconnected();
-      const copilotSettings = await this.saveSettingsWithRevision({
-        ...currentSettings,
-        providerId: "copilot"
-      });
-      const connectionResult = await this.connectionService.connectAndActivate(copilotSettings);
-      const copilotConnected =
-        connectionResult.connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
-      this.patchSession({
-        connectionState: connectionResult.connectionState,
-        requestState: "idle",
-        mode: copilotConnected || copilotSettings.defaultMode !== "always"
-          ? copilotSettings.defaultMode
-          : this.sessionStore.getState().mode,
-        assistanceDepth: copilotSettings.defaultAssistanceDepth,
-        statusMessage: copilotConnected
-          ? { kind: "info", text: "LM Studio サーバーを停止し、Copilot に戻しました。" }
-          : { kind: "warning", text: "LM Studio サーバーは停止しましたが、Copilot にも接続できませんでした。" }
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "LM Studio サーバーを停止できませんでした。";
-      this.updateLmStudioServer({
-        state: "error",
-        canStart: false,
-        canStop: true,
-        message
-      });
-      this.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
-    }
-  }
-
-  private updateLmStudioServer(value: LmStudioServerViewData): void {
-    this.lmStudioServer = value;
-    this.didChangeStateEmitter.fire();
-  }
-
-  private async applyLmStudioModelKeyChange(settings: NavigatorSettings): Promise<NavigatorSettings> {
-    if (settings.providerId !== "lmStudio") {
-      this.connectionService.consumeLmStudioModelKeyChange();
-      return settings;
-    }
-
-    const nextModelKey = this.connectionService.consumeLmStudioModelKeyChange();
-    if (nextModelKey === undefined || nextModelKey === settings.lmStudioModelKey) {
-      return settings;
-    }
-
-    return this.saveSettingsWithRevision({
-      ...settings,
-      lmStudioModelKey: nextModelKey ?? undefined
-    });
-  }
-
-  private async saveSettingsWithRevision(settings: NavigatorSettings): Promise<NavigatorSettings> {
-    const saved = await this.settingsService.saveSettings(settings);
-    this.settingsRevision += 1;
-    return saved;
+    await this.lmStudioCoordinator.restartOnConfiguredPort();
   }
 
   private async collectGuidanceContextForDepth(
@@ -2058,234 +996,6 @@ export class NavigatorController implements vscode.Disposable {
       ...preview,
       selectedTextPreview: undefined
     };
-  }
-
-  private pushScreen(screen: NavigatorScreen): void {
-    const state = this.sessionStore.getState();
-    this.patchSession({
-      screen,
-      screenHistory: [...state.screenHistory, state.screen]
-    });
-  }
-
-  private resolveHomeScreen(connectionState: ConnectionState): NavigatorScreen {
-    switch (connectionState) {
-      case "connected":
-        return "main";
-      case "restricted":
-      case "unavailable":
-        return "error";
-      case "connecting":
-      case "consent_pending":
-      case "disconnected":
-      default:
-        return "onboarding";
-    }
-  }
-
-  private resolveScreenAfterSuccess(kind: GuidanceKind, currentScreen: NavigatorScreen): NavigatorScreen {
-    if (kind === "always") {
-      return currentScreen === "main" ? "conversation" : currentScreen;
-    }
-
-    if (this.shouldKeepUtilityScreen(currentScreen)) {
-      return currentScreen;
-    }
-
-    return "conversation";
-  }
-
-  private resolveSelectedConversationIdAfterSuccess(
-    kind: GuidanceKind,
-    state: NavigatorSessionState,
-    assistantEntryId: string
-  ): string | undefined {
-    if (kind === "always" && state.screen === "advice_detail") {
-      return state.selectedConversationId;
-    }
-
-    return assistantEntryId;
-  }
-
-  private resolveScreenAfterFailure(
-    kind: GuidanceKind,
-    currentScreen: NavigatorScreen,
-    connectionState: ConnectionState,
-    hasLatestGuidance: boolean
-  ): NavigatorScreen {
-    if (kind === "always" && !HOME_SCREENS.includes(currentScreen)) {
-      return currentScreen;
-    }
-
-    if (kind === "always" && connectionState === "restricted" && hasLatestGuidance) {
-      return "main";
-    }
-
-    if (kind !== "always") {
-      if (this.shouldKeepUtilityScreen(currentScreen)) {
-        return currentScreen;
-      }
-
-      return "conversation";
-    }
-
-    return this.resolveHomeScreen(connectionState);
-  }
-
-  private shouldKeepUtilityScreen(screen: NavigatorScreen): boolean {
-    return screen === "history" || screen === "knowledge" || screen === "knowledge_detail" || screen === "settings" || screen === "feedback_form";
-  }
-
-  private buildConnectionStatusMessage(connectionState: ConnectionState): NavigatorStatusMessage {
-    return this.buildConnectionStatusMessageForProvider(this.settingsService.getSettings().providerId, connectionState);
-  }
-
-  private async restoreCopilotAfterLmStudioFailure(
-    attemptedSettings: NavigatorSettings,
-    lmStudioResult: ConnectionActivationResult
-  ): Promise<CopilotFallbackResult> {
-    const lmStudioFailure = this.buildConnectionStatusMessageForProvider(
-      "lmStudio",
-      lmStudioResult.failureState ?? lmStudioResult.connectionState
-    );
-    const settings = await this.saveSettingsWithRevision({
-      ...attemptedSettings,
-      providerId: "copilot"
-    });
-
-    if (
-      this.connectionService.getProviderId() !== "copilot" ||
-      this.connectionService.getState() !== "connected"
-    ) {
-      this.connectionService.resetToDisconnected();
-      await this.connectionService.connectAndActivate(settings);
-    }
-
-    const connectionState = this.connectionService.getState();
-    const copilotConnected =
-      connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
-    return {
-      connectionState,
-      settings,
-      statusMessage: {
-        kind: lmStudioFailure.kind,
-        text: copilotConnected
-          ? `${lmStudioFailure.text} Copilotに戻し、接続先設定もCopilotとして保存しました。`
-          : `${lmStudioFailure.text} 接続先設定はCopilotに戻して保存しましたが、Copilotにも接続できませんでした。`
-      }
-    };
-  }
-
-  private buildConnectionAttemptStatusMessage(
-    providerId: AiProviderId,
-    result: ConnectionActivationResult
-  ): NavigatorStatusMessage {
-    if (result.activated) {
-      return this.buildConnectionStatusMessageForProvider(providerId, result.connectionState);
-    }
-
-    const failureMessage = this.buildConnectionStatusMessageForProvider(providerId, result.failureState ?? result.connectionState);
-    if (result.connectionState === "connected" && result.previousProviderId) {
-      return {
-        kind: failureMessage.kind,
-        text: `${failureMessage.text} 現在の接続は維持し、接続先設定は保存していません。`
-      };
-    }
-    return {
-      kind: failureMessage.kind,
-      text: `${failureMessage.text} 接続先設定は保存していません。`
-    };
-  }
-
-  private buildConnectionStatusMessageForProvider(
-    providerId: AiProviderId,
-    connectionState: ConnectionState
-  ): NavigatorStatusMessage {
-    if (providerId === "lmStudio") {
-      if (!vscode.workspace.isTrusted) {
-        return { kind: "error", text: "Workspace Trust を有効にしてから LM Studio に接続してください。" };
-      }
-      if (connectionState === "unavailable") {
-        switch (this.connectionService.getLastLmStudioIssue()) {
-          case "auth":
-            return { kind: "error", text: "LM Studio の認証設定を確認してください。" };
-          case "unreachable":
-            return { kind: "error", text: "LM Studio サーバーに接続できません。起動状態を確認してください。" };
-          case "timeout":
-            return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
-          case "noLoadedModel":
-            return { kind: "warning", text: "LM Studio でモデルをロードしてから接続してください。" };
-          case "selectionCancelled":
-            return { kind: "warning", text: "使用する LM Studio モデルを選択してください。" };
-          default:
-            return { kind: "error", text: "LM Studio への接続に失敗しました。" };
-        }
-      }
-      if (connectionState === "disconnected") {
-        return { kind: "warning", text: "LM Studio に接続してください。" };
-      }
-      if (connectionState === "connecting") {
-        return { kind: "info", text: "LM Studio に接続しています..." };
-      }
-      if (connectionState === "connected") {
-        return { kind: "info", text: "LM Studio に接続しました。" };
-      }
-    }
-
-    switch (connectionState) {
-      case "disconnected":
-        return {
-          kind: "warning",
-          text: "接続が完了しませんでした。Copilot の同意ダイアログを確認して再試行してください。"
-        };
-      case "unavailable":
-        return {
-          kind: "error",
-          text: this.connectionService.getLastCopilotIssue() === "timeout"
-            ? "Copilot の接続確認が15秒でタイムアウトしました。通信状態を確認して再試行してください。"
-            : vscode.workspace.isTrusted
-            ? this.settingsService.getSettings().copilotModelId
-              ? "Copilot に接続できません。設定で指定したモデルが現在利用可能か確認するか、使用モデルを自動に戻してください。"
-              : "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、利用可能な Copilot モデルがあるか確認してください。"
-            : "Workspace Trust が無効です。ワークスペースを信頼してから再試行してください。"
-        };
-      case "restricted":
-        return {
-          kind: "error",
-          text: "現在は Copilot リクエストが制限されています。少し時間を置いて再接続してください。"
-        };
-      case "connecting":
-      case "consent_pending":
-        return {
-          kind: "info",
-          text: "Copilot への接続を続行しています..."
-        };
-      case "connected":
-      default:
-        return {
-          kind: "info",
-          text: "Copilot に接続しました。"
-        };
-    }
-  }
-
-  private buildAutoModelFallbackStatusMessage(): NavigatorStatusMessage | undefined {
-    if (!this.connectionService.didUseAutoFallbackModel()) {
-      return undefined;
-    }
-
-    return {
-      kind: "warning",
-      text: `Copilot の自動モデルルーティングが見つからなかったため、${this.getCurrentModelLabel() ?? "利用可能なモデル"} で接続しました。`
-    };
-  }
-
-  private getCurrentModelLabel(): string | undefined {
-    const model = this.connectionService.getConnectedModel();
-    if (!model) {
-      return undefined;
-    }
-    return `${model.providerId === "lmStudio" ? "LM Studio" : "GitHub Copilot"} · ${model.modelLabel}`;
   }
 
   private createConversationEntry(
@@ -2346,327 +1056,6 @@ export class NavigatorController implements vscode.Disposable {
     };
   }
 
-  private buildKnowledgeItems(state: NavigatorSessionState): KnowledgeListItem[] {
-    return this.knowledgeStore.list({
-      query: state.knowledgeQuery
-    }).map((item) => ({
-      id: item.id,
-      title: item.title,
-      summary: item.summary,
-      providerId: item.providerId,
-      modelId: item.modelId,
-      modelLabel: item.modelLabel,
-      updatedAt: item.updatedAt
-    }));
-  }
-
-  private buildSelectedKnowledge(state: NavigatorSessionState): KnowledgeDetailViewData | undefined {
-    const selected = state.selectedKnowledgeId ? this.knowledgeStore.get(state.selectedKnowledgeId) : undefined;
-    if (!selected) {
-      return undefined;
-    }
-
-    const sourceConversation = selected.sourceAdviceId
-      ? this.conversationStore.findStreamByEntryId(selected.sourceAdviceId)
-      : undefined;
-    const sourceConversationDeleted = Boolean(selected.sourceAdviceId && !sourceConversation);
-
-    return {
-      id: selected.id,
-      title: selected.title,
-      summary: selected.summary,
-      providerId: selected.providerId,
-      modelId: selected.modelId,
-      modelLabel: selected.modelLabel,
-      body: selected.body,
-      createdAt: selected.createdAt,
-      updatedAt: selected.updatedAt,
-      sourceConversation,
-      sourceConversationDeleted
-    };
-  }
-
-  private findSelectedConversation(state: NavigatorSessionState): ConversationEntry | undefined {
-    if (!state.selectedConversationId) {
-      return undefined;
-    }
-
-    return state.conversationHistory.find((item) => item.id === state.selectedConversationId && item.role === "assistant");
-  }
-
-  private findLatestAssistant(history: ConversationEntry[]): ConversationEntry | undefined {
-    return [...history].reverse().find((item) => item.role === "assistant");
-  }
-
-  private findAssistantEntry(state: NavigatorSessionState, id: string): ConversationEntry | undefined {
-    return state.conversationHistory.find((item) => item.id === id && item.role === "assistant");
-  }
-
-  private async markAdviceFeedback(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
-    const state = this.sessionStore.getState();
-    const previousHistory = state.conversationHistory;
-    const previousLatestGuidance = state.latestGuidance;
-    const conversationHistory = state.conversationHistory.map((entry) =>
-      entry.id === conversationEntryId && entry.role === "assistant"
-        ? { ...entry, feedback: rating }
-        : entry
-    );
-    const updatedAssistant = conversationHistory.find((entry) => entry.id === conversationEntryId && entry.role === "assistant");
-
-    this.patchSession({
-      conversationHistory,
-      latestGuidance: updatedAssistant ? this.createGuidanceCard(updatedAssistant) : state.latestGuidance,
-      statusMessage: undefined
-    });
-    try {
-      await this.persistActiveConversationState({ summarizeTitle: false });
-    } catch (error) {
-      const current = this.sessionStore.getState();
-      if (current.activeConversationStreamId === state.activeConversationStreamId) {
-        this.patchSession({
-          conversationHistory: previousHistory,
-          latestGuidance: previousLatestGuidance
-        });
-      }
-      throw error;
-    }
-  }
-
-  private async persistFeedbackAndMark(
-    input: AdviceFeedbackInput,
-    entry: ConversationEntry
-  ): Promise<string | undefined> {
-    if (this.feedbackPersistingEntryIds.has(input.conversationEntryId)) {
-      return undefined;
-    }
-
-    this.feedbackPersistingEntryIds.add(input.conversationEntryId);
-    this.patchSession({ requestState: "saving_feedback", statusMessage: undefined });
-    try {
-      const feedbackId = await this.feedbackStore.saveFeedback(
-        input,
-        {
-          kind: entry.kind,
-          assistanceDepth: entry.assistanceDepth,
-          slashCommand: entry.slashCommand,
-          adviceText: entry.text
-        },
-        { status: "skipped" }
-      );
-      await this.markAdviceFeedback(input.conversationEntryId, input.rating);
-      return feedbackId;
-    } catch (error) {
-      console.error("Failed to persist feedback", error);
-      this.patchSession({
-        requestState: "idle",
-        statusMessage: {
-          kind: "error",
-          text: "フィードバックを保存できませんでした。もう一度お試しください。"
-        }
-      });
-      return undefined;
-    } finally {
-      this.feedbackPersistingEntryIds.delete(input.conversationEntryId);
-    }
-  }
-
-  private async summarizeAndUpdateFeedback(
-    feedbackId: string,
-    input: AdviceFeedbackInput,
-    entry: ConversationEntry
-  ): Promise<void> {
-    const summary = await this.adviceService.summarizeFeedback({
-      rating: input.rating,
-      adviceTextExcerpt: this.truncateForFeedback(entry.text, 400),
-      reasons: input.reasons,
-      comment: input.comment
-    });
-
-    await this.feedbackStore.updateFeedbackSummary(feedbackId, input.rating, summary);
-  }
-
-  private isBadFeedbackReason(value: unknown): value is BadFeedbackReason {
-    return value === "too_long" ||
-      value === "off_topic" ||
-      value === "gives_answer" ||
-      value === "too_vague" ||
-      value === "other";
-  }
-
-  private returnFromFeedbackForm(): void {
-    const state = this.sessionStore.getState();
-    const nextHistory = [...state.screenHistory];
-    const previousScreen = nextHistory.pop() ?? "conversation";
-
-    this.patchSession({
-      pendingFeedbackEntryId: undefined,
-      requestState: "idle",
-      screen: previousScreen,
-      screenHistory: nextHistory,
-      statusMessage: undefined
-    });
-  }
-
-  private truncateForFeedback(value: string, maxLength: number): string {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
-  }
-
-  private buildKnowledgeConversationWindow(
-    state: NavigatorSessionState,
-    source: ConversationEntry
-  ): ConversationEntry[] {
-    const sourceIndex = state.conversationHistory.findIndex((item) => item.id === source.id);
-    if (sourceIndex < 0) {
-      return [source];
-    }
-
-    const start = Math.max(0, sourceIndex - 4);
-    const end = Math.min(state.conversationHistory.length, sourceIndex + 3);
-    return state.conversationHistory.slice(start, end);
-  }
-
-  private resolveUserEntryText(
-    kind: GuidanceKind,
-    userPrompt?: string,
-    slashCommand?: SlashCommand,
-    slashCommandScope?: SlashCommandScope
-  ): string | undefined {
-    if (slashCommand) {
-      return userPrompt?.trim() || this.getSlashCommandUserEntryText(slashCommand, slashCommandScope);
-    }
-
-    if (userPrompt?.trim() && kind !== "always") {
-      return userPrompt.trim();
-    }
-
-    switch (kind) {
-      case "context":
-        return "この箇所を相談";
-      case "always":
-      case "manual":
-      default:
-        return undefined;
-    }
-  }
-
-  private getSlashCommandUserEntryText(
-    slashCommand: SlashCommand,
-    slashCommandScope?: SlashCommandScope
-  ): string {
-    return getSkill(slashCommand).userEntryText(slashCommandScope);
-  }
-
-  private parseSlashInput(value?: string): ParsedSlashInput {
-    const trimmed = value?.trim();
-    if (!trimmed) {
-      return {};
-    }
-
-    const match = /^\/([a-zA-Z][a-zA-Z0-9_-]*)(?:\s+([\s\S]*))?$/.exec(trimmed);
-    if (!match) {
-      return { userPrompt: trimmed };
-    }
-
-    const slashCommand = this.normalizeSlashCommand(match[1]);
-    if (!slashCommand) {
-      return { userPrompt: trimmed };
-    }
-
-    const userPrompt = match[2]?.trim();
-    if (getSkill(slashCommand).supportsScope) {
-      const nextScope = this.parseNextSlashCommandScope(userPrompt);
-      return {
-        slashCommand,
-        slashCommandScope: nextScope.scope,
-        userPrompt: nextScope.userPrompt
-      };
-    }
-
-    return {
-      slashCommand,
-      slashCommandScope: "standard",
-      userPrompt: userPrompt || undefined
-    };
-  }
-
-  private parseNextSlashCommandScope(value: string | undefined): {
-    scope: SlashCommandScope;
-    userPrompt?: string;
-  } {
-    const args = value?.trim();
-    if (!args) {
-      return { scope: "standard" };
-    }
-
-    const [firstArg, ...rest] = args.split(/\s+/);
-    if (firstArg && /^(deep|wide|full)$/i.test(firstArg)) {
-      const userPrompt = rest.join(" ").trim();
-      return {
-        scope: "deep",
-        userPrompt: userPrompt || undefined
-      };
-    }
-
-    return {
-      scope: "standard",
-      userPrompt: args
-    };
-  }
-
-  private normalizeSlashCommand(value: string): SlashCommand | undefined {
-    const normalized = value.toLowerCase();
-    return isSlashCommand(normalized) ? normalized : undefined;
-  }
-
-  private resolveEffectiveAssistanceDepth(
-    kind: GuidanceKind,
-    assistanceDepth: AssistanceDepth,
-    slashCommand?: SlashCommand
-  ): AssistanceDepth {
-    if (kind === "always") {
-      return "low";
-    }
-
-    // スキルが深さを固定している場合（例: /flow は厚い文脈が要るので推論強度を常に高にする）はそれを優先する。
-    const forced = slashCommand ? getSkill(slashCommand).forceDepth : undefined;
-    if (forced) {
-      return forced;
-    }
-
-    return assistanceDepth;
-  }
-
-  private resolveNextProjectScope(
-    assistanceDepth: AssistanceDepth,
-    slashCommandScope?: SlashCommandScope
-  ): ProjectContextScope {
-    if (slashCommandScope === "deep") {
-      return "deep";
-    }
-
-    return assistanceDepth === "high" ? "project" : "project-lite";
-  }
-
-  private hasMeaningfulContext(context: GuidanceContext): boolean {
-    return Boolean(
-      context.activeFileExcerpt ||
-        context.selectedText ||
-        context.workspaceTree?.treeText ||
-        context.referencedFiles.length > 0 ||
-        context.diagnosticsSummary.length > 0 ||
-        context.recentEditsSummary.length > 0 ||
-        context.relatedSymbols.length > 0 ||
-        context.projectSummary ||
-        context.additionalContext
-    );
-  }
-
-  private withAdditionalContext(context: GuidanceContext, additionalContext?: string): GuidanceContext {
-    const normalized = this.normalizeAdditionalContext(additionalContext);
-    return normalized ? { ...context, additionalContext: normalized } : context;
-  }
-
   private getStreamAdditionalContext(state: NavigatorSessionState): string | undefined {
     return state.screen === "main" ? undefined : state.activeAdditionalContext;
   }
@@ -2681,38 +1070,6 @@ export class NavigatorController implements vscode.Disposable {
     return state.screen === "main"
       ? state.pendingAdditionalContext ?? state.activeAdditionalContext
       : state.activeAdditionalContext;
-  }
-
-  private resolveAdditionalContext(additionalContext: string | undefined, fallback?: string): string | undefined {
-    return this.normalizeAdditionalContext(additionalContext) ?? this.normalizeAdditionalContext(fallback);
-  }
-
-  private normalizeAdditionalContext(value?: string): string | undefined {
-    const normalized = value?.replace(/\r\n/g, "\n").trim();
-    if (!normalized) {
-      return undefined;
-    }
-
-    return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
-  }
-
-  private createAutomaticFingerprint(context: GuidanceContext): string {
-    return JSON.stringify({
-      file: context.activeFilePath,
-      excerpt: context.activeFileExcerpt,
-      selection: context.selectedText,
-      diagnostics: context.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`),
-      recentEdits: context.recentEditsSummary,
-      relatedSymbols: context.relatedSymbols,
-      workspaceTree: context.workspaceTree?.treeText,
-      referencedFiles: context.referencedFiles.map((file) => ({
-        path: file.path,
-        reason: file.reason,
-        excerpt: file.excerpt,
-        diagnostics: file.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`)
-      })),
-      additionalContext: context.additionalContext
-    });
   }
 
   private isActiveDocument(uri: vscode.Uri): boolean {
@@ -2733,7 +1090,7 @@ export class NavigatorController implements vscode.Disposable {
     const connectionState = this.connectionService.getState();
 
     return {
-      screen: this.resolveHomeScreen(connectionState),
+      screen: resolveHomeScreen(connectionState),
       screenHistory: [],
       connectionState,
       requestState: "idle",
