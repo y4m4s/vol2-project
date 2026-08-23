@@ -13,7 +13,12 @@
   ],
   "icon": "media/icon.png",
   "activationEvents": [
-    "onStartupFinished"
+    "onView:aiPairNavigator.sidebar",
+    "onCommand:aiPairNavigator.openView",
+    "onCommand:aiPairNavigator.connectCopilot",
+    "onCommand:aiPairNavigator.askForGuidance",
+    "onCommand:aiPairNavigator.askSelection",
+    "onCommand:aiPairNavigator.runEvalLive"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -70,45 +75,17 @@
           "visibility": "visible"
         }
       ]
-    },
-    "configuration": {
-      "title": "NaviCom",
-      "properties": {
-        "aiPairNavigator.mode": {
-          "type": "string",
-          "enum": [
-            "manual",
-            "always"
-          ],
-          "default": "manual",
-          "description": "Controls whether advice is shown only on demand or continuously."
-        },
-        "aiPairNavigator.idleDelayMs": {
-          "type": "number",
-          "default": 10000,
-          "minimum": 5000,
-          "maximum": 15000,
-          "description": "Idle time before automatic feedback can be triggered."
-        },
-        "aiPairNavigator.excludedGlobs": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "string"
-          },
-          "description": "Additional glob patterns excluded from context collection. NaviCom always applies built-in protected exclusions for secrets, dependencies, build output, databases, and archives."
-        }
-      }
     }
   },
   "scripts": {
-    "compile": "npm run compile:ext && npm run build:webview",
+    "compile": "npm run compile:ext && npm run typecheck:webview && npm run build:webview",
     "compile:ext": "tsc -p ./",
-    "build:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
-    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/LmStudioServerProtocol.test.js",
+    "typecheck:webview": "tsc -p tsconfig.webview.json",
+    "build:webview": "node scripts/clean-webview-output.mjs && esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
+    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackSummaryPolicy.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js",
     "eval": "npm run compile:ext && node out/eval/run-static.js",
     "watch": "tsc -watch -p ./",
-    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outfile=out/webview/main.js --format=iife --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
+    "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
@@ -122,7 +99,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "mermaid": "^11.15.0",
+    "mermaid": "^11.16.1",
     "sql.js": "^1.14.1"
   }
 }

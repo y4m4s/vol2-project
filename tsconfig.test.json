@@ -12,7 +12,21 @@
     "skipLibCheck": true
   },
   "include": [
+    "src/services/FeedbackSummaryPolicy.ts",
+    "src/services/SerialTaskQueue.ts",
+    "src/services/LmStudioClient.ts",
     "src/services/LmStudioServerProtocol.ts",
-    "test/LmStudioServerProtocol.test.ts"
+    "src/application/GuidanceInput.ts",
+    "src/application/coordinators/NavigationCoordinator.ts",
+    "src/shared/messages.ts",
+    "src/shared/types.ts",
+    "src/shared/skills.ts",
+    "test/FeedbackSummaryPolicy.test.ts",
+    "test/SerialTaskQueue.test.ts",
+    "test/LmStudioClient.test.ts",
+    "test/LmStudioServerProtocol.test.ts",
+    "test/WebviewMessages.test.ts",
+    "test/GuidanceInput.test.ts",
+    "test/NavigationCoordinator.test.ts"
   ]
 }

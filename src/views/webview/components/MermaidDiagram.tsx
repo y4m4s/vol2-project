@@ -1,24 +1,12 @@
 import { useEffect, useState } from "react";
-import mermaid from "mermaid";
 
-let initialized = false;
+const MAX_DIAGRAM_CHARACTERS = 20_000;
+const MAX_DIAGRAM_STATEMENTS = 300;
+let mermaidPromise: Promise<(typeof import("mermaid"))["default"]> | undefined;
 
-function ensureInitialized(): void {
-  if (initialized) {
-    return;
-  }
-
-  const isDark =
-    document.body.classList.contains("vscode-dark") ||
-    document.body.classList.contains("vscode-high-contrast");
-
-  mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: "strict",
-    theme: isDark ? "dark" : "neutral",
-    fontFamily: "var(--vscode-font-family, sans-serif)"
-  });
-  initialized = true;
+function loadMermaid(): Promise<(typeof import("mermaid"))["default"]> {
+  mermaidPromise ??= import("mermaid").then((module) => module.default);
+  return mermaidPromise;
 }
 
 let renderSequence = 0;
@@ -26,16 +14,35 @@ let renderSequence = 0;
 export function MermaidDiagram({ code }: { code: string }) {
   const [svg, setSvg] = useState<string>();
   const [failed, setFailed] = useState(false);
+  const [theme, setTheme] = useState(resolveTheme);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setTheme(resolveTheme()));
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setSvg(undefined);
     setFailed(false);
 
-    ensureInitialized();
+    if (!isWithinRenderLimits(code)) {
+      setFailed(true);
+      return;
+    }
     const renderId = `navicom-mermaid-${++renderSequence}`;
-    mermaid
-      .render(renderId, code)
+    void loadMermaid()
+      .then((mermaid) => {
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "strict",
+          theme,
+          maxTextSize: MAX_DIAGRAM_CHARACTERS,
+          fontFamily: "var(--vscode-font-family, sans-serif)"
+        });
+        return mermaid.render(renderId, code);
+      })
       .then((result) => {
         if (!cancelled) {
           setSvg(result.svg);
@@ -52,7 +59,7 @@ export function MermaidDiagram({ code }: { code: string }) {
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, theme]);
 
   if (failed || !svg) {
     return (
@@ -63,4 +70,21 @@ export function MermaidDiagram({ code }: { code: string }) {
   }
 
   return <div className="s04-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+function resolveTheme(): "dark" | "neutral" {
+  return document.body.classList.contains("vscode-dark") ||
+    document.body.classList.contains("vscode-high-contrast")
+    ? "dark"
+    : "neutral";
+}
+
+function isWithinRenderLimits(code: string): boolean {
+  if (code.length > MAX_DIAGRAM_CHARACTERS) {
+    return false;
+  }
+  const statements = code
+    .split(/\r?\n/)
+    .filter((line) => line.trim() && !line.trim().startsWith("%%"));
+  return statements.length <= MAX_DIAGRAM_STATEMENTS;
 }

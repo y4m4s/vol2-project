@@ -98,7 +98,7 @@ export const SKILLS = {
     ],
     // 処理やデータの流れを整理してください
     userEntryText: () => "処理やデータの流れを整理してください",
-    // /flow はハイ固定だが、確認手順や注意点ではなくフローの整理だけに集中させる
+    // /flow は推論強度「高」で固定だが、確認手順や注意点ではなくフローの整理だけに集中させる
     depthRule: () =>
       // フローモード: 流れの整理だけに集中する。チェックリスト・注意点・次のアクションのセクションは追加しない。
       "- Flow mode: focus only on organizing the flow. Do not add checklists, cautions, or next-action sections.",

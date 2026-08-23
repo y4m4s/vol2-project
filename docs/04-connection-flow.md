@@ -8,9 +8,11 @@
 ## 前提条件
 
 - 対応環境は `VS Code Desktop`
-- ユーザーが `GitHub Copilot` を利用可能な状態であること
+- ユーザーが Free / Student / 有料プランのいずれかで `GitHub Copilot` を有効化していること
 - ワークスペースが `Trusted` であること
 - ネットワーク接続が利用可能であること
+
+Free / Student ではモデルが Auto 選択に限定される。NaviCom はプラン名ではなく、`vscode.lm.selectChatModels` が実行時に返すモデルを接続可否の基準とする。詳細は [15-copilot-plan-limitation-investigation.md](15-copilot-plan-limitation-investigation.md) を参照する。
 
 ## 初期表示
 

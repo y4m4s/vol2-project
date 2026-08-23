@@ -1,9 +1,13 @@
 import * as vscode from "vscode";
 import { AiProviderId, ConnectionState, CopilotModelOption, LmStudioModelOption, NavigatorSettings } from "../shared/types";
 import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } from "./LmStudioClient";
+import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
+export type CopilotConnectionIssue = "timeout" | "noPermissions" | "blocked" | "notFound" | "other";
+
+const COPILOT_PROBE_TIMEOUT_MS = 15_000;
 
 export interface ProviderTextResponse {
   text: string;
@@ -19,6 +23,7 @@ export interface ConnectedProviderModel {
   providerId: AiProviderId;
   modelId: string;
   modelLabel: string;
+  profileSource: ModelProfileSource;
   requestText(
     prompt: string,
     token: vscode.CancellationToken,
@@ -53,6 +58,7 @@ export class ConnectionService {
   private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
+  private lastCopilotIssue: CopilotConnectionIssue | undefined;
 
   public constructor(
     private readonly usageMeter: UsageMeter | undefined,
@@ -91,6 +97,10 @@ export class ConnectionService {
 
   public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
     return this.lastLmStudioIssue;
+  }
+
+  public getLastCopilotIssue(): CopilotConnectionIssue | undefined {
+    return this.lastCopilotIssue;
   }
 
   public consumeLmStudioModelKeyChange(): string | null | undefined {
@@ -158,6 +168,7 @@ export class ConnectionService {
     this.connectedModel = undefined;
     this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
+    this.lastCopilotIssue = undefined;
     this.connectionState = "disconnected";
     return this.connectionState;
   }
@@ -242,6 +253,7 @@ export class ConnectionService {
       this.copilotModel = undefined;
       this.connectedModel = undefined;
       this.usedAutomaticModelFallback = false;
+      this.lastCopilotIssue = this.classifyCopilotIssue(error);
       this.connectionState = this.classifyCopilotConnectError(error);
     }
     return this.connectionState;
@@ -258,6 +270,7 @@ export class ConnectionService {
       }
 
       const normalizedBaseUrl = this.lmStudioClient.normalizeBaseUrl(settings.lmStudioBaseUrl);
+      this.copilotModel = undefined;
       this.connectedModel = this.createLmStudioModel(normalizedBaseUrl, selected);
       this.connectionState = "connected";
     } catch (error) {
@@ -327,6 +340,7 @@ export class ConnectionService {
       providerId: "copilot",
       modelId: model.id,
       modelLabel: this.toModelLabel(model),
+      profileSource: model,
       requestText: async (prompt, token) => {
         const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, token);
         let text = "";
@@ -344,6 +358,11 @@ export class ConnectionService {
       providerId: "lmStudio",
       modelId: model.key,
       modelLabel: model.label,
+      profileSource: {
+        id: model.key,
+        name: model.label,
+        vendor: "lmstudio"
+      },
       requestText: async (prompt, cancellationToken, metadata) => {
         return this.lmStudioClient.createCompletion(
           baseUrl,
@@ -426,13 +445,25 @@ export class ConnectionService {
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {
     const tokenSource = new vscode.CancellationTokenSource();
+    let timeoutHandle: NodeJS.Timeout | undefined;
     try {
       const prompt = "Respond with exactly: ready";
-      const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, tokenSource.token);
-      let text = "";
-      for await (const chunk of response.text) text += chunk;
+      const probe = async (): Promise<string> => {
+        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, tokenSource.token);
+        let responseText = "";
+        for await (const chunk of response.text) responseText += chunk;
+        return responseText;
+      };
+      const timeout = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          tokenSource.cancel();
+          reject(new CopilotProbeTimeoutError());
+        }, COPILOT_PROBE_TIMEOUT_MS);
+      });
+      const text = await Promise.race([probe(), timeout]);
       await this.recordProbeUsage(model, prompt, text);
     } finally {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
       tokenSource.dispose();
     }
   }
@@ -456,12 +487,32 @@ export class ConnectionService {
   }
 
   private classifyCopilotConnectError(error: unknown): ConnectionState {
-    return error instanceof vscode.LanguageModelError && error.code === "NoPermissions" ? "disconnected" : "unavailable";
+    if (error instanceof vscode.LanguageModelError) {
+      if (error.code === "NoPermissions") return "disconnected";
+      if (error.code === "Blocked") return "restricted";
+    }
+    return "unavailable";
+  }
+
+  private classifyCopilotIssue(error: unknown): CopilotConnectionIssue {
+    if (error instanceof CopilotProbeTimeoutError) return "timeout";
+    if (!(error instanceof vscode.LanguageModelError)) return "other";
+    if (error.code === "NoPermissions") return "noPermissions";
+    if (error.code === "Blocked") return "blocked";
+    if (error.code === "NotFound") return "notFound";
+    return "other";
   }
 
   private classifyLmStudioIssue(error: unknown): LmStudioConnectionIssue {
     if (this.lastLmStudioIssue) return this.lastLmStudioIssue;
     return error instanceof LmStudioError ? error.kind : "other";
+  }
+}
+
+class CopilotProbeTimeoutError extends Error {
+  public constructor() {
+    super("Copilot connection probe timed out.");
+    this.name = "CopilotProbeTimeoutError";
   }
 }
 

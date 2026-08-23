@@ -145,7 +145,7 @@ button.danger {
   gap: 8px;
   width: 100%;
   min-width: 0;
-  padding: 4px 20px 12px 0;
+  padding: 4px 0 12px;
   border-bottom: 1px solid var(--vscode-panel-border);
   margin-bottom: 16px;
   flex-shrink: 0;
@@ -226,65 +226,113 @@ button.danger {
 }
 
 .connection-activity {
-  position: absolute;
-  top: 4px;
-  right: 0;
-  z-index: 90;
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  z-index: 90;
 }
 
 .connection-activity-provider {
-  width: 13px;
-  height: 13px;
-  min-width: 13px;
-  min-height: 13px;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
   padding: 0;
   margin-top: 0;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--vscode-sideBar-background) 82%, transparent);
-  background: transparent;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--vscode-panel-border) 82%, transparent),
-    0 1px 5px color-mix(in srgb, #000 22%, transparent);
+  border-radius: 7px;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 2px 8px color-mix(in srgb, #000 20%, transparent);
 }
 
 .connection-activity-provider:hover:not(:disabled),
 .connection-activity-provider:focus-visible {
   opacity: 1;
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 2px;
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  border-color: var(--vscode-focusBorder);
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: none;
 }
 
-.connection-activity-provider.copilot.active {
-  background: var(--vscode-textLink-foreground);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--vscode-textLink-foreground) 76%, var(--vscode-panel-border)),
-    0 0 8px color-mix(in srgb, var(--vscode-textLink-foreground) 58%, transparent);
+.connection-activity-provider.copilot {
+  color: var(--vscode-textLink-foreground);
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 48%, var(--vscode-panel-border));
 }
 
-.connection-activity-provider.lmstudio.active {
-  background: #d946ef;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #d946ef 72%, var(--vscode-panel-border)),
-    0 0 9px color-mix(in srgb, #d946ef 62%, transparent);
+.connection-activity-provider.lmstudio {
+  color: var(--vscode-charts-green, #4ec9b0);
+  border-color: color-mix(in srgb, var(--vscode-charts-green, #4ec9b0) 48%, var(--vscode-panel-border));
 }
 
-.connection-activity-provider.inactive {
-  background: #ef4444;
+body.vscode-high-contrast .connection-activity-provider {
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  border-color: var(--vscode-contrastBorder, var(--vscode-foreground));
+  box-shadow: none;
+}
+
+.connection-activity-provider-logo {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+svg.connection-activity-provider-logo {
+  background: none;
+}
+
+.connection-activity-state {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--vscode-sideBar-background);
+  border-radius: 50%;
+  color: #fff;
+}
+
+.connection-activity-state.connected {
+  background: var(--vscode-testing-iconPassed, #2ea043);
+}
+
+.connection-activity-state.switching {
+  background: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.connection-activity-state .material-symbols-outlined {
+  font-size: 9px;
+  line-height: 1;
+}
+
+.connection-activity-state.switching .material-symbols-outlined {
+  animation: connection-activity-spin 0.9s linear infinite;
 }
 
 .connection-activity-tooltip {
   position: absolute;
-  top: 0;
+  top: 4px;
   right: 100%;
   width: max-content;
   max-width: 220px;
   margin-right: 8px;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid var(--vscode-panel-border);
   border-radius: 8px;
   color: var(--vscode-foreground);
@@ -304,8 +352,64 @@ button.danger {
   transform: translateY(0);
 }
 
-.connection-activity-tooltip-row {
+.connection-activity-tooltip-title,
+.connection-activity-tooltip-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+}
+
+.connection-activity-tooltip-title {
+  font-weight: 600;
+}
+
+.connection-activity-tooltip-title .connection-activity-provider-logo {
+  width: 16px;
+  height: 16px;
+}
+
+.connection-activity-tooltip-status {
+  margin-top: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.92em;
+}
+
+.connection-activity-tooltip-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.connection-activity-tooltip-dot.connected {
+  background: var(--vscode-testing-iconPassed, #2ea043);
+}
+
+.connection-activity-tooltip-dot.switching {
+  background: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.connection-activity-tooltip-model {
+  max-width: 200px;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes connection-activity-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-activity-state.switching .material-symbols-outlined {
+    animation: none;
+  }
 }
 
 .status-pill {

@@ -43,6 +43,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     usageMeter
   );
 
+  try {
+    await controller.initialize();
+  } catch (error) {
+    console.error("NaviCom initialization failed", error);
+    await vscode.window.showErrorMessage("NaviCom の初期化に失敗しました。既存データへのアクセス権と Extension Host ログを確認してください。");
+    controller.dispose();
+    throw error;
+  }
+
   const viewProvider = new NavigatorViewProvider(context.extensionUri, controller);
 
   context.subscriptions.push(
@@ -86,11 +95,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   if (context.extensionMode === vscode.ExtensionMode.Development) {
     void vscode.commands.executeCommand("setContext", "naviCom.devMode", true);
   }
-
-  void controller.initialize().catch((error) => {
-    console.error("NaviCom initialization failed", error);
-    void vscode.window.showErrorMessage("NaviCom の初期化に失敗しました。Extension Host ログを確認してください。");
-  });
 
   revealNaviComViewForDevelopment(context);
 }

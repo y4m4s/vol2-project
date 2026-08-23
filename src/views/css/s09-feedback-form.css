@@ -108,3 +108,19 @@
 .s09-primary .material-symbols-outlined {
   font-size: 16px;
 }
+
+.s09-is-spinning {
+  animation: s09-spin 0.9s linear infinite;
+}
+
+@keyframes s09-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s09-is-spinning {
+    animation: none;
+  }
+}
