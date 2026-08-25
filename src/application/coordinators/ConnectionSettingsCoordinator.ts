@@ -20,6 +20,7 @@ export interface SettingsInput {
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
   lmStudioModelKey?: string;
+  orcaRouterModelId?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
   dailyTokenLimit: number;
@@ -66,7 +67,12 @@ export class ConnectionSettingsCoordinator {
     if (!model) {
       return undefined;
     }
-    return `${model.providerId === "lmStudio" ? "LM Studio" : "GitHub Copilot"} · ${model.modelLabel}`;
+    const providerLabel = model.providerId === "lmStudio"
+      ? "LM Studio"
+      : model.providerId === "orcaRouter"
+        ? "OrcaRouter"
+        : "GitHub Copilot";
+    return `${providerLabel} · ${model.modelLabel}`;
   }
 
   public async connect(providerId?: AiProviderId): Promise<void> {
@@ -133,6 +139,7 @@ export class ConnectionSettingsCoordinator {
       defaultAssistanceDepth: input.defaultAssistanceDepth,
       copilotModelId: input.copilotModelId,
       lmStudioModelKey: input.lmStudioModelKey,
+      orcaRouterModelId: input.orcaRouterModelId,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
       dailyTokenLimit: input.dailyTokenLimit,
@@ -147,7 +154,8 @@ export class ConnectionSettingsCoordinator {
     const modelSettingChanged =
       previousSettings.providerId !== nextSettings.providerId ||
       previousSettings.copilotModelId !== nextSettings.copilotModelId ||
-      previousSettings.lmStudioModelKey !== nextSettings.lmStudioModelKey;
+      previousSettings.lmStudioModelKey !== nextSettings.lmStudioModelKey ||
+      previousSettings.orcaRouterModelId !== nextSettings.orcaRouterModelId;
     const connectionSettingChanged =
       modelSettingChanged ||
       this.connectionService.getProviderId() !== nextSettings.providerId ||
@@ -282,6 +290,35 @@ export class ConnectionSettingsCoordinator {
     providerId: AiProviderId,
     connectionState: ConnectionState
   ): NavigatorStatusMessage {
+    if (providerId === "orcaRouter") {
+      if (!vscode.workspace.isTrusted) {
+        return { kind: "error", text: "Workspace Trust を有効にしてから OrcaRouter に接続してください。" };
+      }
+      if (connectionState === "connected") {
+        return { kind: "info", text: "OrcaRouter に接続しました。" };
+      }
+      if (connectionState === "connecting") {
+        return { kind: "info", text: "OrcaRouter に接続しています..." };
+      }
+      switch (this.connectionService.getLastOrcaRouterIssue()) {
+        case "missingApiKey":
+          return { kind: "warning", text: "設定画面で OrcaRouter APIキーを保存してください。" };
+        case "auth":
+          return { kind: "error", text: "OrcaRouter APIキーが無効です。キーを確認してください。" };
+        case "quota":
+          return { kind: "warning", text: "OrcaRouter の無料容量・残高・キー利用上限を確認してください。" };
+        case "rateLimit":
+          return { kind: "warning", text: "OrcaRouter のレート制限に達しました。時間を置いて再試行してください。" };
+        case "timeout":
+          return { kind: "error", text: "OrcaRouter の応答がタイムアウトしました。" };
+        case "modelNotFound":
+          return { kind: "warning", text: "選択した OrcaRouter モデルを利用できません。モデル一覧を更新してください。" };
+        case "unavailable":
+          return { kind: "error", text: "OrcaRouter または上流モデルを現在利用できません。" };
+        default:
+          return { kind: "error", text: "OrcaRouter への接続に失敗しました。" };
+      }
+    }
     if (providerId === "lmStudio") {
       if (!vscode.workspace.isTrusted) {
         return { kind: "error", text: "Workspace Trust を有効にしてから LM Studio に接続してください。" };

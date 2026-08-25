@@ -158,6 +158,10 @@
   margin-top: 10px;
 }
 
+.provider-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .schedule-options {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -274,6 +278,81 @@
 
 .lmstudio-refresh-models {
   margin-top: 10px;
+}
+
+.orcarouter-key-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.84em;
+  font-weight: 650;
+}
+
+.orcarouter-key-status .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.orcarouter-key-status.configured {
+  color: var(--vscode-testing-iconPassed, var(--vscode-textLink-foreground));
+}
+
+.orcarouter-key-status.missing {
+  color: var(--vscode-editorWarning-foreground, var(--vscode-descriptionForeground));
+}
+
+.orcarouter-key-input,
+.orcarouter-model-search {
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  outline: none;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font: inherit;
+  font-size: 0.88em;
+}
+
+.orcarouter-key-input:focus,
+.orcarouter-model-search:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.orcarouter-key-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.orcarouter-key-actions .btn-gray {
+  padding-inline: 8px;
+}
+
+.orcarouter-key-actions .material-symbols-outlined,
+.orcarouter-refresh-models .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.orcarouter-model-options {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.orcarouter-model-options .model-option-meta {
+  max-width: 58%;
+}
+
+.orcarouter-model-empty,
+.orcarouter-refresh-models {
+  margin-top: 10px;
+}
+
+.orcarouter-data-note {
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 35%, var(--vscode-panel-border));
 }
 
 .lmstudio-server-card {
@@ -462,6 +541,11 @@
 
   .s06-savebar-actions button {
     flex: 1;
+  }
+
+  .provider-options,
+  .orcarouter-key-actions {
+    grid-template-columns: 1fr;
   }
 }
 

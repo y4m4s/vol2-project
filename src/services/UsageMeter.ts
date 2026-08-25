@@ -22,6 +22,8 @@ export interface DailyUsage {
 interface UsageBucket extends DailyUsage {
   providerId: AiProviderId;
   modelId?: string;
+  costUsd?: number;
+  costedRequestCount?: number;
 }
 
 interface StoredDailyUsage extends DailyUsage {
@@ -33,6 +35,7 @@ export interface UsageRecordEntry {
   modelId?: string;
   inputTokens: number;
   outputTokens: number;
+  costUsd?: number;
 }
 
 export class UsageMeter {
@@ -57,7 +60,11 @@ export class UsageMeter {
       ...currentBucket,
       requestCount: currentBucket.requestCount + 1,
       inputTokens: currentBucket.inputTokens + this.toNonNegative(entry.inputTokens),
-      outputTokens: currentBucket.outputTokens + this.toNonNegative(entry.outputTokens)
+      outputTokens: currentBucket.outputTokens + this.toNonNegative(entry.outputTokens),
+      costUsd: currentBucket.costUsd !== undefined || entry.costUsd !== undefined
+        ? this.toNonNegativeNumber(currentBucket.costUsd) + this.toNonNegativeNumber(entry.costUsd)
+        : undefined,
+      costedRequestCount: this.toNonNegative(currentBucket.costedRequestCount) + (entry.costUsd !== undefined ? 1 : 0)
     };
     if (index >= 0) {
       buckets[index] = nextBucket;
@@ -87,7 +94,11 @@ export class UsageMeter {
     }
     return this.getBuckets(this.getStoredToday())
       .filter((bucket) => bucket.providerId === providerId)
-      .reduce((total, bucket) => total + this.estimateUsageCost(bucket.modelId, bucket), 0);
+      .reduce((total, bucket) => total + (
+        providerId === "orcaRouter" && bucket.costUsd !== undefined && bucket.costedRequestCount === bucket.requestCount
+          ? bucket.costUsd
+          : this.estimateUsageCost(bucket.modelId, bucket)
+      ), 0);
   }
 
   public estimateBlendedPricePerMTokUsd(providerId: AiProviderId): number {
@@ -114,14 +125,18 @@ export class UsageMeter {
   private getBuckets(stored: StoredDailyUsage): UsageBucket[] {
     if (stored.buckets) {
       return stored.buckets.flatMap((bucket) => {
-        if (bucket?.providerId !== "copilot" && bucket?.providerId !== "lmStudio") return [];
+        if (bucket?.providerId !== "copilot" && bucket?.providerId !== "lmStudio" && bucket?.providerId !== "orcaRouter") return [];
         return [{
           date: stored.date,
           providerId: bucket.providerId,
           modelId: typeof bucket.modelId === "string" && bucket.modelId.trim() ? bucket.modelId.trim() : undefined,
           requestCount: this.toNonNegative(bucket.requestCount),
           inputTokens: this.toNonNegative(bucket.inputTokens),
-          outputTokens: this.toNonNegative(bucket.outputTokens)
+          outputTokens: this.toNonNegative(bucket.outputTokens),
+          costUsd: typeof bucket.costUsd === "number" && Number.isFinite(bucket.costUsd) && bucket.costUsd >= 0
+            ? bucket.costUsd
+            : undefined,
+          costedRequestCount: this.toNonNegative(bucket.costedRequestCount)
         }];
       });
     }
@@ -169,5 +184,9 @@ export class UsageMeter {
 
   private toNonNegative(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+  }
+
+  private toNonNegativeNumber(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
   }
 }

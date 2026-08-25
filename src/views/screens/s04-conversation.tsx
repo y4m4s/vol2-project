@@ -436,7 +436,7 @@ function ResponseActions(
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
-            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（参考料金概算 {formatCostUsd(tokenUsage.estimatedCostUsd)}、請求額ではありません）
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（{tokenUsage.costIsExact ? "実請求額" : "参考料金概算"} {formatCostUsd(tokenUsage.estimatedCostUsd)}{tokenUsage.costIsExact ? "" : "、請求額ではありません"}）
           </span>
         )}
 

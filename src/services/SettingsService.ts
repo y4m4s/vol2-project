@@ -59,6 +59,7 @@ const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
   defaultAssistanceDepth: "low",
   lmStudioBaseUrl: "http://127.0.0.1:1234",
+  orcaRouterModelId: "orcarouter/free",
   requestIntervalMs: 60000,
   idleDelayMs: 10000,
   dailyTokenLimit: 100_000,
@@ -100,6 +101,7 @@ export class SettingsService {
       copilotModelId: this.normalizeCopilotModelId(partial?.copilotModelId),
       lmStudioBaseUrl: this.normalizeLmStudioBaseUrl(partial?.lmStudioBaseUrl),
       lmStudioModelKey: this.normalizeLmStudioModelKey(partial?.lmStudioModelKey),
+      orcaRouterModelId: this.normalizeOrcaRouterModelId(partial?.orcaRouterModelId),
       requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
       idleDelayMs: this.normalizeIdleDelayMs(partial?.idleDelayMs ?? DEFAULT_SETTINGS.idleDelayMs),
       dailyTokenLimit: this.normalizeDailyTokenLimit(
@@ -142,7 +144,7 @@ export class SettingsService {
   }
 
   private normalizeProviderId(value: unknown): NavigatorSettings["providerId"] {
-    return value === "lmStudio" ? "lmStudio" : "copilot";
+    return value === "lmStudio" || value === "orcaRouter" ? value : "copilot";
   }
 
   private normalizeLmStudioBaseUrl(value: unknown): string {
@@ -161,6 +163,15 @@ export class SettingsService {
 
     const normalized = value.trim();
     return normalized || undefined;
+  }
+
+  private normalizeOrcaRouterModelId(value: unknown): string {
+    if (typeof value !== "string") {
+      return DEFAULT_SETTINGS.orcaRouterModelId!;
+    }
+
+    const normalized = value.trim();
+    return normalized || DEFAULT_SETTINGS.orcaRouterModelId!;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {
