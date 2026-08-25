@@ -930,11 +930,21 @@ export class NavigatorController implements vscode.Disposable {
 
   public async setOrcaRouterApiKey(apiKey: string): Promise<void> {
     await this.connectionService.storeOrcaRouterApiKey(apiKey);
+    const options = await this.connectionService.refreshAvailableOrcaRouterModels();
+    const issue = this.connectionService.getLastOrcaRouterIssue();
+    const refreshStatus = issue
+      ? this.connectionSettingsCoordinator.buildConnectionStatusMessageForProvider("orcaRouter", "unavailable")
+      : undefined;
     this.patchSession({
-      statusMessage: {
-        kind: "info",
-        text: "OrcaRouter APIキーを安全なストレージに保存しました。モデル一覧は「モデル一覧を更新」で取得できます。"
-      }
+      statusMessage: refreshStatus
+        ? {
+            kind: refreshStatus.kind,
+            text: `APIキーは保存しましたが、モデル一覧を取得できませんでした。${refreshStatus.text}`
+          }
+        : {
+            kind: "info",
+            text: `OrcaRouter APIキーを安全なストレージに保存し、テキストモデルを ${Math.max(0, options.length - 2)} 件取得しました。`
+          }
     });
   }
 

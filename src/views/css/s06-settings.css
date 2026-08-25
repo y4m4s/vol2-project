@@ -332,7 +332,8 @@
 }
 
 .orcarouter-key-actions .material-symbols-outlined,
-.orcarouter-refresh-models .material-symbols-outlined {
+.orcarouter-refresh-models .material-symbols-outlined,
+.orcarouter-connect .material-symbols-outlined {
   font-size: 18px;
 }
 
@@ -349,6 +350,10 @@
 .orcarouter-model-empty,
 .orcarouter-refresh-models {
   margin-top: 10px;
+}
+
+.orcarouter-connect {
+  margin-top: 8px;
 }
 
 .orcarouter-data-note {

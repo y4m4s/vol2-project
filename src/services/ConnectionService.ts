@@ -70,7 +70,7 @@ export class ConnectionService {
   private connectedModel: ConnectedProviderModel | undefined;
   private availableModelOptions: CopilotModelOption[] = [];
   private availableLmStudioModelOptions: LmStudioModelOption[] = [];
-  private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = createBuiltInOrcaRouterOptions();
+  private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = [];
   private pendingConnection: Promise<ConnectionActivationResult> | undefined;
   private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
@@ -84,7 +84,11 @@ export class ConnectionService {
     private readonly orcaRouterClient: OrcaRouterClient,
     private readonly orcaRouterCredentials: OrcaRouterCredentialStore,
     private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
-  ) {}
+  ) {
+    if (this.orcaRouterCredentials.isConfigured()) {
+      this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+    }
+  }
 
   public getState(): ConnectionState {
     return this.connectionState;
@@ -116,7 +120,7 @@ export class ConnectionService {
   }
 
   public getOrcaRouterModelOptions(): OrcaRouterModelOption[] {
-    return this.availableOrcaRouterModelOptions;
+    return this.orcaRouterCredentials.isConfigured() ? this.availableOrcaRouterModelOptions : [];
   }
 
   public isOrcaRouterApiKeyConfigured(): boolean {
@@ -125,12 +129,13 @@ export class ConnectionService {
 
   public async storeOrcaRouterApiKey(apiKey: string): Promise<void> {
     await this.orcaRouterCredentials.storeApiKey(apiKey);
+    this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
     this.lastOrcaRouterIssue = undefined;
   }
 
   public async deleteOrcaRouterApiKey(): Promise<void> {
     await this.orcaRouterCredentials.deleteApiKey();
-    this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+    this.availableOrcaRouterModelOptions = [];
     this.lastOrcaRouterIssue = "missingApiKey";
     if (this.providerId === "orcaRouter") {
       this.resetToDisconnected();
@@ -187,7 +192,7 @@ export class ConnectionService {
     const apiKey = await this.orcaRouterCredentials.getApiKey();
     if (!apiKey) {
       this.lastOrcaRouterIssue = "missingApiKey";
-      this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+      this.availableOrcaRouterModelOptions = [];
       return this.availableOrcaRouterModelOptions;
     }
     try {

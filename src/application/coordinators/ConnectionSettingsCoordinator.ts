@@ -81,12 +81,34 @@ export class ConnectionSettingsCoordinator {
       return;
     }
 
+    const currentSettings = this.settingsService.getSettings();
+    const requestedProviderId = providerId ?? currentSettings.providerId;
+    if (requestedProviderId === "orcaRouter" && !this.connectionService.isOrcaRouterApiKeyConfigured()) {
+      const setupSettings = currentSettings.providerId === "orcaRouter"
+        ? currentSettings
+        : await this.saveSettingsWithRevision({ ...currentSettings, providerId: "orcaRouter" });
+      this.host.patchSession({
+        requestState: "idle",
+        connectionState: this.connectionService.getState(),
+        screen: "settings",
+        screenHistory: [...state.screenHistory, state.screen],
+        mode: setupSettings.defaultMode === "always" && this.connectionService.getState() !== "connected"
+          ? state.mode
+          : setupSettings.defaultMode,
+        assistanceDepth: setupSettings.defaultAssistanceDepth,
+        statusMessage: {
+          kind: "warning",
+          text: "OrcaRouterを利用するにはAPIキーが必要です。設定画面でキーを保存してください。"
+        }
+      });
+      return;
+    }
+
     this.host.patchSession({
       requestState: "connecting",
       connectionState: "connecting"
     });
 
-    const currentSettings = this.settingsService.getSettings();
     const settings = providerId && providerId !== currentSettings.providerId
       ? { ...currentSettings, providerId }
       : currentSettings;
@@ -388,6 +410,24 @@ export class ConnectionSettingsCoordinator {
   }
 
   private async reconnectForModelSetting(settings: NavigatorSettings): Promise<void> {
+    if (settings.providerId === "orcaRouter" && !this.connectionService.isOrcaRouterApiKeyConfigured()) {
+      const savedSettings = await this.saveSettingsWithRevision(settings);
+      this.host.patchSession({
+        requestState: "idle",
+        connectionState: this.connectionService.getState(),
+        mode: savedSettings.defaultMode === "always" && this.connectionService.getState() !== "connected"
+          ? this.host.getState().mode
+          : savedSettings.defaultMode,
+        assistanceDepth: savedSettings.defaultAssistanceDepth,
+        contextPreview: this.host.collectContextPreview(),
+        statusMessage: {
+          kind: "warning",
+          text: "設定を保存しました。OrcaRouterへ接続するにはAPIキーを保存してください。"
+        }
+      });
+      return;
+    }
+
     this.host.patchSession({
       requestState: "connecting",
       connectionState: "connecting",

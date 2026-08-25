@@ -222,7 +222,7 @@ export function S06Settings() {
           <div className="setting-item">
             <SettingTitle icon="key">APIキー</SettingTitle>
             <div className="setting-desc">
-              sk-orca- で始まるキーをVS Codeの暗号化ストレージに保存します。保存した値は画面へ再表示しません。
+              sk-orca- で始まるキーをVS Codeの暗号化ストレージに保存し、モデル一覧を自動取得します。保存した値は画面へ再表示しません。
             </div>
             <div className={`orcarouter-key-status ${orcaRouterApiKeyConfigured ? "configured" : "missing"}`}>
               <span className="material-symbols-outlined" aria-hidden="true">
@@ -264,30 +264,49 @@ export function S06Settings() {
           <div className="setting-item">
             <SettingTitle icon="smart_toy">使用モデル</SettingTitle>
             <div className="setting-desc">
-              Free Routerは無料容量だけを使い、有料モデルへ自動移行しません。モデル一覧の取得にはAPIキーが必要です。
+              {orcaRouterApiKeyConfigured
+                ? "Free Routerは無料容量だけを使い、有料モデルへ自動移行しません。"
+                : "APIキーを保存すると、Free Router・Auto Routerと利用可能なモデルを選択できます。"}
             </div>
-            <input
-              className="orcarouter-model-search"
-              type="search"
-              placeholder="モデルID・プロバイダで検索"
-              value={orcaRouterModelQuery}
-              onChange={(event) => setOrcaRouterModelQuery(event.target.value)}
-            />
-            <OrcaRouterModelButtonGroup
-              value={orcaRouterModelId}
-              options={orcaRouterModelOptions}
-              query={orcaRouterModelQuery}
-              onChange={setOrcaRouterModelId}
-            />
-            <button
-              type="button"
-              className="btn-gray orcarouter-refresh-models"
-              disabled={!orcaRouterApiKeyConfigured}
-              onClick={() => send({ type: "refreshOrcaRouterModels" })}
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
-              モデル一覧を更新
-            </button>
+            {orcaRouterApiKeyConfigured ? (
+              <>
+                <input
+                  className="orcarouter-model-search"
+                  type="search"
+                  placeholder="モデルID・プロバイダで検索"
+                  value={orcaRouterModelQuery}
+                  onChange={(event) => setOrcaRouterModelQuery(event.target.value)}
+                />
+                <OrcaRouterModelButtonGroup
+                  value={orcaRouterModelId}
+                  options={orcaRouterModelOptions}
+                  query={orcaRouterModelQuery}
+                  onChange={setOrcaRouterModelId}
+                />
+                <button
+                  type="button"
+                  className="btn-gray orcarouter-refresh-models"
+                  onClick={() => send({ type: "refreshOrcaRouterModels" })}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
+                  モデル一覧を更新
+                </button>
+                {(viewModel?.providerId !== "orcaRouter" || viewModel.connectionState !== "connected") && !hasPendingChanges && (
+                  <button
+                    type="button"
+                    className="btn-gray orcarouter-connect"
+                    onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">power</span>
+                    OrcaRouterに接続
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="setting-desc orcarouter-model-empty">
+                APIキー未設定のため、モデル候補はまだ表示されません。
+              </div>
+            )}
           </div>
 
           <div className="setting-item orcarouter-data-note">
