@@ -377,7 +377,7 @@ export class ConnectionService {
       }
 
       this.copilotModel = undefined;
-      this.connectedModel = this.createOrcaRouterModel(apiKey, selected);
+      this.connectedModel = this.createOrcaRouterModel(selected);
       this.lastOrcaRouterIssue = undefined;
       this.connectionState = "connected";
     } catch (error) {
@@ -503,7 +503,7 @@ export class ConnectionService {
     };
   }
 
-  private createOrcaRouterModel(apiKey: string, model: OrcaRouterModelOption): ConnectedProviderModel {
+  private createOrcaRouterModel(model: OrcaRouterModelOption): ConnectedProviderModel {
     return {
       providerId: "orcaRouter",
       modelId: model.id,
@@ -515,7 +515,11 @@ export class ConnectionService {
         maxInputTokens: model.contextLength
       },
       requestText: async (prompt, cancellationToken) => {
-        return this.orcaRouterClient.createCompletion(apiKey, model.id, prompt, cancellationToken);
+        const currentApiKey = await this.orcaRouterCredentials.getApiKey();
+        if (!currentApiKey) {
+          throw new OrcaRouterError("auth", "OrcaRouter API key is not configured.");
+        }
+        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, prompt, cancellationToken);
       }
     };
   }

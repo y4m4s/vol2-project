@@ -31,6 +31,10 @@ test("APIキーを正規化して保存し削除できる", async () => {
   assert.equal([...values.values()][0], "sk-orca-secret");
   assert.equal(credentials.isConfigured(), true);
 
+  await credentials.storeApiKey("sk-orca-replacement");
+  assert.equal(await credentials.getApiKey(), "sk-orca-replacement");
+  assert.equal([...values.values()].includes("sk-orca-secret"), false);
+
   await credentials.deleteApiKey();
   assert.equal(values.size, 0);
   assert.equal(credentials.isConfigured(), false);
