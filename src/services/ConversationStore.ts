@@ -504,7 +504,7 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   private parseProviderId(value: unknown): AiProviderId | undefined {
-    return value === "copilot" || value === "lmStudio" ? value : undefined;
+    return value === "copilot" || value === "lmStudio" || value === "orcaRouter" ? value : undefined;
   }
 
   private parseAssistanceDepth(value: unknown): AssistanceDepth | undefined {

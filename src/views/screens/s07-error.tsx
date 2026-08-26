@@ -7,6 +7,7 @@ export function S07Error() {
 
   const isBusy = viewModel?.isBusy ?? false;
   const providerId = viewModel?.providerId ?? "copilot";
+  const isOrcaRouter = providerId === "orcaRouter";
   const isLmStudio = providerId === "lmStudio";
 
   // connecting 中は直前の安定した state を保持して表示が変わらないようにする
@@ -16,17 +17,40 @@ export function S07Error() {
   }
 
   const isUnavailable = stableStateRef.current === "unavailable";
-  const title = isLmStudio
-    ? "ローカル LLM に接続できません"
-    : isUnavailable
-      ? "Copilotに接続できません"
-      : "現在は利用が制限されています";
-  const description = isLmStudio
-    ? "LM Studio 側で次の項目を確認してください。"
-    : isUnavailable
-      ? "次の項目が完了していない可能性があります。"
-      : "Copilot へのリクエストが一時的に制限されている可能性があります。";
-  const possibleCauses = isLmStudio
+  const title = isOrcaRouter
+    ? "OrcaRouter に接続できません"
+    : isLmStudio
+      ? "ローカル LLM に接続できません"
+      : isUnavailable
+        ? "Copilotに接続できません"
+        : "現在は利用が制限されています";
+  const description = isOrcaRouter
+    ? "OrcaRouter 側で次の項目を確認してください。"
+    : isLmStudio
+      ? "LM Studio 側で次の項目を確認してください。"
+      : isUnavailable
+        ? "次の項目が完了していない可能性があります。"
+        : "Copilot へのリクエストが一時的に制限されている可能性があります。";
+  const possibleCauses = isOrcaRouter
+    ? [
+        {
+          icon: "key_off",
+          text: "設定画面で OrcaRouter APIキーが保存されていない"
+        },
+        {
+          icon: "speed",
+          text: "OrcaRouter の無料容量・残高・レート制限に達している"
+        },
+        {
+          icon: "dns",
+          text: "OrcaRouter または上流モデルが一時的に利用できない"
+        },
+        {
+          icon: "verified_user",
+          text: "ワークスペースが信頼済みになっていない"
+        }
+      ]
+    : isLmStudio
     ? [
         {
           icon: "dns",

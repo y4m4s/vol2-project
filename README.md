@@ -3,7 +3,7 @@
 **ペアプログラミングのナビゲーター役を担う、VS Code 向け AI 学習支援拡張機能**
 
 NaviCom は、コーディング中の詰まりを自力で解決する力を育てることを目的とした VS Code 拡張機能です。  
-GitHub Copilot を活用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
+GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
 
 ---
 
@@ -48,7 +48,7 @@ GitHub Copilot を活用し、「答えの代行」ではなく「考え方・�
 |------|------|
 | 拡張機能ホスト | TypeScript / VS Code Extension API |
 | UI | React / WebviewView |
-| AI 呼び出し | VS Code Language Model API (GitHub Copilot) |
+| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / OrcaRouter |
 | ローカルストレージ | SQLite (sql.js) |
 | ビルド | esbuild / TypeScript Compiler |
 
@@ -79,6 +79,7 @@ src/
   - [Copilot Free](https://docs.github.com/en/copilot/concepts/billing/individual-plans) でも月次上限の範囲で利用できます
   - 認証済みの学生は [Copilot Student](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students) を無料で利用できます
 - LM Studio を利用する場合は、LM Studio と対象モデルをローカルで起動していること
+- OrcaRouter を利用する場合は、[OrcaRouter](https://www.orcarouter.ai) で発行した `sk-orca-` 形式のAPIキー
 - Node.js / npm
 
 ---
@@ -116,5 +117,22 @@ npm run watch:webview
 
 ### 初回接続
 
-拡張機能を起動したら、サイドバーの NaviCom パネルを開き、**Copilot に接続** ボタンを押します。  
-GitHub Copilot の認可ダイアログが表示されたら許可すると、メイン画面に遷移して相談が開始できます。
+拡張機能を起動したら、サイドバーの NaviCom パネルを開き、使用する接続先を選びます。
+
+- **Copilot に接続**: GitHub Copilot の認可ダイアログを許可します。
+- **ローカル LLM に接続**: LM Studioでモデルをロードし、ローカルサーバーへ接続します。
+- **OrcaRouter に接続**: APIキー未設定の場合は設定画面へ移動し、キー入力の案内を表示します。
+
+### OrcaRouterの設定
+
+1. 設定画面の「接続先」で **OrcaRouter** を選択します。
+2. `sk-orca-` で始まるAPIキーを入力し、「キーを保存」を押します。保存後、モデル一覧が自動取得されます。
+3. APIキー保存後に表示されるモデルから、初回の無課金動作確認には **Free Router (`orcarouter/free`)** を選択します。
+4. 必要に応じて「モデル一覧を更新」で最新のテキストモデルを再取得します。
+5. モデルを変更した場合は画面下部の「保存」を、変更していない場合は「OrcaRouterに接続」を押します。
+
+APIキーはVS CodeのSecretStorageへ保存され、設定データや会話履歴には書き込まれません。保存済みキーの値は設定画面へ再表示されず、推論時にはSecretStorageから最新のキーを取得します。`orcarouter/free` は無料容量だけを利用し、容量がない場合も有料モデルへ自動移行しません。
+
+### OrcaRouter利用時のデータ送信
+
+OrcaRouterを選択すると、質問、送信対象のコード断片、診断情報など、回答生成に必要な文脈がOrcaRouterと選択された上流モデル事業者へ送信されます。保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。

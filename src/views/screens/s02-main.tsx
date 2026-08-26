@@ -25,7 +25,9 @@ export function S02Main() {
     ? settings.copilotModelId
       ? modelLabel ?? "GitHub Copilot · 指定モデル"
       : "GitHub Copilot：自動"
-    : undefined;
+    : connectionState === "connected" && providerId === "orcaRouter"
+      ? modelLabel ?? settings.orcaRouterModelId ?? "OrcaRouter"
+      : undefined;
 
   return (
     <div className="s02-root">
@@ -88,6 +90,16 @@ export function S02Main() {
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">
             今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（参考料金概算 {usageToday.estimatedCostText}、請求額ではありません）
+          </span>
+          {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
+        </div>
+      )}
+
+      {providerId === "orcaRouter" && usageToday && (
+        <div className="s02-usage">
+          <span className="material-symbols-outlined">data_usage</span>
+          <span className="s02-usage-text">
+            今日の利用 {usageToday.requestCount}回 / {formatTokenCount(usageToday.totalTokens)}トークン / 記録料金 {usageToday.estimatedCostText}
           </span>
           {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>
