@@ -50,7 +50,7 @@ APIキー保存後は、固定のルーター選択肢として以下も表示�
 - `usage.completion_tokens`
 - `usage.cost_usd`
 
-`usage.cost_usd` がある会話では実請求額として表示する。過去データなど実コストがない場合のみ既存の概算処理を利用する。LM Studio専用の `navicom_referenced_files` はOrcaRouterへ送信しない。
+`usage.cost_usd` がある会話では「応答時点の記録料金」として表示する。これは応答生成時の計算値であり、確定請求額とは限らない。確定した請求情報の確認先はOrcaRouter側の利用履歴またはGeneration情報とする。過去データなど応答コストがない場合のみ既存の概算処理を利用する。LM Studio専用の `navicom_referenced_files` はOrcaRouterへ送信しない。
 
 ## エラー分類
 
@@ -64,16 +64,26 @@ APIキー保存後は、固定のルーター選択肢として以下も表示�
 
 `free_quota_exhausted` / `free_rate_limited` は専用メッセージを表示し、有料モデルへ切り替えていないことを明示する。
 
+認証・残高・利用上限以外の4xxは、接続障害ではなくリクエスト単位の拒否として扱う。入力内容またはモデル設定の確認を案内し、接続済みモデルは保持する。Guardrailによる拒否は専用メッセージを表示する。5xx、タイムアウト、不正レスポンスなど、接続先を正常に利用できない失敗だけを `unavailable` とする。
+
 ## データ送信
 
-OrcaRouter利用時、プロンプトに含まれる質問、コード断片、診断情報などはOrcaRouterと上流モデル事業者へ送信される。READMEと設定画面でこれを明示する。既存の保護済み・追加除外globはOrcaRouterでも適用する。
+OrcaRouter利用時、回答生成、会話タイトル生成、ナレッジ作成などのプロンプトはOrcaRouterと上流モデル事業者へ送信される。質問やコード断片だけでなく、処理に応じて診断情報、ファイル名・ディレクトリ構造、追加コンテキスト、会話内容、再利用ナレッジのタイトル・要約、フィードバック傾向も含まれる。READMEと設定画面でこれを明示する。既存の保護済み・追加除外globはOrcaRouterでもファイル本文に適用し、APIキーはプロンプトへ含めない。
+
+## Guardrail／Firewall
+
+- NaviCom自身はOrcaRouterのGuardrail／Firewallポリシーを作成・有効化しない。
+- GuardrailはOrcaRouter側で設定し、APIキーまたはワークスペースへ適用されたポリシーに従ってプロンプトや応答を検査する。
+- ポリシー未設定で同一の推論エンドポイントを利用するだけでは、Guardrailが自動的に適用されるとは説明しない。
+- 現在のクライアントはChat Completionsへテキストメッセージだけを送り、ツール定義・ツール呼び出しを扱わない。そのため、エージェントのツール実行を制御するFirewallは現在の連携経路では利用しない。
 
 ## テスト方針
 
 - モデル応答の正規化
 - Authorizationヘッダーと固定URL
-- 推論本文、トークン数、実コストの解析
+- 推論本文、トークン数、応答時点の記録料金の解析
 - OrcaRouterエラーコードの保持と分類
+- リクエスト単位の4xxおよびGuardrail拒否で接続を維持すること
 - LM Studio専用パス情報を送信しないこと
 - Webviewメッセージのプロバイダ・APIキー境界検証
 - TypeScriptコンパイル、Webview型検査、Webviewビルド

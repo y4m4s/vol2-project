@@ -819,16 +819,16 @@ export class NavigatorController implements vscode.Disposable {
         responseModel?.modelId
       );
       if (result.usage) {
-        const exactCostUsd = result.usage.costUsd;
+        const reportedCostUsd = result.usage.costUsd;
         assistantEntry.tokenUsage = {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
-          estimatedCostUsd: exactCostUsd ?? this.usageMeter.estimateCostUsd(
+          estimatedCostUsd: reportedCostUsd ?? this.usageMeter.estimateCostUsd(
             this.connectionSettingsCoordinator.getCurrentProviderId(),
             this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
             result.usage
           ),
-          costIsExact: exactCostUsd !== undefined
+          costSource: reportedCostUsd !== undefined ? "providerResponse" : undefined
         };
       }
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);

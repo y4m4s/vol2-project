@@ -312,7 +312,10 @@ export function S06Settings() {
           <div className="setting-item orcarouter-data-note">
             <SettingTitle icon="cloud_upload">外部送信</SettingTitle>
             <div className="setting-desc">
-              質問、送信対象のコード断片、診断情報はOrcaRouterと選択された上流モデル事業者へ送信されます。除外設定に一致するファイル本文は送信しません。
+              回答生成などに使う質問、コード断片、診断情報、ファイル名・ディレクトリ構造、追加コンテキスト、再利用ナレッジのタイトル・要約、フィードバック傾向、必要な会話内容は、OrcaRouterと選択された上流モデル事業者へ送信されます。除外設定に一致するファイル本文は送信しません。
+            </div>
+            <div className="setting-desc">
+              NaviComはOrcaRouterのGuardrail／Firewallを自動設定しません。GuardrailはOrcaRouter側で有効なポリシーを設定・適用した場合に機能します。現在の連携はツール呼び出しを送らないため、Firewallのツール実行制御は利用しません。
             </div>
           </div>
         </>
@@ -391,7 +394,7 @@ export function S06Settings() {
           <div className="setting-item">
             <SettingTitle icon="payments">OrcaRouterの本日利用量</SettingTitle>
             <div className="setting-desc">
-              {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン / 記録料金 {viewModel.usageToday.estimatedCostText}
+              {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン / 応答時点の記録・概算料金 {viewModel.usageToday.estimatedCostText}（確定請求額ではありません）
             </div>
           </div>
         </>
