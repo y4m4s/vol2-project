@@ -16,6 +16,8 @@
     "src/services/SerialTaskQueue.ts",
     "src/services/LmStudioClient.ts",
     "src/services/LmStudioServerProtocol.ts",
+    "src/services/OrcaRouterClient.ts",
+    "src/services/OrcaRouterCredentialStore.ts",
     "src/application/GuidanceInput.ts",
     "src/application/coordinators/NavigationCoordinator.ts",
     "src/shared/messages.ts",
@@ -25,6 +27,8 @@
     "test/SerialTaskQueue.test.ts",
     "test/LmStudioClient.test.ts",
     "test/LmStudioServerProtocol.test.ts",
+    "test/OrcaRouterClient.test.ts",
+    "test/OrcaRouterCredentialStore.test.ts",
     "test/WebviewMessages.test.ts",
     "test/GuidanceInput.test.ts",
     "test/NavigationCoordinator.test.ts"

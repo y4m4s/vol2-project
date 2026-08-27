@@ -6,7 +6,7 @@ export type ConnectionState =
   | "restricted"
   | "unavailable";
 
-export type AiProviderId = "copilot" | "lmStudio";
+export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter";
 
 export type AdviceMode = "manual" | "always";
 
@@ -149,6 +149,7 @@ export interface NavigatorSettings {
   copilotModelId?: string;
   lmStudioBaseUrl: string;
   lmStudioModelKey?: string;
+  orcaRouterModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyTokenLimit: number;
@@ -165,6 +166,14 @@ export interface CopilotModelOption {
 export interface LmStudioModelOption {
   key: string;
   label: string;
+}
+
+export interface OrcaRouterModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  contextLength?: number;
+  isRouter?: boolean;
 }
 
 export type LmStudioServerState =
@@ -246,6 +255,7 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   estimatedCostUsd: number;
+  costIsExact?: boolean;
 }
 
 export interface ConversationEntry {
@@ -348,6 +358,8 @@ export interface NavigatorViewModel {
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
   lmStudioModelOptions: LmStudioModelOption[];
+  orcaRouterModelOptions: OrcaRouterModelOption[];
+  orcaRouterApiKeyConfigured: boolean;
   lmStudioServer: LmStudioServerViewData;
   settingsRevision: number;
   statusMessage?: NavigatorStatusMessage;

@@ -274,7 +274,7 @@ export class KnowledgeStore implements vscode.Disposable {
       body: String(row.body),
       status: row.status === "disabled" ? "disabled" : "active",
       sourceAdviceId: row.source_advice_id ? String(row.source_advice_id) : undefined,
-      providerId: row.provider_id === "copilot" || row.provider_id === "lmStudio" ? row.provider_id : undefined,
+      providerId: row.provider_id === "copilot" || row.provider_id === "lmStudio" || row.provider_id === "orcaRouter" ? row.provider_id : undefined,
       modelId: row.model_id ? String(row.model_id) : undefined,
       modelLabel: row.model_label ? String(row.model_label) : undefined,
       createdAt: String(row.created_at),

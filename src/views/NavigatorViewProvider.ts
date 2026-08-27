@@ -128,6 +128,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "refreshLmStudioModels":
             await this.controller.refreshLmStudioModels();
             return;
+          case "setOrcaRouterApiKey":
+            await this.controller.setOrcaRouterApiKey(message.apiKey);
+            return;
+          case "deleteOrcaRouterApiKey":
+            await this.controller.deleteOrcaRouterApiKey();
+            return;
+          case "refreshOrcaRouterModels":
+            await this.controller.refreshOrcaRouterModels();
+            return;
           case "resetSettings":
             await this.controller.resetSettings();
             return;

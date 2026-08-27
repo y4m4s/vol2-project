@@ -9,7 +9,8 @@ import type {
   AssistanceDepth,
   CopilotModelOption,
   LmStudioModelOption,
-  LmStudioServerViewData
+  LmStudioServerViewData,
+  OrcaRouterModelOption
 } from "../../shared/types";
 
 const IDLE_DELAY_OPTIONS = [5, 10, 15];
@@ -38,6 +39,7 @@ export function S06Settings() {
   const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
   const savedCopilotModelId = settings?.copilotModelId ?? "auto";
   const savedLmStudioModelKey = settings?.lmStudioModelKey ?? "";
+  const savedOrcaRouterModelId = settings?.orcaRouterModelId ?? "orcarouter/free";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
   const savedRequestIntervalSec = settings ? normalizeRequestIntervalSec(settings.requestIntervalMs / 1000) : 60;
   const savedDailyTokenLimit = settings ? normalizeDailyTokenLimit(settings.dailyTokenLimit) : 100_000;
@@ -48,12 +50,17 @@ export function S06Settings() {
   const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
   const [copilotModelId, setCopilotModelId] = useState(savedCopilotModelId);
   const [lmStudioModelKey, setLmStudioModelKey] = useState(savedLmStudioModelKey);
+  const [orcaRouterModelId, setOrcaRouterModelId] = useState(savedOrcaRouterModelId);
+  const [orcaRouterApiKey, setOrcaRouterApiKey] = useState("");
+  const [orcaRouterModelQuery, setOrcaRouterModelQuery] = useState("");
   const [idleDelaySec, setIdleDelaySec] = useState(savedIdleDelaySec);
   const [requestIntervalSec, setRequestIntervalSec] = useState(savedRequestIntervalSec);
   const [dailyTokenLimit, setDailyTokenLimit] = useState(savedDailyTokenLimit);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
   const lmStudioModelOptions = viewModel?.lmStudioModelOptions ?? [];
+  const orcaRouterModelOptions = viewModel?.orcaRouterModelOptions ?? [];
+  const orcaRouterApiKeyConfigured = viewModel?.orcaRouterApiKeyConfigured ?? false;
   const lmStudioServer = viewModel?.lmStudioServer ?? {
     state: "checking" as const,
     canStart: false,
@@ -67,11 +74,12 @@ export function S06Settings() {
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
     setLmStudioModelKey(savedLmStudioModelKey);
+    setOrcaRouterModelId(savedOrcaRouterModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyTokenLimit(savedDailyTokenLimit);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedIdleDelaySec, savedRequestIntervalSec, savedDailyTokenLimit, savedExcludeGlobs, viewModel?.settingsRevision]);
+  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedOrcaRouterModelId, savedIdleDelaySec, savedRequestIntervalSec, savedDailyTokenLimit, savedExcludeGlobs, viewModel?.settingsRevision]);
 
   useEffect(() => {
     if (
@@ -89,6 +97,7 @@ export function S06Settings() {
     defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
     copilotModelId !== savedCopilotModelId ||
     lmStudioModelKey !== savedLmStudioModelKey ||
+    orcaRouterModelId !== savedOrcaRouterModelId ||
     idleDelaySec !== savedIdleDelaySec ||
     requestIntervalSec !== savedRequestIntervalSec ||
     dailyTokenLimit !== savedDailyTokenLimit ||
@@ -106,6 +115,7 @@ export function S06Settings() {
         defaultAssistanceDepth,
         copilotModelId: copilotModelId === "auto" ? undefined : copilotModelId,
         lmStudioModelKey: lmStudioModelKey || undefined,
+        orcaRouterModelId,
         idleDelaySec,
         requestIntervalSec,
         dailyTokenLimit,
@@ -120,6 +130,7 @@ export function S06Settings() {
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
     setLmStudioModelKey(savedLmStudioModelKey);
+    setOrcaRouterModelId(savedOrcaRouterModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyTokenLimit(savedDailyTokenLimit);
@@ -206,6 +217,107 @@ export function S06Settings() {
         </>
       )}
 
+      {providerId === "orcaRouter" && (
+        <>
+          <div className="setting-item">
+            <SettingTitle icon="key">APIキー</SettingTitle>
+            <div className="setting-desc">
+              sk-orca- で始まるキーをVS Codeの暗号化ストレージに保存し、モデル一覧を自動取得します。保存した値は画面へ再表示しません。
+            </div>
+            <div className={`orcarouter-key-status ${orcaRouterApiKeyConfigured ? "configured" : "missing"}`}>
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {orcaRouterApiKeyConfigured ? "check_circle" : "warning"}
+              </span>
+              {orcaRouterApiKeyConfigured ? "APIキー設定済み" : "APIキー未設定"}
+            </div>
+            <input
+              className="orcarouter-key-input"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={orcaRouterApiKeyConfigured ? "新しいキーで置き換える" : "sk-orca-..."}
+              value={orcaRouterApiKey}
+              onChange={(event) => setOrcaRouterApiKey(event.target.value)}
+            />
+            <div className="orcarouter-key-actions">
+              <button
+                type="button"
+                className="btn-gray"
+                disabled={!orcaRouterApiKey.trim().startsWith("sk-orca-") || orcaRouterApiKey.trim().length <= "sk-orca-".length}
+                onClick={() => {
+                  send({ type: "setOrcaRouterApiKey", apiKey: orcaRouterApiKey.trim() });
+                  setOrcaRouterApiKey("");
+                }}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">save</span>
+                キーを保存
+              </button>
+              {orcaRouterApiKeyConfigured && (
+                <button type="button" className="btn-gray" onClick={() => send({ type: "deleteOrcaRouterApiKey" })}>
+                  <span className="material-symbols-outlined" aria-hidden="true">delete</span>
+                  キーを削除
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="setting-item">
+            <SettingTitle icon="smart_toy">使用モデル</SettingTitle>
+            <div className="setting-desc">
+              {orcaRouterApiKeyConfigured
+                ? "Free Routerは無料容量だけを使い、有料モデルへ自動移行しません。"
+                : "APIキーを保存すると、Free Router・Auto Routerと利用可能なモデルを選択できます。"}
+            </div>
+            {orcaRouterApiKeyConfigured ? (
+              <>
+                <input
+                  className="orcarouter-model-search"
+                  type="search"
+                  placeholder="モデルID・プロバイダで検索"
+                  value={orcaRouterModelQuery}
+                  onChange={(event) => setOrcaRouterModelQuery(event.target.value)}
+                />
+                <OrcaRouterModelButtonGroup
+                  value={orcaRouterModelId}
+                  options={orcaRouterModelOptions}
+                  query={orcaRouterModelQuery}
+                  onChange={setOrcaRouterModelId}
+                />
+                <button
+                  type="button"
+                  className="btn-gray orcarouter-refresh-models"
+                  onClick={() => send({ type: "refreshOrcaRouterModels" })}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
+                  モデル一覧を更新
+                </button>
+                {(viewModel?.providerId !== "orcaRouter" || viewModel.connectionState !== "connected") && !hasPendingChanges && (
+                  <button
+                    type="button"
+                    className="btn-gray orcarouter-connect"
+                    onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">power</span>
+                    OrcaRouterに接続
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="setting-desc orcarouter-model-empty">
+                APIキー未設定のため、モデル候補はまだ表示されません。
+              </div>
+            )}
+          </div>
+
+          <div className="setting-item orcarouter-data-note">
+            <SettingTitle icon="cloud_upload">外部送信</SettingTitle>
+            <div className="setting-desc">
+              質問、送信対象のコード断片、診断情報はOrcaRouterと選択された上流モデル事業者へ送信されます。除外設定に一致するファイル本文は送信しません。
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span> モード設定
       </div>
@@ -267,6 +379,20 @@ export function S06Settings() {
               value={dailyTokenLimit}
               onChange={setDailyTokenLimit}
             />
+          </div>
+        </>
+      )}
+
+      {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
+        <>
+          <div className="settings-section">
+            <span className="material-symbols-outlined">data_usage</span> 利用量
+          </div>
+          <div className="setting-item">
+            <SettingTitle icon="payments">OrcaRouterの本日利用量</SettingTitle>
+            <div className="setting-desc">
+              {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン / 記録料金 {viewModel.usageToday.estimatedCostText}
+            </div>
           </div>
         </>
       )}
@@ -382,7 +508,7 @@ function ProviderButtonGroup({
   onChange: (value: AiProviderId) => void;
 }) {
   return (
-    <div className="choice-options mode-options" role="group" aria-label="接続先">
+    <div className="choice-options mode-options provider-options" role="group" aria-label="接続先">
       <button
         type="button"
         className={`choice-option ${value === "copilot" ? "selected" : ""}`}
@@ -398,6 +524,14 @@ function ProviderButtonGroup({
         onClick={() => onChange("lmStudio")}
       >
         LM Studio
+      </button>
+      <button
+        type="button"
+        className={`choice-option ${value === "orcaRouter" ? "selected" : ""}`}
+        aria-pressed={value === "orcaRouter"}
+        onClick={() => onChange("orcaRouter")}
+      >
+        OrcaRouter
       </button>
     </div>
   );
@@ -579,6 +713,53 @@ function LmStudioModelButtonGroup({
           >
             <span className="model-option-name">{option.label}</span>
             <span className="model-option-meta">{option.key}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function OrcaRouterModelButtonGroup({
+  value,
+  options,
+  query,
+  onChange
+}: {
+  value: string;
+  options: OrcaRouterModelOption[];
+  query: string;
+  onChange: (value: string) => void;
+}) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = options.filter((option) =>
+    !normalizedQuery || `${option.id} ${option.label} ${option.provider}`.toLowerCase().includes(normalizedQuery)
+  );
+  const selectedMissing = !options.some((option) => option.id === value);
+  const visibleOptions = selectedMissing && (!normalizedQuery || value.toLowerCase().includes(normalizedQuery))
+    ? [{ id: value, label: value, provider: "保存済み", isRouter: false }, ...filtered]
+    : filtered;
+
+  if (visibleOptions.length === 0) {
+    return <div className="setting-desc orcarouter-model-empty">一致するモデルがありません。</div>;
+  }
+
+  return (
+    <div className="choice-options model-options orcarouter-model-options" role="radiogroup" aria-label="OrcaRouterの使用モデルを1つ選択">
+      {visibleOptions.map((option) => {
+        const selected = option.id === value;
+        const contextText = option.contextLength ? `${option.contextLength.toLocaleString()} tokens` : option.provider;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            role="radio"
+            className={`choice-option ${selected ? "selected" : ""}`}
+            aria-checked={selected}
+            onClick={() => onChange(option.id)}
+          >
+            <span className="model-option-name">{option.label}</span>
+            <span className="model-option-meta">{option.id}<br />{contextText}</span>
           </button>
         );
       })}
