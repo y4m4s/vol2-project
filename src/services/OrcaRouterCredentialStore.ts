@@ -2,6 +2,14 @@ import type * as vscode from "vscode";
 
 const ORCA_ROUTER_API_KEY_SECRET = "aiPairNavigator.orcaRouter.apiKey";
 
+export const ORCA_ROUTER_API_KEY_PREFIX = "sk-orca-";
+
+/**
+ * Stores the OrcaRouter API key in VS Code SecretStorage.
+ *
+ * The key value never touches workspaceState, the view model, conversation
+ * history, or logs. The webview only learns whether a key is configured.
+ */
 export class OrcaRouterCredentialStore {
   private configured = false;
 
@@ -23,8 +31,8 @@ export class OrcaRouterCredentialStore {
 
   public async storeApiKey(value: string): Promise<void> {
     const normalized = value.trim();
-    if (!normalized.startsWith("sk-orca-") || normalized.length <= "sk-orca-".length || normalized.length > 500) {
-      throw new Error("OrcaRouter API key must start with sk-orca-.");
+    if (!normalized.startsWith(ORCA_ROUTER_API_KEY_PREFIX) || normalized.length <= ORCA_ROUTER_API_KEY_PREFIX.length || normalized.length > 500) {
+      throw new Error(`OrcaRouter API key must start with ${ORCA_ROUTER_API_KEY_PREFIX}.`);
     }
     await this.secrets.store(ORCA_ROUTER_API_KEY_SECRET, normalized);
     this.configured = true;

@@ -3,6 +3,8 @@ import { NavigatorSettings } from "../shared/types";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 
+export const DEFAULT_ORCA_ROUTER_MODEL_ID = "orcarouter/free";
+
 const PROTECTED_EXCLUDED_GLOBS = [
   "**/.git/**",
   "**/.hg/**",
@@ -59,7 +61,7 @@ const DEFAULT_SETTINGS: NavigatorSettings = {
   defaultMode: "manual",
   defaultAssistanceDepth: "low",
   lmStudioBaseUrl: "http://127.0.0.1:1234",
-  orcaRouterModelId: "orcarouter/free",
+  orcaRouterModelId: DEFAULT_ORCA_ROUTER_MODEL_ID,
   requestIntervalMs: 60000,
   idleDelayMs: 10000,
   dailyTokenLimit: 100_000,
@@ -167,11 +169,11 @@ export class SettingsService {
 
   private normalizeOrcaRouterModelId(value: unknown): string {
     if (typeof value !== "string") {
-      return DEFAULT_SETTINGS.orcaRouterModelId!;
+      return DEFAULT_ORCA_ROUTER_MODEL_ID;
     }
 
     const normalized = value.trim();
-    return normalized || DEFAULT_SETTINGS.orcaRouterModelId!;
+    return normalized || DEFAULT_ORCA_ROUTER_MODEL_ID;
   }
 
   private normalizeCustomExcludedGlobs(patterns: string[]): string[] {

@@ -449,7 +449,9 @@ export class ConnectionService {
       const supportsOpenAi = model.supportedEndpointTypes.length === 0 || model.supportedEndpointTypes.includes("openai");
       const acceptsText = model.inputModalities.length === 0 || model.inputModalities.includes("text");
       const producesText = model.outputModalities.length === 0 || model.outputModalities.includes("text");
-      if (!supportsOpenAi || !acceptsText || !producesText) continue;
+      if (!supportsOpenAi || !acceptsText || !producesText) {
+        continue;
+      }
       options.set(model.id, {
         id: model.id,
         label: model.id.split("/").slice(1).join("/") || model.id,

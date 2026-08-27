@@ -824,10 +824,10 @@ export class NavigatorController implements vscode.Disposable {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
           estimatedCostUsd: exactCostUsd ?? this.usageMeter.estimateCostUsd(
-              this.connectionSettingsCoordinator.getCurrentProviderId(),
-              this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
-              result.usage
-            ),
+            this.connectionSettingsCoordinator.getCurrentProviderId(),
+            this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
+            result.usage
+          ),
           costIsExact: exactCostUsd !== undefined
         };
       }

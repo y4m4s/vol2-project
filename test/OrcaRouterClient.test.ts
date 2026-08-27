@@ -39,7 +39,7 @@ test("モデル一覧の能力メタデータを正規化する", async () => {
   }]);
 });
 
-test("chat completionにはキーと実コスト要求を付け、ローカルパスは送らない", async () => {
+test("chat completionにキーと実コスト要求を付け、本文と利用量を読み取る", async () => {
   let requestedUrl = "";
   let requestBody: unknown;
   globalThis.fetch = async (url, init) => {

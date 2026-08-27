@@ -44,6 +44,13 @@ export interface OrcaRouterCompletion {
   resolvedModelId?: string;
 }
 
+/**
+ * Minimal OpenAI-compatible client for the OrcaRouter gateway.
+ *
+ * Mirrors LmStudioClient: both speak the OpenAI /v1 chat completions shape over
+ * fetch, so no OpenAI SDK dependency is needed. The base URL is pinned to the
+ * OrcaRouter gateway so OrcaRouter remains a first-class named provider.
+ */
 export class OrcaRouterClient {
   public async listModels(
     apiKey: string,
@@ -61,7 +68,9 @@ export class OrcaRouterClient {
     }
 
     return data.flatMap((value) => {
-      if (!isRecord(value) || typeof value.id !== "string" || !value.id.trim()) return [];
+      if (!isRecord(value) || typeof value.id !== "string" || !value.id.trim()) {
+        return [];
+      }
       const architecture = isRecord(value.architecture) ? value.architecture : undefined;
       return [{
         id: value.id.trim(),
@@ -156,7 +165,9 @@ export class OrcaRouterClient {
         throw new OrcaRouterError("invalidResponse", "OrcaRouter returned invalid JSON.");
       }
     } catch (error) {
-      if (error instanceof OrcaRouterError) throw error;
+      if (error instanceof OrcaRouterError) {
+        throw error;
+      }
       if (controller.signal.aborted) {
         throw new OrcaRouterError("timeout", "OrcaRouter request timed out.");
       }
@@ -194,9 +205,16 @@ function readErrorDetail(rawText: string): { message?: string; code?: string } {
 }
 
 function readMessageContent(value: unknown): string | undefined {
-  if (typeof value === "string") return value.trim() || undefined;
-  if (!Array.isArray(value)) return undefined;
-  const text = value.flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : []).join("").trim();
+  if (typeof value === "string") {
+    return value.trim() || undefined;
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const text = value
+    .flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : [])
+    .join("")
+    .trim();
   return text || undefined;
 }
 
