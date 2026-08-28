@@ -211,11 +211,14 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       vscode.Uri.joinPath(this.extensionUri, "media", "icon.png")
     );
     const providerLogoUris = JSON.stringify({
-      copilot: webview.asWebviewUri(
-        vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-logo.png")
+      copilotBlack: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-icon-black.svg")
+      ).toString(),
+      copilotWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-icon-white.svg")
       ).toString(),
       lmStudio: webview.asWebviewUri(
-        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-logo.svg")
+        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-color.svg")
       ).toString()
     });
 

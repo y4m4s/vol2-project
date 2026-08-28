@@ -286,17 +286,33 @@ body.vscode-high-contrast .connection-activity-provider {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  background-color: currentColor;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
+  object-fit: contain;
 }
 
-svg.connection-activity-provider-logo {
-  background: none;
+.provider-logo-copilot {
+  position: relative;
+}
+
+.provider-logo-copilot img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.provider-logo-copilot .provider-logo-copilot-white {
+  display: none;
+}
+
+body.vscode-dark .provider-logo-copilot .provider-logo-copilot-black,
+body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-black {
+  display: none;
+}
+
+body.vscode-dark .provider-logo-copilot .provider-logo-copilot-white,
+body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
+  display: block;
 }
 
 .connection-activity-provider-logo-symbol {
