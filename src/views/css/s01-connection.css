@@ -179,17 +179,7 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  background-color: currentColor;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
-svg.s01-connect-logo {
-  background: none;
+  object-fit: contain;
 }
 
 .s01-connect-logo-symbol {

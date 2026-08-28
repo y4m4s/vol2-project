@@ -154,3 +154,7 @@ NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定し�
 ### OrcaRouterの料金表示
 
 応答の `usage.cost_usd` は「応答時点の記録料金」として表示します。この値は応答生成時に計算された情報であり、確定請求額とは限りません。確定した請求情報はOrcaRouter側の利用履歴、または[`GET /v1/generation`](https://docs.orcarouter.ai/operations/per-request-cost)で確認してください。`usage.cost_usd` がない応答や過去データは、NaviComの参考料金概算を表示します。
+
+## 商標について
+
+GitHubおよびGitHub CopilotはGitHub, Inc.の商標です。LM StudioはElement Labs, Inc.の商標です。OrcaRouterは各権利者に帰属する商標です。NaviComはこれら各社が開発、承認、後援する公式製品ではありません。プロバイダーのブランドアセットは、対応する接続先を識別する目的に限って使用しています。

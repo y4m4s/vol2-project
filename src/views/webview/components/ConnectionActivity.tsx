@@ -23,7 +23,7 @@ export function ConnectionActivity() {
     ? "ローカル LLM"
     : providerId === "orcaRouter"
       ? "OrcaRouter"
-      : "GitHub Copilot Chat";
+      : "GitHub Copilot";
   const stateLabel = isConnected ? "接続中" : "切り替え中";
   const modelLabel = viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio|OrcaRouter)\s*[·：:]\s*/, "");
 
@@ -38,7 +38,6 @@ export function ConnectionActivity() {
       >
         <ProviderLogo
           providerId={providerId}
-          instance="button"
           className="connection-activity-provider-logo"
           symbolClassName="connection-activity-provider-logo-symbol"
         />
@@ -51,7 +50,6 @@ export function ConnectionActivity() {
         <div className="connection-activity-tooltip-title">
           <ProviderLogo
             providerId={providerId}
-            instance="tooltip"
             className="connection-activity-provider-logo"
             symbolClassName="connection-activity-provider-logo-symbol"
           />
