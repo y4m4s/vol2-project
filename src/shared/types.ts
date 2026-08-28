@@ -255,6 +255,8 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   estimatedCostUsd: number;
+  costSource?: "providerResponse";
+  /** @deprecated Kept so existing conversation records remain readable. */
   costIsExact?: boolean;
 }
 

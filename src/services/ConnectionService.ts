@@ -368,7 +368,7 @@ export class ConnectionService {
 
       const models = await this.orcaRouterClient.listModels(apiKey);
       this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
-      const selectedId = settings.orcaRouterModelId ?? createBuiltInOrcaRouterOptions()[0].id;
+      const selectedId = settings.orcaRouterModelId ?? "orcarouter/free";
       const selected = this.availableOrcaRouterModelOptions.find((model) => model.id === selectedId);
       if (!selected) {
         this.lastOrcaRouterIssue = "modelNotFound";

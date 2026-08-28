@@ -7,8 +7,8 @@ export function S07Error() {
 
   const isBusy = viewModel?.isBusy ?? false;
   const providerId = viewModel?.providerId ?? "copilot";
-  const isOrcaRouter = providerId === "orcaRouter";
   const isLmStudio = providerId === "lmStudio";
+  const isOrcaRouter = providerId === "orcaRouter";
 
   // connecting 中は直前の安定した state を保持して表示が変わらないようにする
   const stableStateRef = useRef(viewModel?.connectionState);
@@ -17,40 +17,21 @@ export function S07Error() {
   }
 
   const isUnavailable = stableStateRef.current === "unavailable";
-  const title = isOrcaRouter
-    ? "OrcaRouter に接続できません"
-    : isLmStudio
-      ? "ローカル LLM に接続できません"
-      : isUnavailable
-        ? "Copilotに接続できません"
-        : "現在は利用が制限されています";
-  const description = isOrcaRouter
-    ? "OrcaRouter 側で次の項目を確認してください。"
-    : isLmStudio
-      ? "LM Studio 側で次の項目を確認してください。"
-      : isUnavailable
-        ? "次の項目が完了していない可能性があります。"
-        : "Copilot へのリクエストが一時的に制限されている可能性があります。";
-  const possibleCauses = isOrcaRouter
-    ? [
-        {
-          icon: "key_off",
-          text: "設定画面で OrcaRouter APIキーが保存されていない"
-        },
-        {
-          icon: "speed",
-          text: "OrcaRouter の無料容量・残高・レート制限に達している"
-        },
-        {
-          icon: "dns",
-          text: "OrcaRouter または上流モデルが一時的に利用できない"
-        },
-        {
-          icon: "verified_user",
-          text: "ワークスペースが信頼済みになっていない"
-        }
-      ]
-    : isLmStudio
+  const title = isLmStudio
+    ? "ローカル LLM に接続できません"
+    : isOrcaRouter
+      ? isUnavailable ? "OrcaRouterに接続できません" : "OrcaRouterの利用が制限されています"
+    : isUnavailable
+      ? "Copilotに接続できません"
+      : "現在は利用が制限されています";
+  const description = isLmStudio
+    ? "LM Studio 側で次の項目を確認してください。"
+    : isOrcaRouter
+      ? "OrcaRouterの設定と利用状態を確認してください。"
+    : isUnavailable
+      ? "次の項目が完了していない可能性があります。"
+      : "Copilot へのリクエストが一時的に制限されている可能性があります。";
+  const possibleCauses = isLmStudio
     ? [
         {
           icon: "dns",
@@ -69,6 +50,13 @@ export function S07Error() {
           text: "ワークスペースが信頼済みになっていない"
         }
       ]
+    : isOrcaRouter
+      ? [
+          { icon: "key_off", text: "APIキーが未設定、無効、または期限切れになっている" },
+          { icon: "savings", text: "無料モデルの容量を現在利用できない、またはキーの利用上限に達している" },
+          { icon: "speed", text: "選択したモデルが利用できない、またはレート制限に達している" },
+          { icon: "verified_user", text: "ワークスペースが信頼済みになっていない" }
+        ]
     : isUnavailable
       ? [
         {

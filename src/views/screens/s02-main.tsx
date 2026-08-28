@@ -99,7 +99,7 @@ export function S02Main() {
         <div className="s02-usage">
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">
-            今日の利用 {usageToday.requestCount}回 / {formatTokenCount(usageToday.totalTokens)}トークン / 記録料金 {usageToday.estimatedCostText}
+            今日の利用 {usageToday.requestCount}回 / {formatTokenCount(usageToday.totalTokens)}トークン / 応答時点の記録・概算料金 {usageToday.estimatedCostText}（確定請求額ではありません）
           </span>
           {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>

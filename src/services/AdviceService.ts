@@ -19,6 +19,7 @@ import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from 
 import { serializeFeedbackSummaryInput, validateFeedbackSummary } from "./FeedbackSummaryPolicy";
 import { LmStudioError } from "./LmStudioClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
+import { classifyOrcaRouterFailure, requestRejectionMessage } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
 import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
@@ -202,7 +203,10 @@ export class AdviceService {
           this.connectionService.markRestricted();
         } else if (connectionState === "disconnected") {
           this.connectionService.resetToDisconnected();
-        } else if (model.providerId === "lmStudio" || model.providerId === "orcaRouter") {
+        } else if (
+          connectionState === "unavailable"
+          && (model.providerId === "lmStudio" || model.providerId === "orcaRouter")
+        ) {
           this.connectionService.markUnavailable();
         }
       }
@@ -626,7 +630,11 @@ export class AdviceService {
       return "unavailable";
     }
     if (error instanceof OrcaRouterError) {
-      return error.kind === "quota" || error.kind === "rateLimit" ? "restricted" : "unavailable";
+      const disposition = classifyOrcaRouterFailure(error);
+      if (disposition === "requestRejected") {
+        return this.connectionService.getState();
+      }
+      return disposition;
     }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked" || error.code === "NoPermissions") {
@@ -654,6 +662,10 @@ export class AdviceService {
       }
     }
     if (error instanceof OrcaRouterError) {
+      const rejectionMessage = requestRejectionMessage(error);
+      if (rejectionMessage) {
+        return rejectionMessage;
+      }
       if (error.code === "free_quota_exhausted") {
         return "OrcaRouter の無料モデル容量を現在利用できません。時間を置いて再試行してください。有料モデルへは切り替えていません。";
       }

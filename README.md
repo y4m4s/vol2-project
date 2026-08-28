@@ -1,5 +1,7 @@
 # NaviCom
 
+[![Powered by OrcaRouter](https://img.shields.io/badge/Powered_by-OrcaRouter-2563eb)](https://www.orcarouter.ai/ref/ref_ca9caab6221888bc490e)
+
 **ペアプログラミングのナビゲーター役を担う、VS Code 向け AI 学習支援拡張機能**
 
 NaviCom は、コーディング中の詰まりを自力で解決する力を育てることを目的とした VS Code 拡張機能です。  
@@ -38,7 +40,7 @@ GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」で�
 
 有用な回答をナレッジとして保存できます。
 保存されたナレッジは以降の回答生成時に参照され、検索・閲覧・削除・元会話への遡りが可能です。
-データはローカルの SQLite に保存され、外部には送信されません。
+ナレッジ本体はローカルの SQLite に保存されます。ただし、回答生成時に再利用対象となったナレッジのタイトル・要約は、プロンプトの一部として選択中のAI接続先へ送信されます。
 
 ---
 
@@ -79,7 +81,7 @@ src/
   - [Copilot Free](https://docs.github.com/en/copilot/concepts/billing/individual-plans) でも月次上限の範囲で利用できます
   - 認証済みの学生は [Copilot Student](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students) を無料で利用できます
 - LM Studio を利用する場合は、LM Studio と対象モデルをローカルで起動していること
-- OrcaRouter を利用する場合は、[OrcaRouter](https://www.orcarouter.ai) で発行した `sk-orca-` 形式のAPIキー
+- OrcaRouter を利用する場合は、[OrcaRouterの紹介リンク](https://www.orcarouter.ai/ref/ref_ca9caab6221888bc490e)から発行した `sk-orca-` 形式のAPIキー
 - Node.js / npm
 
 ---
@@ -135,4 +137,20 @@ APIキーはVS CodeのSecretStorageへ保存され、設定データや会話履
 
 ### OrcaRouter利用時のデータ送信
 
-OrcaRouterを選択すると、質問、送信対象のコード断片、診断情報など、回答生成に必要な文脈がOrcaRouterと選択された上流モデル事業者へ送信されます。保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。
+OrcaRouterを選択すると、回答生成や会話タイトル・ナレッジ作成などに使うプロンプトがOrcaRouterと選択された上流モデル事業者へ送信されます。プロンプトには、処理に応じて次の情報が含まれます。
+
+- 質問、追加コンテキスト、必要な会話内容
+- 送信対象のコード断片、診断情報、ファイル名、ディレクトリ構造、関連シンボル、直近の編集情報
+- 再利用する個人ナレッジのタイトル・要約と、回答改善に使うフィードバック傾向
+
+保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。APIキーはプロンプトに含めず、VS CodeのSecretStorageからOrcaRouterへの認証にだけ使用します。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。
+
+### OrcaRouterのGuardrail／Firewall
+
+NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定しません。[GuardrailをAPIキーへ適用](https://docs.orcarouter.ai/security/guardrails/attach-to-key)するか、OrcaRouter側でワークスペース既定のポリシーを設定した場合に、プロンプトや応答が検査されます。ポリシー未設定の状態で、NaviComから同じ推論エンドポイントを使うだけでは自動適用されません。
+
+現在のNaviCom連携は通常のChat Completionsとしてテキストだけを送り、ツール定義やツール呼び出しを送信・実行しません。このため、[Agent Firewall](https://docs.orcarouter.ai/security/concepts/guardrails-vs-firewall)のツール実行制御は現在の連携経路では利用しません。Guardrailにより個別のリクエストが拒否された場合は、その旨を表示し、OrcaRouterとの接続自体は維持します。
+
+### OrcaRouterの料金表示
+
+応答の `usage.cost_usd` は「応答時点の記録料金」として表示します。この値は応答生成時に計算された情報であり、確定請求額とは限りません。確定した請求情報はOrcaRouter側の利用履歴、または[`GET /v1/generation`](https://docs.orcarouter.ai/operations/per-request-cost)で確認してください。`usage.cost_usd` がない応答や過去データは、NaviComの参考料金概算を表示します。
