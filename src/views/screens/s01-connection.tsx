@@ -1,4 +1,5 @@
 import { useApp } from "../webview/state/AppContext";
+import { ProviderLogo } from "../webview/components/ProviderLogo";
 
 declare global {
   interface Window { __ICON_URI__: string; }
@@ -81,29 +82,72 @@ export function S01Connection() {
             disabled={!canConnect}
             onClick={() => send({ type: "connect", providerId: "copilot" })}
           >
-            <span className={`material-symbols-outlined${isBusy ? " s01-spin" : ""}`}>
-              {isBusy ? "sync" : "power"}
+            <span className="s01-connect-icon" aria-hidden="true">
+              {isBusy ? (
+                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
+              ) : (
+                <ProviderLogo
+                  providerId="copilot"
+                  instance="s01-copilot"
+                  className="s01-connect-logo"
+                  symbolClassName="s01-connect-logo-symbol"
+                />
+              )}
             </span>
-            {isBusy ? "接続を確認しています..." : "Copilot に接続"}
+            <ConnectLabel text={isBusy ? "接続を確認しています..." : "Copilot に接続"} />
           </button>
           <button
             className="s01-local-connect-btn"
             disabled={!canConnect || isBusy}
             onClick={() => send({ type: "connect", providerId: "lmStudio" })}
           >
-            <span className="material-symbols-outlined">memory</span>
-            ローカル LLM に接続
+            <span className="s01-connect-icon" aria-hidden="true">
+              <ProviderLogo
+                providerId="lmStudio"
+                instance="s01-lmstudio"
+                className="s01-connect-logo"
+                symbolClassName="s01-connect-logo-symbol"
+              />
+            </span>
+            <ConnectLabel text="ローカル LLM に接続" />
           </button>
           <button
             className="s01-local-connect-btn"
             disabled={!canConnect || isBusy}
             onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
           >
-            <span className="material-symbols-outlined">route</span>
-            OrcaRouter に接続
+            <span className="s01-connect-icon" aria-hidden="true">
+              <ProviderLogo
+                providerId="orcaRouter"
+                instance="s01-orcarouter"
+                className="s01-connect-logo"
+                symbolClassName="s01-connect-logo-symbol"
+              />
+            </span>
+            <ConnectLabel text="OrcaRouter に接続" />
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+/** 3つのボタンで共通の文言。ラベル幅をこの中の最長に揃えるために使う。 */
+const CONNECT_LABELS = ["Copilot に接続", "ローカル LLM に接続", "OrcaRouter に接続"];
+
+/**
+ * 接続ボタンのラベル。表示されないサイザーで全文言の最長幅を確保することで、
+ * ボタン内容を中央寄せしてもアイコンとラベルの開始位置が3つとも縦にそろう。
+ */
+function ConnectLabel({ text }: { text: string }) {
+  return (
+    <span className="s01-connect-label">
+      <span className="s01-connect-label-text">{text}</span>
+      <span className="s01-connect-label-sizer" aria-hidden="true">
+        {CONNECT_LABELS.map((label) => (
+          <span key={label}>{label}</span>
+        ))}
+      </span>
+    </span>
   );
 }

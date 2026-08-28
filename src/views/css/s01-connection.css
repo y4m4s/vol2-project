@@ -108,35 +108,30 @@
   justify-content: center;
 }
 
-.s01-connect-btn {
+/* 3つの接続ボタンで、内容を中央寄せしつつアイコンとラベルの位置を縦にそろえる */
+.s01-connect-btn,
+.s01-local-connect-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 0 12px;
   min-width: 210px;
-  margin-top: 0;
-  padding: 10px 18px;
+  padding: 9px 18px;
+  border: 1px solid transparent;
   border-radius: 999px;
+}
+
+.s01-connect-btn {
+  margin-top: 0;
 }
 
 .s01-connect-btn.busy:disabled {
   opacity: 0.82;
 }
 
-.s01-connect-btn .material-symbols-outlined {
-  font-size: 18px;
-}
-
 .s01-local-connect-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 210px;
   margin: 0;
-  padding: 9px 18px;
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 999px;
+  border-color: var(--vscode-panel-border);
   color: var(--vscode-foreground);
   background: var(--vscode-input-background);
 }
@@ -145,8 +140,67 @@
   background: var(--vscode-toolbar-hoverBackground);
 }
 
-.s01-local-connect-btn .material-symbols-outlined {
+.s01-connect-icon {
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.s01-connect-label {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+}
+
+.s01-connect-label-text,
+.s01-connect-label-sizer {
+  grid-area: 1 / 1;
+}
+
+/* 最長の文言ぶんの幅だけを確保する非表示要素 */
+.s01-connect-label-sizer {
+  min-width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.s01-connect-label-sizer > span {
+  display: block;
+  white-space: nowrap;
+}
+
+.s01-connect-logo {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+svg.s01-connect-logo {
+  background: none;
+}
+
+.s01-connect-logo-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: none;
   font-size: 18px;
+  line-height: 1;
 }
 
 @keyframes s01-spin {
