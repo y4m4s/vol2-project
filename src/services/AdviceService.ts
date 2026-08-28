@@ -18,6 +18,8 @@ import {
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
 import { serializeFeedbackSummaryInput, validateFeedbackSummary } from "./FeedbackSummaryPolicy";
 import { LmStudioError } from "./LmStudioClient";
+import { OrcaRouterError } from "./OrcaRouterClient";
+import { classifyOrcaRouterFailure, requestRejectionMessage } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
 import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
@@ -29,6 +31,7 @@ export interface GuidanceRequestSuccess {
   usage?: {
     inputTokens: number;
     outputTokens: number;
+    costUsd?: number;
   };
 }
 
@@ -200,7 +203,10 @@ export class AdviceService {
           this.connectionService.markRestricted();
         } else if (connectionState === "disconnected") {
           this.connectionService.resetToDisconnected();
-        } else if (model.providerId === "lmStudio") {
+        } else if (
+          connectionState === "unavailable"
+          && (model.providerId === "lmStudio" || model.providerId === "orcaRouter")
+        ) {
           this.connectionService.markUnavailable();
         }
       }
@@ -242,7 +248,7 @@ export class AdviceService {
     model: ConnectedProviderModel,
     prompt: string,
     response: ProviderTextResponse
-  ): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
+  ): Promise<{ inputTokens: number; outputTokens: number; costUsd?: number } | undefined> {
     if (!this.usageMeter) {
       return undefined;
     }
@@ -257,9 +263,10 @@ export class AdviceService {
       providerId: model.providerId,
       modelId: model.modelId,
       inputTokens,
-      outputTokens
+      outputTokens,
+      costUsd: response.costUsd
     });
-    return { inputTokens, outputTokens };
+    return { inputTokens, outputTokens, costUsd: response.costUsd };
   }
 
   private async countTokensSafe(model: ConnectedProviderModel, text: string): Promise<number> {
@@ -622,6 +629,13 @@ export class AdviceService {
     if (error instanceof LmStudioError) {
       return "unavailable";
     }
+    if (error instanceof OrcaRouterError) {
+      const disposition = classifyOrcaRouterFailure(error);
+      if (disposition === "requestRejected") {
+        return this.connectionService.getState();
+      }
+      return disposition;
+    }
     if (error instanceof vscode.LanguageModelError) {
       if (error.code === "Blocked" || error.code === "NoPermissions") {
         return "restricted";
@@ -645,6 +659,35 @@ export class AdviceService {
           return "LM Studio の応答がタイムアウトしました。";
         default:
           return "LM Studio へのリクエストに失敗しました。";
+      }
+    }
+    if (error instanceof OrcaRouterError) {
+      const rejectionMessage = requestRejectionMessage(error);
+      if (rejectionMessage) {
+        return rejectionMessage;
+      }
+      if (error.code === "free_quota_exhausted") {
+        return "OrcaRouter の無料モデル容量を現在利用できません。時間を置いて再試行してください。有料モデルへは切り替えていません。";
+      }
+      if (error.code === "free_rate_limited") {
+        if (error.retryAfter) {
+          return `OrcaRouter の無料枠の上限に達しました。${error.retryAfter}秒後に再試行してください。有料モデルへは切り替えていません。`;
+        }
+        return "OrcaRouter の無料モデルで1リクエストあたりの入力上限を超えました。送信する文脈を短くしてください。有料モデルへは切り替えていません。";
+      }
+      switch (error.kind) {
+        case "auth":
+          return "OrcaRouter APIキーが無効です。設定画面でキーを確認してください。";
+        case "quota":
+          return "OrcaRouter の残高・無料容量・キー利用上限を確認してください。";
+        case "rateLimit":
+          return `OrcaRouter のレート制限に達しました。${error.retryAfter ? `${error.retryAfter}秒後に再試行してください。` : "時間を置いて再試行してください。"}`;
+        case "timeout":
+          return "OrcaRouter の応答がタイムアウトしました。";
+        case "unavailable":
+          return "OrcaRouter または上流モデルを現在利用できません。";
+        default:
+          return "OrcaRouter へのリクエストに失敗しました。";
       }
     }
     if (error instanceof vscode.LanguageModelError) {

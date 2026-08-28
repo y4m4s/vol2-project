@@ -1,11 +1,26 @@
 import * as vscode from "vscode";
-import { AiProviderId, ConnectionState, CopilotModelOption, LmStudioModelOption, NavigatorSettings } from "../shared/types";
+import {
+  AiProviderId,
+  ConnectionState,
+  CopilotModelOption,
+  LmStudioModelOption,
+  NavigatorSettings,
+  OrcaRouterModelOption
+} from "../shared/types";
 import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } from "./LmStudioClient";
+import {
+  OrcaRouterClient,
+  OrcaRouterError,
+  OrcaRouterFailureKind,
+  OrcaRouterModel
+} from "./OrcaRouterClient";
+import { OrcaRouterCredentialStore } from "./OrcaRouterCredentialStore";
 import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
 export type CopilotConnectionIssue = "timeout" | "noPermissions" | "blocked" | "notFound" | "other";
+export type OrcaRouterConnectionIssue = OrcaRouterFailureKind | "missingApiKey" | "modelNotFound";
 
 const COPILOT_PROBE_TIMEOUT_MS = 15_000;
 
@@ -13,6 +28,7 @@ export interface ProviderTextResponse {
   text: string;
   inputTokens?: number;
   outputTokens?: number;
+  costUsd?: number;
 }
 
 export interface ProviderRequestMetadata {
@@ -54,17 +70,25 @@ export class ConnectionService {
   private connectedModel: ConnectedProviderModel | undefined;
   private availableModelOptions: CopilotModelOption[] = [];
   private availableLmStudioModelOptions: LmStudioModelOption[] = [];
+  private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = [];
   private pendingConnection: Promise<ConnectionActivationResult> | undefined;
   private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
   private lastCopilotIssue: CopilotConnectionIssue | undefined;
+  private lastOrcaRouterIssue: OrcaRouterConnectionIssue | undefined;
 
   public constructor(
     private readonly usageMeter: UsageMeter | undefined,
     private readonly lmStudioClient: LmStudioClient,
+    private readonly orcaRouterClient: OrcaRouterClient,
+    private readonly orcaRouterCredentials: OrcaRouterCredentialStore,
     private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
-  ) {}
+  ) {
+    if (this.orcaRouterCredentials.isConfigured()) {
+      this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+    }
+  }
 
   public getState(): ConnectionState {
     return this.connectionState;
@@ -95,12 +119,41 @@ export class ConnectionService {
     this.availableLmStudioModelOptions = [];
   }
 
+  public getOrcaRouterModelOptions(): OrcaRouterModelOption[] {
+    return this.orcaRouterCredentials.isConfigured() ? this.availableOrcaRouterModelOptions : [];
+  }
+
+  public isOrcaRouterApiKeyConfigured(): boolean {
+    return this.orcaRouterCredentials.isConfigured();
+  }
+
+  public async storeOrcaRouterApiKey(apiKey: string): Promise<void> {
+    await this.orcaRouterCredentials.storeApiKey(apiKey);
+    this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+    this.lastOrcaRouterIssue = undefined;
+  }
+
+  public async deleteOrcaRouterApiKey(): Promise<void> {
+    await this.orcaRouterCredentials.deleteApiKey();
+    this.availableOrcaRouterModelOptions = [];
+    this.lastOrcaRouterIssue = "missingApiKey";
+    if (this.providerId === "orcaRouter") {
+      this.resetToDisconnected();
+      this.providerId = "orcaRouter";
+      this.lastOrcaRouterIssue = "missingApiKey";
+    }
+  }
+
   public getLastLmStudioIssue(): LmStudioConnectionIssue | undefined {
     return this.lastLmStudioIssue;
   }
 
   public getLastCopilotIssue(): CopilotConnectionIssue | undefined {
     return this.lastCopilotIssue;
+  }
+
+  public getLastOrcaRouterIssue(): OrcaRouterConnectionIssue | undefined {
+    return this.lastOrcaRouterIssue;
   }
 
   public consumeLmStudioModelKeyChange(): string | null | undefined {
@@ -133,6 +186,24 @@ export class ConnectionService {
       this.lastLmStudioIssue = this.classifyLmStudioIssue(error);
     }
     return this.availableLmStudioModelOptions;
+  }
+
+  public async refreshAvailableOrcaRouterModels(): Promise<OrcaRouterModelOption[]> {
+    const apiKey = await this.orcaRouterCredentials.getApiKey();
+    if (!apiKey) {
+      this.lastOrcaRouterIssue = "missingApiKey";
+      this.availableOrcaRouterModelOptions = [];
+      return this.availableOrcaRouterModelOptions;
+    }
+    try {
+      const models = await this.orcaRouterClient.listModels(apiKey);
+      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      this.lastOrcaRouterIssue = undefined;
+    } catch (error) {
+      this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
+      this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
+    }
+    return this.availableOrcaRouterModelOptions;
   }
 
   public async connect(settings: NavigatorSettings): Promise<ConnectionState> {
@@ -169,6 +240,7 @@ export class ConnectionService {
     this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.lastCopilotIssue = undefined;
+    this.lastOrcaRouterIssue = undefined;
     this.connectionState = "disconnected";
     return this.connectionState;
   }
@@ -178,6 +250,7 @@ export class ConnectionService {
     this.providerId = settings.providerId;
     this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
+    this.lastOrcaRouterIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
 
     if (!vscode.workspace.isTrusted) {
@@ -188,7 +261,9 @@ export class ConnectionService {
     this.connectionState = "connecting";
     const connectionState = await (settings.providerId === "lmStudio"
       ? this.connectLmStudio(settings)
-      : this.connectCopilot(settings.copilotModelId));
+      : settings.providerId === "orcaRouter"
+        ? this.connectOrcaRouter(settings)
+        : this.connectCopilot(settings.copilotModelId));
 
     if (connectionState === "connected") {
       return { connectionState, activated: true };
@@ -282,6 +357,39 @@ export class ConnectionService {
     return this.connectionState;
   }
 
+  private async connectOrcaRouter(settings: NavigatorSettings): Promise<ConnectionState> {
+    try {
+      const apiKey = await this.orcaRouterCredentials.getApiKey();
+      if (!apiKey) {
+        this.lastOrcaRouterIssue = "missingApiKey";
+        this.connectionState = "unavailable";
+        return this.connectionState;
+      }
+
+      const models = await this.orcaRouterClient.listModels(apiKey);
+      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      const selectedId = settings.orcaRouterModelId ?? "orcarouter/free";
+      const selected = this.availableOrcaRouterModelOptions.find((model) => model.id === selectedId);
+      if (!selected) {
+        this.lastOrcaRouterIssue = "modelNotFound";
+        this.connectionState = "unavailable";
+        return this.connectionState;
+      }
+
+      this.copilotModel = undefined;
+      this.connectedModel = this.createOrcaRouterModel(selected);
+      this.lastOrcaRouterIssue = undefined;
+      this.connectionState = "connected";
+    } catch (error) {
+      this.connectedModel = undefined;
+      this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
+      this.connectionState = this.lastOrcaRouterIssue === "quota" || this.lastOrcaRouterIssue === "rateLimit"
+        ? "restricted"
+        : "unavailable";
+    }
+    return this.connectionState;
+  }
+
   private async resolveLmStudioModel(
     models: LmStudioModel[],
     savedModelKey: string | undefined
@@ -335,6 +443,28 @@ export class ConnectionService {
     return [...options.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
 
+  private toOrcaRouterModelOptions(models: OrcaRouterModel[]): OrcaRouterModelOption[] {
+    const options = new Map(createBuiltInOrcaRouterOptions().map((option) => [option.id, option]));
+    for (const model of models) {
+      const supportsOpenAi = model.supportedEndpointTypes.length === 0 || model.supportedEndpointTypes.includes("openai");
+      const acceptsText = model.inputModalities.length === 0 || model.inputModalities.includes("text");
+      const producesText = model.outputModalities.length === 0 || model.outputModalities.includes("text");
+      if (!supportsOpenAi || !acceptsText || !producesText) {
+        continue;
+      }
+      options.set(model.id, {
+        id: model.id,
+        label: model.id.split("/").slice(1).join("/") || model.id,
+        provider: model.ownedBy,
+        contextLength: model.contextLength
+      });
+    }
+    return [...options.values()].sort((a, b) => {
+      if (a.isRouter !== b.isRouter) return a.isRouter ? -1 : 1;
+      return a.label.localeCompare(b.label);
+    });
+  }
+
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
     return {
       providerId: "copilot",
@@ -371,6 +501,27 @@ export class ConnectionService {
           metadata?.referencedFilePaths,
           cancellationToken
         );
+      }
+    };
+  }
+
+  private createOrcaRouterModel(model: OrcaRouterModelOption): ConnectedProviderModel {
+    return {
+      providerId: "orcaRouter",
+      modelId: model.id,
+      modelLabel: model.label,
+      profileSource: {
+        id: model.id,
+        name: model.label,
+        vendor: model.provider,
+        maxInputTokens: model.contextLength
+      },
+      requestText: async (prompt, cancellationToken) => {
+        const currentApiKey = await this.orcaRouterCredentials.getApiKey();
+        if (!currentApiKey) {
+          throw new OrcaRouterError("auth", "OrcaRouter API key is not configured.");
+        }
+        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, prompt, cancellationToken);
       }
     };
   }
@@ -507,6 +658,11 @@ export class ConnectionService {
     if (this.lastLmStudioIssue) return this.lastLmStudioIssue;
     return error instanceof LmStudioError ? error.kind : "other";
   }
+
+  private classifyOrcaRouterIssue(error: unknown): OrcaRouterConnectionIssue {
+    if (this.lastOrcaRouterIssue) return this.lastOrcaRouterIssue;
+    return error instanceof OrcaRouterError ? error.kind : "other";
+  }
 }
 
 class CopilotProbeTimeoutError extends Error {
@@ -518,4 +674,21 @@ class CopilotProbeTimeoutError extends Error {
 
 function normalizeModelIdentifier(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function createBuiltInOrcaRouterOptions(): OrcaRouterModelOption[] {
+  return [
+    {
+      id: "orcarouter/free",
+      label: "Free Router",
+      provider: "orcarouter",
+      isRouter: true
+    },
+    {
+      id: "orcarouter/auto",
+      label: "Auto Router",
+      provider: "orcarouter",
+      isRouter: true
+    }
+  ];
 }

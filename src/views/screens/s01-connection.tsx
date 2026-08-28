@@ -19,7 +19,7 @@ export function S01Connection() {
             <div className="s01-title">NaviCom</div>
           </div>
           <div className="s01-subtitle">
-            GitHub Copilotと連携した学習支援コーディングアシスタントです。
+            Copilot・ローカルLLM・OrcaRouterに対応した学習支援コーディングアシスタントです。
           </div>
         </div>
 
@@ -93,6 +93,14 @@ export function S01Connection() {
           >
             <span className="material-symbols-outlined">memory</span>
             ローカル LLM に接続
+          </button>
+          <button
+            className="s01-local-connect-btn"
+            disabled={!canConnect || isBusy}
+            onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
+          >
+            <span className="material-symbols-outlined">route</span>
+            OrcaRouter に接続
           </button>
         </div>
       </div>

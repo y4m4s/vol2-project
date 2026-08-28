@@ -8,6 +8,8 @@ import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { FeedbackStore } from "./services/FeedbackStore";
 import { LmStudioClient } from "./services/LmStudioClient";
+import { OrcaRouterClient } from "./services/OrcaRouterClient";
+import { OrcaRouterCredentialStore } from "./services/OrcaRouterCredentialStore";
 import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
@@ -22,9 +24,13 @@ import { runEvalLiveCommand } from "./eval/live";
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const conversationStorageUri = context.storageUri ?? vscode.Uri.joinPath(context.globalStorageUri, "workspace-history");
   const usageMeter = new UsageMeter(context.globalState);
+  const orcaRouterCredentials = new OrcaRouterCredentialStore(context.secrets);
+  await orcaRouterCredentials.initialize();
   const connectionService = new ConnectionService(
     usageMeter,
     new LmStudioClient(),
+    new OrcaRouterClient(),
+    orcaRouterCredentials,
     context.languageModelAccessInformation
   );
   const contextCollector = new ContextCollector();

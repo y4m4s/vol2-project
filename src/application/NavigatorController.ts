@@ -285,6 +285,8 @@ export class NavigatorController implements vscode.Disposable {
       modelLabel: this.connectionSettingsCoordinator.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
       lmStudioModelOptions: this.connectionService.getLmStudioModelOptions(),
+      orcaRouterModelOptions: this.connectionService.getOrcaRouterModelOptions(),
+      orcaRouterApiKeyConfigured: this.connectionService.isOrcaRouterApiKeyConfigured(),
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
       settingsRevision: this.connectionSettingsCoordinator.revision,
       statusMessage: state.statusMessage,
@@ -817,14 +819,16 @@ export class NavigatorController implements vscode.Disposable {
         responseModel?.modelId
       );
       if (result.usage) {
+        const reportedCostUsd = result.usage.costUsd;
         assistantEntry.tokenUsage = {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
-          estimatedCostUsd: this.usageMeter.estimateCostUsd(
+          estimatedCostUsd: reportedCostUsd ?? this.usageMeter.estimateCostUsd(
             this.connectionSettingsCoordinator.getCurrentProviderId(),
             this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
             result.usage
-          )
+          ),
+          costSource: reportedCostUsd !== undefined ? "providerResponse" : undefined
         };
       }
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
@@ -922,6 +926,44 @@ export class NavigatorController implements vscode.Disposable {
 
   public async refreshLmStudioModels(announce = true): Promise<void> {
     await this.lmStudioCoordinator.refreshModels(announce);
+  }
+
+  public async setOrcaRouterApiKey(apiKey: string): Promise<void> {
+    await this.connectionService.storeOrcaRouterApiKey(apiKey);
+    const options = await this.connectionService.refreshAvailableOrcaRouterModels();
+    const issue = this.connectionService.getLastOrcaRouterIssue();
+    const refreshStatus = issue
+      ? this.connectionSettingsCoordinator.buildConnectionStatusMessageForProvider("orcaRouter", "unavailable")
+      : undefined;
+    this.patchSession({
+      statusMessage: refreshStatus
+        ? {
+            kind: refreshStatus.kind,
+            text: `APIキーは保存しましたが、モデル一覧を取得できませんでした。${refreshStatus.text}`
+          }
+        : {
+            kind: "info",
+            text: `OrcaRouter APIキーを安全なストレージに保存し、テキストモデルを ${Math.max(0, options.length - 2)} 件取得しました。`
+          }
+    });
+  }
+
+  public async deleteOrcaRouterApiKey(): Promise<void> {
+    await this.connectionService.deleteOrcaRouterApiKey();
+    this.patchSession({
+      connectionState: this.connectionService.getState(),
+      statusMessage: { kind: "info", text: "OrcaRouter APIキーを削除しました。" }
+    });
+  }
+
+  public async refreshOrcaRouterModels(): Promise<void> {
+    const options = await this.connectionService.refreshAvailableOrcaRouterModels();
+    const issue = this.connectionService.getLastOrcaRouterIssue();
+    this.patchSession({
+      statusMessage: issue
+        ? this.connectionSettingsCoordinator.buildConnectionStatusMessageForProvider("orcaRouter", "unavailable")
+        : { kind: "info", text: `OrcaRouter のテキストモデルを ${Math.max(0, options.length - 2)} 件取得しました。` }
+    });
   }
 
   public async refreshLmStudioServerStatus(announce = true): Promise<void> {

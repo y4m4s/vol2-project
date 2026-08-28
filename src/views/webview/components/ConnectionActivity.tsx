@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-type ProviderId = "copilot" | "lmStudio";
+type ProviderId = "copilot" | "lmStudio" | "orcaRouter";
 
 export function ConnectionActivity() {
   const { viewModel, send } = useApp();
@@ -26,17 +26,20 @@ export function ConnectionActivity() {
   }
 
   const isConnected = viewModel.connectionState === "connected";
-  const isLmStudio = viewModel.providerId === "lmStudio";
-  const providerId: ProviderId = isLmStudio ? "lmStudio" : "copilot";
-  const providerName = isLmStudio ? "ローカル LLM" : "GitHub Copilot Chat";
+  const providerId: ProviderId = viewModel.providerId;
+  const providerName = providerId === "lmStudio"
+    ? "ローカル LLM"
+    : providerId === "orcaRouter"
+      ? "OrcaRouter"
+      : "GitHub Copilot Chat";
   const stateLabel = isConnected ? "接続中" : "切り替え中";
-  const modelLabel = viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio)\s*[·：:]\s*/, "");
+  const modelLabel = viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio|OrcaRouter)\s*[·：:]\s*/, "");
 
   return (
     <div className="connection-activity">
       <button
         type="button"
-        className={`connection-activity-provider ${isLmStudio ? "lmstudio" : "copilot"} ${isConnected ? "connected" : "switching"}`}
+        className={`connection-activity-provider ${providerId.toLowerCase()} ${isConnected ? "connected" : "switching"}`}
         aria-label={`${providerName} ${stateLabel}。接続設定を開く`}
         aria-describedby="connection-activity-tooltip"
         onClick={() => send({ type: "navigate", screen: "settings" })}
@@ -69,6 +72,9 @@ function ProviderLogo({
   providerId: ProviderId;
   instance: "button" | "tooltip";
 }) {
+  if (providerId === "orcaRouter") {
+    return <span className="material-symbols-outlined connection-activity-provider-logo connection-activity-provider-logo-symbol" aria-hidden="true">route</span>;
+  }
   if (providerId === "lmStudio") {
     const logoUri = window.__PROVIDER_LOGO_URIS__.lmStudio;
     return (

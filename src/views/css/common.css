@@ -270,6 +270,11 @@ button.danger {
   border-color: color-mix(in srgb, var(--vscode-charts-green, #4ec9b0) 48%, var(--vscode-panel-border));
 }
 
+.connection-activity-provider.orcarouter {
+  color: var(--vscode-charts-blue, #2563eb);
+  border-color: color-mix(in srgb, var(--vscode-charts-blue, #2563eb) 55%, var(--vscode-panel-border));
+}
+
 body.vscode-high-contrast .connection-activity-provider {
   color: var(--vscode-icon-foreground, var(--vscode-foreground));
   border-color: var(--vscode-contrastBorder, var(--vscode-foreground));
@@ -292,6 +297,15 @@ body.vscode-high-contrast .connection-activity-provider {
 
 svg.connection-activity-provider-logo {
   background: none;
+}
+
+.connection-activity-provider-logo-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .connection-activity-state {
@@ -367,6 +381,10 @@ svg.connection-activity-provider-logo {
 .connection-activity-tooltip-title .connection-activity-provider-logo {
   width: 16px;
   height: 16px;
+}
+
+.connection-activity-tooltip-title .connection-activity-provider-logo-symbol {
+  font-size: 16px;
 }
 
 .connection-activity-tooltip-status {

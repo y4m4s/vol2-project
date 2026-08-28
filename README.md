@@ -1,9 +1,11 @@
 # NaviCom
 
+[![Powered by OrcaRouter](https://img.shields.io/badge/Powered_by-OrcaRouter-2563eb)](https://www.orcarouter.ai/ref/ref_ca9caab6221888bc490e)
+
 **ペアプログラミングのナビゲーター役を担う、VS Code 向け AI 学習支援拡張機能**
 
 NaviCom は、コーディング中の詰まりを自力で解決する力を育てることを目的とした VS Code 拡張機能です。  
-GitHub Copilot を活用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
+GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
 
 ---
 
@@ -38,7 +40,7 @@ GitHub Copilot を活用し、「答えの代行」ではなく「考え方・�
 
 有用な回答をナレッジとして保存できます。
 保存されたナレッジは以降の回答生成時に参照され、検索・閲覧・削除・元会話への遡りが可能です。
-データはローカルの SQLite に保存され、外部には送信されません。
+ナレッジ本体はローカルの SQLite に保存されます。ただし、回答生成時に再利用対象となったナレッジのタイトル・要約は、プロンプトの一部として選択中のAI接続先へ送信されます。
 
 ---
 
@@ -48,7 +50,7 @@ GitHub Copilot を活用し、「答えの代行」ではなく「考え方・�
 |------|------|
 | 拡張機能ホスト | TypeScript / VS Code Extension API |
 | UI | React / WebviewView |
-| AI 呼び出し | VS Code Language Model API (GitHub Copilot) |
+| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / OrcaRouter |
 | ローカルストレージ | SQLite (sql.js) |
 | ビルド | esbuild / TypeScript Compiler |
 
@@ -79,6 +81,7 @@ src/
   - [Copilot Free](https://docs.github.com/en/copilot/concepts/billing/individual-plans) でも月次上限の範囲で利用できます
   - 認証済みの学生は [Copilot Student](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students) を無料で利用できます
 - LM Studio を利用する場合は、LM Studio と対象モデルをローカルで起動していること
+- OrcaRouter を利用する場合は、[OrcaRouterの紹介リンク](https://www.orcarouter.ai/ref/ref_ca9caab6221888bc490e)から発行した `sk-orca-` 形式のAPIキー
 - Node.js / npm
 
 ---
@@ -116,5 +119,38 @@ npm run watch:webview
 
 ### 初回接続
 
-拡張機能を起動したら、サイドバーの NaviCom パネルを開き、**Copilot に接続** ボタンを押します。  
-GitHub Copilot の認可ダイアログが表示されたら許可すると、メイン画面に遷移して相談が開始できます。
+拡張機能を起動したら、サイドバーの NaviCom パネルを開き、使用する接続先を選びます。
+
+- **Copilot に接続**: GitHub Copilot の認可ダイアログを許可します。
+- **ローカル LLM に接続**: LM Studioでモデルをロードし、ローカルサーバーへ接続します。
+- **OrcaRouter に接続**: APIキー未設定の場合は設定画面へ移動し、キー入力の案内を表示します。
+
+### OrcaRouterの設定
+
+1. 設定画面の「接続先」で **OrcaRouter** を選択します。
+2. `sk-orca-` で始まるAPIキーを入力し、「キーを保存」を押します。保存後、モデル一覧が自動取得されます。
+3. APIキー保存後に表示されるモデルから、初回の無課金動作確認には **Free Router (`orcarouter/free`)** を選択します。
+4. 必要に応じて「モデル一覧を更新」で最新のテキストモデルを再取得します。
+5. モデルを変更した場合は画面下部の「保存」を、変更していない場合は「OrcaRouterに接続」を押します。
+
+APIキーはVS CodeのSecretStorageへ保存され、設定データや会話履歴には書き込まれません。保存済みキーの値は設定画面へ再表示されず、推論時にはSecretStorageから最新のキーを取得します。`orcarouter/free` は無料容量だけを利用し、容量がない場合も有料モデルへ自動移行しません。
+
+### OrcaRouter利用時のデータ送信
+
+OrcaRouterを選択すると、回答生成や会話タイトル・ナレッジ作成などに使うプロンプトがOrcaRouterと選択された上流モデル事業者へ送信されます。プロンプトには、処理に応じて次の情報が含まれます。
+
+- 質問、追加コンテキスト、必要な会話内容
+- 送信対象のコード断片、診断情報、ファイル名、ディレクトリ構造、関連シンボル、直近の編集情報
+- 再利用する個人ナレッジのタイトル・要約と、回答改善に使うフィードバック傾向
+
+保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。APIキーはプロンプトに含めず、VS CodeのSecretStorageからOrcaRouterへの認証にだけ使用します。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。
+
+### OrcaRouterのGuardrail／Firewall
+
+NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定しません。[GuardrailをAPIキーへ適用](https://docs.orcarouter.ai/security/guardrails/attach-to-key)するか、OrcaRouter側でワークスペース既定のポリシーを設定した場合に、プロンプトや応答が検査されます。ポリシー未設定の状態で、NaviComから同じ推論エンドポイントを使うだけでは自動適用されません。
+
+現在のNaviCom連携は通常のChat Completionsとしてテキストだけを送り、ツール定義やツール呼び出しを送信・実行しません。このため、[Agent Firewall](https://docs.orcarouter.ai/security/concepts/guardrails-vs-firewall)のツール実行制御は現在の連携経路では利用しません。Guardrailにより個別のリクエストが拒否された場合は、その旨を表示し、OrcaRouterとの接続自体は維持します。
+
+### OrcaRouterの料金表示
+
+応答の `usage.cost_usd` は「応答時点の記録料金」として表示します。この値は応答生成時に計算された情報であり、確定請求額とは限りません。確定した請求情報はOrcaRouter側の利用履歴、または[`GET /v1/generation`](https://docs.orcarouter.ai/operations/per-request-cost)で確認してください。`usage.cost_usd` がない応答や過去データは、NaviComの参考料金概算を表示します。
