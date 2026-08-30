@@ -45,7 +45,14 @@ function renderScreen(screen: NavigatorScreen) {
     case "conversation":
       return <S04Conversation />;
     case "feedback_form":
-      return <S09FeedbackForm />;
+      return (
+        <div className="s09-layer-host">
+          <div className="s09-background" aria-hidden="true" inert>
+            <S04Conversation />
+          </div>
+          <S09FeedbackForm />
+        </div>
+      );
     case "advice_detail":
       return <S04Conversation />;
     case "knowledge":
