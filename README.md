@@ -143,9 +143,9 @@ OrcaRouterを選択すると、回答生成や会話タイトル・ナレッジ�
 
 - 質問、追加コンテキスト、必要な会話内容
 - 送信対象のコード断片、診断情報、ファイル名、ディレクトリ構造、関連シンボル、直近の編集情報
-- 再利用する個人ナレッジのタイトル・要約と、回答改善に使うフィードバック傾向
+- 再利用する個人ナレッジのタイトル・要約と、評価理由からローカル生成した定型フィードバック傾向
 
-保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。APIキーはプロンプトに含めず、VS CodeのSecretStorageからOrcaRouterへの認証にだけ使用します。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。
+フィードバック処理によって、任意の補足コメントや回答抜粋を追加送信することはありません。保護済みまたは追加の除外パターンに一致するファイル本文は送信対象から除外されます。APIキーはプロンプトに含めず、VS CodeのSecretStorageからOrcaRouterへの認証にだけ使用します。利用前に[OrcaRouterのData Handling](https://docs.orcarouter.ai/operations/data-handling)と、利用する上流モデル事業者の規約を確認してください。
 
 ### OrcaRouterのGuardrail／Firewall
 

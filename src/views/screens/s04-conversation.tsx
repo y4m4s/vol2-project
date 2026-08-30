@@ -479,8 +479,8 @@ function ResponseActions(
 
         <button
           className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
-          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Good"}
-          disabled={Boolean(feedback) || isFeedbackDisabled}
+          title={isFeedbackDisabled ? "処理完了後に評価できます" : feedback ? "評価を変更" : "Good"}
+          disabled={isFeedbackDisabled}
           onClick={() => onRate("good")}
           aria-label="この回答をGoodと評価"
           aria-pressed={feedback === "good"}
@@ -490,8 +490,8 @@ function ResponseActions(
 
         <button
           className={`s04-response-action ${feedback === "bad" ? "active feedback-bad" : ""}`}
-          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Bad"}
-          disabled={Boolean(feedback) || isFeedbackDisabled}
+          title={isFeedbackDisabled ? "処理完了後に評価できます" : feedback ? "評価を変更" : "Bad"}
+          disabled={isFeedbackDisabled}
           onClick={() => onRate("bad")}
           aria-label="この回答をBadと評価"
           aria-pressed={feedback === "bad"}

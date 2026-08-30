@@ -64,6 +64,12 @@
   margin: 0;
 }
 
+.s09-note {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+  line-height: 1.45;
+}
+
 .s09-comment {
   width: 100%;
   min-height: 108px;
@@ -77,6 +83,12 @@
   font-family: var(--vscode-font-family);
   font-size: 0.9em;
   line-height: 1.5;
+}
+
+.s09-comment-count {
+  justify-self: end;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
 }
 
 .s09-actions {

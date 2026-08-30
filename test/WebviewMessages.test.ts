@@ -14,7 +14,18 @@ test("rejects oversized and malformed webview messages", () => {
   assert.equal(parseWebviewMessage({ type: "ask", text: "x".repeat(20_001) }), undefined);
   assert.equal(parseWebviewMessage({ type: "navigate", screen: "admin" }), undefined);
   assert.equal(parseWebviewMessage({ type: "rateAdvice", id: "entry", rating: "maybe" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: [], comment: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: ["unknown"], comment: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: ["too_long"], comment: "x".repeat(1_001) }), undefined);
   assert.equal(parseWebviewMessage(null), undefined);
+});
+
+test("Good／Bad共通のフィードバック理由を受け入れる", () => {
+  assert.deepEqual(
+    parseWebviewMessage({ type: "submitFeedback", reasons: ["concise", "other"], comment: "補足" }),
+    { type: "submitFeedback", reasons: ["concise", "other"], comment: "補足" }
+  );
+  assert.deepEqual(parseWebviewMessage({ type: "cancelFeedback" }), { type: "cancelFeedback" });
 });
 
 test("validates token guard settings at the execution boundary", () => {

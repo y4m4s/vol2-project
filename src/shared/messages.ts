@@ -2,11 +2,12 @@ import type {
   AdviceMode,
   AiProviderId,
   AssistanceDepth,
-  BadFeedbackReason,
+  FeedbackReason,
   FeedbackRating,
   NavigatorScreen,
   NavigatorViewModel
 } from "./types";
+import { BAD_FEEDBACK_REASONS, GOOD_FEEDBACK_REASONS } from "./feedback";
 
 export type WebviewToExtension =
   | { type: "ready" }
@@ -23,8 +24,8 @@ export type WebviewToExtension =
   | { type: "navigateBack" }
   | { type: "saveKnowledge"; id?: string }
   | { type: "rateAdvice"; id: string; rating: FeedbackRating }
-  | { type: "submitBadFeedback"; reasons: BadFeedbackReason[]; comment: string }
-  | { type: "cancelBadFeedback" }
+  | { type: "submitFeedback"; reasons: FeedbackReason[]; comment: string }
+  | { type: "cancelFeedback" }
   | { type: "selectKnowledge"; id: string }
   | {
       type: "updateKnowledge";
@@ -74,7 +75,7 @@ const SIMPLE_MESSAGE_TYPES = new Set([
   "cancelGuidanceRequest",
   "toggleAutoPause",
   "navigateBack",
-  "cancelBadFeedback",
+  "cancelFeedback",
   "refreshLmStudioServerStatus",
   "startLmStudioServer",
   "stopLmStudioServer",
@@ -90,7 +91,7 @@ const SCREENS = new Set([
   "onboarding", "main", "history", "conversation", "feedback_form",
   "error", "advice_detail", "knowledge", "knowledge_detail", "settings"
 ]);
-const BAD_FEEDBACK_REASONS = new Set(["too_long", "off_topic", "gives_answer", "too_vague", "other"]);
+const FEEDBACK_REASONS = new Set<unknown>([...GOOD_FEEDBACK_REASONS, ...BAD_FEEDBACK_REASONS]);
 
 export function parseWebviewMessage(value: unknown): WebviewToExtension | undefined {
   if (!isRecord(value) || typeof value.type !== "string") return undefined;
@@ -124,10 +125,10 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
     case "rateAdvice":
       return isBoundedString(value.id, 1, 200) && (value.rating === "good" || value.rating === "bad")
         ? value as WebviewToExtension : undefined;
-    case "submitBadFeedback":
-      return Array.isArray(value.reasons) && value.reasons.length <= 5 &&
-        value.reasons.every((reason) => typeof reason === "string" && BAD_FEEDBACK_REASONS.has(reason)) &&
-        isBoundedString(value.comment, 0, 4_000) ? value as WebviewToExtension : undefined;
+    case "submitFeedback":
+      return Array.isArray(value.reasons) && value.reasons.length >= 1 && value.reasons.length <= 6 &&
+        value.reasons.every((reason) => FEEDBACK_REASONS.has(reason)) &&
+        isBoundedString(value.comment, 0, 1_000) ? value as WebviewToExtension : undefined;
     case "updateKnowledge":
       return isBoundedString(value.id, 1, 200) && isBoundedString(value.title, 0, 200) &&
         isBoundedString(value.summary, 0, 2_000) && isBoundedString(value.body, 0, 50_000)

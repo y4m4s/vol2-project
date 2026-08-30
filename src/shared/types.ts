@@ -45,6 +45,14 @@ export type ConversationRole = "user" | "assistant";
 
 export type FeedbackRating = "good" | "bad";
 
+export type GoodFeedbackReason =
+  | "concise"
+  | "concrete"
+  | "well_structured"
+  | "right_depth"
+  | "guided_thinking"
+  | "other";
+
 export type BadFeedbackReason =
   | "too_long"
   | "off_topic"
@@ -52,18 +60,13 @@ export type BadFeedbackReason =
   | "too_vague"
   | "other";
 
+export type FeedbackReason = GoodFeedbackReason | BadFeedbackReason;
+
 export interface AdviceFeedbackInput {
   conversationEntryId: string;
   rating: FeedbackRating;
-  reasons?: BadFeedbackReason[];
+  reasons: FeedbackReason[];
   comment?: string;
-}
-
-export type FeedbackSummaryStatus = "ok" | "failed" | "skipped";
-
-export interface FeedbackSummaryResult {
-  status: FeedbackSummaryStatus;
-  summaryText?: string;
 }
 
 export interface FeedbackTendencySummary {
@@ -335,6 +338,7 @@ export interface NavigatorSessionState {
   conversationHistory: ConversationEntry[];
   selectedConversationId?: string;
   pendingFeedbackEntryId?: string;
+  pendingFeedbackRating?: FeedbackRating;
   knowledgeQuery: string;
   selectedKnowledgeId?: string;
   activeAdditionalContext?: string;
@@ -369,6 +373,7 @@ export interface NavigatorViewModel {
   activeAdditionalContext?: string;
   conversationHistory: ConversationEntry[];
   pendingFeedbackEntryId?: string;
+  pendingFeedbackRating?: FeedbackRating;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
   knowledgeItems: KnowledgeListItem[];

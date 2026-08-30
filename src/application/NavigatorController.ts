@@ -56,7 +56,7 @@ import {
   SlashCommandScope,
   UsageTodayViewData,
   FeedbackRating,
-  BadFeedbackReason
+  FeedbackReason
 } from "../shared/types";
 
 const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
@@ -149,6 +149,7 @@ export class NavigatorController implements vscode.Disposable {
     );
     this.conversationCoordinator = new ConversationCoordinator(
       this.conversationStore,
+      this.feedbackStore,
       this.adviceService,
       this.connectionService,
       this.settingsService,
@@ -170,7 +171,6 @@ export class NavigatorController implements vscode.Disposable {
     });
     this.feedbackCoordinator = new FeedbackCoordinator(
       this.feedbackStore,
-      this.adviceService,
       {
         getState: () => this.sessionStore.getState(),
         patchSession: (partial) => this.patchSession(partial),
@@ -305,6 +305,7 @@ export class NavigatorController implements vscode.Disposable {
       activeAdditionalContext: this.getVisibleAdditionalContext(state),
       conversationHistory: state.conversationHistory,
       pendingFeedbackEntryId: state.pendingFeedbackEntryId,
+      pendingFeedbackRating: state.pendingFeedbackRating,
       currentRequestPlan,
       settings,
       knowledgeItems: this.initialized ? this.knowledgeCoordinator.buildItems(state) : [],
@@ -465,12 +466,12 @@ export class NavigatorController implements vscode.Disposable {
     await this.feedbackCoordinator.rateAdvice(conversationEntryId, rating);
   }
 
-  public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
-    await this.feedbackCoordinator.submitBadFeedback(reasons, comment);
+  public async submitFeedback(reasons: FeedbackReason[], comment: string): Promise<void> {
+    await this.feedbackCoordinator.submitFeedback(reasons, comment);
   }
 
-  public cancelBadFeedback(): void {
-    this.feedbackCoordinator.cancelBadFeedback();
+  public cancelFeedback(): void {
+    this.feedbackCoordinator.cancelFeedback();
   }
 
   public dispose(): void {
@@ -785,7 +786,13 @@ export class NavigatorController implements vscode.Disposable {
         slashCommand: options.slashCommand,
         slashCommandScope: options.slashCommandScope,
         knowledgeItems: this.knowledgeStore.findReusable(prepared.context),
-        feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary()
+        feedbackTendency: options.kind === "always"
+          ? undefined
+          : this.feedbackStore.getTendencySummary({
+              kind: options.kind,
+              assistanceDepth,
+              slashCommand: options.slashCommand
+            })
       },
       tokenSource.token
     );
