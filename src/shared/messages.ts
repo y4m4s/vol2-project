@@ -44,6 +44,8 @@ export type WebviewToExtension =
   | { type: "setOrcaRouterApiKey"; apiKey: string }
   | { type: "deleteOrcaRouterApiKey" }
   | { type: "refreshOrcaRouterModels" }
+  | { type: "refreshRequestPlan" }
+  | { type: "openReferencedFile"; path: string; line?: number }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
@@ -81,6 +83,7 @@ const SIMPLE_MESSAGE_TYPES = new Set([
   "refreshLmStudioModels",
   "deleteOrcaRouterApiKey",
   "refreshOrcaRouterModels",
+  "refreshRequestPlan",
   "resetSettings"
 ]);
 const SCREENS = new Set([
@@ -133,6 +136,10 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
       return isSaveSettingsPayload(value.payload) ? value as WebviewToExtension : undefined;
     case "searchKnowledge":
       return isBoundedString(value.query, 0, 500) ? value as WebviewToExtension : undefined;
+    case "openReferencedFile":
+      return isBoundedString(value.path, 1, 2_000) &&
+        (value.line === undefined || isFiniteInRange(value.line, 1, 1_000_000))
+        ? value as WebviewToExtension : undefined;
     case "setAdditionalContext":
       return isBoundedString(value.additionalContext, 0, 10_000) ? value as WebviewToExtension : undefined;
     default:

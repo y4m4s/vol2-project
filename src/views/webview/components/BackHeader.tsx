@@ -55,7 +55,6 @@ export function BackButton({
     </button>
   );
 }
-
 export function PageTitleWithIcon({ icon, children }: PageTitleWithIconProps) {
   return (
     <span className="page-title-with-icon">
@@ -64,7 +63,6 @@ export function PageTitleWithIcon({ icon, children }: PageTitleWithIconProps) {
     </span>
   );
 }
-
 export function PageHeader({
   title,
   subtitle,
@@ -105,8 +103,4 @@ export function PageHeader({
       </div>
     </div>
   );
-}
-
-export function BackHeader() {
-  return <BackButton />;
 }

@@ -22,6 +22,7 @@ import {
 } from "./coordinators/NavigationCoordinator";
 import { FeedbackCoordinator } from "./coordinators/FeedbackCoordinator";
 import { KnowledgeCoordinator } from "./coordinators/KnowledgeCoordinator";
+import { RequestPlanCoordinator } from "./coordinators/RequestPlanCoordinator";
 import {
   ConnectionSettingsCoordinator,
   SettingsInput
@@ -80,6 +81,7 @@ export class NavigatorController implements vscode.Disposable {
   private readonly navigationCoordinator: NavigationCoordinator;
   private readonly feedbackCoordinator: FeedbackCoordinator;
   private readonly knowledgeCoordinator: KnowledgeCoordinator;
+  private readonly requestPlanCoordinator: RequestPlanCoordinator;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly didChangeStateEmitter = new vscode.EventEmitter<void>();
   private pendingSelectionContext?: GuidanceContext;
@@ -108,6 +110,19 @@ export class NavigatorController implements vscode.Disposable {
     private readonly usageMeter: UsageMeter
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
+    this.requestPlanCoordinator = new RequestPlanCoordinator(
+      this.contextCollector,
+      this.requestPlanner,
+      this.settingsService,
+      {
+        getState: () => this.sessionStore.getState(),
+        patchSession: (partial) => this.patchSession(partial),
+        rememberSelectionContext: (preview) => this.rememberSelectionContext(preview),
+        collectGuidanceContextForDepth: (settings, assistanceDepth, baseContext) =>
+          this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext),
+        getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state)
+      }
+    );
     this.connectionSettingsCoordinator = new ConnectionSettingsCoordinator(
       this.connectionService,
       this.settingsService,
@@ -260,13 +275,7 @@ export class NavigatorController implements vscode.Disposable {
   public getViewModel(): NavigatorViewModel {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
-    const currentRequestPlan = this.requestPlanner.prepareGuidanceRequest(
-      withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.getStreamAdditionalContext(state)),
-      state.contextPreview,
-      settings,
-      state.mode === "always" ? "always" : "context",
-      resolveEffectiveAssistanceDepth(state.mode === "always" ? "always" : "context", state.assistanceDepth)
-    ).requestPlan;
+    const currentRequestPlan = this.requestPlanCoordinator.getCurrentPlan(state);
 
     return {
       screen: state.screen,
@@ -291,7 +300,6 @@ export class NavigatorController implements vscode.Disposable {
       settingsRevision: this.connectionSettingsCoordinator.revision,
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
-      latestGuidance: state.latestGuidance,
       conversationStreams: state.conversationStreams,
       activeConversationStreamId: state.activeConversationStreamId,
       activeAdditionalContext: this.getVisibleAdditionalContext(state),
@@ -308,6 +316,14 @@ export class NavigatorController implements vscode.Disposable {
 
   public async connectCopilot(providerId?: AiProviderId): Promise<void> {
     await this.connectionSettingsCoordinator.connect(providerId);
+  }
+
+  public async refreshCurrentRequestPlan(): Promise<void> {
+    await this.requestPlanCoordinator.refresh();
+  }
+
+  public async openReferencedFile(displayPath: string, line?: number): Promise<void> {
+    await this.requestPlanCoordinator.openReferencedFile(displayPath, line);
   }
 
   public async createConversationStream(): Promise<void> {
@@ -478,13 +494,13 @@ export class NavigatorController implements vscode.Disposable {
     const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
     const additionalContext = this.getGuidanceAdditionalContext(state);
     const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
-    const prepared = this.requestPlanner.prepareGuidanceRequest(
+    const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(guidanceContext, additionalContext),
       preview,
       settings,
       "always",
       "low"
-    );
+    ));
 
     if (!hasMeaningfulContext(prepared.context)) {
       this.patchSession({
@@ -531,8 +547,6 @@ export class NavigatorController implements vscode.Disposable {
       outputTokens: usage.outputTokens,
       totalTokens: usage.inputTokens + usage.outputTokens,
       estimatedCostText: cost > 0 && cost < 0.001 ? "$0.001未満" : `$${cost.toFixed(3)}`,
-      blendedPricePerMTokenUsd: this.usageMeter.estimateBlendedPricePerMTokUsd(providerId),
-      tokenLimit: settings.dailyTokenLimit,
       tokenLimitExceeded: this.usageMeter.isTokenLimitExceeded(providerId, settings.dailyTokenLimit)
     };
   }
@@ -579,7 +593,7 @@ export class NavigatorController implements vscode.Disposable {
 
     if (kind !== "context") {
       const prepared = projectScope
-        ? this.requestPlanner.prepareGuidanceRequest(
+        ? this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
             withAdditionalContext(
               await this.contextCollector.collectNextActionContext(settings, projectScope, liveContext),
               effectiveAdditionalContext
@@ -590,7 +604,7 @@ export class NavigatorController implements vscode.Disposable {
             assistanceDepth,
             slashCommand,
             slashCommandScope
-          )
+          ))
         : undefined;
 
       return {
@@ -618,7 +632,7 @@ export class NavigatorController implements vscode.Disposable {
     const requestContext = projectScope
       ? await this.contextCollector.collectNextActionContext(settings, projectScope, rawContext)
       : await this.collectGuidanceContextForDepth(settings, assistanceDepth, rawContext);
-    const prepared = this.requestPlanner.prepareGuidanceRequest(
+    const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(requestContext, effectiveAdditionalContext),
       preview,
       settings,
@@ -626,7 +640,7 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth,
       slashCommand,
       slashCommandScope
-    );
+    ));
 
     return {
       kind,
@@ -699,7 +713,7 @@ export class NavigatorController implements vscode.Disposable {
         : await this.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared =
       options.prepared ??
-      this.requestPlanner.prepareGuidanceRequest(
+      this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
         withAdditionalContext(
           fallbackContext!,
           effectiveAdditionalContext
@@ -710,7 +724,7 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         options.slashCommand,
         options.slashCommandScope
-      );
+      ));
     this.clearSelectionAfterContextCapture(options.kind, prepared.context);
     const contextPreviewAfterCapture =
       options.kind === "context" && prepared.context.selectedText

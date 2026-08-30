@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, FocusEvent } from "react";
 import type { RequestPlanFile } from "../../../shared/types";
+import { useApp } from "../state/AppContext";
 
 interface ReferencedFilesBadgeProps {
   files?: RequestPlanFile[];
@@ -14,6 +15,7 @@ const CARD_MAX_HEIGHT_PX = 240;
 type CardPlacement = "above" | "below";
 
 export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
+  const { send } = useApp();
   const badgeRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -197,13 +199,22 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
           <div className="referenced-files-card-title">参照ファイル</div>
           <div className="referenced-files-card-list">
             {referencedFiles.map((file) => (
-              <div key={file.path} className="referenced-files-card-item">
+              <button
+                key={file.path}
+                type="button"
+                className="referenced-files-card-item"
+                title={`${normalizePath(file.path)} を開く`}
+                onClick={() => {
+                  send({ type: "openReferencedFile", path: file.path });
+                  closeCard();
+                }}
+              >
                 <span className="material-symbols-outlined">description</span>
                 <div className="referenced-files-card-copy">
                   <div className="referenced-files-card-name">{getShortFileName(file.path)}</div>
                   <div className="referenced-files-card-path">{normalizePath(file.path)}</div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

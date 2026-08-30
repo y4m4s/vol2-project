@@ -2,6 +2,7 @@ import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader"
 import { useApp } from "../webview/state/AppContext";
 import { formatDateTime } from "../webview/utils/formatTime";
 import { SearchBar } from "../webview/components/SearchBar";
+import { ConfirmDeleteButton } from "../webview/components/ConfirmDeleteButton";
 
 export function S05Knowledge() {
   const { viewModel, send } = useApp();
@@ -57,15 +58,11 @@ export function S05Knowledge() {
                 </span>
               </button>
 
-              <button
-                type="button"
+              <ConfirmDeleteButton
                 className="knowledge-delete-btn"
-                title="ナレッジを削除"
-                aria-label={`${item.title}を削除`}
-                onClick={() => send({ type: "deleteKnowledge", id: item.id })}
-              >
-                <span className="material-symbols-outlined">delete</span>
-              </button>
+                ariaLabel={`${item.title}を削除`}
+                onConfirm={() => send({ type: "deleteKnowledge", id: item.id })}
+              />
             </div>
           ))}
         </div>

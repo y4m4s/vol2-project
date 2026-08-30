@@ -6,6 +6,8 @@
     "outDir": ".test-out",
     "rootDir": ".",
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "esModuleInterop": true,
     "moduleResolution": "node16",
     "types": ["node"],
@@ -19,6 +21,9 @@
     "src/services/OrcaRouterErrorPolicy.ts",
     "src/services/OrcaRouterCredentialStore.ts",
     "src/services/LmStudioServerProtocol.ts",
+    "src/services/RequestPlanner.ts",
+    "src/services/contextPreset.ts",
+    "src/services/WorkspacePathPolicy.ts",
     "src/application/GuidanceInput.ts",
     "src/application/coordinators/NavigationCoordinator.ts",
     "src/shared/messages.ts",
@@ -33,6 +38,8 @@
     "test/LmStudioServerProtocol.test.ts",
     "test/WebviewMessages.test.ts",
     "test/GuidanceInput.test.ts",
-    "test/NavigationCoordinator.test.ts"
+    "test/NavigationCoordinator.test.ts",
+    "test/RequestPlanner.test.ts",
+    "test/WorkspacePathPolicy.test.ts"
   ]
 }

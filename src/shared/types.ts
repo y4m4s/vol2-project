@@ -204,8 +204,6 @@ export interface UsageTodayViewData {
   outputTokens: number;
   totalTokens: number;
   estimatedCostText: string;
-  blendedPricePerMTokenUsd: number;
-  tokenLimit: number;
   tokenLimitExceeded: boolean;
 }
 
@@ -366,7 +364,6 @@ export interface NavigatorViewModel {
   settingsRevision: number;
   statusMessage?: NavigatorStatusMessage;
   contextPreview: NavigatorContextPreview;
-  latestGuidance?: GuidanceCard;
   conversationStreams: ConversationStreamListItem[];
   activeConversationStreamId?: string;
   activeAdditionalContext?: string;

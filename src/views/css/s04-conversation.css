@@ -365,7 +365,41 @@
   display: flex;
   align-items: flex-start;
   gap: 7px;
+  width: 100%;
   min-width: 0;
+  margin: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.s04-md-file-reference {
+  display: inline;
+  width: auto;
+  margin: 0;
+  padding: 1px 4px;
+  border: 0;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+
+.s04-md-file-reference:hover,
+.s04-md-file-reference:focus-visible {
+  opacity: 1;
+  text-decoration: underline;
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.referenced-files-card-item:hover,
+.referenced-files-card-item:focus-visible {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
 }
 
 .referenced-files-card-item .material-symbols-outlined {

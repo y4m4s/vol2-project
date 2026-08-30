@@ -1,6 +1,7 @@
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { formatDateTime, formatRelativeTime } from "../webview/utils/formatTime";
+import { ConfirmDeleteButton } from "../webview/components/ConfirmDeleteButton";
 
 export function S05KnowledgeDetail() {
   const { viewModel, send } = useApp();
@@ -31,15 +32,11 @@ export function S05KnowledgeDetail() {
           title={<PageTitleWithIcon icon="auto_stories">{detail.title}</PageTitleWithIcon>}
           subtitle={formatDateTime(detail.updatedAt)}
           actions={(
-            <button
-              type="button"
+            <ConfirmDeleteButton
               className="knowledge-detail-delete-btn"
-              title="ナレッジを削除"
-              aria-label={`${detail.title}を削除`}
-              onClick={() => send({ type: "deleteKnowledge", id: detail.id })}
-            >
-              <span className="material-symbols-outlined">delete</span>
-            </button>
+              ariaLabel={`${detail.title}を削除`}
+              onConfirm={() => send({ type: "deleteKnowledge", id: detail.id })}
+            />
           )}
         />
       </div>

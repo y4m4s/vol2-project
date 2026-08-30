@@ -55,3 +55,14 @@ test("accepts OrcaRouter settings and bounds API keys", () => {
   });
   assert.equal(parseWebviewMessage({ type: "setOrcaRouterApiKey", apiKey: "x".repeat(501) }), undefined);
 });
+
+test("送信計画の更新とワークスペース相対の参照ファイルを受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "refreshRequestPlan" }), { type: "refreshRequestPlan" });
+  assert.deepEqual(
+    parseWebviewMessage({ type: "openReferencedFile", path: "src/services/AdviceService.ts", line: 42 }),
+    { type: "openReferencedFile", path: "src/services/AdviceService.ts", line: 42 }
+  );
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "src/app.ts", line: 0 }), undefined);
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "x".repeat(2_001) }), undefined);
+});

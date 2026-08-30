@@ -132,7 +132,7 @@ export class RequestPlanner {
         "エディタで選択している範囲",
         true,
         Boolean(context.selectedText),
-        this.describeSelectionCategoryNote(fileExcluded, rawContext.selectedText, context.selectedText)
+        this.describeSelectionCategoryNote(fileExcluded, rawContext.selectedText)
       ),
       this.createCategory(
         "diagnostics",
@@ -349,7 +349,7 @@ export class RequestPlanner {
     return "現在の表示範囲や選択範囲から本文を抜粋します";
   }
 
-  private describeSelectionCategoryNote(fileExcluded: boolean, rawSelection?: string, selection?: string): string | undefined {
+  private describeSelectionCategoryNote(fileExcluded: boolean, rawSelection?: string): string | undefined {
     if (fileExcluded) {
       return "除外設定に一致したため、選択範囲も送信しません";
     }
