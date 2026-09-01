@@ -452,6 +452,17 @@ export function S06Settings() {
         </button>
       </div>
 
+      <div className="s06-attribution">
+        Orca icon by{" "}
+        <a
+          href="https://icons8.com/icon/iAYdQa49uN11/orca"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Icons8
+        </a>
+      </div>
+
       {hasPendingChanges && (
         <div className="s06-savebar">
           <div className="s06-savebar-copy">

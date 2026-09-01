@@ -93,6 +93,23 @@
   font-size: 18px;
 }
 
+.s06-attribution {
+  margin: 12px 0 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+  text-align: center;
+}
+
+.s06-attribution a {
+  color: var(--vscode-textLink-foreground);
+}
+
+.s06-attribution a:hover,
+.s06-attribution a:focus-visible {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  text-decoration: underline;
+}
+
 .btn-gray {
   width: 100%;
   border: 0;

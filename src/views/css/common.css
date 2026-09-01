@@ -289,11 +289,11 @@ body.vscode-high-contrast .connection-activity-provider {
   object-fit: contain;
 }
 
-.provider-logo-copilot {
+.provider-logo-theme-pair {
   position: relative;
 }
 
-.provider-logo-copilot img {
+.provider-logo-theme-pair img {
   position: absolute;
   inset: 0;
   display: block;
@@ -301,17 +301,17 @@ body.vscode-high-contrast .connection-activity-provider {
   height: 100%;
 }
 
-.provider-logo-copilot .provider-logo-copilot-white {
+.provider-logo-theme-pair .provider-logo-theme-white {
   display: none;
 }
 
-body.vscode-dark .provider-logo-copilot .provider-logo-copilot-black,
-body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-black {
+body.vscode-dark .provider-logo-theme-pair .provider-logo-theme-black,
+body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-black {
   display: none;
 }
 
-body.vscode-dark .provider-logo-copilot .provider-logo-copilot-white,
-body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
+body.vscode-dark .provider-logo-theme-pair .provider-logo-theme-white,
+body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   display: block;
 }
 
@@ -794,7 +794,7 @@ body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
 .chat-auto-inline {
   display: inline-flex;
   align-items: center;
-  flex: 1 1 128px;
+  flex: 0 1 auto;
   gap: 6px;
   min-width: 0;
   max-width: 260px;

@@ -237,21 +237,26 @@
 
 .s04-response-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   margin-top: 4px;
   min-width: 0;
 }
 
-.s04-response-action-buttons {
-  display: inline-flex;
+.s04-response-usage-row {
+  display: flex;
+  min-width: 0;
+}
+
+.s04-response-tools-row {
+  display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
   min-height: 28px;
-  flex-shrink: 0;
-  margin-left: auto;
+  min-width: 0;
 }
 
 .s04-response-action {
@@ -292,9 +297,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex: 1 1 168px;
   min-height: 28px;
   min-width: 0;
-  max-width: calc(100% - 78px);
+  max-width: 100%;
+  margin-right: auto;
   align-self: center;
 }
 
@@ -477,14 +484,14 @@
 .s04-response-usage {
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  margin-right: 2px;
+  min-height: 28px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--vscode-descriptionForeground);
   font-size: 0.74em;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .s04-mermaid {

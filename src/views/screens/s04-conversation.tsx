@@ -465,17 +465,19 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      <ReferencedFilesBadge files={referencedFiles} />
-
-      <div className="s04-response-action-buttons">
-        {tokenUsage && (
+      {tokenUsage && (
+        <div className="s04-response-usage-row">
           <span
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
             約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（{hasProviderReportedCost ? "応答時点の記録料金" : "参考料金概算"} {formatCostUsd(tokenUsage.estimatedCostUsd)}、確定請求額ではありません）
           </span>
-        )}
+        </div>
+      )}
+
+      <div className="s04-response-tools-row">
+        <ReferencedFilesBadge files={referencedFiles} />
 
         <button
           className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}

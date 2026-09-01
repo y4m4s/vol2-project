@@ -223,8 +223,17 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       copilotWhite: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-icon-white.svg")
       ).toString(),
-      lmStudio: webview.asWebviewUri(
+      lmStudioColor: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-color.svg")
+      ).toString(),
+      lmStudioWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-outline-white.svg")
+      ).toString(),
+      icons8OrcaBlack: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-black.png")
+      ).toString(),
+      icons8OrcaWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-white.png")
       ).toString()
     });
 
