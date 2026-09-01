@@ -121,6 +121,17 @@
   border-radius: 999px;
 }
 
+.s01-provider-btn {
+  border-width: 2px;
+  border-style: solid;
+}
+
+.s01-provider-btn--copilot {
+  border-color: #464646;
+  color: #ffffff;
+  background: #464646;
+}
+
 .s01-connect-btn {
   margin-top: 0;
 }
@@ -136,8 +147,49 @@
   background: var(--vscode-input-background);
 }
 
+.s01-local-connect-btn.s01-provider-btn--lm-studio {
+  border-color: #8b5cf6;
+  color: #ffffff;
+  background: #8b5cf6;
+}
+
+.s01-local-connect-btn.s01-provider-btn--orca-router {
+  border-color: #2D7DF6;
+  color: #ffffff;
+  background: #2D7DF6;
+}
+
 .s01-local-connect-btn:hover:not(:disabled) {
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.s01-provider-btn--copilot:hover:not(:disabled) {
+  opacity: 1;
+  background: #292929;
+}
+
+.s01-provider-btn--lm-studio:hover:not(:disabled) {
+  opacity: 1;
+  background: #7c3aed;
+}
+
+.s01-provider-btn--orca-router:hover:not(:disabled) {
+  opacity: 1;
+  background: #2655d8;
+}
+
+.s01-provider-btn.s01-provider-btn--copilot .provider-logo-theme-black,
+.s01-provider-btn.s01-provider-btn--orca-router .provider-logo-theme-black {
+  display: none;
+}
+
+.s01-provider-btn.s01-provider-btn--copilot .provider-logo-theme-white,
+.s01-provider-btn.s01-provider-btn--orca-router .provider-logo-theme-white {
+  display: block;
+}
+
+body.vscode-high-contrast .s01-provider-btn {
+  border-color: var(--vscode-contrastBorder, var(--vscode-foreground));
 }
 
 .s01-connect-icon {
