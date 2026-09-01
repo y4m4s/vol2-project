@@ -1,7 +1,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import { AiProviderId, GuidanceContext } from "../shared/types";
 import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
+import { escapeKnowledgeLikePattern, normalizeKnowledgeSearchText } from "./KnowledgeSearch";
 import { SerialTaskQueue } from "./SerialTaskQueue";
 
 type SqlValue = string | number | Uint8Array | null;
@@ -68,6 +70,8 @@ export class KnowledgeStore implements vscode.Disposable {
   private db?: SqlJsDatabase;
   private dbUri?: vscode.Uri;
   private readonly mutationQueue = new SerialTaskQueue();
+  // 全件取得は ViewModel を組み直すたびに走る。書き込みまで結果を使い回す。
+  private cachedRecords?: KnowledgeRecord[];
 
   public constructor(private readonly storageUri: vscode.Uri) {}
 
@@ -81,25 +85,27 @@ export class KnowledgeStore implements vscode.Disposable {
 
     this.db = await openDatabaseWithBackup(this.dbUri, SQL.Database);
     this.migrate();
+    this.invalidateCache();
     await this.persist();
   }
 
+  /**
+   * 絞り込みは SQL 側で行う。以前は全件を JS へ取り出してから includes していたため、
+   * 検索欄の 1 打鍵ごとに全レコードのマーシャリングが発生していた。
+   */
   public list(input: KnowledgeSearchInput): KnowledgeRecord[] {
-    const normalizedQuery = input.query.trim().toLowerCase();
-    const rows = this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
-
+    const normalizedQuery = normalizeKnowledgeSearchText(input.query.trim());
     if (!normalizedQuery) {
-      return rows;
+      return this.selectAllRecords();
     }
 
-    return rows.filter((item) => {
-      const haystack = [
-        item.title,
-        item.summary,
-        item.body
-      ].join("\n").toLowerCase();
-      return haystack.includes(normalizedQuery);
-    });
+    const pattern = `%${escapeKnowledgeLikePattern(normalizedQuery)}%`;
+    return this.selectRecords(
+      `SELECT * FROM knowledge
+        WHERE search_text LIKE ? ESCAPE '\\'
+        ORDER BY updated_at DESC`,
+      [pattern]
+    );
   }
 
   public get(id: string): KnowledgeRecord | undefined {
@@ -114,10 +120,7 @@ export class KnowledgeStore implements vscode.Disposable {
   }
 
   public listSourceAdviceIds(): string[] {
-    const sourceAdviceIds = this.selectRecords(
-      "SELECT * FROM knowledge WHERE source_advice_id IS NOT NULL ORDER BY updated_at DESC",
-      []
-    )
+    const sourceAdviceIds = this.selectAllRecords()
       .map((record) => record.sourceAdviceId)
       .filter((sourceAdviceId): sourceAdviceId is string => Boolean(sourceAdviceId));
 
@@ -143,10 +146,11 @@ export class KnowledgeStore implements vscode.Disposable {
 
       this.getDb().run(
         `INSERT INTO knowledge
-        (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        this.toSqlParams(record)
+        (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at, search_text)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [...this.toSqlParams(record), this.toSearchText(record)]
       );
+      this.invalidateCache();
       await this.persist();
       return record;
     });
@@ -170,7 +174,7 @@ export class KnowledgeStore implements vscode.Disposable {
 
       this.getDb().run(
       `UPDATE knowledge
-       SET title = ?, summary = ?, body = ?, status = ?, updated_at = ?
+       SET title = ?, summary = ?, body = ?, status = ?, updated_at = ?, search_text = ?
        WHERE id = ?`,
       [
         updated.title,
@@ -178,9 +182,11 @@ export class KnowledgeStore implements vscode.Disposable {
         updated.body,
         updated.status,
         updated.updatedAt,
+        this.toSearchText(updated),
         id
       ]
     );
+      this.invalidateCache();
       await this.persist();
       return updated;
     });
@@ -194,13 +200,14 @@ export class KnowledgeStore implements vscode.Disposable {
       }
 
       this.getDb().run("DELETE FROM knowledge WHERE id = ?", [id]);
+      this.invalidateCache();
       await this.persist();
       return true;
     });
   }
 
   public findReusable(context: GuidanceContext, limit = 3): KnowledgeRecord[] {
-    const records = this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
+    const records = this.selectAllRecords();
     const keywords = this.extractContextKeywords(context);
     if (keywords.length === 0) {
       return records.slice(0, limit);
@@ -243,11 +250,26 @@ export class KnowledgeStore implements vscode.Disposable {
 
       CREATE INDEX IF NOT EXISTS idx_knowledge_source_advice
         ON knowledge(source_advice_id);
+
+      CREATE INDEX IF NOT EXISTS idx_knowledge_updated
+        ON knowledge(updated_at DESC);
     `);
 
     this.ensureColumn("knowledge", "model_label", "TEXT");
     this.ensureColumn("knowledge", "provider_id", "TEXT");
     this.ensureColumn("knowledge", "model_id", "TEXT");
+    this.ensureColumn("knowledge", "search_text", "TEXT");
+    this.backfillSearchText();
+  }
+
+  private selectAllRecords(): KnowledgeRecord[] {
+    this.cachedRecords ??= this.selectRecords("SELECT * FROM knowledge ORDER BY updated_at DESC", []);
+    // 呼び出し側での並べ替えなどでキャッシュを壊されないよう、配列はコピーで返す。
+    return [...this.cachedRecords];
+  }
+
+  private invalidateCache(): void {
+    this.cachedRecords = undefined;
   }
 
   private selectRecords(sql: string, params: SqlValue[]): KnowledgeRecord[] {
@@ -296,6 +318,38 @@ export class KnowledgeStore implements vscode.Disposable {
       record.createdAt,
       record.updatedAt
     ];
+  }
+
+  private toSearchText(record: Pick<KnowledgeRecord, "title" | "summary" | "body">): string {
+    return normalizeKnowledgeSearchText(record.title, record.summary, record.body);
+  }
+
+  private backfillSearchText(): void {
+    const stmt = this.getDb().prepare(
+      "SELECT id, title, summary, body FROM knowledge WHERE search_text IS NULL"
+    );
+    const rows: Array<{ id: string; title: string; summary: string; body: string }> = [];
+
+    try {
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        rows.push({
+          id: String(row.id),
+          title: String(row.title),
+          summary: String(row.summary),
+          body: String(row.body)
+        });
+      }
+    } finally {
+      stmt.free();
+    }
+
+    for (const row of rows) {
+      this.getDb().run(
+        "UPDATE knowledge SET search_text = ? WHERE id = ?",
+        [normalizeKnowledgeSearchText(row.title, row.summary, row.body), row.id]
+      );
+    }
   }
 
   private ensureColumn(tableName: string, columnName: string, definition: string): void {
@@ -399,6 +453,6 @@ export class KnowledgeStore implements vscode.Disposable {
   }
 
   private createId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return randomUUID();
   }
 }

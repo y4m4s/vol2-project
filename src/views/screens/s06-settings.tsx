@@ -361,43 +361,41 @@ export function S06Settings() {
         onChange={setRequestIntervalSec}
       />
 
-      {providerId === "copilot" && (
-        <>
-          <div className="settings-section">
-            <span className="material-symbols-outlined">data_usage</span> 利用量
-          </div>
+      <div className="settings-section">
+        <span className="material-symbols-outlined">data_usage</span> 利用量
+      </div>
 
-          <div className="setting-item">
-            <SettingTitle icon="data_usage">NaviCom内の概算使用量ガード</SettingTitle>
-            <div className="setting-desc">
-              NaviComが数えた入出力トークンの合計です。上限に達すると自動助言を一時停止します（手動相談は警告のみ）。Copilotの請求額やAI Creditsとは一致しません
-              {viewModel?.providerId === "copilot" && viewModel.usageToday && (
-                <>
-                  <br />
-                  今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン（参考料金概算 {viewModel.usageToday.estimatedCostText}、請求額ではありません）
-                </>
+      {/* 上限は接続先を問わず適用する。実費が出る OrcaRouter にこそガードが要るため。 */}
+      <div className="setting-item">
+        <SettingTitle icon="data_usage">NaviCom内の概算使用量ガード</SettingTitle>
+        <div className="setting-desc">
+          NaviComが数えた入出力トークンの合計です。接続先を問わず、上限に達すると自動助言を一時停止します（手動相談は警告のみ）。実際の請求額やAI Creditsとは一致しません
+          {viewModel?.providerId === providerId && viewModel.usageToday && (
+            <>
+              <br />
+              今日の利用: {viewModel.usageToday.requestCount}回 / 約{formatTokenCount(viewModel.usageToday.totalTokens)}トークン
+              {viewModel.usageToday.recordedCostText && (
+                <>（応答時点の記録料金 {viewModel.usageToday.recordedCostText}、確定請求額ではありません）</>
               )}
-            </div>
-            <TokenLimitButtonGroup
-              value={dailyTokenLimit}
-              onChange={setDailyTokenLimit}
-            />
-          </div>
-        </>
-      )}
+            </>
+          )}
+        </div>
+        <TokenLimitButtonGroup
+          value={dailyTokenLimit}
+          onChange={setDailyTokenLimit}
+        />
+      </div>
 
       {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
-        <>
-          <div className="settings-section">
-            <span className="material-symbols-outlined">data_usage</span> 利用量
+        <div className="setting-item">
+          <SettingTitle icon="payments">OrcaRouterの本日利用量</SettingTitle>
+          <div className="setting-desc">
+            {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン
+            {viewModel.usageToday.recordedCostText
+              ? <> / 応答時点の記録料金 {viewModel.usageToday.recordedCostText}（確定請求額ではありません）</>
+              : <> / 料金情報はプロバイダー応答に含まれていません</>}
           </div>
-          <div className="setting-item">
-            <SettingTitle icon="payments">OrcaRouterの本日利用量</SettingTitle>
-            <div className="setting-desc">
-              {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン / 応答時点の記録・概算料金 {viewModel.usageToday.estimatedCostText}（確定請求額ではありません）
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {providerId === "copilot" && (

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
 import { AdviceService } from "../services/AdviceService";
@@ -9,6 +10,7 @@ import { KnowledgeStore } from "../services/KnowledgeStore";
 import { FeedbackStore } from "../services/FeedbackStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
+import { SingleFlightGate } from "../services/SingleFlightGate";
 import { UsageMeter } from "../services/UsageMeter";
 import { LmStudioServerService } from "../services/LmStudioServerService";
 import { LmStudioCoordinator } from "./coordinators/LmStudioCoordinator";
@@ -42,7 +44,6 @@ import { getSkill } from "../shared/skills";
 import {
   AdviceMode,
   AiProviderId,
-  AdviceTriggerReason,
   AssistanceDepth,
   ConversationEntry,
   GuidanceCard,
@@ -66,12 +67,13 @@ interface GuidanceExecutionOptions {
   userPrompt?: string;
   prepared?: PreparedGuidanceRequest;
   preview?: NavigatorSessionState["contextPreview"];
-  triggerReason?: AdviceTriggerReason;
   additionalContext?: string;
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
 }
+
+type GuidanceExecutionOptionsFactory = () => Promise<GuidanceExecutionOptions | undefined>;
 
 export class NavigatorController implements vscode.Disposable {
   private readonly sessionStore: SessionStore;
@@ -92,6 +94,8 @@ export class NavigatorController implements vscode.Disposable {
     tokenSource: vscode.CancellationTokenSource;
   };
   private nextGuidanceRequestId = 1;
+  // requestState がまだ "idle" のまま進む準備区間を含めて、助言リクエストを 1 本に絞る。
+  private readonly guidanceRequestGate = new SingleFlightGate();
   private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
@@ -206,8 +210,8 @@ export class NavigatorController implements vscode.Disposable {
       this.adviceScheduler.onDidChangeState(() => {
         this.didChangeStateEmitter.fire();
       }),
-      this.adviceScheduler.onDidTriggerAdvice((event) => {
-        void this.handleAutomaticGuidance(event.reason);
+      this.adviceScheduler.onDidTriggerAdvice(() => {
+        void this.handleAutomaticGuidance();
       })
     );
   }
@@ -233,9 +237,11 @@ export class NavigatorController implements vscode.Disposable {
       }),
       vscode.workspace.onDidOpenTextDocument((document) => {
         this.contextCollector.primeDocument(document);
+        this.invalidateRequestPlan();
       }),
       vscode.workspace.onDidCloseTextDocument((document) => {
         this.contextCollector.releaseDocument(document.uri);
+        this.invalidateRequestPlan();
       }),
       vscode.window.onDidChangeTextEditorSelection((event) => {
         this.refreshContextPreview();
@@ -249,14 +255,21 @@ export class NavigatorController implements vscode.Disposable {
         if (this.isActiveDocument(event.document.uri)) {
           this.refreshContextPreview();
           this.adviceScheduler.handleActivity("text_edit");
+        } else {
+          this.invalidateRequestPlan();
         }
       }),
       vscode.languages.onDidChangeDiagnostics((event) => {
         if (this.hasActiveDocumentDiagnosticChange(event.uris)) {
           this.refreshContextPreview();
           this.adviceScheduler.handleActivity("diagnostics_change");
+        } else {
+          this.invalidateRequestPlan();
         }
       }),
+      vscode.workspace.onDidCreateFiles(() => this.invalidateRequestPlan()),
+      vscode.workspace.onDidDeleteFiles(() => this.invalidateRequestPlan()),
+      vscode.workspace.onDidRenameFiles(() => this.invalidateRequestPlan()),
       vscode.lm.onDidChangeChatModels(() => {
         void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
       })
@@ -339,11 +352,23 @@ export class NavigatorController implements vscode.Disposable {
     await this.conversationCoordinator.deleteStream(streamId);
   }
 
+  public async deleteAllConversationStreams(): Promise<void> {
+    await this.conversationCoordinator.deleteAllStreams();
+  }
+
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
     const parsed = parseSlashInput(userPrompt);
     const guidanceKind = kind ?? (parsed.userPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
-      await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, true, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
+      await this.executeGuidanceRequest(() =>
+        this.buildCurrentContextGuidanceOptions(
+          parsed.userPrompt,
+          true,
+          additionalContext,
+          parsed.slashCommand,
+          parsed.slashCommandScope
+        )
+      );
       return;
     }
 
@@ -360,7 +385,15 @@ export class NavigatorController implements vscode.Disposable {
 
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
     const parsed = parseSlashInput(userPrompt);
-    await this.executeGuidanceRequest(await this.buildCurrentContextGuidanceOptions(parsed.userPrompt, false, additionalContext, parsed.slashCommand, parsed.slashCommandScope));
+    await this.executeGuidanceRequest(() =>
+      this.buildCurrentContextGuidanceOptions(
+        parsed.userPrompt,
+        false,
+        additionalContext,
+        parsed.slashCommand,
+        parsed.slashCommandScope
+      )
+    );
   }
 
   public cancelGuidanceRequest(): void {
@@ -480,58 +513,58 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private async handleAutomaticGuidance(reason: AdviceTriggerReason): Promise<void> {
-    const state = this.sessionStore.getState();
-    const settings = this.settingsService.getSettings();
+  private async handleAutomaticGuidance(): Promise<void> {
+    let fingerprint: string | undefined;
+    const result = await this.executeGuidanceRequest(async () => {
+      const state = this.sessionStore.getState();
+      const settings = this.settingsService.getSettings();
 
-    if (this.usageMeter.isTokenLimitExceeded(
-      this.connectionSettingsCoordinator.getCurrentProviderId(),
-      settings.dailyTokenLimit
-    )) {
-      this.pauseAutoAdviceForTokenLimit();
-      return;
-    }
+      if (this.usageMeter.isTokenLimitExceeded(
+        this.connectionSettingsCoordinator.getCurrentProviderId(),
+        settings.dailyTokenLimit
+      )) {
+        this.pauseAutoAdviceForTokenLimit();
+        return undefined;
+      }
 
-    const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
-    const additionalContext = this.getGuidanceAdditionalContext(state);
-    const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
-    const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
-      withAdditionalContext(guidanceContext, additionalContext),
-      preview,
-      settings,
-      "always",
-      "low"
-    ));
+      const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
+      const additionalContext = this.getGuidanceAdditionalContext(state);
+      const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
+      const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
+        withAdditionalContext(guidanceContext, additionalContext),
+        preview,
+        settings,
+        "always",
+        "low"
+      ));
 
-    if (!hasMeaningfulContext(prepared.context)) {
-      this.patchSession({
-        contextPreview: preview
-      });
-      return;
-    }
+      if (!hasMeaningfulContext(prepared.context)) {
+        this.patchSession({ contextPreview: preview });
+        return undefined;
+      }
 
-    const fingerprint = createAutomaticFingerprint(prepared.context);
-    if (SUPPRESS_DUPLICATE_AUTO_ADVICE && fingerprint === this.lastAutomaticContextFingerprint) {
-      this.patchSession({
-        contextPreview: preview,
-        statusMessage: {
-          kind: "info",
-          text: "類似した文脈のため、自動アドバイスを今回は控えました。"
-        }
-      });
-      return;
-    }
+      fingerprint = createAutomaticFingerprint(prepared.context);
+      if (SUPPRESS_DUPLICATE_AUTO_ADVICE && fingerprint === this.lastAutomaticContextFingerprint) {
+        this.patchSession({
+          contextPreview: preview,
+          statusMessage: {
+            kind: "info",
+            text: "類似した文脈のため、自動アドバイスを今回は控えました。"
+          }
+        });
+        return undefined;
+      }
 
-    const result = await this.executeGuidanceRequest({
-      kind: "always",
-      prepared,
-      preview,
-      triggerReason: reason,
-      additionalContext,
-      assistanceDepth: "low"
-    });
+      return {
+        kind: "always",
+        prepared,
+        preview,
+        additionalContext,
+        assistanceDepth: "low"
+      };
+    }, true);
 
-    if (result.ok) {
+    if (result.ok && fingerprint) {
       this.lastAutomaticContextFingerprint = fingerprint;
     }
   }
@@ -539,7 +572,7 @@ export class NavigatorController implements vscode.Disposable {
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
     const providerId = this.connectionSettingsCoordinator.getCurrentProviderId();
     const usage = this.usageMeter.getToday(providerId);
-    const cost = this.usageMeter.estimateCostUsd(providerId);
+    const cost = this.usageMeter.getRecordedCostUsd(providerId);
 
     return {
       date: usage.date,
@@ -547,7 +580,11 @@ export class NavigatorController implements vscode.Disposable {
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       totalTokens: usage.inputTokens + usage.outputTokens,
-      estimatedCostText: cost > 0 && cost < 0.001 ? "$0.001未満" : `$${cost.toFixed(3)}`,
+      recordedCostText: cost === undefined
+        ? undefined
+        : cost > 0 && cost < 0.001
+          ? "$0.001未満"
+          : `$${cost.toFixed(3)}`,
       tokenLimitExceeded: this.usageMeter.isTokenLimitExceeded(providerId, settings.dailyTokenLimit)
     };
   }
@@ -655,14 +692,31 @@ export class NavigatorController implements vscode.Disposable {
     };
   }
 
-  private async executeGuidanceRequest(options: GuidanceExecutionOptions): Promise<{ ok: boolean }> {
-    let state = this.sessionStore.getState();
+  /**
+   * 文脈収集を含む助言処理全体の入口ガード。
+   *
+   * single-flight で二重送信を防ぎ、preparing_guidance で文脈収集中の履歴削除や
+   * 設定変更など、別種の操作が割り込むことも防ぐ。
+   */
+  private async executeGuidanceRequest(
+    optionsOrFactory: GuidanceExecutionOptions | GuidanceExecutionOptionsFactory,
+    automatic = false
+  ): Promise<{ ok: boolean }> {
+    const state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
+      if (!automatic) {
+        this.patchSession({
+          statusMessage: {
+            kind: "info",
+            text: "別の助言を処理中です。完了してからもう一度送信してください。"
+          }
+        });
+      }
       return { ok: false };
     }
 
     if (this.connectionService.getState() !== "connected") {
-      if (options.kind !== "always") {
+      if (!automatic) {
         this.patchSession({
           connectionState: this.connectionService.getState(),
           statusMessage: {
@@ -674,7 +728,67 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
 
-    state = await this.prepareConversationForGuidance(state, options.kind);
+    const release = this.guidanceRequestGate.tryAcquire();
+    if (!release) {
+      if (!automatic) {
+        this.patchSession({
+          statusMessage: {
+            kind: "info",
+            text: "別の助言を処理中です。完了してからもう一度送信してください。"
+          }
+        });
+      }
+      return { ok: false };
+    }
+
+    this.patchSession({ requestState: "preparing_guidance" });
+
+    try {
+      const options = typeof optionsOrFactory === "function"
+        ? await optionsOrFactory()
+        : optionsOrFactory;
+      if (!options) {
+        return { ok: false };
+      }
+
+      const latestState = this.sessionStore.getState();
+      if (latestState.requestState !== "preparing_guidance") {
+        return { ok: false };
+      }
+      if (this.connectionService.getState() !== "connected") {
+        if (!automatic) {
+          this.patchSession({
+            connectionState: this.connectionService.getState(),
+            statusMessage: {
+              kind: "warning",
+              text: "文脈の準備中に AI との接続が切れました。再接続してからもう一度送信してください。"
+            }
+          });
+        }
+        return { ok: false };
+      }
+
+      return await this.runGuidanceRequest(options, latestState);
+    } finally {
+      const activeRequest = this.activeGuidanceRequest;
+      if (activeRequest) {
+        activeRequest.tokenSource.cancel();
+        activeRequest.tokenSource.dispose();
+        this.activeGuidanceRequest = undefined;
+      }
+      const requestState = this.sessionStore.getState().requestState;
+      if (requestState === "preparing_guidance" || requestState === "requesting_guidance") {
+        this.patchSession({ requestState: "idle" });
+      }
+      release();
+    }
+  }
+
+  private async runGuidanceRequest(
+    options: GuidanceExecutionOptions,
+    initialState: NavigatorSessionState
+  ): Promise<{ ok: boolean }> {
+    let state = await this.prepareConversationForGuidance(initialState, options.kind);
 
     const fallbackAdditionalContext = this.getGuidanceAdditionalContext(state);
     const receivedAdditionalContext = options.additionalContext !== undefined;
@@ -732,7 +846,9 @@ export class NavigatorController implements vscode.Disposable {
         ? this.clearSelectionPreview(preview)
         : preview;
 
-    const nextHistory = [...state.conversationHistory];
+    // 文脈収集の await をまたいでいるので、履歴は積む直前の最新状態から組み直す。
+    // 古い state から組むと、その間に入った更新を巻き戻してしまう。
+    const nextHistory = [...this.sessionStore.getState().conversationHistory];
     const userEntryText = resolveUserEntryText(
       options.kind,
       options.userPrompt,
@@ -844,12 +960,9 @@ export class NavigatorController implements vscode.Disposable {
         assistantEntry.tokenUsage = {
           inputTokens: result.usage.inputTokens,
           outputTokens: result.usage.outputTokens,
-          estimatedCostUsd: reportedCostUsd ?? this.usageMeter.estimateCostUsd(
-            this.connectionSettingsCoordinator.getCurrentProviderId(),
-            this.connectionSettingsCoordinator.getCurrentModelIdentifier(),
-            result.usage
-          ),
-          costSource: reportedCostUsd !== undefined ? "providerResponse" : undefined
+          ...(reportedCostUsd !== undefined
+            ? { costUsd: reportedCostUsd }
+            : {})
         };
       }
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
@@ -908,9 +1021,15 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private refreshContextPreview(): void {
+    this.requestPlanCoordinator.invalidate();
     this.patchSession({
       contextPreview: this.rememberSelectionContext(this.contextCollector.collectPreview())
     });
+  }
+
+  private invalidateRequestPlan(): void {
+    this.requestPlanCoordinator.invalidate();
+    this.didChangeStateEmitter.fire();
   }
 
   private async prepareConversationForGuidance(
@@ -1178,6 +1297,6 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   private createId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return randomUUID();
   }
 }

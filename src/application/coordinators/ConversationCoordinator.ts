@@ -4,8 +4,7 @@ import {
   ConversationRevisionConflictError,
   ConversationStore,
   ConversationStreamRecord,
-  DEFAULT_CONVERSATION_STREAM_TITLE,
-  StoredConversationEntry
+  DEFAULT_CONVERSATION_STREAM_TITLE
 } from "../../services/ConversationStore";
 import { SettingsService } from "../../services/SettingsService";
 import { UsageMeter } from "../../services/UsageMeter";
@@ -20,6 +19,8 @@ import {
   NavigatorSessionState
 } from "../../shared/types";
 import { normalizeAdditionalContext } from "../GuidanceInput";
+
+const MAX_CONVERSATION_STREAMS = 100;
 
 export interface ConversationCoordinatorHost {
   getState(): NavigatorSessionState;
@@ -54,6 +55,8 @@ export class ConversationCoordinator {
   }
 
   public async restore(): Promise<void> {
+    await this.reconcileFeedbackWithConversationHistory();
+    await this.enforceRetentionLimit();
     const existingStream = this.resolveInitialStream();
     if (!existingStream) {
       this.host.patchSession({
@@ -127,6 +130,39 @@ export class ConversationCoordinator {
     });
   }
 
+  public async deleteAllStreams(): Promise<void> {
+    const state = this.host.getState();
+    if (state.requestState !== "idle") return;
+
+    await this.store.deleteAllStreams();
+    let feedbackCleanupFailed = false;
+    try {
+      await this.feedbackStore.deleteAll();
+    } catch (error) {
+      feedbackCleanupFailed = true;
+      console.error("Failed to delete feedback associated with all conversations", error);
+    }
+
+    this.guidanceContexts.clear();
+    this.summarizedTitleStreamIds.clear();
+    this.host.resetAutomaticFingerprint();
+    this.host.patchSession({
+      conversationStreams: [],
+      activeConversationStreamId: undefined,
+      activeAdditionalContext: undefined,
+      latestGuidance: undefined,
+      conversationHistory: [],
+      selectedConversationId: undefined,
+      pendingFeedbackEntryId: undefined,
+      pendingFeedbackRating: undefined,
+      screenHistory: state.screenHistory.filter((screen) => screen !== "conversation" && screen !== "advice_detail" && screen !== "feedback_form"),
+      screen: state.screen === "history" ? "history" : this.host.resolveHomeScreen(),
+      statusMessage: feedbackCleanupFailed
+        ? { kind: "warning", text: "相談履歴は削除しましたが、関連する評価データの削除に失敗しました。" }
+        : { kind: "info", text: "相談履歴と関連する評価データをすべて削除しました。" }
+    });
+  }
+
   public async prepareForGuidance(state: NavigatorSessionState, kind: GuidanceKind): Promise<NavigatorSessionState> {
     if (kind === "always") {
       return state.screen === "main" ? this.createNewActiveStream() : this.ensureActiveStream();
@@ -162,6 +198,7 @@ export class ConversationCoordinator {
       if (!latestRecord || latestRecord.id !== record.id) return;
       saved = await this.store.saveStream({ ...latestRecord, title: recordToSave.title });
     }
+    await this.enforceRetentionLimit();
     this.host.patchSession({
       activeConversationStreamId: saved.id,
       activeAdditionalContext: saved.additionalContext,
@@ -200,6 +237,35 @@ export class ConversationCoordinator {
     return latestStream ? this.store.get(latestStream.id) : undefined;
   }
 
+  private async enforceRetentionLimit(): Promise<void> {
+    const removed = await this.store.pruneToLimit(MAX_CONVERSATION_STREAMS);
+    if (removed.streamIds.length === 0) return;
+    for (const streamId of removed.streamIds) {
+      this.summarizedTitleStreamIds.delete(streamId);
+    }
+    for (const entryId of removed.entryIds) {
+      this.guidanceContexts.delete(entryId);
+    }
+    try {
+      await this.feedbackStore.deleteByConversationEntryIds(removed.entryIds);
+    } catch (error) {
+      console.error("Failed to delete feedback for expired conversation history", error);
+    }
+  }
+
+  private async reconcileFeedbackWithConversationHistory(): Promise<void> {
+    const retainedEntryIds = new Set(this.store.listEntryIds());
+    const orphanedEntryIds = this.feedbackStore
+      .listConversationEntryIds()
+      .filter((entryId) => !retainedEntryIds.has(entryId));
+    if (orphanedEntryIds.length === 0) return;
+    try {
+      await this.feedbackStore.deleteByConversationEntryIds(orphanedEntryIds);
+    } catch (error) {
+      console.error("Failed to reconcile feedback with conversation history", error);
+    }
+  }
+
   private async createNewActiveStream(): Promise<NavigatorSessionState> {
     const additionalContext = this.host.getGuidanceAdditionalContext(this.host.getState());
     await this.discardActiveIfEmpty();
@@ -231,7 +297,7 @@ export class ConversationCoordinator {
     options: { screen?: NavigatorScreen; resetNavigation?: boolean; clearStatusMessage?: boolean } = {}
   ): void {
     this.guidanceContexts.clear();
-    const conversationHistory = this.toConversationHistory(record.entries);
+    const conversationHistory = record.entries.map((entry) => ({ ...entry }));
     const latestAssistant = [...conversationHistory].reverse().find((entry) => entry.role === "assistant");
     this.host.patchSession({
       conversationStreams: this.store.list(),
@@ -269,21 +335,10 @@ export class ConversationCoordinator {
       title: this.resolveTitle(existing?.title, state.conversationHistory),
       createdAt: existing?.createdAt ?? now,
       updatedAt: existing?.updatedAt ?? now,
-      entries: state.conversationHistory.map((entry) => ({
-        ...entry,
-        guidanceContext: this.guidanceContexts.get(entry.id)
-      })),
+      entries: state.conversationHistory.map((entry) => ({ ...entry })),
       additionalContext: normalizeAdditionalContext(state.activeAdditionalContext),
       revision: existing?.revision ?? 0
     };
-  }
-
-  private toConversationHistory(entries: StoredConversationEntry[]): ConversationEntry[] {
-    return entries.map((entry) => {
-      if (entry.guidanceContext) this.guidanceContexts.set(entry.id, entry.guidanceContext);
-      const { guidanceContext: _guidanceContext, ...conversationEntry } = entry;
-      return conversationEntry;
-    });
   }
 
   private resolveTitle(currentTitle: string | undefined, history: ConversationEntry[]): string {

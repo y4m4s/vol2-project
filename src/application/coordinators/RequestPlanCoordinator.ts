@@ -33,6 +33,9 @@ export interface RequestPlanCoordinatorHost {
 
 export class RequestPlanCoordinator {
   private detailedRequestPlan?: { key: string; plan: RequestPlanSnapshot };
+  // getCurrentPlan は ViewModel を組むたびに呼ばれる。入力が変わらない限り作り直さない。
+  private fallbackRequestPlan?: { key: string; plan: RequestPlanSnapshot };
+  private cacheGeneration = 0;
 
   public constructor(
     private readonly contextCollector: ContextCollector,
@@ -48,18 +51,31 @@ export class RequestPlanCoordinator {
       return this.detailedRequestPlan.plan;
     }
 
+    if (this.fallbackRequestPlan?.key === key) {
+      return this.fallbackRequestPlan.plan;
+    }
+
     const kind: GuidanceKind = state.contextPreview.selectedTextPreview ? "context" : "manual";
-    return this.externalize(this.requestPlanner.prepareGuidanceRequest(
+    const plan = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.host.getVisibleAdditionalContext(state)),
       state.contextPreview,
       settings,
       kind,
       resolveEffectiveAssistanceDepth(kind, state.assistanceDepth)
     )).requestPlan;
+    this.fallbackRequestPlan = { key, plan };
+    return plan;
   }
 
   public externalize(prepared: PreparedGuidanceRequest): PreparedGuidanceRequest {
     return createExternalGuidanceRequest(prepared.context, prepared.requestPlan, this.getWorkspaceRoots());
+  }
+
+  /** 文書・診断・ワークスペースの変更で、キーに表れない収集結果も破棄する。 */
+  public invalidate(): void {
+    this.cacheGeneration += 1;
+    this.detailedRequestPlan = undefined;
+    this.fallbackRequestPlan = undefined;
   }
 
   public async refresh(): Promise<void> {
@@ -73,6 +89,7 @@ export class RequestPlanCoordinator {
     const kind: GuidanceKind = preview.selectedTextPreview ? "context" : "manual";
     const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth);
     const requestPlanKey = this.createKey({ ...state, contextPreview: preview });
+    const requestPlanGeneration = this.cacheGeneration;
     const context = await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(context, this.host.getVisibleAdditionalContext(state)),
@@ -84,7 +101,10 @@ export class RequestPlanCoordinator {
 
     const currentState = this.host.getState();
     const currentPreview = this.contextCollector.collectPreview();
-    if (this.createKey({ ...currentState, contextPreview: currentPreview }) !== requestPlanKey) {
+    if (
+      this.cacheGeneration !== requestPlanGeneration ||
+      this.createKey({ ...currentState, contextPreview: currentPreview }) !== requestPlanKey
+    ) {
       return;
     }
 
@@ -130,7 +150,9 @@ export class RequestPlanCoordinator {
       activeFilePath: state.contextPreview.activeFilePath,
       selectedTextPreview: state.contextPreview.selectedTextPreview,
       diagnosticsSummary: state.contextPreview.diagnosticsSummary,
-      additionalContext: this.host.getVisibleAdditionalContext(state)
+      additionalContext: this.host.getVisibleAdditionalContext(state),
+      // 除外設定を変えたら作り直す必要があるため、キーに含める。
+      excludedGlobs: this.settingsService.getSettings().excludedGlobs.join("\n")
     });
   }
 }

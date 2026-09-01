@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import { NavigatorController } from "../application/NavigatorController";
 import { parseWebviewMessage } from "../shared/messages";
 
@@ -56,6 +57,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "deleteConversationStream":
             await this.controller.deleteConversationStream(message.id);
+            return;
+          case "deleteAllConversationStreams":
+            await this.controller.deleteAllConversationStreams();
             return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
@@ -242,7 +246,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
     <style>
       @font-face {
         font-family: "Material Symbols Outlined";
@@ -286,10 +290,5 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 }
 
 function getNonce(): string {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+  return randomUUID();
 }

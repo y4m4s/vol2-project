@@ -138,7 +138,9 @@ export class LmStudioClient {
     const cancellation = cancellationToken?.onCancellationRequested(() => controller.abort());
 
     try {
-      const response = await fetch(url, { ...init, signal: controller.signal });
+      // localhost に固定していても、そのポートを取った別プロセスが 307/308 を返せば
+      // プロンプト本文ごと外部へ転送されてしまう。リダイレクトは追わない。
+      const response = await fetch(url, { ...init, redirect: "error", signal: controller.signal });
       const rawText = await response.text();
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {

@@ -11,6 +11,40 @@
   background: var(--vscode-sideBar-background);
 }
 
+.s08-history-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0 12px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.78em;
+}
+
+.s08-delete-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  min-width: max-content;
+  margin: 0;
+  padding: 5px 8px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+}
+
+.s08-delete-all-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.s08-delete-all-btn:hover:not(:disabled),
+.s08-delete-all-btn.confirming-delete {
+  color: #f87171;
+  background: color-mix(in srgb, #f87171 14%, transparent);
+}
+
 .s08-head {
   display: flex;
   align-items: flex-start;

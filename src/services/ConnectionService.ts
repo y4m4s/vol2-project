@@ -102,11 +102,6 @@ export class ConnectionService {
     return this.connectedModel;
   }
 
-  // Kept temporarily for Copilot-specific callers during the provider migration.
-  public getModel(): vscode.LanguageModelChat | undefined {
-    return this.copilotModel;
-  }
-
   public getModelOptions(): CopilotModelOption[] {
     return this.availableModelOptions;
   }
@@ -204,11 +199,6 @@ export class ConnectionService {
       this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
     }
     return this.availableOrcaRouterModelOptions;
-  }
-
-  public async connect(settings: NavigatorSettings): Promise<ConnectionState> {
-    const result = await this.connectAndActivate(settings);
-    return result.connectionState;
   }
 
   public async connectAndActivate(settings: NavigatorSettings): Promise<ConnectionActivationResult> {

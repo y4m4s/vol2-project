@@ -5,6 +5,7 @@
   "version": "0.0.1",
   "publisher": "local-dev",
   "private": true,
+  "license": "UNLICENSED",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -29,6 +30,12 @@
     "onCommand:aiPairNavigator.runEvalLive"
   ],
   "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Restricted Mode allows viewing saved local data and settings, but AI connections, workspace context collection, and LM Studio process control require a trusted workspace."
+    }
+  },
   "contributes": {
     "commands": [
       {
@@ -86,12 +93,15 @@
     }
   },
   "scripts": {
-    "compile": "npm run compile:ext && npm run typecheck:webview && npm run build:webview && npm run check:webview-size",
+    "lint": "eslint src test",
+    "audit:dependencies": "npm audit --audit-level=high",
+    "compile": "npm run compile:ext && npm run typecheck:webview && npm run build:webview && npm run check:webview-size && npm run check:icon-subset",
     "compile:ext": "tsc -p ./",
     "typecheck:webview": "tsc -p tsconfig.webview.json",
     "build:webview": "node scripts/clean-webview-output.mjs && esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --define:process.env.NODE_ENV=\\\"production\\\" --minify",
     "check:webview-size": "node scripts/check-webview-size.mjs",
-    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackTendencyPolicy.test.js .test-out/test/FeedbackCoordinator.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/OrcaRouterClient.test.js .test-out/test/OrcaRouterErrorPolicy.test.js .test-out/test/OrcaRouterCredentialStore.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js .test-out/test/RequestPlanner.test.js .test-out/test/WorkspacePathPolicy.test.js",
+    "check:icon-subset": "node scripts/check-icon-subset.mjs",
+    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackTendencyPolicy.test.js .test-out/test/FeedbackCoordinator.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/OrcaRouterClient.test.js .test-out/test/OrcaRouterErrorPolicy.test.js .test-out/test/OrcaRouterCredentialStore.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js .test-out/test/RequestPlanner.test.js .test-out/test/WorkspacePathPolicy.test.js .test-out/test/GlobMatch.test.js .test-out/test/PromptBuilder.test.js .test-out/test/UsageMeter.test.js .test-out/test/SingleFlightGate.test.js .test-out/test/KnowledgeSearch.test.js",
     "eval": "npm run compile:ext && node out/eval/run-static.js",
     "watch": "tsc -watch -p ./",
     "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
@@ -103,10 +113,12 @@
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.99.0",
     "esbuild": "^0.28.0",
+    "eslint": "^10.9.1",
     "mermaid": "^11.16.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.69.0"
   },
   "dependencies": {
     "sql.js": "^1.14.1"

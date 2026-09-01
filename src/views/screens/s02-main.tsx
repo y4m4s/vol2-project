@@ -89,17 +89,29 @@ export function S02Main() {
         <div className={`s02-usage ${usageToday.tokenLimitExceeded ? "exceeded" : ""}`}>
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">
-            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（参考料金概算 {usageToday.estimatedCostText}、請求額ではありません）
+            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン
           </span>
           {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>
       )}
 
       {providerId === "orcaRouter" && usageToday && (
-        <div className="s02-usage">
+        <div className={`s02-usage ${usageToday.tokenLimitExceeded ? "exceeded" : ""}`}>
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">
-            今日の利用 {usageToday.requestCount}回 / {formatTokenCount(usageToday.totalTokens)}トークン / 応答時点の記録・概算料金 {usageToday.estimatedCostText}（確定請求額ではありません）
+            今日の利用 {usageToday.requestCount}回 / {formatTokenCount(usageToday.totalTokens)}トークン
+            {usageToday.recordedCostText && <> / 応答時点の記録料金 {usageToday.recordedCostText}（確定請求額ではありません）</>}
+          </span>
+          {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
+        </div>
+      )}
+
+      {/* ローカル実行は普段の利用量を出さないが、上限に当たって自動助言が止まったことは伝える。 */}
+      {providerId === "lmStudio" && usageToday?.tokenLimitExceeded && (
+        <div className="s02-usage exceeded">
+          <span className="material-symbols-outlined">data_usage</span>
+          <span className="s02-usage-text">
+            今日の利用 {usageToday.requestCount}回 / 約{formatTokenCount(usageToday.totalTokens)}トークン（設定した上限に達したため自動助言を停止しました）
           </span>
           {usageModelLabel && <span className="s02-usage-model">{usageModelLabel}</span>}
         </div>

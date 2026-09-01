@@ -47,7 +47,6 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     // activeAdditionalContext を deps に含めない:
     // main 画面で追加コンテキストを入力するたびにラウンドトリップで変化するため、
     // 入力中にメイン入力欄がクリアされたりパネルが閉じるのを防ぐ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 
   useEffect(() => {

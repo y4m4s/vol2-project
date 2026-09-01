@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { isPathExcluded } from "./globMatch";
 import {
   DiagnosticSeverityLabel,
   DiagnosticSummary,
@@ -777,21 +778,9 @@ export class ContextCollector {
     return [...new Set([...settings.protectedExcludedGlobs, ...settings.excludedGlobs])];
   }
 
-  private isPathExcluded(filePath: string, patterns: string[]): boolean {
-    const normalizedPath = filePath.replaceAll("\\", "/");
-    return patterns.some((pattern) => this.globToRegExp(pattern).test(normalizedPath));
-  }
-
-  private globToRegExp(pattern: string): RegExp {
-    const escaped = pattern
-      .replaceAll("\\", "/")
-      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*\*/g, "__DOUBLE_STAR__")
-      .replace(/\*/g, "[^/]*")
-      .replace(/__DOUBLE_STAR__/g, ".*")
-      .replace(/\?/g, ".");
-
-    return new RegExp(`^${escaped}$`);
+  // 一致判定は globMatch に集約する（RequestPlanner と同じ実装を使うため）。
+  private isPathExcluded(filePath: string, patterns: readonly string[]): boolean {
+    return isPathExcluded(filePath, patterns);
   }
 
   private collectRelatedSymbols(editor: vscode.TextEditor, selectedText?: string): string[] {

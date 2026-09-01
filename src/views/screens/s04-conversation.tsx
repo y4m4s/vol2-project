@@ -432,7 +432,7 @@ function ResponseActions(
     onSave: () => void;
   }
 ) {
-  const hasProviderReportedCost = tokenUsage?.costSource === "providerResponse" || tokenUsage?.costIsExact === true;
+  const recordedCostUsd = tokenUsage?.costUsd;
 
   const [pendingSave, setPendingSave] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -471,7 +471,10 @@ function ResponseActions(
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
-            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（{hasProviderReportedCost ? "応答時点の記録料金" : "参考料金概算"} {formatCostUsd(tokenUsage.estimatedCostUsd)}、確定請求額ではありません）
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン
+            {recordedCostUsd !== undefined && (
+              <>（応答時点の記録料金 {formatCostUsd(recordedCostUsd)}、確定請求額ではありません）</>
+            )}
           </span>
         </div>
       )}

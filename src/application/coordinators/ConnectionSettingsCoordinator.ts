@@ -58,10 +58,6 @@ export class ConnectionSettingsCoordinator {
     return this.connectionService.getProviderId();
   }
 
-  public getCurrentModelIdentifier(): string | undefined {
-    return this.connectionService.getConnectedModel()?.modelId;
-  }
-
   public getCurrentModelLabel(): string | undefined {
     const model = this.connectionService.getConnectedModel();
     if (!model) {

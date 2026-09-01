@@ -40,13 +40,6 @@ export function excludes(substring: string, name?: string): Check {
   };
 }
 
-export function matches(re: RegExp, name?: string): Check {
-  return {
-    name: name ?? `matches(${re})`,
-    run: (text) => (re.test(text) ? { passed: true } : { passed: false, detail: `expected to match: ${re}` })
-  };
-}
-
 export function maxApproxTokens(max: number, name?: string): Check {
   return {
     name: name ?? `maxApproxTokens(${max})`,

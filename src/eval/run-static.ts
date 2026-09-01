@@ -11,7 +11,6 @@ import { formatReport, runStatic } from "./runner";
  */
 function main(): void {
   const report = runStatic(SCENARIOS);
-  // eslint-disable-next-line no-console
   console.log(formatReport(report));
   process.exit(report.failed > 0 ? 1 : 0);
 }

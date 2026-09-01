@@ -65,9 +65,9 @@ Bad:
 
 保存先は `<globalStorageUri>/feedback.sqlite`。評価、選択理由、任意コメント、相談種別を保存する。回答本文は新規評価データへ保存しない。
 
-既存DBとの互換性のため `advice_text_excerpt` / `summary_text` / `summary_status` 列は残しているが、新規評価は回答抜粋を空文字、`summary_text = NULL`、`summary_status = 'skipped'` とし、読取時には使用しない。
+`PRAGMA user_version = 2` の移行で、常に空だった `advice_text_excerpt` と、使用されなくなった `summary_text` / `summary_status` を削除する。旧DBの重複評価削除とテーブル再構築は v2 への更新時に一度だけ行い、毎起動時には実行しない。
 
-会話削除時は、削除対象の会話エントリIDに紐づく評価を `FeedbackStore.deleteByConversationEntryIds()` で削除する。別DB間の処理なので、評価削除だけ失敗した場合は警告を表示する。
+会話削除時は、削除対象の会話エントリIDに紐づく評価を `FeedbackStore.deleteByConversationEntryIds()` で削除する。履歴の一括削除時は評価DBも全件削除する。別DB間の処理なので、評価削除だけ失敗した場合は警告を表示し、次回起動時に会話DBと照合して孤立した評価を再度削除する。保持上限で古い会話が自動削除された場合も同じ関連評価を削除する。
 
 ## 安全性
 

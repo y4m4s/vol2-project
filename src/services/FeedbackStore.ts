@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import {
   AdviceFeedbackInput,
   AssistanceDepth,
@@ -34,6 +35,8 @@ interface SqlJsStatic {
 const initSqlJs = require("sql.js") as (config?: {
   locateFile?: (file: string) => string;
 }) => Promise<SqlJsStatic>;
+
+const FEEDBACK_SCHEMA_VERSION = 2;
 
 export interface AdviceFeedbackMeta {
   kind: GuidanceKind;
@@ -90,8 +93,7 @@ export class FeedbackStore implements vscode.Disposable {
         this.getDb().run(
           `UPDATE advice_feedback
               SET rating = ?, advice_kind = ?, assistance_depth = ?, slash_command = ?,
-                  advice_text_excerpt = '', reasons_json = ?, comment = ?, summary_text = NULL,
-                  summary_status = 'skipped', created_at = ?
+                  reasons_json = ?, comment = ?, created_at = ?
             WHERE id = ?`,
           [...values, existingId]
         );
@@ -102,8 +104,8 @@ export class FeedbackStore implements vscode.Disposable {
       const id = this.createId();
       this.getDb().run(
         `INSERT INTO advice_feedback
-         (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, reasons_json, comment, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           input.conversationEntryId,
@@ -111,11 +113,8 @@ export class FeedbackStore implements vscode.Disposable {
           meta.kind,
           meta.assistanceDepth ?? null,
           meta.slashCommand ?? null,
-          "",
           reasonsJson,
           comment,
-          null,
-          "skipped",
           now
         ]
       );
@@ -126,6 +125,20 @@ export class FeedbackStore implements vscode.Disposable {
 
   public getTendencySummary(scope: FeedbackTendencyScope, limit = 5): FeedbackTendencySummary {
     return collectFeedbackTendency(this.selectTendencyCandidates(scope), limit);
+  }
+
+  public listConversationEntryIds(): string[] {
+    const stmt = this.getDb().prepare("SELECT conversation_entry_id FROM advice_feedback");
+    const ids: string[] = [];
+    try {
+      while (stmt.step()) {
+        const value = stmt.getAsObject().conversation_entry_id;
+        if (typeof value === "string" && value.length > 0) ids.push(value);
+      }
+      return ids;
+    } finally {
+      stmt.free();
+    }
   }
 
   public async deleteByConversationEntryIds(conversationEntryIds: readonly string[]): Promise<void> {
@@ -144,44 +157,134 @@ export class FeedbackStore implements vscode.Disposable {
     });
   }
 
+  public async deleteAll(): Promise<void> {
+    await this.mutationQueue.run(async () => {
+      this.getDb().run("DELETE FROM advice_feedback");
+      await this.persist();
+    });
+  }
+
   public dispose(): void {
     this.db?.close();
     this.db = undefined;
   }
 
   private migrate(): void {
-    this.getDb().run(`
-      CREATE TABLE IF NOT EXISTS advice_feedback (
-        id TEXT PRIMARY KEY,
-        conversation_entry_id TEXT NOT NULL,
-        rating TEXT NOT NULL CHECK (rating IN ('good', 'bad')),
-        advice_kind TEXT NOT NULL,
-        assistance_depth TEXT,
-        slash_command TEXT,
-        advice_text_excerpt TEXT NOT NULL,
-        reasons_json TEXT,
-        comment TEXT,
-        summary_text TEXT,
-        summary_status TEXT NOT NULL CHECK (summary_status IN ('ok', 'failed', 'skipped')) DEFAULT 'ok',
-        created_at TEXT NOT NULL
-      );
+    const db = this.getDb();
+    const version = this.getUserVersion();
+    if (version > FEEDBACK_SCHEMA_VERSION) {
+      throw new Error(`Unsupported feedback database schema version: ${version}`);
+    }
 
-      DELETE FROM advice_feedback
-       WHERE rowid NOT IN (
-         SELECT MAX(rowid)
-           FROM advice_feedback
-          GROUP BY conversation_entry_id
-       );
+    if (!this.tableExists("advice_feedback")) {
+      db.run(`
+        CREATE TABLE advice_feedback (
+          id TEXT PRIMARY KEY,
+          conversation_entry_id TEXT NOT NULL UNIQUE,
+          rating TEXT NOT NULL CHECK (rating IN ('good', 'bad')),
+          advice_kind TEXT NOT NULL,
+          assistance_depth TEXT,
+          slash_command TEXT,
+          reasons_json TEXT,
+          comment TEXT,
+          created_at TEXT NOT NULL
+        );
 
+        CREATE INDEX idx_advice_feedback_scope_created
+          ON advice_feedback(advice_kind, assistance_depth, slash_command, created_at DESC);
+
+        PRAGMA user_version = ${FEEDBACK_SCHEMA_VERSION};
+      `);
+      return;
+    }
+
+    if (version < FEEDBACK_SCHEMA_VERSION || this.hasColumn("advice_feedback", "advice_text_excerpt")) {
+      this.migrateToVersion2();
+      return;
+    }
+
+    db.run(`
       CREATE UNIQUE INDEX IF NOT EXISTS idx_advice_feedback_entry_unique
         ON advice_feedback(conversation_entry_id);
-
-      DROP INDEX IF EXISTS idx_advice_feedback_entry;
-      DROP INDEX IF EXISTS idx_advice_feedback_rating_created;
 
       CREATE INDEX IF NOT EXISTS idx_advice_feedback_scope_created
         ON advice_feedback(advice_kind, assistance_depth, slash_command, created_at DESC);
     `);
+  }
+
+  private migrateToVersion2(): void {
+    const db = this.getDb();
+    db.run("BEGIN IMMEDIATE");
+    try {
+      db.run(`
+        CREATE TABLE advice_feedback_v2 (
+          id TEXT PRIMARY KEY,
+          conversation_entry_id TEXT NOT NULL UNIQUE,
+          rating TEXT NOT NULL CHECK (rating IN ('good', 'bad')),
+          advice_kind TEXT NOT NULL,
+          assistance_depth TEXT,
+          slash_command TEXT,
+          reasons_json TEXT,
+          comment TEXT,
+          created_at TEXT NOT NULL
+        );
+
+        INSERT INTO advice_feedback_v2
+          (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, reasons_json, comment, created_at)
+        SELECT id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, reasons_json, comment, created_at
+          FROM advice_feedback
+         WHERE rowid IN (
+           SELECT MAX(rowid)
+             FROM advice_feedback
+            GROUP BY conversation_entry_id
+         );
+
+        DROP TABLE advice_feedback;
+        ALTER TABLE advice_feedback_v2 RENAME TO advice_feedback;
+
+        CREATE INDEX idx_advice_feedback_scope_created
+          ON advice_feedback(advice_kind, assistance_depth, slash_command, created_at DESC);
+
+        PRAGMA user_version = ${FEEDBACK_SCHEMA_VERSION};
+      `);
+      db.run("COMMIT");
+    } catch (error) {
+      db.run("ROLLBACK");
+      throw error;
+    }
+  }
+
+  private getUserVersion(): number {
+    const stmt = this.getDb().prepare("PRAGMA user_version");
+    try {
+      return stmt.step() ? Number(stmt.getAsObject().user_version ?? 0) : 0;
+    } finally {
+      stmt.free();
+    }
+  }
+
+  private tableExists(tableName: string): boolean {
+    const stmt = this.getDb().prepare(
+      "SELECT 1 AS found FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1"
+    );
+    try {
+      stmt.bind([tableName]);
+      return stmt.step();
+    } finally {
+      stmt.free();
+    }
+  }
+
+  private hasColumn(tableName: string, columnName: string): boolean {
+    const stmt = this.getDb().prepare(`PRAGMA table_info(${tableName})`);
+    try {
+      while (stmt.step()) {
+        if (String(stmt.getAsObject().name) === columnName) return true;
+      }
+      return false;
+    } finally {
+      stmt.free();
+    }
   }
 
   private selectTendencyCandidates(scope: FeedbackTendencyScope): FeedbackTendencyCandidate[] {
@@ -263,6 +366,6 @@ export class FeedbackStore implements vscode.Disposable {
   }
 
   private createId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return randomUUID();
   }
 }

@@ -28,6 +28,12 @@ test("Good／Bad共通のフィードバック理由を受け入れる", () => {
   assert.deepEqual(parseWebviewMessage({ type: "cancelFeedback" }), { type: "cancelFeedback" });
 });
 
+test("相談履歴の一括削除メッセージを受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "deleteAllConversationStreams" }), {
+    type: "deleteAllConversationStreams"
+  });
+});
+
 test("validates token guard settings at the execution boundary", () => {
   const valid = {
     type: "saveSettings",

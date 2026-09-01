@@ -181,7 +181,7 @@ npm run eval
 
 | 部品 | 用途 |
 |---|---|
-| `includes` / `excludes` / `matches` | 文字列・正規表現の包含/除外 |
+| `includes` / `excludes` | 文字列の包含/除外 |
 | `maxApproxTokens` | 概算トークン数の上限（コスト回帰の歯止め）|
 | `hasMermaidBlock` | 応答に ` ```mermaid ` を含む（/flow）|
 | `hasNoFencedCode` | 応答にコードフェンスを含まない（/hint 等）|

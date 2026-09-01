@@ -174,9 +174,8 @@ Controller 側では、送信テキストを以下のように解析する。
 - `slash_command`
 - `slash_command_scope`
 - `request_plan_json`
-- `guidance_context_json`
 
-これにより、過去の回答がどのコマンド、どの深さ、どの文脈スコープで生成されたかを後から参照できる。
+これにより、過去の回答がどのコマンド、どの深さ、どの文脈スコープで生成されたかを後から参照できる。送信時のソース断片を含む `guidance_context_json` は平文で残さず、応答生成中だけメモリに保持する。
 
 ## 現状の制約
 

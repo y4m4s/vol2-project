@@ -3,15 +3,6 @@ import { AiProviderId } from "../shared/types";
 
 const STORAGE_KEY = "aiPairNavigator.usage.daily";
 
-const MODEL_PRICES_PER_MTOK: Array<{ match: string; input: number; output: number }> = [
-  { match: "gpt54nano", input: 0.2, output: 1.25 },
-  { match: "gpt5mini", input: 0.25, output: 2.0 },
-  { match: "raptormini", input: 0.25, output: 2.0 },
-  { match: "gemini3flash", input: 0.5, output: 3.0 }
-];
-
-const FALLBACK_PRICE_PER_MTOK = { input: 0.25, output: 2.0 };
-
 export interface DailyUsage {
   date: string;
   requestCount: number;
@@ -76,29 +67,32 @@ export class UsageMeter {
     await this.storage.update(STORAGE_KEY, { ...total, buckets } satisfies StoredDailyUsage);
   }
 
+  /**
+   * 上限は全プロバイダーに適用する。
+   *
+   * 以前は Copilot 限定だったため、実費が発生する OrcaRouter で常時モードの自動送信を
+   * 止める仕組みが存在しなかった。ローカル実行の LM Studio も含めて同じ上限で扱う
+   * （送信量そのものを抑えるための設定であり、課金の有無とは別の目的のため）。
+   */
   public isTokenLimitExceeded(providerId: AiProviderId, tokenLimit: number): boolean {
+    if (tokenLimit <= 0) {
+      return false;
+    }
+
     const usage = this.getToday(providerId);
-    return providerId === "copilot" && tokenLimit > 0 && usage.inputTokens + usage.outputTokens >= tokenLimit;
+    return usage.inputTokens + usage.outputTokens >= tokenLimit;
   }
 
-  public estimateCostUsd(
-    providerId: AiProviderId,
-    modelId?: string,
-    usage?: Pick<DailyUsage, "inputTokens" | "outputTokens">
-  ): number {
+  public getRecordedCostUsd(providerId: AiProviderId): number | undefined {
     if (providerId === "lmStudio") {
       return 0;
     }
-    if (usage) {
-      return this.estimateUsageCost(modelId, usage);
+    const buckets = this.getBuckets(this.getStoredToday()).filter((bucket) => bucket.providerId === providerId);
+    if (buckets.length === 0) return undefined;
+    if (buckets.some((bucket) => bucket.costUsd === undefined || bucket.costedRequestCount !== bucket.requestCount)) {
+      return undefined;
     }
-    return this.getBuckets(this.getStoredToday())
-      .filter((bucket) => bucket.providerId === providerId)
-      .reduce((total, bucket) => total + (
-        providerId === "orcaRouter" && bucket.costUsd !== undefined && bucket.costedRequestCount === bucket.requestCount
-          ? bucket.costUsd
-          : this.estimateUsageCost(bucket.modelId, bucket)
-      ), 0);
+    return buckets.reduce((total, bucket) => total + (bucket.costUsd ?? 0), 0);
   }
 
   private getStoredToday(): StoredDailyUsage {
@@ -158,17 +152,6 @@ export class UsageMeter {
       }),
       { date, requestCount: 0, inputTokens: 0, outputTokens: 0 }
     );
-  }
-
-  private estimateUsageCost(modelId: string | undefined, usage: Pick<DailyUsage, "inputTokens" | "outputTokens">): number {
-    const price = this.resolvePrice(modelId);
-    return (usage.inputTokens * price.input + usage.outputTokens * price.output) / 1_000_000;
-  }
-
-  private resolvePrice(modelId: string | undefined): { input: number; output: number } {
-    if (!modelId) return FALLBACK_PRICE_PER_MTOK;
-    const normalized = modelId.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    return MODEL_PRICES_PER_MTOK.find((entry) => normalized.includes(entry.match)) ?? FALLBACK_PRICE_PER_MTOK;
   }
 
   private todayKey(): string {

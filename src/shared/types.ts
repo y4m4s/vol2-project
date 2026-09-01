@@ -35,7 +35,13 @@ export type NavigatorScreen =
   | "knowledge_detail"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge" | "saving_feedback";
+export type RequestState =
+  | "idle"
+  | "connecting"
+  | "preparing_guidance"
+  | "requesting_guidance"
+  | "saving_knowledge"
+  | "saving_feedback";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
@@ -156,7 +162,8 @@ export interface NavigatorSettings {
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyTokenLimit: number;
-  protectedExcludedGlobs: string[];
+  // ユーザーが外せない保護パターン。実体は services/protectedGlobs にあり書き換えない。
+  protectedExcludedGlobs: readonly string[];
   excludedGlobs: string[];
 }
 
@@ -206,7 +213,7 @@ export interface UsageTodayViewData {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-  estimatedCostText: string;
+  recordedCostText?: string;
   tokenLimitExceeded: boolean;
 }
 
@@ -255,10 +262,7 @@ export interface GuidanceCard {
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
-  estimatedCostUsd: number;
-  costSource?: "providerResponse";
-  /** @deprecated Kept so existing conversation records remain readable. */
-  costIsExact?: boolean;
+  costUsd?: number;
 }
 
 export interface ConversationEntry {

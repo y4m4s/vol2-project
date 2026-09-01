@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 interface ConfirmDeleteButtonProps {
   className: string;
   ariaLabel: string;
+  label?: string;
   disabled?: boolean;
   onConfirm: () => void;
 }
@@ -12,6 +13,7 @@ const CONFIRM_TIMEOUT_MS = 3_000;
 export function ConfirmDeleteButton({
   className,
   ariaLabel,
+  label,
   disabled = false,
   onConfirm
 }: ConfirmDeleteButtonProps) {
@@ -47,6 +49,7 @@ export function ConfirmDeleteButton({
       <span className="material-symbols-outlined" aria-hidden="true">
         {armed ? "delete_forever" : "delete"}
       </span>
+      {label && <span>{armed ? "もう一度押して確定" : label}</span>}
     </button>
   );
 }

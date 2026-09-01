@@ -12,6 +12,7 @@ import {
   SlashCommandScope
 } from "../shared/types";
 import { applySkillContextPreset, getSkillContextPreset } from "./contextPreset";
+import { isPathExcluded } from "./globMatch";
 
 export interface PreparedGuidanceRequest {
   context: GuidanceContext;
@@ -394,25 +395,13 @@ export class RequestPlanner {
     return values.join(" / ");
   }
 
-  private isPathExcluded(filePath: string, patterns: string[]): boolean {
-    const normalizedPath = filePath.replaceAll("\\", "/");
-    return patterns.some((pattern) => this.globToRegExp(pattern).test(normalizedPath));
+  // 一致判定は globMatch に集約する（ContextCollector と同じ実装を使うため）。
+  private isPathExcluded(filePath: string, patterns: readonly string[]): boolean {
+    return isPathExcluded(filePath, patterns);
   }
 
   private getEffectiveExcludedGlobs(settings: NavigatorSettings): string[] {
     return [...new Set([...settings.protectedExcludedGlobs, ...settings.excludedGlobs])];
-  }
-
-  private globToRegExp(pattern: string): RegExp {
-    const escaped = pattern
-      .replaceAll("\\", "/")
-      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*\*/g, "__DOUBLE_STAR__")
-      .replace(/\*/g, "[^/]*")
-      .replace(/__DOUBLE_STAR__/g, ".*")
-      .replace(/\?/g, ".");
-
-    return new RegExp(`^${escaped}$`);
   }
 
   private byteLength(value: string): number {

@@ -265,11 +265,10 @@ stop(baseUrl: string): Promise<LmStudioServerStatus>
 
 検出順:
 
-1. Extension Host の `PATH` にある `lms`
-2. macOS / Linux の `~/.lmstudio/bin/lms`
-3. Windows の LM Studio 標準 CLI 配置先
+1. LM Studio の既知の絶対配置先 `~/.lmstudio/bin/lms`（Windows は `lms.exe`）
+2. Extension Host の `PATH` にある `lms`
 
-候補ごとに `server status --json --quiet` を `execFile` で実行する。存在しない候補は次へ進み、すべて失敗した場合は `cliUnavailable` とする。
+候補ごとに `server status --json --quiet` を `execFile` で実行する。絶対パスを先にすることでカレントディレクトリの同名ファイルを拾う余地を減らす。存在しない候補は次へ進み、すべて失敗した場合は `cliUnavailable` とする。
 
 利用者が入力した任意コマンドや任意パスは実行しない。
 

@@ -332,7 +332,10 @@ export class LmStudioServerService implements vscode.Disposable {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
     try {
-      const response = await fetch(`${origin}/api/v1/models`, { signal: controller.signal });
+      const response = await fetch(`${origin}/api/v1/models`, {
+        redirect: "error",
+        signal: controller.signal
+      });
       const text = await response.text();
       return classifyLmStudioModelsHttpResponse(response.status, response.ok, text);
     } catch {
@@ -382,9 +385,11 @@ export class LmStudioServerService implements vscode.Disposable {
 
 function cliCandidates(): string[] {
   const executable = process.platform === "win32" ? "lms.exe" : "lms";
+  // 既知の絶対パスを先に試す。相対名を先に解決すると、プラットフォームによっては
+  // カレントディレクトリ側の同名実行ファイルを拾いうる。
   return [...new Set([
-    executable,
-    join(homedir(), ".lmstudio", "bin", executable)
+    join(homedir(), ".lmstudio", "bin", executable),
+    executable
   ])];
 }
 

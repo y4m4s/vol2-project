@@ -15,6 +15,7 @@ export type WebviewToExtension =
   | { type: "createConversationStream" }
   | { type: "selectConversationStream"; id: string }
   | { type: "deleteConversationStream"; id: string }
+  | { type: "deleteAllConversationStreams" }
   | { type: "ask"; text: string; additionalContext?: string }
   | { type: "cancelGuidanceRequest" }
   | { type: "setMode"; mode: AdviceMode; additionalContext?: string }
@@ -72,6 +73,7 @@ export type ExtensionToWebview =
 const SIMPLE_MESSAGE_TYPES = new Set([
   "ready",
   "createConversationStream",
+  "deleteAllConversationStreams",
   "cancelGuidanceRequest",
   "toggleAutoPause",
   "navigateBack",

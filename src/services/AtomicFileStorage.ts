@@ -43,26 +43,36 @@ export async function openDatabaseWithBackup<T>(
 /**
  * Writes beside the destination and atomically replaces it. The immediately
  * preceding valid file is retained as `<name>.bak` for crash recovery.
+ *
+ * 以前は既存ファイルを読み直して `.bak` へ書き写していたため、1 回の保存で
+ * 「本体サイズの読み込み 1 回 + 書き込み 2 回」が発生していた。現在は既存ファイルを
+ * rename で `.bak` へ退避するだけなので、書き込みは新しい内容の 1 回で済む。
+ *
+ * クラッシュ耐性は変わらない。一時ファイルは 2 つの rename より前に書き終えており、
+ * rename の合間に落ちた場合は本体が欠けた状態になるが、openDatabaseWithBackup が
+ * `.bak` から復旧する。
  */
 export async function writeFileAtomically(uri: vscode.Uri, bytes: Uint8Array): Promise<void> {
   const temporaryUri = uri.with({ path: `${uri.path}.${process.pid}.${Date.now()}.tmp` });
   const backupUri = uri.with({ path: `${uri.path}.bak` });
-  const backupTemporaryUri = uri.with({ path: `${uri.path}.bak.tmp` });
 
   try {
     await vscode.workspace.fs.writeFile(temporaryUri, bytes);
-
-    const existing = await readFileIfExists(uri);
-    if (existing) {
-      await vscode.workspace.fs.writeFile(backupTemporaryUri, existing);
-      await vscode.workspace.fs.rename(backupTemporaryUri, backupUri, { overwrite: true });
-    }
-
+    await renameIfExists(uri, backupUri);
     await vscode.workspace.fs.rename(temporaryUri, uri, { overwrite: true });
   } catch (error) {
     await deleteIfExists(temporaryUri);
-    await deleteIfExists(backupTemporaryUri);
     throw error;
+  }
+}
+
+async function renameIfExists(source: vscode.Uri, destination: vscode.Uri): Promise<void> {
+  try {
+    await vscode.workspace.fs.rename(source, destination, { overwrite: true });
+  } catch (error) {
+    if (!isFileNotFound(error)) {
+      throw error;
+    }
   }
 }
 
