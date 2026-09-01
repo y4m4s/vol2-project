@@ -87,11 +87,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "rateAdvice":
             await this.controller.rateAdvice(message.id, message.rating);
             return;
-          case "submitBadFeedback":
-            await this.controller.submitBadFeedback(message.reasons, message.comment);
+          case "submitFeedback":
+            await this.controller.submitFeedback(message.reasons, message.comment);
             return;
-          case "cancelBadFeedback":
-            this.controller.cancelBadFeedback();
+          case "cancelFeedback":
+            this.controller.cancelFeedback();
             return;
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
@@ -136,6 +136,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "refreshOrcaRouterModels":
             await this.controller.refreshOrcaRouterModels();
+            return;
+          case "refreshRequestPlan":
+            await this.controller.refreshCurrentRequestPlan();
+            return;
+          case "openReferencedFile":
+            await this.controller.openReferencedFile(message.path, message.line);
             return;
           case "resetSettings":
             await this.controller.resetSettings();
@@ -217,8 +223,17 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       copilotWhite: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-icon-white.svg")
       ).toString(),
-      lmStudio: webview.asWebviewUri(
+      lmStudioColor: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-color.svg")
+      ).toString(),
+      lmStudioWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-outline-white.svg")
+      ).toString(),
+      icons8OrcaBlack: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-black.png")
+      ).toString(),
+      icons8OrcaWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-white.png")
       ).toString()
     });
 

@@ -3,7 +3,10 @@ declare global {
     __PROVIDER_LOGO_URIS__: {
       copilotBlack: string;
       copilotWhite: string;
-      lmStudio: string;
+      lmStudioColor: string;
+      lmStudioWhite: string;
+      icons8OrcaBlack: string;
+      icons8OrcaWhite: string;
     };
   }
 }
@@ -11,29 +14,43 @@ declare global {
 export type ProviderLogoId = "copilot" | "lmStudio" | "orcaRouter";
 
 /**
- * プロバイダーのロゴ表示。Copilot と LM Studio は公式配布アセットを加工せず表示し、
- * OrcaRouter はロゴ画像がないため Material Symbols を使う。
+ * 公式プロバイダー資産とライセンス済みの第三者アイコンを表示する。
  */
 export function ProviderLogo({
   providerId,
   className,
-  symbolClassName
+  variant = "default"
 }: {
   providerId: ProviderLogoId;
   className: string;
   symbolClassName?: string;
+  variant?: "default" | "white";
 }) {
   if (providerId === "orcaRouter") {
-    const symbolClasses = ["material-symbols-outlined", className, symbolClassName]
-      .filter(Boolean)
-      .join(" ");
-    return <span className={symbolClasses} aria-hidden="true">hub</span>;
+    return (
+      <span className={`${className} provider-logo-theme-pair`} aria-hidden="true">
+        <img
+          src={window.__PROVIDER_LOGO_URIS__.icons8OrcaBlack}
+          className="provider-logo-theme-black"
+          alt=""
+          draggable={false}
+        />
+        <img
+          src={window.__PROVIDER_LOGO_URIS__.icons8OrcaWhite}
+          className="provider-logo-theme-white"
+          alt=""
+          draggable={false}
+        />
+      </span>
+    );
   }
 
   if (providerId === "lmStudio") {
     return (
       <img
-        src={window.__PROVIDER_LOGO_URIS__.lmStudio}
+        src={variant === "white"
+          ? window.__PROVIDER_LOGO_URIS__.lmStudioWhite
+          : window.__PROVIDER_LOGO_URIS__.lmStudioColor}
         className={className}
         alt=""
         aria-hidden="true"
@@ -43,16 +60,16 @@ export function ProviderLogo({
   }
 
   return (
-    <span className={`${className} provider-logo-copilot`} aria-hidden="true">
+    <span className={`${className} provider-logo-theme-pair`} aria-hidden="true">
       <img
         src={window.__PROVIDER_LOGO_URIS__.copilotBlack}
-        className="provider-logo-copilot-black"
+        className="provider-logo-theme-black"
         alt=""
         draggable={false}
       />
       <img
         src={window.__PROVIDER_LOGO_URIS__.copilotWhite}
-        className="provider-logo-copilot-white"
+        className="provider-logo-theme-white"
         alt=""
         draggable={false}
       />

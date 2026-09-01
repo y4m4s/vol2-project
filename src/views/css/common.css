@@ -289,11 +289,11 @@ body.vscode-high-contrast .connection-activity-provider {
   object-fit: contain;
 }
 
-.provider-logo-copilot {
+.provider-logo-theme-pair {
   position: relative;
 }
 
-.provider-logo-copilot img {
+.provider-logo-theme-pair img {
   position: absolute;
   inset: 0;
   display: block;
@@ -301,17 +301,17 @@ body.vscode-high-contrast .connection-activity-provider {
   height: 100%;
 }
 
-.provider-logo-copilot .provider-logo-copilot-white {
+.provider-logo-theme-pair .provider-logo-theme-white {
   display: none;
 }
 
-body.vscode-dark .provider-logo-copilot .provider-logo-copilot-black,
-body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-black {
+body.vscode-dark .provider-logo-theme-pair .provider-logo-theme-black,
+body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-black {
   display: none;
 }
 
-body.vscode-dark .provider-logo-copilot .provider-logo-copilot-white,
-body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
+body.vscode-dark .provider-logo-theme-pair .provider-logo-theme-white,
+body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   display: block;
 }
 
@@ -588,6 +588,128 @@ body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
   border-color: var(--vscode-focusBorder);
 }
 
+.request-plan-disclosure {
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: color-mix(in srgb, var(--vscode-input-background) 90%, var(--vscode-editorWidget-background));
+}
+
+.request-plan-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 0;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  font-size: 0.75em;
+  text-align: left;
+}
+
+.request-plan-trigger:hover {
+  opacity: 1;
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.request-plan-trigger > .material-symbols-outlined {
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.request-plan-trigger-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-plan-chevron {
+  margin-left: auto;
+}
+
+.request-plan-details {
+  max-height: min(360px, 45vh);
+  overflow-y: auto;
+  padding: 2px 11px 10px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+}
+
+.request-plan-note {
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 8%, transparent);
+  line-height: 1.45;
+}
+
+.request-plan-section-title {
+  margin: 10px 0 5px;
+  color: var(--vscode-foreground);
+  font-weight: 700;
+}
+
+.request-plan-list,
+.request-plan-files {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request-plan-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.request-plan-list li > .material-symbols-outlined {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #22c55e;
+  font-size: 14px;
+}
+
+.request-plan-list li.excluded,
+.request-plan-files li.excluded {
+  opacity: 0.62;
+}
+
+.request-plan-list li.excluded > .material-symbols-outlined {
+  color: var(--vscode-descriptionForeground);
+}
+
+.request-plan-list strong,
+.request-plan-list small {
+  display: block;
+}
+
+.request-plan-list strong {
+  color: var(--vscode-foreground);
+}
+
+.request-plan-files li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.request-plan-file-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .chat-selected-context {
   display: flex;
   align-items: center;
@@ -672,7 +794,7 @@ body.vscode-high-contrast .provider-logo-copilot .provider-logo-copilot-white {
 .chat-auto-inline {
   display: inline-flex;
   align-items: center;
-  flex: 1 1 128px;
+  flex: 0 1 auto;
   gap: 6px;
   min-width: 0;
   max-width: 260px;
@@ -1099,6 +1221,21 @@ ul.bullet-list li {
   transform: translateX(-50%) translateY(0);
   transition: opacity 0.42s ease, transform 0.42s ease;
   animation: floating-toast-in 0.18s ease-out;
+}
+
+.confirming-delete {
+  color: #fff !important;
+  background: #dc2626 !important;
+  animation: confirming-delete-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes confirming-delete-pulse {
+  from { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); }
+  to { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirming-delete { animation: none; }
 }
 
 .floating-toast.leaving {

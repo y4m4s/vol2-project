@@ -167,7 +167,11 @@ function ChatBubble(
 }
 
 function MarkdownText({ text }: { text: string }) {
+  const { send } = useApp();
   const blocks = parseMarkdownBlocks(text);
+  const renderInline = (value: string) => renderInlineMarkdown(value, (path, line) => {
+    send({ type: "openReferencedFile", path, line });
+  });
 
   return (
     <>
@@ -176,7 +180,7 @@ function MarkdownText({ text }: { text: string }) {
           case "heading":
             return (
               <div key={index} className="s04-md-heading">
-                {renderInlineMarkdown(block.text)}
+                {renderInline(block.text)}
               </div>
             );
           case "bullet":
@@ -185,7 +189,7 @@ function MarkdownText({ text }: { text: string }) {
             return (
               <ListTag key={index} className="s04-md-list">
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+                  <li key={itemIndex}>{renderInline(item)}</li>
                 ))}
               </ListTag>
             );
@@ -203,7 +207,7 @@ function MarkdownText({ text }: { text: string }) {
           default:
             return (
               <p key={index} className="s04-md-paragraph">
-                {renderInlineMarkdown(block.text)}
+                {renderInline(block.text)}
               </p>
             );
         }
@@ -328,7 +332,10 @@ function parseMarkdownBlocks(text: string): MarkdownBlock[] {
   return blocks.length > 0 ? blocks : [{ type: "paragraph", text }];
 }
 
-function renderInlineMarkdown(text: string): ReactNode[] {
+function renderInlineMarkdown(
+  text: string,
+  onOpenFile: (path: string, line?: number) => void
+): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
   let lastIndex = 0;
@@ -342,11 +349,21 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     const token = match[0];
     const key = `${match.index}-${token.length}`;
     if (token.startsWith("`")) {
-      nodes.push(
-        <code key={key} className="s04-md-inline-code">
-          {token.slice(1, -1)}
-        </code>
-      );
+      const value = token.slice(1, -1);
+      const fileReference = parseWorkspaceFileReference(value);
+      nodes.push(fileReference ? (
+        <button
+          key={key}
+          type="button"
+          className="s04-md-inline-code s04-md-file-reference"
+          title={`${fileReference.path}${fileReference.line ? `:${fileReference.line}` : ""} を開く`}
+          onClick={() => onOpenFile(fileReference.path, fileReference.line)}
+        >
+          {value}
+        </button>
+      ) : (
+        <code key={key} className="s04-md-inline-code">{value}</code>
+      ));
     } else {
       nodes.push(<strong key={key}>{token.slice(2, -2)}</strong>);
     }
@@ -359,6 +376,24 @@ function renderInlineMarkdown(text: string): ReactNode[] {
   }
 
   return nodes;
+}
+
+const WORKSPACE_FILE_EXTENSIONS = new Set([
+  "c", "cc", "cpp", "cs", "css", "dart", "go", "h", "hpp", "html", "java", "js", "jsx",
+  "json", "kt", "kts", "md", "php", "ps1", "py", "rb", "rs", "scss", "sh", "sql", "svelte",
+  "swift", "toml", "ts", "tsx", "vue", "xml", "yaml", "yml"
+]);
+
+function parseWorkspaceFileReference(value: string): { path: string; line?: number } | undefined {
+  const match = /^(.+?\.([a-zA-Z0-9]+))(?::(\d+))?$/.exec(value.trim());
+  if (!match || /^https?:\/\//i.test(match[1]) || !WORKSPACE_FILE_EXTENSIONS.has(match[2].toLowerCase())) {
+    return undefined;
+  }
+  const line = match[3] ? Number(match[3]) : undefined;
+  return {
+    path: match[1].replaceAll("\\", "/"),
+    line: line && Number.isSafeInteger(line) && line > 0 ? line : undefined
+  };
 }
 
 function SelectionReference({ selectedText }: { selectedText?: string }) {
@@ -430,22 +465,24 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      <ReferencedFilesBadge files={referencedFiles} />
-
-      <div className="s04-response-action-buttons">
-        {tokenUsage && (
+      {tokenUsage && (
+        <div className="s04-response-usage-row">
           <span
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
             約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（{hasProviderReportedCost ? "応答時点の記録料金" : "参考料金概算"} {formatCostUsd(tokenUsage.estimatedCostUsd)}、確定請求額ではありません）
           </span>
-        )}
+        </div>
+      )}
+
+      <div className="s04-response-tools-row">
+        <ReferencedFilesBadge files={referencedFiles} />
 
         <button
           className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
-          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Good"}
-          disabled={Boolean(feedback) || isFeedbackDisabled}
+          title={isFeedbackDisabled ? "処理完了後に評価できます" : feedback ? "評価を変更" : "Good"}
+          disabled={isFeedbackDisabled}
           onClick={() => onRate("good")}
           aria-label="この回答をGoodと評価"
           aria-pressed={feedback === "good"}
@@ -455,8 +492,8 @@ function ResponseActions(
 
         <button
           className={`s04-response-action ${feedback === "bad" ? "active feedback-bad" : ""}`}
-          title={feedback ? "評価済み" : isFeedbackDisabled ? "処理完了後に評価できます" : "Bad"}
-          disabled={Boolean(feedback) || isFeedbackDisabled}
+          title={isFeedbackDisabled ? "処理完了後に評価できます" : feedback ? "評価を変更" : "Bad"}
+          disabled={isFeedbackDisabled}
           onClick={() => onRate("bad")}
           aria-label="この回答をBadと評価"
           aria-pressed={feedback === "bad"}

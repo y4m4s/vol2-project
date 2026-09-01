@@ -78,7 +78,7 @@ export function S01Connection() {
 
         <div className="s01-actions">
           <button
-            className={`s01-connect-btn${isBusy ? " busy" : ""}`}
+            className={`s01-connect-btn s01-provider-btn s01-provider-btn--copilot${isBusy ? " busy" : ""}`}
             disabled={!canConnect}
             onClick={() => send({ type: "connect", providerId: "copilot" })}
           >
@@ -96,7 +96,7 @@ export function S01Connection() {
             <ConnectLabel text={isBusy ? "接続を確認しています..." : "Copilot に接続"} />
           </button>
           <button
-            className="s01-local-connect-btn"
+            className="s01-local-connect-btn s01-provider-btn s01-provider-btn--lm-studio"
             disabled={!canConnect || isBusy}
             onClick={() => send({ type: "connect", providerId: "lmStudio" })}
           >
@@ -105,12 +105,13 @@ export function S01Connection() {
                 providerId="lmStudio"
                 className="s01-connect-logo"
                 symbolClassName="s01-connect-logo-symbol"
+                variant="white"
               />
             </span>
             <ConnectLabel text="ローカル LLM に接続" />
           </button>
           <button
-            className="s01-local-connect-btn"
+            className="s01-local-connect-btn s01-provider-btn s01-provider-btn--orca-router"
             disabled={!canConnect || isBusy}
             onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
           >

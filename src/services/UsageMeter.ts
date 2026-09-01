@@ -101,12 +101,6 @@ export class UsageMeter {
       ), 0);
   }
 
-  public estimateBlendedPricePerMTokUsd(providerId: AiProviderId): number {
-    const usage = this.getToday(providerId);
-    const totalTokens = usage.inputTokens + usage.outputTokens;
-    return totalTokens > 0 ? (this.estimateCostUsd(providerId) * 1_000_000) / totalTokens : 0;
-  }
-
   private getStoredToday(): StoredDailyUsage {
     const saved = this.storage.get<Partial<StoredDailyUsage>>(STORAGE_KEY);
     const date = this.todayKey();

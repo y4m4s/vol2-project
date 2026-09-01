@@ -312,7 +312,7 @@ export function S06Settings() {
           <div className="setting-item orcarouter-data-note">
             <SettingTitle icon="cloud_upload">外部送信</SettingTitle>
             <div className="setting-desc">
-              回答生成などに使う質問、コード断片、診断情報、ファイル名・ディレクトリ構造、追加コンテキスト、再利用ナレッジのタイトル・要約、フィードバック傾向、必要な会話内容は、OrcaRouterと選択された上流モデル事業者へ送信されます。除外設定に一致するファイル本文は送信しません。
+              回答生成などに使う質問、コード断片、診断情報、ファイル名・ディレクトリ構造、追加コンテキスト、再利用ナレッジのタイトル・要約、評価理由からローカル生成した定型フィードバック傾向、必要な会話内容は、OrcaRouterと選択された上流モデル事業者へ送信されます。フィードバックの補足コメントは送信せず、除外設定に一致するファイル本文も送信しません。
             </div>
             <div className="setting-desc">
               NaviComはOrcaRouterのGuardrail／Firewallを自動設定しません。GuardrailはOrcaRouter側で有効なポリシーを設定・適用した場合に機能します。現在の連携はツール呼び出しを送らないため、Firewallのツール実行制御は利用しません。
@@ -450,6 +450,17 @@ export function S06Settings() {
           <span className="material-symbols-outlined">restart_alt</span>
           初期値に戻す
         </button>
+      </div>
+
+      <div className="s06-attribution">
+        Orca icon by{" "}
+        <a
+          href="https://icons8.com/icon/iAYdQa49uN11/orca"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Icons8
+        </a>
       </div>
 
       {hasPendingChanges && (
