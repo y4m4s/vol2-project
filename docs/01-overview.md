@@ -10,7 +10,7 @@
 本プロダクトは、VS Code 上で動作する「ペアプログラミングのナビゲーター役」を担う AI 拡張機能である。  
 目的は、ユーザーの学習支援であり、回答や実装を代行することではない。AI はユーザーの作業文脈を踏まえつつ、考え方、切り分け方、確認ポイント、次に見るべき箇所を提案する。
 
-v1 では `GitHub Copilot + VS Code Language Model API` を利用し、ユーザー自身の Copilot 利用権限の範囲で AI 応答を提供する。  
+現行版では `GitHub Copilot + VS Code Language Model API`、`LM Studio`、`OrcaRouter`から接続先を選び、利用可能なモデルの範囲で AI 応答を提供する。
 ナレッジ保存はローカルの `SQLite` を使用し、個人利用を前提とする。
 
 ## コンセプト
@@ -31,9 +31,9 @@ v1 では `GitHub Copilot + VS Code Language Model API` を利用し、ユーザ
 
 - 対応環境: `VS Code Desktop`
 - 非対応環境: `vscode.dev` / `github.dev` などの Web 版
-- AI 利用基盤: `GitHub Copilot`
-- AI 呼び出し方式: `VS Code Language Model API`
-- ローカル LLM: v1 では対象外
+- AI 利用基盤: `GitHub Copilot` / `LM Studio` / `OrcaRouter`
+- AI 呼び出し方式: `VS Code Language Model API` / OpenAI互換Chat Completions
+- ローカル LLM: LM Studio経由で対応
 
 ## 技術スタック
 
@@ -50,8 +50,8 @@ v1 では `GitHub Copilot + VS Code Language Model API` を利用し、ユーザ
 
 ### モデル利用方針
 
-- 初期実装では `GitHub Copilot` をモデル提供基盤として利用する
-- 拡張機能から `VS Code Language Model API` 経由でモデルを呼び出す
+- GitHub Copilotは `VS Code Language Model API` 経由で呼び出す
+- LM StudioとOrcaRouterはプロバイダー抽象を通じてOpenAI互換APIを呼び出す
 - `OpenAI official JavaScript SDK` を直接利用する構成は v1 では採用しない
 - 将来的に他モデルプロバイダへ差し替え・追加可能な構成を目指す
 
@@ -59,7 +59,7 @@ v1 では `GitHub Copilot + VS Code Language Model API` を利用し、ユーザ
 
 ### 初期スコープ
 
-- `GitHub Copilot + VS Code Language Model API` を利用した AI 応答
+- GitHub Copilot、LM Studio、OrcaRouterを利用した AI 応答
 - 横ウィンドウでの対話 UI
 - 初回接続フロー
 - リアルタイムまたは準リアルタイムのフィードバック
@@ -69,7 +69,6 @@ v1 では `GitHub Copilot + VS Code Language Model API` を利用し、ユーザ
 
 ### 初期スコープ外
 
-- ローカル LLM の利用
 - チーム共有ナレッジ
 - 他者との同期
 - AI によるコード変更、自動実行、ターミナル操作

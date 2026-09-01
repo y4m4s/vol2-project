@@ -1,9 +1,9 @@
-import { AdviceService } from "../../services/AdviceService";
 import { FeedbackStore } from "../../services/FeedbackStore";
+import { isFeedbackReasonForRating } from "../../shared/feedback";
 import {
   AdviceFeedbackInput,
-  BadFeedbackReason,
   ConversationEntry,
+  FeedbackReason,
   FeedbackRating,
   GuidanceCard,
   NavigatorSessionState
@@ -23,7 +23,6 @@ export class FeedbackCoordinator {
 
   public constructor(
     private readonly feedbackStore: FeedbackStore,
-    private readonly adviceService: AdviceService,
     private readonly host: FeedbackCoordinatorHost
   ) {}
 
@@ -32,56 +31,56 @@ export class FeedbackCoordinator {
     const state = this.host.getState();
     if (state.requestState !== "idle") return;
     const entry = findAssistantEntry(state, conversationEntryId);
-    if (!entry || entry.feedback) return;
+    if (!entry) return;
 
-    if (rating === "bad") {
-      this.host.patchSession({ pendingFeedbackEntryId: conversationEntryId, statusMessage: undefined });
-      this.host.pushFeedbackForm();
-      return;
-    }
-
-    const input = { conversationEntryId, rating: "good" } satisfies AdviceFeedbackInput;
-    const feedbackId = await this.persistFeedbackAndMark(input, entry);
-    if (feedbackId) {
-      this.host.patchSession({ requestState: "idle" });
-      void this.summarizeAndUpdate(feedbackId, input, entry)
-        .catch((error) => console.error("Failed to summarize good feedback", error));
-    }
+    this.host.patchSession({
+      pendingFeedbackEntryId: conversationEntryId,
+      pendingFeedbackRating: rating,
+      statusMessage: undefined
+    });
+    this.host.pushFeedbackForm();
   }
 
-  public async submitBadFeedback(reasons: BadFeedbackReason[], comment: string): Promise<void> {
+  public async submitFeedback(reasons: FeedbackReason[], comment: string): Promise<void> {
     const state = this.host.getState();
     if (state.requestState !== "idle") return;
     const conversationEntryId = state.pendingFeedbackEntryId;
-    if (!conversationEntryId) {
+    const rating = state.pendingFeedbackRating;
+    if (!conversationEntryId || !rating) {
       this.host.navigateBack();
       return;
     }
     const entry = findAssistantEntry(state, conversationEntryId);
-    if (!entry || entry.feedback) {
-      this.cancelBadFeedback();
+    if (!entry) {
+      this.cancelFeedback();
+      return;
+    }
+
+    const normalizedReasons = [...new Set(reasons.filter((reason) => isFeedbackReasonForRating(reason, rating)))];
+    if (normalizedReasons.length === 0) {
+      this.host.patchSession({
+        statusMessage: { kind: "warning", text: "フィードバックの理由を1つ以上選択してください。" }
+      });
       return;
     }
 
     const input: AdviceFeedbackInput = {
       conversationEntryId,
-      rating: "bad",
-      reasons: [...new Set(reasons.filter(isBadFeedbackReason))],
+      rating,
+      reasons: normalizedReasons,
       comment: comment.trim().slice(0, 1000)
     };
     const feedbackId = await this.persistFeedbackAndMark(input, entry);
     if (!feedbackId) return;
     this.returnFromForm();
-    void this.summarizeAndUpdate(feedbackId, input, entry)
-      .catch((error) => console.error("Failed to summarize bad feedback", error));
   }
 
-  public cancelBadFeedback(): void {
+  public cancelFeedback(): void {
     if (this.host.getState().requestState === "saving_feedback") return;
     this.returnFromForm();
   }
 
-  private async markAdviceFeedback(conversationEntryId: string, rating: FeedbackRating): Promise<void> {
+  private async markAdviceFeedback(conversationEntryId: string, rating: FeedbackRating | undefined): Promise<void> {
     const state = this.host.getState();
     const previousHistory = state.conversationHistory;
     const previousLatestGuidance = state.latestGuidance;
@@ -89,9 +88,12 @@ export class FeedbackCoordinator {
       entry.id === conversationEntryId && entry.role === "assistant" ? { ...entry, feedback: rating } : entry
     );
     const updatedAssistant = conversationHistory.find((entry) => entry.id === conversationEntryId && entry.role === "assistant");
+    const latestGuidance = state.latestGuidance?.id === conversationEntryId && updatedAssistant
+      ? this.host.createGuidanceCard(updatedAssistant)
+      : state.latestGuidance;
     this.host.patchSession({
       conversationHistory,
-      latestGuidance: updatedAssistant ? this.host.createGuidanceCard(updatedAssistant) : state.latestGuidance,
+      latestGuidance,
       statusMessage: undefined
     });
     try {
@@ -111,20 +113,27 @@ export class FeedbackCoordinator {
     if (this.persistingEntryIds.has(input.conversationEntryId)) return undefined;
     this.persistingEntryIds.add(input.conversationEntryId);
     this.host.patchSession({ requestState: "saving_feedback", statusMessage: undefined });
+    let conversationUpdated = false;
     try {
+      await this.markAdviceFeedback(input.conversationEntryId, input.rating);
+      conversationUpdated = true;
       const feedbackId = await this.feedbackStore.saveFeedback(
         input,
         {
           kind: entry.kind,
           assistanceDepth: entry.assistanceDepth,
-          slashCommand: entry.slashCommand,
-          adviceText: entry.text
-        },
-        { status: "skipped" }
+          slashCommand: entry.slashCommand
+        }
       );
-      await this.markAdviceFeedback(input.conversationEntryId, input.rating);
       return feedbackId;
     } catch (error) {
+      if (conversationUpdated) {
+        try {
+          await this.markAdviceFeedback(input.conversationEntryId, entry.feedback);
+        } catch (rollbackError) {
+          console.error("Failed to roll back conversation feedback", rollbackError);
+        }
+      }
       console.error("Failed to persist feedback", error);
       this.host.patchSession({
         requestState: "idle",
@@ -136,26 +145,13 @@ export class FeedbackCoordinator {
     }
   }
 
-  private async summarizeAndUpdate(
-    feedbackId: string,
-    input: AdviceFeedbackInput,
-    entry: ConversationEntry
-  ): Promise<void> {
-    const summary = await this.adviceService.summarizeFeedback({
-      rating: input.rating,
-      adviceTextExcerpt: truncate(entry.text, 400),
-      reasons: input.reasons,
-      comment: input.comment
-    });
-    await this.feedbackStore.updateFeedbackSummary(feedbackId, input.rating, summary);
-  }
-
   private returnFromForm(): void {
     const state = this.host.getState();
     const nextHistory = [...state.screenHistory];
     const previousScreen = nextHistory.pop() ?? "conversation";
     this.host.patchSession({
       pendingFeedbackEntryId: undefined,
+      pendingFeedbackRating: undefined,
       requestState: "idle",
       screen: previousScreen,
       screenHistory: nextHistory,
@@ -166,13 +162,4 @@ export class FeedbackCoordinator {
 
 function findAssistantEntry(state: NavigatorSessionState, id: string): ConversationEntry | undefined {
   return state.conversationHistory.find((entry) => entry.id === id && entry.role === "assistant");
-}
-
-function isBadFeedbackReason(value: unknown): value is BadFeedbackReason {
-  return value === "too_long" || value === "off_topic" || value === "gives_answer" || value === "too_vague" || value === "other";
-}
-
-function truncate(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
 }

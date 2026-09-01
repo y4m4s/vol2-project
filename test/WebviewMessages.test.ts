@@ -14,7 +14,18 @@ test("rejects oversized and malformed webview messages", () => {
   assert.equal(parseWebviewMessage({ type: "ask", text: "x".repeat(20_001) }), undefined);
   assert.equal(parseWebviewMessage({ type: "navigate", screen: "admin" }), undefined);
   assert.equal(parseWebviewMessage({ type: "rateAdvice", id: "entry", rating: "maybe" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: [], comment: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: ["unknown"], comment: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "submitFeedback", reasons: ["too_long"], comment: "x".repeat(1_001) }), undefined);
   assert.equal(parseWebviewMessage(null), undefined);
+});
+
+test("Good／Bad共通のフィードバック理由を受け入れる", () => {
+  assert.deepEqual(
+    parseWebviewMessage({ type: "submitFeedback", reasons: ["concise", "other"], comment: "補足" }),
+    { type: "submitFeedback", reasons: ["concise", "other"], comment: "補足" }
+  );
+  assert.deepEqual(parseWebviewMessage({ type: "cancelFeedback" }), { type: "cancelFeedback" });
 });
 
 test("validates token guard settings at the execution boundary", () => {
@@ -54,4 +65,15 @@ test("accepts OrcaRouter settings and bounds API keys", () => {
     apiKey: "sk-orca-test"
   });
   assert.equal(parseWebviewMessage({ type: "setOrcaRouterApiKey", apiKey: "x".repeat(501) }), undefined);
+});
+
+test("送信計画の更新とワークスペース相対の参照ファイルを受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "refreshRequestPlan" }), { type: "refreshRequestPlan" });
+  assert.deepEqual(
+    parseWebviewMessage({ type: "openReferencedFile", path: "src/services/AdviceService.ts", line: 42 }),
+    { type: "openReferencedFile", path: "src/services/AdviceService.ts", line: 42 }
+  );
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "src/app.ts", line: 0 }), undefined);
+  assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "x".repeat(2_001) }), undefined);
 });

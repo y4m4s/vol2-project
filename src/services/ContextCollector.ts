@@ -132,7 +132,7 @@ export class ContextCollector {
     const selectedText = this.getSelectedText(editor);
 
     return {
-      activeFilePath: editor.document.uri.fsPath,
+      activeFilePath: this.toWorkspaceRelativePath(editor.document.uri),
       selectedTextPreview: this.toPreviewText(selectedText),
       diagnosticsSummary: this.collectDiagnostics(editor.document.uri)
     };
@@ -549,6 +549,10 @@ export class ContextCollector {
   }
 
   private toWorkspaceRelativePath(uri: vscode.Uri): string {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+    if (!workspaceFolder) {
+      return path.basename(uri.fsPath);
+    }
     const includeWorkspaceFolder = (vscode.workspace.workspaceFolders?.length ?? 0) > 1;
     return vscode.workspace.asRelativePath(uri, includeWorkspaceFolder).replaceAll("\\", "/");
   }

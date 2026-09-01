@@ -9,6 +9,7 @@ import {
 } from "../../services/ConversationStore";
 import { SettingsService } from "../../services/SettingsService";
 import { UsageMeter } from "../../services/UsageMeter";
+import { FeedbackStore } from "../../services/FeedbackStore";
 import {
   AiProviderId,
   ConversationEntry,
@@ -36,6 +37,7 @@ export class ConversationCoordinator {
 
   public constructor(
     private readonly store: ConversationStore,
+    private readonly feedbackStore: FeedbackStore,
     private readonly adviceService: AdviceService,
     private readonly connectionService: ConnectionService,
     private readonly settingsService: SettingsService,
@@ -89,17 +91,28 @@ export class ConversationCoordinator {
     const state = this.host.getState();
     if (state.requestState !== "idle") return;
     const deletingActiveStream = state.activeConversationStreamId === streamId;
+    const deletingRecord = this.store.get(streamId);
     const deleted = await this.store.deleteStream(streamId);
     if (!deleted) {
       this.host.patchSession({ conversationStreams: this.store.list() });
       return;
     }
 
+    let feedbackCleanupFailed = false;
+    try {
+      await this.feedbackStore.deleteByConversationEntryIds(deletingRecord?.entries.map((entry) => entry.id) ?? []);
+    } catch (error) {
+      feedbackCleanupFailed = true;
+      console.error("Failed to delete feedback associated with conversation", error);
+    }
+
     this.summarizedTitleStreamIds.delete(streamId);
     if (deletingActiveStream) this.guidanceContexts.clear();
     this.host.patchSession({
       conversationStreams: this.store.list(),
-      statusMessage: undefined,
+      statusMessage: feedbackCleanupFailed
+        ? { kind: "warning", text: "履歴は削除しましたが、関連する評価データの削除に失敗しました。" }
+        : undefined,
       ...(deletingActiveStream
         ? {
             activeConversationStreamId: undefined,

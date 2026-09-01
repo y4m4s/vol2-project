@@ -3,6 +3,7 @@ import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader"
 import { useApp } from "../webview/state/AppContext";
 import { formatRelativeTime } from "../webview/utils/formatTime";
 import { SearchBar } from "../webview/components/SearchBar";
+import { ConfirmDeleteButton } from "../webview/components/ConfirmDeleteButton";
 
 export function S08History() {
   const { viewModel, send } = useApp();
@@ -71,18 +72,12 @@ export function S08History() {
                   <span className="s08-item-time">{formatRelativeTime(stream.updatedAt)}</span>
                 </button>
 
-                <button
+                <ConfirmDeleteButton
                   className="s08-delete-btn"
-                  title="履歴を削除"
-                  aria-label="履歴を削除"
+                  ariaLabel={`${stream.title}の履歴を削除`}
                   disabled={isBusy}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    send({ type: "deleteConversationStream", id: stream.id });
-                  }}
-                >
-                  <span className="material-symbols-outlined">delete</span>
-                </button>
+                  onConfirm={() => send({ type: "deleteConversationStream", id: stream.id })}
+                />
               </div>
             ))}
           </div>

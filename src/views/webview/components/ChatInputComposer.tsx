@@ -14,6 +14,7 @@ import {
 } from "./SlashCommandSuggest";
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 import { getSelectionLabel } from "../utils/labelUtils";
+import { RequestPlanDisclosure } from "./RequestPlanDisclosure";
 
 interface ChatInputComposerProps {
   resetKey?: string;
@@ -50,12 +51,16 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   }, [resetKey]);
 
   useEffect(() => {
-    send({ type: "setAdditionalContext", additionalContext: additionalContextDraft });
+    const timer = window.setTimeout(() => {
+      send({ type: "setAdditionalContext", additionalContext: additionalContextDraft });
+    }, 250);
+    return () => window.clearTimeout(timer);
   }, [additionalContextDraft, send]);
 
+  const composerActive = Boolean(inputText.trim());
   useEffect(() => {
-    send({ type: "setComposerActive", active: Boolean(inputText.trim()) });
-  }, [inputText, send]);
+    send({ type: "setComposerActive", active: composerActive });
+  }, [composerActive, send]);
 
   useEffect(() => {
     if (enterSendConfirmation && inputText.trim() !== enterSendConfirmation) {
@@ -295,6 +300,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       </div>
 
       <div className="chat-input-wrap">
+        <RequestPlanDisclosure />
         {contextPreview.selectedTextPreview && (
           <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
             <span className="material-symbols-outlined">code</span>

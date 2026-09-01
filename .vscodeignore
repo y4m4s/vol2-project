@@ -1,5 +1,15 @@
 .vscode/**
+.github/**
+.agents/**
+.codex/**
+.gitignore
 src/**
 !src/views/css/**
-tsconfig.json
-README.md
+docs/**
+test/**
+.test-out/**
+scripts/**
+AGENTS.md
+package-lock.json
+tsconfig*.json
+out/**/*.map

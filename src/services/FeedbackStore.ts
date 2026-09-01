@@ -2,13 +2,11 @@ import * as vscode from "vscode";
 import {
   AdviceFeedbackInput,
   AssistanceDepth,
-  FeedbackSummaryResult,
   FeedbackTendencySummary,
-  FeedbackRating,
   GuidanceKind,
   SlashCommand
 } from "../shared/types";
-import { collectValidFeedbackSummaries, validateFeedbackSummary } from "./FeedbackSummaryPolicy";
+import { collectFeedbackTendency, type FeedbackTendencyCandidate } from "../shared/feedback";
 import { SerialTaskQueue } from "./SerialTaskQueue";
 import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
 
@@ -41,7 +39,12 @@ export interface AdviceFeedbackMeta {
   kind: GuidanceKind;
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
-  adviceText: string;
+}
+
+export interface FeedbackTendencyScope {
+  kind: GuidanceKind;
+  assistanceDepth?: AssistanceDepth;
+  slashCommand?: SlashCommand;
 }
 
 export class FeedbackStore implements vscode.Disposable {
@@ -66,84 +69,79 @@ export class FeedbackStore implements vscode.Disposable {
 
   public async saveFeedback(
     input: AdviceFeedbackInput,
-    meta: AdviceFeedbackMeta,
-    summary: FeedbackSummaryResult
+    meta: AdviceFeedbackMeta
   ): Promise<string> {
     return this.mutationQueue.run(async () => {
       const existingId = this.findFeedbackId(input.conversationEntryId);
       const now = new Date().toISOString();
-      const summaryText = summary.status === "ok"
-        ? validateFeedbackSummary(summary.summaryText, input.rating)
-        : undefined;
-      const summaryStatus = summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed";
+      const reasonsJson = JSON.stringify(input.reasons);
+      const comment = this.normalizeOptionalText(input.comment) ?? null;
       const values: SqlValue[] = [
         input.rating,
         meta.kind,
         meta.assistanceDepth ?? null,
         meta.slashCommand ?? null,
-        this.truncateOneLine(meta.adviceText, 400),
-        input.reasons?.length ? JSON.stringify(input.reasons) : null,
-        this.normalizeOptionalText(input.comment) ?? null,
-        summaryText ?? null,
-        summaryStatus,
+        reasonsJson,
+        comment,
         now
       ];
 
       if (existingId) {
-        const id = this.createId();
         this.getDb().run(
           `UPDATE advice_feedback
-              SET id = ?, rating = ?, advice_kind = ?, assistance_depth = ?, slash_command = ?,
-                  advice_text_excerpt = ?, reasons_json = ?, comment = ?, summary_text = ?,
-                  summary_status = ?, created_at = ?
+              SET rating = ?, advice_kind = ?, assistance_depth = ?, slash_command = ?,
+                  advice_text_excerpt = '', reasons_json = ?, comment = ?, summary_text = NULL,
+                  summary_status = 'skipped', created_at = ?
             WHERE id = ?`,
-          [id, ...values, existingId]
+          [...values, existingId]
         );
         await this.persist();
-        return id;
+        return existingId;
       }
 
       const id = this.createId();
       this.getDb().run(
         `INSERT INTO advice_feedback
-          (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
+         (id, conversation_entry_id, rating, advice_kind, assistance_depth, slash_command, advice_text_excerpt, reasons_json, comment, summary_text, summary_status, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, input.conversationEntryId, ...values]
+        [
+          id,
+          input.conversationEntryId,
+          input.rating,
+          meta.kind,
+          meta.assistanceDepth ?? null,
+          meta.slashCommand ?? null,
+          "",
+          reasonsJson,
+          comment,
+          null,
+          "skipped",
+          now
+        ]
       );
       await this.persist();
       return id;
     });
   }
 
-  public async updateFeedbackSummary(
-    id: string,
-    rating: FeedbackRating,
-    summary: FeedbackSummaryResult
-  ): Promise<void> {
-    await this.mutationQueue.run(async () => {
-      const summaryText = summary.status === "ok"
-        ? validateFeedbackSummary(summary.summaryText, rating)
-        : undefined;
-      this.getDb().run(
-        `UPDATE advice_feedback
-            SET summary_text = ?, summary_status = ?
-          WHERE id = ? AND rating = ?`,
-        [
-          summaryText ?? null,
-          summaryText ? "ok" : summary.status === "skipped" ? "skipped" : "failed",
-          id,
-          rating
-        ]
-      );
-      await this.persist();
-    });
+  public getTendencySummary(scope: FeedbackTendencyScope, limit = 5): FeedbackTendencySummary {
+    return collectFeedbackTendency(this.selectTendencyCandidates(scope), limit);
   }
 
-  public getTendencySummary(limit = 5): FeedbackTendencySummary {
-    return {
-      goodPatterns: this.selectSummaryTexts("good", limit),
-      badAvoidPatterns: this.selectSummaryTexts("bad", limit)
-    };
+  public async deleteByConversationEntryIds(conversationEntryIds: readonly string[]): Promise<void> {
+    const ids = [...new Set(conversationEntryIds.filter((id) => id.trim().length > 0))];
+    if (ids.length === 0) return;
+
+    await this.mutationQueue.run(async () => {
+      for (let index = 0; index < ids.length; index += 200) {
+        const chunk = ids.slice(index, index + 200);
+        this.getDb().run(
+          `DELETE FROM advice_feedback WHERE conversation_entry_id IN (${chunk.map(() => "?").join(", ")})`,
+          chunk
+        );
+      }
+      await this.persist();
+    });
   }
 
   public dispose(): void {
@@ -168,12 +166,6 @@ export class FeedbackStore implements vscode.Disposable {
         created_at TEXT NOT NULL
       );
 
-      CREATE INDEX IF NOT EXISTS idx_advice_feedback_entry
-        ON advice_feedback(conversation_entry_id);
-
-      CREATE INDEX IF NOT EXISTS idx_advice_feedback_rating_created
-        ON advice_feedback(rating, created_at);
-
       DELETE FROM advice_feedback
        WHERE rowid NOT IN (
          SELECT MAX(rowid)
@@ -183,34 +175,54 @@ export class FeedbackStore implements vscode.Disposable {
 
       CREATE UNIQUE INDEX IF NOT EXISTS idx_advice_feedback_entry_unique
         ON advice_feedback(conversation_entry_id);
+
+      DROP INDEX IF EXISTS idx_advice_feedback_entry;
+      DROP INDEX IF EXISTS idx_advice_feedback_rating_created;
+
+      CREATE INDEX IF NOT EXISTS idx_advice_feedback_scope_created
+        ON advice_feedback(advice_kind, assistance_depth, slash_command, created_at DESC);
     `);
   }
 
-  private selectSummaryTexts(rating: "good" | "bad", limit: number): string[] {
-    if (!Number.isInteger(limit) || limit <= 0) {
-      return [];
-    }
+  private selectTendencyCandidates(scope: FeedbackTendencyScope): FeedbackTendencyCandidate[] {
     const stmt = this.getDb().prepare(
-      `SELECT summary_text
+      `SELECT rating, reasons_json
          FROM advice_feedback
-        WHERE rating = ?
-          AND summary_status = 'ok'
-          AND summary_text IS NOT NULL
-        ORDER BY created_at DESC`
+        WHERE advice_kind = ?
+          AND ((assistance_depth = ?) OR (assistance_depth IS NULL AND ? IS NULL))
+          AND ((slash_command = ?) OR (slash_command IS NULL AND ? IS NULL))
+        ORDER BY created_at DESC
+        LIMIT 100`
     );
-    const candidates: unknown[] = [];
+    const candidates: FeedbackTendencyCandidate[] = [];
+    const assistanceDepth = scope.assistanceDepth ?? null;
+    const slashCommand = scope.slashCommand ?? null;
 
     try {
-      stmt.bind([rating]);
+      stmt.bind([scope.kind, assistanceDepth, assistanceDepth, slashCommand, slashCommand]);
       while (stmt.step()) {
         const row = stmt.getAsObject();
-        candidates.push(row.summary_text);
+        if (row.rating !== "good" && row.rating !== "bad") continue;
+        candidates.push({
+          rating: row.rating,
+          reasons: this.parseReasons(row.reasons_json)
+        });
       }
     } finally {
       stmt.free();
     }
 
-    return collectValidFeedbackSummaries(candidates, rating, limit);
+    return candidates;
+  }
+
+  private parseReasons(value: unknown): unknown[] {
+    if (typeof value !== "string") return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   private findFeedbackId(conversationEntryId: string): string | undefined {
@@ -218,7 +230,6 @@ export class FeedbackStore implements vscode.Disposable {
       `SELECT id
          FROM advice_feedback
         WHERE conversation_entry_id = ?
-        ORDER BY created_at ASC
         LIMIT 1`
     );
 
@@ -233,11 +244,6 @@ export class FeedbackStore implements vscode.Disposable {
   private normalizeOptionalText(value?: string): string | undefined {
     const normalized = value?.replace(/\r\n/g, "\n").trim();
     return normalized ? normalized : undefined;
-  }
-
-  private truncateOneLine(value: string, maxLength: number): string {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    return normalized.length <= maxLength ? normalized : `${normalized.slice(0, maxLength)}...`;
   }
 
   private async persist(): Promise<void> {

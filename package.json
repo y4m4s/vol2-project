@@ -9,7 +9,15 @@
     "vscode": "^1.99.0"
   },
   "categories": [
+    "Machine Learning",
     "Other"
+  ],
+  "keywords": [
+    "ai",
+    "pair programming",
+    "learning",
+    "copilot",
+    "lm studio"
   ],
   "icon": "media/icon.png",
   "activationEvents": [
@@ -78,11 +86,12 @@
     }
   },
   "scripts": {
-    "compile": "npm run compile:ext && npm run typecheck:webview && npm run build:webview",
+    "compile": "npm run compile:ext && npm run typecheck:webview && npm run build:webview && npm run check:webview-size",
     "compile:ext": "tsc -p ./",
     "typecheck:webview": "tsc -p tsconfig.webview.json",
-    "build:webview": "node scripts/clean-webview-output.mjs && esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json",
-    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackSummaryPolicy.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/OrcaRouterClient.test.js .test-out/test/OrcaRouterErrorPolicy.test.js .test-out/test/OrcaRouterCredentialStore.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js",
+    "build:webview": "node scripts/clean-webview-output.mjs && esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --define:process.env.NODE_ENV=\\\"production\\\" --minify",
+    "check:webview-size": "node scripts/check-webview-size.mjs",
+    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackTendencyPolicy.test.js .test-out/test/FeedbackCoordinator.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/OrcaRouterClient.test.js .test-out/test/OrcaRouterErrorPolicy.test.js .test-out/test/OrcaRouterCredentialStore.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js .test-out/test/RequestPlanner.test.js .test-out/test/WorkspacePathPolicy.test.js",
     "eval": "npm run compile:ext && node out/eval/run-static.js",
     "watch": "tsc -watch -p ./",
     "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
@@ -94,12 +103,12 @@
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.99.0",
     "esbuild": "^0.28.0",
+    "mermaid": "^11.16.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "mermaid": "^11.16.1",
     "sql.js": "^1.14.1"
   }
 }
