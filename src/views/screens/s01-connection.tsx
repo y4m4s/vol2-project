@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import type { AiProviderId } from "../../shared/types";
 import { useApp } from "../webview/state/AppContext";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 
@@ -10,6 +12,25 @@ export function S01Connection() {
 
   const canConnect = viewModel?.canConnect ?? false;
   const isBusy = viewModel?.isBusy ?? false;
+  const [connectingProviderId, setConnectingProviderId] = useState<AiProviderId>();
+  const wasBusyRef = useRef(false);
+
+  useEffect(() => {
+    if (isBusy) {
+      wasBusyRef.current = true;
+    } else if (wasBusyRef.current) {
+      wasBusyRef.current = false;
+      setConnectingProviderId(undefined);
+    }
+  }, [isBusy]);
+
+  const connect = (providerId: AiProviderId) => {
+    setConnectingProviderId(providerId);
+    send({ type: "connect", providerId });
+  };
+
+  const isConnecting = (providerId: AiProviderId) =>
+    isBusy && connectingProviderId === providerId;
 
   return (
     <div className="s01-root">
@@ -78,12 +99,12 @@ export function S01Connection() {
 
         <div className="s01-actions">
           <button
-            className={`s01-connect-btn s01-provider-btn s01-provider-btn--copilot${isBusy ? " busy" : ""}`}
+            className={`s01-connect-btn s01-provider-btn s01-provider-btn--copilot${isConnecting("copilot") ? " busy" : ""}`}
             disabled={!canConnect}
-            onClick={() => send({ type: "connect", providerId: "copilot" })}
+            onClick={() => connect("copilot")}
           >
             <span className="s01-connect-icon" aria-hidden="true">
-              {isBusy ? (
+              {isConnecting("copilot") ? (
                 <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
               ) : (
                 <ProviderLogo
@@ -93,36 +114,44 @@ export function S01Connection() {
                 />
               )}
             </span>
-            <ConnectLabel text={isBusy ? "接続を確認しています..." : "Copilot に接続"} />
+            <ConnectLabel text={isConnecting("copilot") ? "Copilot に接続中..." : "Copilot に接続"} />
           </button>
           <button
-            className="s01-local-connect-btn s01-provider-btn s01-provider-btn--lm-studio"
-            disabled={!canConnect || isBusy}
-            onClick={() => send({ type: "connect", providerId: "lmStudio" })}
+            className={`s01-local-connect-btn s01-provider-btn s01-provider-btn--lm-studio${isConnecting("lmStudio") ? " busy" : ""}`}
+            disabled={!canConnect}
+            onClick={() => connect("lmStudio")}
           >
             <span className="s01-connect-icon" aria-hidden="true">
-              <ProviderLogo
-                providerId="lmStudio"
-                className="s01-connect-logo"
-                symbolClassName="s01-connect-logo-symbol"
-                variant="white"
-              />
+              {isConnecting("lmStudio") ? (
+                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
+              ) : (
+                <ProviderLogo
+                  providerId="lmStudio"
+                  className="s01-connect-logo"
+                  symbolClassName="s01-connect-logo-symbol"
+                  variant="white"
+                />
+              )}
             </span>
-            <ConnectLabel text="ローカル LLM に接続" />
+            <ConnectLabel text={isConnecting("lmStudio") ? "ローカル LLM に接続中..." : "ローカル LLM に接続"} />
           </button>
           <button
-            className="s01-local-connect-btn s01-provider-btn s01-provider-btn--orca-router"
-            disabled={!canConnect || isBusy}
-            onClick={() => send({ type: "connect", providerId: "orcaRouter" })}
+            className={`s01-local-connect-btn s01-provider-btn s01-provider-btn--orca-router${isConnecting("orcaRouter") ? " busy" : ""}`}
+            disabled={!canConnect}
+            onClick={() => connect("orcaRouter")}
           >
             <span className="s01-connect-icon" aria-hidden="true">
-              <ProviderLogo
-                providerId="orcaRouter"
-                className="s01-connect-logo"
-                symbolClassName="s01-connect-logo-symbol"
-              />
+              {isConnecting("orcaRouter") ? (
+                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
+              ) : (
+                <ProviderLogo
+                  providerId="orcaRouter"
+                  className="s01-connect-logo"
+                  symbolClassName="s01-connect-logo-symbol"
+                />
+              )}
             </span>
-            <ConnectLabel text="OrcaRouter に接続" />
+            <ConnectLabel text={isConnecting("orcaRouter") ? "OrcaRouter に接続中..." : "OrcaRouter に接続"} />
           </button>
         </div>
       </div>
@@ -131,7 +160,14 @@ export function S01Connection() {
 }
 
 /** 3つのボタンで共通の文言。ラベル幅をこの中の最長に揃えるために使う。 */
-const CONNECT_LABELS = ["Copilot に接続", "ローカル LLM に接続", "OrcaRouter に接続"];
+const CONNECT_LABELS = [
+  "Copilot に接続",
+  "Copilot に接続中...",
+  "ローカル LLM に接続",
+  "ローカル LLM に接続中...",
+  "OrcaRouter に接続",
+  "OrcaRouter に接続中..."
+];
 
 /**
  * 接続ボタンのラベル。表示されないサイザーで全文言の最長幅を確保することで、
