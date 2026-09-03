@@ -3,6 +3,8 @@ import type * as vscode from "vscode";
 export const ORCA_ROUTER_BASE_URL = "https://api.orcarouter.ai/v1";
 export const ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS = 10_000;
 export const ORCA_ROUTER_COMPLETION_TIMEOUT_MS = 120_000;
+export const ORCA_ROUTER_MAX_AUTOMATIC_RETRY_DELAY_MS = 10_000;
+const ORCA_ROUTER_TRANSIENT_RETRY_DELAY_MS = 400;
 
 export type OrcaRouterFailureKind =
   | "auth"
@@ -42,7 +44,19 @@ export interface OrcaRouterCompletion {
   outputTokens?: number;
   costUsd?: number;
   resolvedModelId?: string;
+  requestId?: string;
+  finishReason?: string;
+  providerAttemptCount?: number;
 }
+
+interface OrcaRouterJsonResponse {
+  payload: unknown;
+  requestId?: string;
+  resolvedModelId?: string;
+  attemptCount: number;
+}
+
+type OrcaRouterRetryMode = "none" | "read" | "completion" | "freeCompletion";
 
 /**
  * Minimal OpenAI-compatible client for the OrcaRouter gateway.
@@ -56,11 +70,12 @@ export class OrcaRouterClient {
     apiKey: string,
     cancellationToken?: vscode.CancellationToken
   ): Promise<OrcaRouterModel[]> {
-    const payload = await this.requestJson(
+    const { payload } = await this.requestJson(
       `${ORCA_ROUTER_BASE_URL}/models`,
       { method: "GET", headers: this.createHeaders(apiKey) },
       ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      "read"
     );
     const data = isRecord(payload) && Array.isArray(payload.data) ? payload.data : undefined;
     if (!data) {
@@ -90,7 +105,12 @@ export class OrcaRouterClient {
     prompt: string,
     cancellationToken?: vscode.CancellationToken
   ): Promise<OrcaRouterCompletion> {
-    const payload = await this.requestJson(
+    const {
+      payload,
+      requestId,
+      resolvedModelId: headerResolvedModelId,
+      attemptCount: providerAttemptCount
+    } = await this.requestJson(
       `${ORCA_ROUTER_BASE_URL}/chat/completions`,
       {
         method: "POST",
@@ -102,7 +122,8 @@ export class OrcaRouterClient {
         })
       },
       ORCA_ROUTER_COMPLETION_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      isFreeModel(modelId) ? "freeCompletion" : "completion"
     );
 
     const responseRecord = isRecord(payload) ? payload : undefined;
@@ -114,14 +135,23 @@ export class OrcaRouterClient {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter completion response did not include text.");
     }
     const usage = responseRecord && isRecord(responseRecord.usage) ? responseRecord.usage : undefined;
+    const resolvedModelId = headerResolvedModelId ?? (
+      typeof responseRecord?.model === "string" && responseRecord.model.trim()
+        ? responseRecord.model.trim()
+        : undefined
+    );
+    const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
+      ? firstChoice.finish_reason
+      : undefined;
     return {
       text,
       inputTokens: readNonNegativeInteger(usage?.prompt_tokens),
       outputTokens: readNonNegativeInteger(usage?.completion_tokens),
       costUsd: readNonNegativeNumber(usage?.cost_usd),
-      resolvedModelId: typeof responseRecord?.model === "string" && responseRecord.model.trim()
-        ? responseRecord.model.trim()
-        : undefined
+      ...(resolvedModelId ? { resolvedModelId } : {}),
+      ...(requestId ? { requestId } : {}),
+      ...(finishReason ? { finishReason } : {}),
+      providerAttemptCount
     };
   }
 
@@ -141,8 +171,29 @@ export class OrcaRouterClient {
     url: string,
     init: RequestInit,
     timeoutMs: number,
+    cancellationToken?: vscode.CancellationToken,
+    retryMode: OrcaRouterRetryMode = "none"
+  ): Promise<OrcaRouterJsonResponse> {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const response = await this.requestJsonOnce(url, init, timeoutMs, cancellationToken);
+        return { ...response, attemptCount: attempt + 1 };
+      } catch (error) {
+        const retryDelayMs = this.resolveRetryDelay(error, retryMode, attempt, cancellationToken);
+        if (retryDelayMs === undefined) {
+          throw error;
+        }
+        await this.waitForRetry(retryDelayMs, cancellationToken);
+      }
+    }
+  }
+
+  private async requestJsonOnce(
+    url: string,
+    init: RequestInit,
+    timeoutMs: number,
     cancellationToken?: vscode.CancellationToken
-  ): Promise<unknown> {
+  ): Promise<OrcaRouterJsonResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     const cancellation = cancellationToken?.onCancellationRequested(() => controller.abort());
@@ -160,7 +211,12 @@ export class OrcaRouterClient {
         );
       }
       try {
-        return JSON.parse(rawText) as unknown;
+        return {
+          payload: JSON.parse(rawText) as unknown,
+          requestId: readHeader(response.headers, "x-orca-request-id"),
+          resolvedModelId: readHeader(response.headers, "x-orca-resolved-model"),
+          attemptCount: 1
+        };
       } catch {
         throw new OrcaRouterError("invalidResponse", "OrcaRouter returned invalid JSON.");
       }
@@ -179,6 +235,70 @@ export class OrcaRouterClient {
       clearTimeout(timeout);
       cancellation?.dispose();
     }
+  }
+
+  private resolveRetryDelay(
+    error: unknown,
+    retryMode: OrcaRouterRetryMode,
+    attempt: number,
+    cancellationToken?: vscode.CancellationToken
+  ): number | undefined {
+    if (
+      attempt > 0
+      || retryMode === "none"
+      || cancellationToken?.isCancellationRequested
+      || !(error instanceof OrcaRouterError)
+    ) {
+      return undefined;
+    }
+
+    if (error.kind === "rateLimit" && error.retryAfter !== undefined) {
+      const retryAfterSeconds = Number(error.retryAfter);
+      const retryAfterMs = retryAfterSeconds * 1000;
+      return Number.isFinite(retryAfterMs)
+        && retryAfterMs >= 0
+        && retryAfterMs <= ORCA_ROUTER_MAX_AUTOMATIC_RETRY_DELAY_MS
+        ? retryAfterMs
+        : undefined;
+    }
+
+    const canRetryTransient = retryMode === "read" || retryMode === "freeCompletion";
+    if (!canRetryTransient) {
+      return undefined;
+    }
+    if (
+      error.kind === "invalidResponse"
+      || error.kind === "unavailable"
+      || error.status === 500
+      || error.status === 502
+      || error.status === 503
+    ) {
+      return ORCA_ROUTER_TRANSIENT_RETRY_DELAY_MS;
+    }
+    return undefined;
+  }
+
+  private async waitForRetry(
+    delayMs: number,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<void> {
+    if (delayMs <= 0) {
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        cancellation?.dispose();
+        resolve();
+      }, delayMs);
+      let cancellation: vscode.Disposable | undefined;
+      cancellation = cancellationToken?.onCancellationRequested(() => {
+        clearTimeout(timeout);
+        cancellation?.dispose();
+        const error = new Error("OrcaRouter retry was cancelled.");
+        error.name = "AbortError";
+        reject(error);
+      });
+    });
   }
 }
 
@@ -232,6 +352,16 @@ function readNonNegativeInteger(value: unknown): number | undefined {
 
 function readNonNegativeNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+function readHeader(headers: Headers, name: string): string | undefined {
+  const value = headers.get(name)?.trim();
+  return value || undefined;
+}
+
+function isFreeModel(modelId: string): boolean {
+  const normalized = modelId.trim().toLowerCase();
+  return normalized === "orcarouter/free" || normalized.endsWith("-free");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

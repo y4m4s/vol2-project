@@ -29,6 +29,10 @@ export interface ProviderTextResponse {
   inputTokens?: number;
   outputTokens?: number;
   costUsd?: number;
+  requestId?: string;
+  resolvedModelId?: string;
+  finishReason?: string;
+  providerAttemptCount?: number;
 }
 
 export interface ProviderRequestMetadata {

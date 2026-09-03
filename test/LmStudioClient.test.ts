@@ -37,7 +37,8 @@ test("chat completion本文とusageを読み取る", async () => {
   globalThis.fetch = async (_url, init) => {
     requestBody = JSON.parse(String(init?.body));
     return new Response(JSON.stringify({
-      choices: [{ message: { content: "回答です" } }],
+      model: "qwen/resolved",
+      choices: [{ message: { content: "回答です" }, finish_reason: "stop" }],
       usage: { prompt_tokens: 12, completion_tokens: 4 }
     }));
   };
@@ -49,7 +50,13 @@ test("chat completion本文とusageを読み取る", async () => {
     ["src/example.ts"]
   );
 
-  assert.deepEqual(result, { text: "回答です", inputTokens: 12, outputTokens: 4 });
+  assert.deepEqual(result, {
+    text: "回答です",
+    inputTokens: 12,
+    outputTokens: 4,
+    resolvedModelId: "qwen/resolved",
+    finishReason: "stop"
+  });
   assert.deepEqual(requestBody, {
     model: "qwen@test",
     messages: [{ role: "user", content: "質問" }],

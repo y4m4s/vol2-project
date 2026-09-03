@@ -118,6 +118,19 @@ function ChatBubble(
     : undefined;
   const depthLabel = entry.assistanceDepth === "high" ? "推論強度: 高" : entry.assistanceDepth === "low" ? "推論強度: 低" : undefined;
   const modelLabel = !isUser ? entry.modelLabel : undefined;
+  const responseMetadata = !isUser ? entry.responseMetadata : undefined;
+  const modelDetails = [
+    modelLabel,
+    responseMetadata?.finishReasons?.length
+      ? `終了理由: ${responseMetadata.finishReasons.join(" → ")}`
+      : undefined,
+    responseMetadata?.requestIds?.length
+      ? `リクエストID: ${responseMetadata.requestIds.join(", ")}`
+      : undefined,
+    responseMetadata && responseMetadata.providerRequestCount > responseMetadata.attemptCount
+      ? `通信試行: ${responseMetadata.providerRequestCount}回`
+      : undefined
+  ].filter((value): value is string => Boolean(value)).join("\n");
 
   return (
     <div className={`s04-bubble-wrap ${isUser ? "user" : "assistant"}`}>
@@ -130,7 +143,12 @@ function ChatBubble(
         <span className="s04-bubble-role">{label}</span>
         {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
         {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
-        {modelLabel && <span className="s04-meta-pill model" title={modelLabel}>{modelLabel}</span>}
+        {modelLabel && <span className="s04-meta-pill model" title={modelDetails}>{modelLabel}</span>}
+        {responseMetadata && responseMetadata.attemptCount > 1 && (
+          <span className="s04-meta-pill depth" title="出力形式を満たさなかったため、バックエンドで1回再生成しました">
+            図を再生成済み
+          </span>
+        )}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 
@@ -167,7 +185,7 @@ function ChatBubble(
 }
 
 function MarkdownText({ text }: { text: string }) {
-  const { send } = useApp();
+  const { send, viewModel } = useApp();
   const blocks = parseMarkdownBlocks(text);
   const renderInline = (value: string) => renderInlineMarkdown(value, (path, line) => {
     send({ type: "openReferencedFile", path, line });
@@ -196,7 +214,15 @@ function MarkdownText({ text }: { text: string }) {
           }
           case "code":
             if (isMermaidBlock(block)) {
-              return <MermaidDiagram key={index} code={block.text} />;
+              return (
+                <MermaidDiagram
+                  key={index}
+                  code={block.text}
+                  onRetry={viewModel?.canAskForGuidance && !viewModel.isBusy
+                    ? () => send({ type: "ask", text: "/flow" })
+                    : undefined}
+                />
+              );
             }
             return (
               <pre key={index} className="s04-md-code">

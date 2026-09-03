@@ -27,6 +27,7 @@
     "src/services/globMatch.ts",
     "src/services/protectedGlobs.ts",
     "src/services/PromptBuilder.ts",
+    "src/services/GuidanceResponsePolicy.ts",
     "src/services/ModelProfile.ts",
     "src/services/UsageMeter.ts",
     "src/services/SingleFlightGate.ts",
@@ -52,6 +53,7 @@
     "test/WorkspacePathPolicy.test.ts",
     "test/GlobMatch.test.ts",
     "test/PromptBuilder.test.ts",
+    "test/GuidanceResponsePolicy.test.ts",
     "test/UsageMeter.test.ts",
     "test/SingleFlightGate.test.ts",
     "test/KnowledgeSearch.test.ts"

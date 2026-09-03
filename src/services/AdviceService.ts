@@ -7,6 +7,7 @@ import {
   GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
+  ProviderResponseMetadata,
   RequestPlanSnapshot,
   SlashCommand,
   SlashCommandScope,
@@ -17,6 +18,7 @@ import { LmStudioError } from "./LmStudioClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
 import { classifyOrcaRouterFailure, requestRejectionMessage } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
+import { buildGuidanceFormatRepairPrompt, validateGuidanceResponse } from "./GuidanceResponsePolicy";
 import { buildGuidancePrompt, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
@@ -29,6 +31,7 @@ export interface GuidanceRequestSuccess {
     outputTokens: number;
     costUsd?: number;
   };
+  responseMetadata?: ProviderResponseMetadata;
 }
 
 export interface GuidanceRequestFailure {
@@ -92,7 +95,57 @@ export class AdviceService {
     input: GuidanceRequestInput,
     cancellationToken?: vscode.CancellationToken
   ): Promise<GuidanceRequestResult> {
-    return this.requestText(this.buildPrompt(input), cancellationToken, input.referencedFilePaths);
+    const prompt = this.buildPrompt(input);
+    const first = await this.requestText(prompt, cancellationToken, input.referencedFilePaths);
+    if (!first.ok) {
+      return first;
+    }
+
+    const firstValidation = validateGuidanceResponse(input.slashCommand, first.text);
+    if (firstValidation.ok) {
+      return {
+        ...first,
+        text: firstValidation.text,
+        responseMetadata: this.buildResponseMetadata(
+          [first.responseMetadata],
+          firstValidation.normalized
+        )
+      };
+    }
+
+    if (cancellationToken?.isCancellationRequested) {
+      return this.cancelledResult();
+    }
+
+    // Format-constrained commands get one corrective attempt. A hard limit prevents
+    // accidental retry loops and keeps provider usage predictable.
+    const repaired = await this.requestText(
+      buildGuidanceFormatRepairPrompt(prompt, firstValidation.reason),
+      cancellationToken,
+      input.referencedFilePaths
+    );
+    if (!repaired.ok) {
+      return repaired;
+    }
+
+    const repairedValidation = validateGuidanceResponse(input.slashCommand, repaired.text);
+    if (!repairedValidation.ok) {
+      return {
+        ok: false,
+        connectionState: this.connectionService.getState(),
+        message: "AI は応答しましたが、図の形式を2回とも満たせませんでした。入力を短くするか、もう一度 /flow を実行してください。"
+      };
+    }
+
+    return {
+      ...repaired,
+      text: repairedValidation.text,
+      usage: this.combineUsage(first.usage, repaired.usage),
+      responseMetadata: this.buildResponseMetadata(
+        [first.responseMetadata, repaired.responseMetadata],
+        repairedValidation.normalized
+      )
+    };
   }
 
   public async createKnowledgeDraft(input: KnowledgeDraftInput): Promise<KnowledgeDraftResult> {
@@ -167,7 +220,8 @@ export class AdviceService {
       return {
         ok: true,
         text: response.text,
-        usage
+        usage,
+        responseMetadata: this.buildResponseMetadata([response], false)
       };
     } catch (error) {
       if (this.isCancellation(error, cancellationToken)) {
@@ -243,6 +297,59 @@ export class AdviceService {
       costUsd: response.costUsd
     });
     return { inputTokens, outputTokens, costUsd: response.costUsd };
+  }
+
+  private combineUsage(
+    first: GuidanceRequestSuccess["usage"],
+    second: GuidanceRequestSuccess["usage"]
+  ): GuidanceRequestSuccess["usage"] {
+    if (!first) return second;
+    if (!second) return first;
+
+    return {
+      inputTokens: first.inputTokens + second.inputTokens,
+      outputTokens: first.outputTokens + second.outputTokens,
+      ...(first.costUsd !== undefined && second.costUsd !== undefined
+        ? { costUsd: first.costUsd + second.costUsd }
+        : {})
+    };
+  }
+
+  private buildResponseMetadata(
+    responses: Array<Pick<ProviderTextResponse, "requestId" | "resolvedModelId" | "finishReason" | "providerAttemptCount"> | ProviderResponseMetadata | undefined>,
+    formatNormalized: boolean
+  ): ProviderResponseMetadata {
+    const requestIds = responses.flatMap((response) => {
+      if (!response) return [];
+      if ("attemptCount" in response) return response.requestIds ?? [];
+      return response.requestId ? [response.requestId] : [];
+    });
+    const resolvedModelIds = responses.flatMap((response) => {
+      if (!response) return [];
+      if ("attemptCount" in response) return response.resolvedModelIds ?? [];
+      return response.resolvedModelId ? [response.resolvedModelId] : [];
+    });
+    const finishReasons = responses.flatMap((response) => {
+      if (!response) return [];
+      if ("attemptCount" in response) return response.finishReasons ?? [];
+      return response.finishReason ? [response.finishReason] : [];
+    });
+    const providerRequestCount = responses.reduce((total, response) => {
+      if (!response) return total;
+      return total + ("attemptCount" in response
+        ? response.providerRequestCount
+        : response.providerAttemptCount ?? 1);
+    }, 0);
+
+    return {
+      attemptCount: responses.reduce((total, response) =>
+        total + (response && "attemptCount" in response ? response.attemptCount : response ? 1 : 0), 0),
+      providerRequestCount,
+      ...(requestIds.length > 0 ? { requestIds } : {}),
+      ...(resolvedModelIds.length > 0 ? { resolvedModelIds } : {}),
+      ...(finishReasons.length > 0 ? { finishReasons } : {}),
+      ...(formatNormalized ? { formatNormalized: true } : {})
+    };
   }
 
   private async countTokensSafe(model: ConnectedProviderModel, text: string): Promise<number> {

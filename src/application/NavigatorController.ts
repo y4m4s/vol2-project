@@ -53,6 +53,7 @@ import {
   NavigatorSessionState,
   NavigatorSettings,
   NavigatorViewModel,
+  ProviderResponseMetadata,
   SlashCommand,
   SlashCommandScope,
   UsageTodayViewData,
@@ -941,6 +942,12 @@ export class NavigatorController implements vscode.Disposable {
     const latestState = this.sessionStore.getState();
 
     if (result.ok) {
+      const resolvedModelId = result.responseMetadata?.resolvedModelIds?.at(-1);
+      const persistedModelLabel = resolvedModelId
+        && responseModel?.providerId === "orcaRouter"
+        && resolvedModelId !== responseModel.modelId
+        ? `${responseModelLabel} → ${resolvedModelId}`
+        : responseModelLabel;
       const assistantEntry = this.createConversationEntry(
         "assistant",
         result.text,
@@ -951,9 +958,10 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         options.slashCommand,
         options.slashCommandScope,
-        responseModelLabel,
+        persistedModelLabel,
         responseModel?.providerId,
-        responseModel?.modelId
+        responseModel?.modelId,
+        result.responseMetadata
       );
       if (result.usage) {
         const reportedCostUsd = result.usage.costUsd;
@@ -1192,7 +1200,8 @@ export class NavigatorController implements vscode.Disposable {
     slashCommandScope?: SlashCommandScope,
     modelLabel?: string,
     providerId?: AiProviderId,
-    modelId?: string
+    modelId?: string,
+    responseMetadata?: ProviderResponseMetadata
   ): ConversationEntry {
     return {
       id: this.createId(),
@@ -1208,7 +1217,8 @@ export class NavigatorController implements vscode.Disposable {
       providerId,
       modelId,
       modelLabel,
-      requestPlan
+      requestPlan,
+      responseMetadata
     };
   }
 

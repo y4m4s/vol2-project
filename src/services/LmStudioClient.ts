@@ -27,6 +27,8 @@ export interface LmStudioCompletion {
   text: string;
   inputTokens?: number;
   outputTokens?: number;
+  resolvedModelId?: string;
+  finishReason?: string;
 }
 
 export class LmStudioClient {
@@ -116,10 +118,18 @@ export class LmStudioClient {
     }
 
     const usage = isRecord(payload) && isRecord(payload.usage) ? payload.usage : undefined;
+    const resolvedModelId = isRecord(payload) && typeof payload.model === "string" && payload.model.trim()
+      ? payload.model.trim()
+      : undefined;
+    const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
+      ? firstChoice.finish_reason
+      : undefined;
     return {
       text,
       inputTokens: readNonNegativeInteger(usage?.prompt_tokens),
-      outputTokens: readNonNegativeInteger(usage?.completion_tokens)
+      outputTokens: readNonNegativeInteger(usage?.completion_tokens),
+      ...(resolvedModelId ? { resolvedModelId } : {}),
+      ...(finishReason ? { finishReason } : {})
     };
   }
 

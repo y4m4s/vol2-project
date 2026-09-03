@@ -50,9 +50,14 @@ test("chat completionにキーと応答時点の料金要求を付け、本文�
     requestBody = JSON.parse(String(init?.body));
     return new Response(JSON.stringify({
       model: "openai/gpt-test",
-      choices: [{ message: { content: "回答です" } }],
+      choices: [{ message: { content: "回答です" }, finish_reason: "stop" }],
       usage: { prompt_tokens: 12, completion_tokens: 4, cost_usd: 0.00012 }
-    }));
+    }), {
+      headers: {
+        "X-Orca-Request-Id": "request-123",
+        "X-Orca-Resolved-Model": "openai/gpt-resolved"
+      }
+    });
   };
 
   const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
@@ -67,7 +72,10 @@ test("chat completionにキーと応答時点の料金要求を付け、本文�
     inputTokens: 12,
     outputTokens: 4,
     costUsd: 0.00012,
-    resolvedModelId: "openai/gpt-test"
+    resolvedModelId: "openai/gpt-resolved",
+    requestId: "request-123",
+    finishReason: "stop",
+    providerAttemptCount: 1
   });
 });
 
@@ -84,15 +92,73 @@ test("APIエラーのcodeと分類を保持する", async () => {
 });
 
 test("無料枠の429でRetry-Afterを保持する", async () => {
-  globalThis.fetch = async () => new Response(JSON.stringify({
-    error: { message: "free limit reached", code: "free_rate_limited" }
-  }), { status: 429, headers: { "Retry-After": "42" } });
+  let callCount = 0;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    return new Response(JSON.stringify({
+      error: { message: "free limit reached", code: "free_rate_limited" }
+    }), { status: 429, headers: { "Retry-After": "42" } });
+  };
 
   await assert.rejects(
     () => new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問"),
     (error: unknown) => error instanceof OrcaRouterError &&
       error.kind === "rateLimit" && error.code === "free_rate_limited" && error.retryAfter === "42"
   );
+  assert.equal(callCount, 1);
+});
+
+test("短いRetry-Afterなら1回だけ待って再試行する", async () => {
+  let callCount = 0;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    if (callCount === 1) {
+      return new Response(JSON.stringify({
+        error: { message: "free limit reached", code: "free_rate_limited" }
+      }), { status: 429, headers: { "Retry-After": "0" } });
+    }
+    return new Response(JSON.stringify({
+      model: "deepseek/test-free",
+      choices: [{ message: { content: "再試行後の回答" }, finish_reason: "stop" }]
+    }));
+  };
+
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
+  assert.equal(callCount, 2);
+  assert.equal(result.text, "再試行後の回答");
+  assert.equal(result.providerAttemptCount, 2);
+});
+
+test("有料モデルの一時障害は重複課金を避けるため自動再試行しない", async () => {
+  let callCount = 0;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    return new Response(JSON.stringify({ error: { message: "upstream unavailable" } }), { status: 503 });
+  };
+
+  await assert.rejects(
+    () => new OrcaRouterClient().createCompletion("sk-orca-test", "openai/gpt-test", "質問"),
+    (error: unknown) => error instanceof OrcaRouterError && error.kind === "unavailable"
+  );
+  assert.equal(callCount, 1);
+});
+
+test("無料モデルの一時障害は短い待機後に1回だけ再試行する", async () => {
+  let callCount = 0;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    if (callCount === 1) {
+      return new Response(JSON.stringify({ error: { message: "upstream unavailable" } }), { status: 503 });
+    }
+    return new Response(JSON.stringify({
+      choices: [{ message: { content: "復旧後の回答" } }]
+    }));
+  };
+
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
+  assert.equal(callCount, 2);
+  assert.equal(result.text, "復旧後の回答");
+  assert.equal(result.providerAttemptCount, 2);
 });
 
 test("OrcaRouter形式でないキーは通信前に拒否する", async () => {

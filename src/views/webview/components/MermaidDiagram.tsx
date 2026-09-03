@@ -11,9 +11,9 @@ function loadMermaid(): Promise<(typeof import("mermaid"))["default"]> {
 
 let renderSequence = 0;
 
-export function MermaidDiagram({ code }: { code: string }) {
+export function MermaidDiagram({ code, onRetry }: { code: string; onRetry?: () => void }) {
   const [svg, setSvg] = useState<string>();
-  const [failed, setFailed] = useState(false);
+  const [failureMessage, setFailureMessage] = useState<string>();
   const [theme, setTheme] = useState(resolveTheme);
 
   useEffect(() => {
@@ -25,10 +25,10 @@ export function MermaidDiagram({ code }: { code: string }) {
   useEffect(() => {
     let cancelled = false;
     setSvg(undefined);
-    setFailed(false);
+    setFailureMessage(undefined);
 
     if (!isWithinRenderLimits(code)) {
-      setFailed(true);
+      setFailureMessage("図が大きすぎるため、Mermaidコードとして表示しています。");
       return;
     }
     const renderId = `navicom-mermaid-${++renderSequence}`;
@@ -50,7 +50,7 @@ export function MermaidDiagram({ code }: { code: string }) {
       })
       .catch(() => {
         if (!cancelled) {
-          setFailed(true);
+          setFailureMessage("Mermaidの構文を解釈できなかったため、コードとして表示しています。もう一度 /flow を実行すると再生成できます。");
         }
         // 描画失敗時に mermaid が残す一時要素を掃除する
         document.getElementById(`d${renderId}`)?.remove();
@@ -61,13 +61,24 @@ export function MermaidDiagram({ code }: { code: string }) {
     };
   }, [code, theme]);
 
-  if (failed || !svg) {
+  if (failureMessage) {
     return (
-      <pre className="s04-md-code">
-        <code>{code}</code>
-      </pre>
+      <div className="s04-mermaid-fallback" role="status">
+        <div className="s04-mermaid-fallback-message">{failureMessage}</div>
+        {onRetry && (
+          <button type="button" className="s04-mermaid-retry" onClick={onRetry}>
+            <span className="material-symbols-outlined">refresh</span>
+            現在の文脈で図を再生成
+          </button>
+        )}
+        <pre className="s04-md-code">
+          <code>{code}</code>
+        </pre>
+      </div>
     );
   }
+
+  if (!svg) return null;
 
   return <div className="s04-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
 }

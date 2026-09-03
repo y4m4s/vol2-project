@@ -509,3 +509,33 @@
   max-width: 100%;
   height: auto;
 }
+
+.s04-mermaid-fallback-message {
+  margin: 6px 0;
+  padding: 7px 9px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.s04-mermaid-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 2px;
+  padding: 5px 9px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 6px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  cursor: pointer;
+}
+
+.s04-mermaid-retry:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.s04-mermaid-retry .material-symbols-outlined {
+  font-size: 16px;
+}

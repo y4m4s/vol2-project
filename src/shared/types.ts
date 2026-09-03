@@ -265,6 +265,15 @@ export interface TokenUsage {
   costUsd?: number;
 }
 
+export interface ProviderResponseMetadata {
+  attemptCount: number;
+  providerRequestCount: number;
+  requestIds?: string[];
+  resolvedModelIds?: string[];
+  finishReasons?: string[];
+  formatNormalized?: boolean;
+}
+
 export interface ConversationEntry {
   id: string;
   role: ConversationRole;
@@ -281,6 +290,7 @@ export interface ConversationEntry {
   modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
+  responseMetadata?: ProviderResponseMetadata;
   feedback?: FeedbackRating;
 }
 
