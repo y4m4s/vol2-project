@@ -34,6 +34,20 @@
   margin-top: 4px;
 }
 
+.setting-title-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.setting-title-row:hover,
+.setting-title-row:focus-within {
+  z-index: 20;
+}
+
 .setting-title {
   display: inline-flex;
   align-items: center;
@@ -55,6 +69,77 @@
 .setting-title > span:last-child {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.setting-help {
+  position: relative;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.setting-help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.setting-help-button:hover,
+.setting-help-button:focus-visible {
+  color: var(--vscode-textLink-foreground);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 12%, transparent);
+  opacity: 1;
+}
+
+.setting-help-icon {
+  display: block;
+  width: 19px;
+  height: 19px;
+  max-width: none;
+  flex: 0 0 19px;
+}
+
+.setting-help-tooltip {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 30;
+  width: min(280px, calc(100vw - 56px));
+  padding: 9px 10px;
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-panel-border));
+  border-radius: 7px;
+  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+  background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+  box-shadow: 0 4px 14px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.28));
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  text-align: left;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+.setting-help:hover .setting-help-tooltip,
+.setting-help:focus-within .setting-help-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .setting-item {
@@ -87,6 +172,10 @@
 
 .s06-actions button {
   margin-top: 10px;
+}
+
+.s06-actions .setting-help-button {
+  margin-top: 0;
 }
 
 .s06-actions .material-symbols-outlined {
@@ -163,6 +252,7 @@
 
 .schedule-header > div {
   min-width: 0;
+  width: 100%;
 }
 
 .choice-options {
@@ -378,7 +468,7 @@
 }
 
 .lmstudio-server-card {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .lmstudio-server-status {
@@ -482,6 +572,10 @@
 @media (prefers-reduced-motion: reduce) {
   .is-spinning {
     animation: none;
+  }
+
+  .setting-help-tooltip {
+    transition: none;
   }
 }
 

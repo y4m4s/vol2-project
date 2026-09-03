@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
@@ -167,7 +167,12 @@ export function S06Settings() {
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="cable">接続先</SettingTitle>
+        <SettingTitle
+          icon="cable"
+          help="回答生成に使うAIプロバイダーを選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
+        >
+          接続先
+        </SettingTitle>
         <div className="setting-desc">助言を生成する AI を選択します。</div>
         <ProviderButtonGroup value={providerId} onChange={handleProviderChange} />
       </div>
@@ -185,7 +190,12 @@ export function S06Settings() {
           />
 
           <div className="setting-item">
-            <SettingTitle icon="memory">ロード中のモデル</SettingTitle>
+            <SettingTitle
+              icon="memory"
+              help="LM Studioでロード済みのモデルから、NaviComが使用するモデルを1つ選びます。一覧にない場合はLM Studioでモデルをロードしてから更新してください。"
+            >
+              ロード中のモデル
+            </SettingTitle>
             <div className="setting-desc lmstudio-model-note">
               {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
                 ? `接続中: ${viewModel.modelLabel ?? "ロード済みモデル"}`
@@ -220,7 +230,12 @@ export function S06Settings() {
       {providerId === "orcaRouter" && (
         <>
           <div className="setting-item">
-            <SettingTitle icon="key">APIキー</SettingTitle>
+            <SettingTitle
+              icon="key"
+              help="OrcaRouterのAPIキーをVS Codeの暗号化ストレージへ保存します。保存済みのキーそのものは、この画面にも再表示されません。"
+            >
+              APIキー
+            </SettingTitle>
             <div className="setting-desc">
               sk-orca- で始まるキーをVS Codeの暗号化ストレージに保存し、モデル一覧を自動取得します。保存した値は画面へ再表示しません。
             </div>
@@ -262,7 +277,12 @@ export function S06Settings() {
           </div>
 
           <div className="setting-item">
-            <SettingTitle icon="smart_toy">使用モデル</SettingTitle>
+            <SettingTitle
+              icon="smart_toy"
+              help="OrcaRouter経由で回答生成に使うモデルまたはルーターを選びます。Free Routerは無料枠内のモデルだけを選択します。"
+            >
+              使用モデル
+            </SettingTitle>
             <div className="setting-desc">
               {orcaRouterApiKeyConfigured
                 ? "Free Routerは無料容量だけを使い、有料モデルへ自動移行しません。"
@@ -310,7 +330,12 @@ export function S06Settings() {
           </div>
 
           <div className="setting-item orcarouter-data-note">
-            <SettingTitle icon="cloud_upload">外部送信</SettingTitle>
+            <SettingTitle
+              icon="cloud_upload"
+              help="OrcaRouter利用時に外部へ送られる情報と、Guardrail／Firewallの適用範囲を説明しています。機密情報を扱う前に確認してください。"
+            >
+              外部送信
+            </SettingTitle>
             <div className="setting-desc">
               回答生成などに使う質問、コード断片、診断情報、ファイル名・ディレクトリ構造、追加コンテキスト、再利用ナレッジのタイトル・要約、評価理由からローカル生成した定型フィードバック傾向、必要な会話内容は、OrcaRouterと選択された上流モデル事業者へ送信されます。フィードバックの補足コメントは送信せず、除外設定に一致するファイル本文も送信しません。
             </div>
@@ -326,13 +351,23 @@ export function S06Settings() {
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="toggle_on">初期モード</SettingTitle>
+        <SettingTitle
+          icon="toggle_on"
+          help="新しい相談を始めたときの動作を選びます。「必要時」は手動相談のみ、「常時」は操作状況に応じた自動助言も有効にします。"
+        >
+          初期モード
+        </SettingTitle>
         <div className="setting-desc">相談開始時に使用するモードです</div>
         <ModeButtonGroup value={defaultMode} onChange={setDefaultMode} />
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="travel_explore">推論強度</SettingTitle>
+        <SettingTitle
+          icon="travel_explore"
+          help="手動相談でAIへ渡す調査範囲と、回答の詳しさを選びます。「高」では関連ファイルやディレクトリ構造も参照するため、処理時間と使用量が増える場合があります。"
+        >
+          推論強度
+        </SettingTitle>
         <div className="setting-desc">手動相談で使う調査範囲と助言の詳しさです。高では関連ファイルとディレクトリ構造も参照します</div>
         <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
       </div>
@@ -367,7 +402,12 @@ export function S06Settings() {
 
       {/* 上限は接続先を問わず適用する。実費が出る OrcaRouter にこそガードが要るため。 */}
       <div className="setting-item">
-        <SettingTitle icon="data_usage">NaviCom内の概算使用量ガード</SettingTitle>
+        <SettingTitle
+          icon="data_usage"
+          help="NaviComが記録した1日分の入出力トークンに上限を設けます。上限到達後は自動助言を停止しますが、プロバイダー側の請求上限を設定する機能ではありません。"
+        >
+          NaviCom内の概算使用量ガード
+        </SettingTitle>
         <div className="setting-desc">
           NaviComが数えた入出力トークンの合計です。接続先を問わず、上限に達すると自動助言を一時停止します（手動相談は警告のみ）。実際の請求額やAI Creditsとは一致しません
           {viewModel?.providerId === providerId && viewModel.usageToday && (
@@ -388,7 +428,12 @@ export function S06Settings() {
 
       {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
         <div className="setting-item">
-          <SettingTitle icon="payments">OrcaRouterの本日利用量</SettingTitle>
+          <SettingTitle
+            icon="payments"
+            help="本日NaviComからOrcaRouterへ送ったリクエストとトークンの概算です。表示料金は応答時点の記録であり、確定請求額ではありません。"
+          >
+            OrcaRouterの本日利用量
+          </SettingTitle>
           <div className="setting-desc">
             {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン
             {viewModel.usageToday.recordedCostText
@@ -400,7 +445,12 @@ export function S06Settings() {
 
       {providerId === "copilot" && (
         <div className="setting-item">
-          <SettingTitle icon="smart_toy">使用モデル</SettingTitle>
+          <SettingTitle
+            icon="smart_toy"
+            help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
+          >
+            使用モデル
+          </SettingTitle>
           <div className="setting-desc">
             自動では GitHub Copilot の自動モデルルーティングを使用します
             <br />
@@ -419,7 +469,12 @@ export function S06Settings() {
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="shield_lock">保護済みパターン</SettingTitle>
+        <SettingTitle
+          icon="shield_lock"
+          help="認証情報や巨大ファイルなどをAIの参照対象から守るため、NaviComが常に適用する除外パターンです。この一覧は編集できません。"
+        >
+          保護済みパターン
+        </SettingTitle>
         <div className="setting-desc">機密性やサイズの観点から常に除外されるパターンです</div>
         <div className="protected-exclude-list">
           {settings?.protectedExcludedGlobs.join("\n") ?? ""}
@@ -427,7 +482,13 @@ export function S06Settings() {
       </div>
 
       <div className="setting-item">
-        <SettingTitle icon="playlist_remove" htmlFor="excludeGlobs">追加除外パターン (glob)</SettingTitle>
+        <SettingTitle
+          icon="playlist_remove"
+          htmlFor="excludeGlobs"
+          help="AIへ渡したくないファイルやフォルダーをglobパターンで1行ずつ指定します。例: **/tmp/** や **/*.secret"
+        >
+          追加除外パターン (glob)
+        </SettingTitle>
         <div className="setting-desc">ワークスペースで追加除外したいパターンを1行ずつ入力します</div>
         <div className="exclude-textarea">
           <textarea
@@ -442,7 +503,12 @@ export function S06Settings() {
       </div>
 
       <div className="s06-actions">
-        <SettingTitle icon="restart_alt">初期化</SettingTitle>
+        <SettingTitle
+          icon="restart_alt"
+          help="保存済みのNaviCom設定を初期値へ戻します。除外パターンなど、この画面で変更した設定もリセットされます。"
+        >
+          初期化
+        </SettingTitle>
         <div className="setting-desc">保存済みの設定を初期値に戻します</div>
         <button className="btn-gray" onClick={() => send({ type: "resetSettings" })}>
           <span className="material-symbols-outlined">restart_alt</span>
@@ -624,7 +690,7 @@ function ScheduleButtonGroup({
     <div className="schedule-group" role="group" aria-labelledby={`${id}-label`}>
       <div className="schedule-header">
         <div>
-          <SettingTitle id={`${id}-label`} icon={icon}>{label}</SettingTitle>
+          <SettingTitle id={`${id}-label`} icon={icon} help={description}>{label}</SettingTitle>
           <div className="setting-desc">{description}</div>
         </div>
       </div>
@@ -782,14 +848,17 @@ function OrcaRouterModelButtonGroup({
 function SettingTitle({
   icon,
   children,
+  help,
   id,
   htmlFor
 }: {
   icon: string;
   children: ReactNode;
+  help: string;
   id?: string;
   htmlFor?: string;
 }) {
+  const tooltipId = useId();
   const content = (
     <>
       <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>
@@ -797,10 +866,47 @@ function SettingTitle({
     </>
   );
 
-  return htmlFor ? (
-    <label id={id} className="setting-label setting-title" htmlFor={htmlFor}>{content}</label>
-  ) : (
-    <div id={id} className="setting-label setting-title">{content}</div>
+  return (
+    <div className="setting-title-row">
+      {htmlFor ? (
+        <label id={id} className="setting-label setting-title" htmlFor={htmlFor}>{content}</label>
+      ) : (
+        <div id={id} className="setting-label setting-title">{content}</div>
+      )}
+      <div className="setting-help">
+        <button
+          type="button"
+          className="setting-help-button"
+          aria-label="この項目のヘルプ"
+          aria-describedby={tooltipId}
+        >
+          <HelpCircleIcon />
+        </button>
+        <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
+          {help}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpCircleIcon() {
+  return (
+    <svg
+      className="setting-help-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M9.4 9.1a2.75 2.75 0 1 1 4.7 1.95c-.98.97-2.1 1.45-2.1 2.95" />
+      <path d="M12 17h.01" />
+    </svg>
   );
 }
 
@@ -849,7 +955,12 @@ function LmStudioServerControl({
 
   return (
     <div className="setting-item lmstudio-server-card" aria-busy={isTransitioning}>
-      <SettingTitle icon="dns">LM Studio サーバー</SettingTitle>
+      <SettingTitle
+        icon="dns"
+        help="NaviComからLM Studioのローカルサーバーを起動・停止します。停止すると、同じサーバーを使っているほかのアプリの接続にも影響します。"
+      >
+        LM Studio サーバー
+      </SettingTitle>
       <div className={`lmstudio-server-status state-${server.state}`} aria-live="polite">
         <span
           className={`material-symbols-outlined lmstudio-server-status-icon${isTransitioning ? " is-spinning" : ""}`}
