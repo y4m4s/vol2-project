@@ -31,6 +31,30 @@ export interface GuidancePromptInput {
   modelProfile?: ModelProfile;
 }
 
+export interface GuidancePromptMessages {
+  systemPrompt: string;
+  userPrompt: string;
+}
+
+/**
+ * Provider roles are kept separate here. OpenAI-compatible providers can send
+ * Guidance as a system message while editor/workspace data remains a user message.
+ * buildGuidancePrompt is retained as the flattened representation used by evals.
+ */
+export function buildGuidancePromptMessages(input: GuidancePromptInput): GuidancePromptMessages {
+  const prompt = buildGuidancePrompt(input);
+  const delimiter = (input.modelProfile ?? DEFAULT_MODEL_PROFILE).delimiter;
+  const boundary = delimiter === "markdown" ? "\n## Context\n" : "\n<context>\n";
+  const boundaryIndex = prompt.indexOf(boundary);
+  if (boundaryIndex < 0) {
+    return { systemPrompt: prompt, userPrompt: "" };
+  }
+  return {
+    systemPrompt: prompt.slice(0, boundaryIndex).trim(),
+    userPrompt: prompt.slice(boundaryIndex + 1).trim()
+  };
+}
+
 export function buildGuidancePrompt(input: GuidancePromptInput): string {
   const { context, kind, userPrompt, knowledgeItems, feedbackTendency, slashCommand, slashCommandScope } = input;
   const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
@@ -245,6 +269,7 @@ function buildGuidanceBlock(
     modelProfile.terse
       ? "- Keep the response terse: prefer short bullets unless the selected slash command requires a specific format."
       : "- Keep the response compact and focused; expand only where the requested depth or slash command needs it.",
+    "- Treat this as a stateless request. Do not assume access to earlier conversation turns unless their content appears in the current reference data.",
     // 実装やデバッグの依頼では、完全な解決策や修正そのものを述べず、ユーザーが自力で気づけるよう導く。
     "- For implementation or debugging requests, do not state complete solutions or fixes. Guide the user to discover them.",
     // 追加コンテキストの内容・要件・制約・入出力・意味について尋ねられたら、追加コンテキストから直接答える。
@@ -264,6 +289,11 @@ function buildGuidanceBlock(
     "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
     // 正確な言い回しやフレーズの型を固定せず、自然に次の行動へ導く。
     "- Write in a way that naturally leads the user to their next action without prescribing exact wording or phrasing patterns.",
+    "- Return only one JSON object with no Markdown fence or surrounding text.",
+    '- When giving advice, use exactly this shape: {"kind":"advice","text":"Japanese Markdown response"}.',
+    kind === "always"
+      ? '- If there is no worthwhile advice, use exactly this shape: {"kind":"no_advice"}. Do not use an empty response.'
+      : '- For this request, kind must be "advice" and text must be non-empty.',
     `- Request focus: ${getInstructionByKind(kind)}`
   ];
 
@@ -318,8 +348,8 @@ export function getInstructionByKind(kind: GuidanceKind): string {
       // ユーザーが質問しています。追加コンテキストの問題文・要件・制約・入出力・意味について尋ねている場合は、追加コンテキストを最優先にして直接説明してください。実装やデバッグの相談では、着目すべき場所・処理・関係性を示して、ユーザー自身が手を動かして確かめられるよう誘導してください。
       return "The user is asking a question. If they ask about the problem statement, requirements, constraints, input/output, or meaning of the additional context, explain it directly with the additional context as the top priority. For implementation or debugging questions, point to the relevant locations, operations, and relationships so the user can verify things hands-on themselves.";
     case "always":
-      // 今の編集の流れを見て、見落としやすい設計上の懸念・壊れやすい境界・次に影響が出そうな箇所があれば、それだけを短く指し示してください。書きかけのコードや構文の不完全さには触れないでください。何も気になる点がなければ何も返さないでください。
-      return "Looking at the current editing flow, if there are easy-to-miss design concerns, fragile boundaries, or spots likely to be affected next, point to only those, briefly. Do not comment on in-progress code or syntactic incompleteness. If nothing stands out, return nothing.";
+      // 今の編集の流れを見て、見落としやすい設計上の懸念・壊れやすい境界・次に影響が出そうな箇所があれば、それだけを短く指し示してください。書きかけのコードや構文の不完全さには触れないでください。何も気になる点がなければ no_advice を返してください。
+      return 'Looking at the current editing flow, if there are easy-to-miss design concerns, fragile boundaries, or spots likely to be affected next, point to only those, briefly. Do not comment on in-progress code or syntactic incompleteness. If nothing stands out, return the required {"kind":"no_advice"} result.';
     case "context":
     default:
       // ユーザーが選択箇所について相談しています。その箇所の周辺で注目すべき処理・依存関係・データの流れを指し示して、ユーザー自身が原因や改善点にたどり着けるよう誘導してください。

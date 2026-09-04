@@ -33,7 +33,7 @@ export function S02Main() {
     <div className="s02-root">
       <PageHeader
         title="新しい相談"
-        subtitle="最初の質問を送ると会話画面へ移動し、そのまま続けて相談できます"
+        subtitle="質問と回答を相談単位で保存します（過去の発言はAIへ自動送信しません）"
         back={false}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
@@ -54,7 +54,7 @@ export function S02Main() {
               <span className="material-symbols-outlined">history</span>
               <div className="s02-empty-point-copy">
                 <div className="s02-empty-point-title">履歴は別ページで管理</div>
-                <div className="s02-empty-point-desc">右上の履歴アイコンから途中の会話を再開できます</div>
+                <div className="s02-empty-point-desc">右上の履歴アイコンから過去の質問と回答を見返せます</div>
               </div>
             </div>
 

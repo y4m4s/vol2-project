@@ -30,6 +30,8 @@ const NEXT_TODO_FILE_LIMIT = 180;
 const NEXT_TODO_MAX_FILE_BYTES = 200_000;
 const NEXT_MANIFEST_MAX_FILE_BYTES = 200_000;
 const NEXT_DOC_MAX_FILE_BYTES = 200_000;
+const MAX_DOCUMENT_SNAPSHOT_CHARS = 200_000;
+const REFERENCED_FILE_CONTEXT_RADIUS = 20;
 
 interface RecentEditRecord {
   lineStart: number;
@@ -42,6 +44,7 @@ interface ReferencedFileCandidate {
   uri: vscode.Uri;
   reason: ReferencedFileReason;
   score: number;
+  focusLine?: number;
 }
 
 interface WorkspaceTreeNode {
@@ -108,11 +111,17 @@ export class ContextCollector {
   }
 
   public primeDocument(document: vscode.TextDocument): void {
-    if (document.uri.scheme !== "file") {
+    if (!this.isWorkspaceFile(document.uri)) {
       return;
     }
 
-    this.documentSnapshotsByUri.set(document.uri.toString(), document.getText());
+    const key = document.uri.toString();
+    const snapshot = this.captureBoundedSnapshot(document);
+    if (snapshot === undefined) {
+      this.documentSnapshotsByUri.delete(key);
+    } else {
+      this.documentSnapshotsByUri.set(key, snapshot);
+    }
   }
 
   public releaseDocument(uri: vscode.Uri): void {
@@ -124,7 +133,7 @@ export class ContextCollector {
   public collectPreview(): NavigatorContextPreview {
     const editor = vscode.window.activeTextEditor;
 
-    if (!editor) {
+    if (!editor || !this.isWorkspaceFile(editor.document.uri)) {
       return {
         diagnosticsSummary: []
       };
@@ -142,7 +151,7 @@ export class ContextCollector {
   public collectGuidanceContext(): GuidanceContext {
     const editor = vscode.window.activeTextEditor;
 
-    if (!editor) {
+    if (!editor || !this.isWorkspaceFile(editor.document.uri)) {
       return {
         referencedFiles: [],
         diagnosticsSummary: [],
@@ -228,7 +237,7 @@ export class ContextCollector {
   }
 
   public captureDocumentChange(event: vscode.TextDocumentChangeEvent): void {
-    if (event.contentChanges.length === 0 || event.document.uri.scheme !== "file") {
+    if (event.contentChanges.length === 0 || !this.isWorkspaceFile(event.document.uri)) {
       return;
     }
 
@@ -241,7 +250,14 @@ export class ContextCollector {
     const nextRecords = [...changes, ...existing].slice(0, MAX_RECENT_EDIT_COUNT);
 
     this.recentEditsByDocument.set(key, nextRecords);
-    this.documentSnapshotsByUri.set(key, event.document.getText());
+    const nextSnapshot = previousText === undefined
+      ? this.captureBoundedSnapshot(event.document)
+      : this.applyDocumentChanges(previousText, event.contentChanges);
+    if (nextSnapshot === undefined) {
+      this.documentSnapshotsByUri.delete(key);
+    } else {
+      this.documentSnapshotsByUri.set(key, nextSnapshot);
+    }
   }
 
   private getSelectedText(editor: vscode.TextEditor): string | undefined {
@@ -254,6 +270,9 @@ export class ContextCollector {
   }
 
   private collectDiagnostics(uri: vscode.Uri): DiagnosticSummary[] {
+    if (!this.isWorkspaceFile(uri)) {
+      return [];
+    }
     return vscode.languages.getDiagnostics(uri).slice(0, MAX_DIAGNOSTIC_COUNT).map((diagnostic) => ({
       severity: this.mapSeverity(diagnostic.severity),
       message: diagnostic.message,
@@ -388,17 +407,20 @@ export class ContextCollector {
         continue;
       }
       const score = diagnostics.some((item) => item.severity === vscode.DiagnosticSeverity.Error) ? 90 : 75;
-      this.addReferencedFileCandidate(candidates, uri, "diagnostic", score, activePath, excludedGlobs);
+      const focusLine = diagnostics.reduce((line, item) => Math.min(line, item.range.start.line + 1), Number.MAX_SAFE_INTEGER);
+      this.addReferencedFileCandidate(candidates, uri, "diagnostic", score, activePath, excludedGlobs, focusLine);
     }
 
     for (const key of this.recentEditsByDocument.keys()) {
+      const recentFocusLine = this.pruneRecentEdits(this.recentEditsByDocument.get(key) ?? [])[0]?.lineStart;
       this.addReferencedFileCandidate(
         candidates,
         vscode.Uri.parse(key),
         "recentEdit",
         85,
         activePath,
-        excludedGlobs
+        excludedGlobs,
+        recentFocusLine
       );
     }
 
@@ -448,10 +470,11 @@ export class ContextCollector {
     reason: ReferencedFileReason,
     score: number,
     activeFilePath: string | undefined,
-    excludedGlobs: string[]
+    excludedGlobs: string[],
+    focusLine?: number
   ): void {
     if (
-      uri.scheme !== "file" ||
+      !this.isWorkspaceFile(uri) ||
       uri.fsPath === activeFilePath ||
       this.isPathExcluded(uri.fsPath, excludedGlobs)
     ) {
@@ -461,7 +484,7 @@ export class ContextCollector {
     const key = uri.toString();
     const existing = candidates.get(key);
     if (!existing || existing.score < score) {
-      candidates.set(key, { uri, reason, score });
+      candidates.set(key, { uri, reason, score, focusLine });
     }
   }
 
@@ -470,13 +493,16 @@ export class ContextCollector {
     maxExcerptLength = MAX_REFERENCED_FILE_EXCERPT_LENGTH
   ): Promise<ReferencedFileContext | undefined> {
     try {
+      if (!this.isWorkspaceFile(candidate.uri)) {
+        return undefined;
+      }
       const stat = await vscode.workspace.fs.stat(candidate.uri);
       if (stat.type !== vscode.FileType.File || stat.size > MAX_REFERENCED_FILE_BYTES) {
         return undefined;
       }
 
       const document = await vscode.workspace.openTextDocument(candidate.uri);
-      const excerpt = this.collectDocumentExcerpt(document, maxExcerptLength);
+      const excerpt = this.collectDocumentExcerpt(document, maxExcerptLength, candidate.focusLine);
       if (!excerpt && this.collectDiagnostics(candidate.uri).length === 0) {
         return undefined;
       }
@@ -495,13 +521,21 @@ export class ContextCollector {
     }
   }
 
-  private collectDocumentExcerpt(document: vscode.TextDocument, maxLength: number): string | undefined {
-    const lastLine = Math.min(document.lineCount - 1, FALLBACK_TOP_LINE_COUNT - 1);
+  private collectDocumentExcerpt(
+    document: vscode.TextDocument,
+    maxLength: number,
+    focusLine?: number
+  ): string | undefined {
+    const focusIndex = focusLine === undefined ? undefined : Math.max(0, focusLine - 1);
+    const firstLine = focusIndex === undefined ? 0 : Math.max(0, focusIndex - REFERENCED_FILE_CONTEXT_RADIUS);
+    const lastLine = focusIndex === undefined
+      ? Math.min(document.lineCount - 1, FALLBACK_TOP_LINE_COUNT - 1)
+      : Math.min(document.lineCount - 1, focusIndex + REFERENCED_FILE_CONTEXT_RADIUS);
     if (lastLine < 0) {
       return undefined;
     }
 
-    const range = new vscode.Range(0, 0, lastLine, document.lineAt(lastLine).text.length);
+    const range = new vscode.Range(firstLine, 0, lastLine, document.lineAt(lastLine).text.length);
     const text = document.getText(range);
 
     return text.trim().length > 0 ? this.limitText(text, maxLength) : undefined;
@@ -564,7 +598,7 @@ export class ContextCollector {
 
   private collectOpenFileSummary(excludedGlobs: string[], maxCount: number): string[] {
     return vscode.workspace.textDocuments
-      .filter((document) => document.uri.scheme === "file" && !this.isPathExcluded(document.uri.fsPath, excludedGlobs))
+      .filter((document) => this.isWorkspaceFile(document.uri) && !this.isPathExcluded(document.uri.fsPath, excludedGlobs))
       .map((document) => `${this.toWorkspaceRelativePath(document.uri)} (${document.languageId})`)
       .slice(0, maxCount);
   }
@@ -572,7 +606,7 @@ export class ContextCollector {
   private collectWorkspaceDiagnosticsSummary(excludedGlobs: string[], maxCount: number): string[] {
     return vscode.languages.getDiagnostics()
       .flatMap(([uri, diagnostics]) => diagnostics
-        .filter(() => uri.scheme === "file" && !this.isPathExcluded(uri.fsPath, excludedGlobs))
+        .filter(() => this.isWorkspaceFile(uri) && !this.isPathExcluded(uri.fsPath, excludedGlobs))
         .map((diagnostic) => ({
           uri,
           diagnostic
@@ -590,7 +624,7 @@ export class ContextCollector {
 
     for (const [key, records] of this.recentEditsByDocument.entries()) {
       const uri = vscode.Uri.parse(key);
-      if (uri.scheme !== "file" || this.isPathExcluded(uri.fsPath, excludedGlobs)) {
+      if (!this.isWorkspaceFile(uri) || this.isPathExcluded(uri.fsPath, excludedGlobs)) {
         continue;
       }
 
@@ -781,6 +815,41 @@ export class ContextCollector {
   // 一致判定は globMatch に集約する（RequestPlanner と同じ実装を使うため）。
   private isPathExcluded(filePath: string, patterns: readonly string[]): boolean {
     return isPathExcluded(filePath, patterns);
+  }
+
+  private isWorkspaceFile(uri: vscode.Uri): boolean {
+    return uri.scheme === "file" && vscode.workspace.getWorkspaceFolder(uri) !== undefined;
+  }
+
+  private captureBoundedSnapshot(document: vscode.TextDocument): string | undefined {
+    if (!this.isWorkspaceFile(document.uri) || document.lineCount <= 0) {
+      return undefined;
+    }
+    const lastLine = document.lineCount - 1;
+    const end = new vscode.Position(lastLine, document.lineAt(lastLine).text.length);
+    if (document.offsetAt(end) > MAX_DOCUMENT_SNAPSHOT_CHARS) {
+      return undefined;
+    }
+    return document.getText(new vscode.Range(new vscode.Position(0, 0), end));
+  }
+
+  private applyDocumentChanges(
+    previousText: string,
+    changes: readonly vscode.TextDocumentContentChangeEvent[]
+  ): string | undefined {
+    let nextText = previousText;
+    const descendingChanges = [...changes].sort((a, b) => b.rangeOffset - a.rangeOffset);
+    for (const change of descendingChanges) {
+      const endOffset = change.rangeOffset + change.rangeLength;
+      if (change.rangeOffset < 0 || endOffset > nextText.length) {
+        return undefined;
+      }
+      nextText = `${nextText.slice(0, change.rangeOffset)}${change.text}${nextText.slice(endOffset)}`;
+      if (nextText.length > MAX_DOCUMENT_SNAPSHOT_CHARS) {
+        return undefined;
+      }
+    }
+    return nextText;
   }
 
   private collectRelatedSymbols(editor: vscode.TextEditor, selectedText?: string): string[] {

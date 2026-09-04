@@ -34,7 +34,8 @@ export class KnowledgeCoordinator {
       providerId: item.providerId,
       modelId: item.modelId,
       modelLabel: item.modelLabel,
-      updatedAt: item.updatedAt
+      updatedAt: item.updatedAt,
+      reviewRequired: item.status === "disabled"
     }));
   }
 
@@ -54,6 +55,7 @@ export class KnowledgeCoordinator {
       body: selected.body,
       createdAt: selected.createdAt,
       updatedAt: selected.updatedAt,
+      reviewRequired: selected.status === "disabled",
       sourceConversation,
       sourceConversationDeleted: Boolean(selected.sourceAdviceId && !sourceConversation)
     };
@@ -94,9 +96,14 @@ export class KnowledgeCoordinator {
 
     const existing = this.knowledgeStore.getBySourceAdviceId(source.id);
     if (existing) {
+      this.select(existing.id);
       this.host.patchSession({
-        selectedKnowledgeId: existing.id,
-        statusMessage: { kind: "info", text: "このアドバイスはすでにナレッジ化されています。" }
+        statusMessage: {
+          kind: "info",
+          text: existing.status === "disabled"
+            ? "このナレッジ下書きは確認待ちです。内容を確認して有効化してください。"
+            : "このアドバイスはすでにナレッジ化されています。"
+        }
       });
       return;
     }
@@ -105,38 +112,58 @@ export class KnowledgeCoordinator {
       requestState: "saving_knowledge",
       statusMessage: { kind: "info", text: "接続中の AI でアドバイスをナレッジ用に整理しています..." }
     });
-    const model = this.connectionService.getConnectedModel();
-    const modelLabel = this.host.getCurrentModelLabel();
-    const draftResult = await this.adviceService.createKnowledgeDraft({
-      source: { ...source, context: this.host.getGuidanceContext(source.id) },
-      conversation: buildConversationWindow(state, source)
-    });
-    if (!draftResult.ok) {
-      this.host.patchSession({
-        requestState: "idle",
-        connectionState: draftResult.connectionState,
-        statusMessage: {
-          kind: draftResult.connectionState === "restricted" || draftResult.connectionState === "unavailable" ? "error" : "warning",
-          text: draftResult.message
-        }
+    try {
+      const model = this.connectionService.getConnectedModel();
+      const modelLabel = this.host.getCurrentModelLabel();
+      const draftResult = await this.adviceService.createKnowledgeDraft({
+        source: { ...source, context: this.host.getGuidanceContext(source.id) },
+        conversation: buildConversationWindow(state, source)
       });
-      return;
-    }
+      if (!draftResult.ok) {
+        this.host.patchSession({
+          connectionState: draftResult.connectionState,
+          statusMessage: {
+            kind: draftResult.connectionState === "restricted" || draftResult.connectionState === "unavailable" ? "error" : "warning",
+            text: draftResult.message
+          }
+        });
+        return;
+      }
 
-    const record = await this.knowledgeStore.create({
-      title: draftResult.draft.title,
-      summary: draftResult.draft.summary,
-      body: draftResult.draft.body,
-      sourceAdviceId: source.id,
-      providerId: model?.providerId,
-      modelId: model?.modelId,
-      modelLabel
-    });
+      const record = await this.knowledgeStore.create({
+        title: draftResult.draft.title,
+        summary: draftResult.draft.summary,
+        body: draftResult.draft.body,
+        sourceAdviceId: source.id,
+        providerId: model?.providerId,
+        modelId: model?.modelId,
+        modelLabel,
+        requiresReview: true
+      });
+      this.host.patchSession({
+        screen: "knowledge_detail",
+        screenHistory: state.screen === "knowledge_detail" ? state.screenHistory : [...state.screenHistory, state.screen],
+        selectedKnowledgeId: record.id,
+        statusMessage: { kind: "info", text: "ナレッジ下書きを作成しました。内容を確認して有効化してください。" }
+      });
+    } finally {
+      if (this.host.getState().requestState === "saving_knowledge") {
+        this.host.patchSession({ requestState: "idle" });
+      }
+    }
+  }
+
+  public async approve(id: string): Promise<void> {
+    if (this.host.getState().requestState !== "idle") return;
+    const approved = await this.knowledgeStore.approve(id);
     this.host.patchSession({
-      requestState: "idle",
-      ...(conversationId ? {} : { screen: "knowledge" as const }),
-      selectedKnowledgeId: record.id,
-      statusMessage: { kind: "info", text: "アドバイスを整理してナレッジとして保存しました。" }
+      ...(approved ? { selectedKnowledgeId: approved.id } : {}),
+      statusMessage: {
+        kind: approved ? "info" : "warning",
+        text: approved
+          ? "内容を確認済みとして、ナレッジの再利用を有効にしました。"
+          : "有効化するナレッジが見つかりません。"
+      }
     });
   }
 

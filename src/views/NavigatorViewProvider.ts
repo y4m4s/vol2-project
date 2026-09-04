@@ -9,6 +9,8 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   private view?: vscode.WebviewView;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly viewDisposables: vscode.Disposable[] = [];
+  private updateTimer?: NodeJS.Timeout;
+  private postQueue: Promise<void> = Promise.resolve();
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
@@ -16,7 +18,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   ) {
     this.disposables.push(
       this.controller.onDidChangeState(() => {
-        void this.postViewModel();
+        this.scheduleViewModelUpdate();
       })
     );
   }
@@ -100,6 +102,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
             return;
+          case "approveKnowledge":
+            await this.controller.approveKnowledge(message.id);
+            return;
           case "updateKnowledge":
             await this.controller.updateKnowledge({
               id: message.id,
@@ -171,9 +176,29 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   private async postViewModel(): Promise<void> {
-    if (!this.view) return;
-    const payload = this.controller.getViewModel();
-    await this.view.webview.postMessage({ type: "updateViewModel", payload });
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+      this.updateTimer = undefined;
+    }
+    const queued = this.postQueue.then(async () => {
+      if (!this.view) return;
+      const payload = this.controller.getViewModel();
+      await this.view.webview.postMessage({ type: "updateViewModel", payload });
+    });
+    this.postQueue = queued.catch(() => undefined);
+    await queued;
+  }
+
+  private scheduleViewModelUpdate(): void {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+    }
+    this.updateTimer = setTimeout(() => {
+      this.updateTimer = undefined;
+      void this.postViewModel().catch((error) => {
+        console.error("Failed to post the coalesced NaviCom view model", error);
+      });
+    }, 75);
   }
 
   private async postOperationError(message: string): Promise<void> {
@@ -181,6 +206,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   public dispose(): void {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+      this.updateTimer = undefined;
+    }
+    this.view = undefined;
     this.clearViewDisposables();
     for (const disposable of this.disposables) {
       disposable.dispose();

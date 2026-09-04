@@ -47,6 +47,9 @@ const initSqlJs = require("sql.js") as (config?: {
 const ACTIVE_STREAM_KEY = "active_stream_id";
 const CONVERSATION_SCHEMA_VERSION = 1;
 export const DEFAULT_CONVERSATION_STREAM_TITLE = "新しい相談";
+const MAX_CONVERSATION_ENTRY_TEXT_LENGTH = 50_000;
+const MAX_ADDITIONAL_CONTEXT_LENGTH = 10_000;
+const MAX_MODEL_FIELD_LENGTH = 500;
 
 interface ConversationStreamSummary extends ConversationStreamListItem {
   additionalContext?: string;
@@ -177,13 +180,18 @@ export class ConversationStore implements vscode.Disposable {
       if (currentRevision !== record.revision) {
         throw new ConversationRevisionConflictError(record.id);
       }
-      const normalizedEntries = record.entries.map((entry) => ({ ...entry }));
+      const normalizedEntries = record.entries.map((entry) => ({
+        ...entry,
+        text: this.normalizeEntryText(entry.text),
+        modelId: this.normalizeOptionalText(entry.modelId, MAX_MODEL_FIELD_LENGTH),
+        modelLabel: this.normalizeOptionalText(entry.modelLabel, MAX_MODEL_FIELD_LENGTH)
+      }));
       const nextRecord: ConversationStreamRecord = {
         ...record,
         title: this.normalizeTitle(record.title),
         updatedAt: this.resolveUpdatedAt(record.updatedAt, normalizedEntries),
         entries: normalizedEntries,
-        additionalContext: this.normalizeOptionalText(record.additionalContext),
+        additionalContext: this.normalizeOptionalText(record.additionalContext, MAX_ADDITIONAL_CONTEXT_LENGTH),
         revision: record.revision + 1
       };
       const lastMessagePreview = this.buildLastMessagePreview(normalizedEntries);
@@ -555,12 +563,14 @@ export class ConversationStore implements vscode.Disposable {
   private summaryFromRow(row: Record<string, unknown>): ConversationStreamSummary {
     return {
       id: String(row.id),
-      title: String(row.title),
+      title: this.normalizeTitle(String(row.title)),
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
       messageCount: Number(row.message_count ?? 0),
-      lastMessagePreview: row.last_message_preview ? String(row.last_message_preview) : undefined,
-      additionalContext: this.normalizeOptionalText(row.additional_context)
+      lastMessagePreview: row.last_message_preview
+        ? this.buildPreview(String(row.last_message_preview), 120)
+        : undefined,
+      additionalContext: this.normalizeOptionalText(row.additional_context, MAX_ADDITIONAL_CONTEXT_LENGTH)
     };
   }
 
@@ -568,7 +578,7 @@ export class ConversationStore implements vscode.Disposable {
     return {
       id: String(row.id),
       role: this.parseRole(row.role),
-      text: String(row.text),
+      text: this.normalizeEntryText(String(row.text)),
       createdAt: String(row.created_at),
       kind: this.parseGuidanceKind(row.kind),
       basedOn: this.parseJson<NavigatorContextPreview>(row.based_on_json),
@@ -579,8 +589,8 @@ export class ConversationStore implements vscode.Disposable {
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
       tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json),
       providerId: this.parseProviderId(row.provider_id),
-      modelId: this.normalizeOptionalText(row.model_id),
-      modelLabel: this.normalizeOptionalText(row.model_label),
+      modelId: this.normalizeOptionalText(row.model_id, MAX_MODEL_FIELD_LENGTH),
+      modelLabel: this.normalizeOptionalText(row.model_label, MAX_MODEL_FIELD_LENGTH),
       responseMetadata: this.parseJson<ProviderResponseMetadata>(row.response_metadata_json),
       feedback: this.parseFeedbackRating(row.feedback)
     };
@@ -695,7 +705,7 @@ export class ConversationStore implements vscode.Disposable {
       return undefined;
     }
 
-    return text.length <= 120 ? text : `${text.slice(0, 120)}...`;
+    return this.buildPreview(text, 120);
   }
 
   private normalizeTitle(value: string): string {
@@ -704,16 +714,32 @@ export class ConversationStore implements vscode.Disposable {
       return DEFAULT_CONVERSATION_STREAM_TITLE;
     }
 
-    return normalized.length <= 60 ? normalized : `${normalized.slice(0, 60)}...`;
+    return normalized.length <= 60 ? normalized : `${normalized.slice(0, 57)}...`;
   }
 
-  private normalizeOptionalText(value: unknown): string | undefined {
+  private normalizeOptionalText(value: unknown, maxLength: number): string | undefined {
     if (typeof value !== "string") {
       return undefined;
     }
 
     const normalized = value.replace(/\r\n/g, "\n").trim();
-    return normalized.length > 0 ? normalized : undefined;
+    if (!normalized) return undefined;
+    return normalized.length <= maxLength
+      ? normalized
+      : normalized.slice(0, maxLength);
+  }
+
+  private buildPreview(value: string, maxLength: number): string {
+    return value.length <= maxLength
+      ? value
+      : `${value.slice(0, Math.max(0, maxLength - 3))}...`;
+  }
+
+  private normalizeEntryText(value: string): string {
+    const normalized = value.replace(/\r\n/g, "\n");
+    return normalized.length <= MAX_CONVERSATION_ENTRY_TEXT_LENGTH
+      ? normalized
+      : `${normalized.slice(0, MAX_CONVERSATION_ENTRY_TEXT_LENGTH - 3)}...`;
   }
 
   private async persist(): Promise<void> {

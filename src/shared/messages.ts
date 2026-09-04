@@ -28,6 +28,7 @@ export type WebviewToExtension =
   | { type: "submitFeedback"; reasons: FeedbackReason[]; comment: string }
   | { type: "cancelFeedback" }
   | { type: "selectKnowledge"; id: string }
+  | { type: "approveKnowledge"; id: string }
   | {
       type: "updateKnowledge";
       id: string;
@@ -108,6 +109,7 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
     case "selectConversationStream":
     case "deleteConversationStream":
     case "selectKnowledge":
+    case "approveKnowledge":
     case "deleteKnowledge":
       return isBoundedString(value.id, 1, 200) ? value as WebviewToExtension : undefined;
     case "ask":

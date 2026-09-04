@@ -60,12 +60,21 @@ test("chat completionにキーと応答時点の料金要求を付け、本文�
     });
   };
 
-  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", {
+    systemPrompt: "制御指示",
+    userPrompt: "質問",
+    purpose: "guidance",
+    maxOutputTokens: 2048
+  });
   assert.equal(requestedUrl, `${ORCA_ROUTER_BASE_URL}/chat/completions`);
   assert.deepEqual(requestBody, {
     model: "orcarouter/free",
-    messages: [{ role: "user", content: "質問" }],
-    stream: false
+    messages: [
+      { role: "system", content: "制御指示" },
+      { role: "user", content: "質問" }
+    ],
+    stream: false,
+    max_tokens: 2048
   });
   assert.deepEqual(result, {
     text: "回答です",
@@ -77,6 +86,26 @@ test("chat completionにキーと応答時点の料金要求を付け、本文�
     finishReason: "stop",
     providerAttemptCount: 1
   });
+});
+
+test("応答ヘッダーと利用量の異常値を境界で正規化する", async () => {
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    choices: [{ message: { content: "回答" }, finish_reason: "f".repeat(150) }],
+    usage: { prompt_tokens: 1.5, completion_tokens: 3, cost_usd: Number.MAX_VALUE }
+  }), {
+    headers: {
+      "X-Orca-Request-Id": "r".repeat(600),
+      "X-Orca-Resolved-Model": "m".repeat(600)
+    }
+  });
+
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "openai/test", "質問");
+  assert.equal(result.requestId?.length, 500);
+  assert.equal(result.resolvedModelId?.length, 500);
+  assert.equal(result.finishReason?.length, 100);
+  assert.equal(result.inputTokens, undefined);
+  assert.equal(result.outputTokens, 3);
+  assert.equal(result.costUsd, undefined);
 });
 
 test("APIエラーのcodeと分類を保持する", async () => {
@@ -123,7 +152,12 @@ test("短いRetry-Afterなら1回だけ待って再試行する", async () => {
     }));
   };
 
-  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", {
+    systemPrompt: "制御指示",
+    userPrompt: "質問",
+    purpose: "guidance",
+    maxOutputTokens: 2048
+  });
   assert.equal(callCount, 2);
   assert.equal(result.text, "再試行後の回答");
   assert.equal(result.providerAttemptCount, 2);
@@ -155,7 +189,12 @@ test("無料モデルの一時障害は短い待機後に1回だけ再試行す�
     }));
   };
 
-  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問");
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", {
+    systemPrompt: "制御指示",
+    userPrompt: "質問",
+    purpose: "guidance",
+    maxOutputTokens: 2048
+  });
   assert.equal(callCount, 2);
   assert.equal(result.text, "復旧後の回答");
   assert.equal(result.providerAttemptCount, 2);

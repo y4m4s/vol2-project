@@ -199,7 +199,7 @@ npm run eval
 | `next-deep` | /next deep がプロジェクト概要を根拠に薄く広く整理する |
 | `additional-context-question` | 問題文（追加コンテキスト）への質問を最優先で扱う |
 | `knowledge-injection` | 再利用ナレッジが控えめに注入される |
-| `always-mode` | 常時モードは推論強度「低」で固定・何も無ければ何も返さない |
+| `always-mode` | 常時モードは推論強度「低」で固定・何も無ければ構造化された `no_advice` を返す |
 | `preset-flow-trims-irrelevant` | /flow プリセットが構造系を残し診断・編集履歴を落とす（①）|
 | `preset-hint-keeps-local` | /hint プリセットが手元の文脈を残し構造系を落とす（①）|
 | `data-instruction-separation` | 文脈がタグで囲われ、データ内の閉じタグが無効化される（②）|

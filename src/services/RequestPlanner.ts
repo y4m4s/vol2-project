@@ -95,7 +95,7 @@ export class RequestPlanner {
     }
 
     return categories.map((category) =>
-      presetAllow.has(category.key) || category.key === "additionalContext"
+      !category.enabled || presetAllow.has(category.key) || category.key === "additionalContext"
         ? category
         : { ...category, included: false, note: `/${slashCommand} では送信しません` }
     );
@@ -194,6 +194,14 @@ export class RequestPlanner {
         true,
         Boolean(context.additionalContext),
         context.additionalContext ? "入力された補足文脈を送信します" : "追加コンテキストは入力されていません"
+      ),
+      this.createCategory(
+        "conversationHistory",
+        "過去の会話",
+        "この相談に保存済みの過去メッセージ",
+        false,
+        false,
+        "コンテキスト増大を防ぐためAIへ自動送信しません"
       )
     ];
   }

@@ -89,7 +89,8 @@ export type ContextCategoryKey =
   | "workspaceTree"
   | "referencedFiles"
   | "projectSummary"
-  | "additionalContext";
+  | "additionalContext"
+  | "conversationHistory";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -327,6 +328,7 @@ export interface KnowledgeListItem {
   modelId?: string;
   modelLabel?: string;
   updatedAt: string;
+  reviewRequired?: boolean;
 }
 
 export interface KnowledgeDetailViewData extends KnowledgeListItem {

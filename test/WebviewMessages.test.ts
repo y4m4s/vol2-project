@@ -34,6 +34,14 @@ test("相談履歴の一括削除メッセージを受け入れる", () => {
   });
 });
 
+test("確認済みナレッジの有効化メッセージをID上限付きで受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "approveKnowledge", id: "knowledge-1" }), {
+    type: "approveKnowledge",
+    id: "knowledge-1"
+  });
+  assert.equal(parseWebviewMessage({ type: "approveKnowledge", id: "" }), undefined);
+});
+
 test("validates token guard settings at the execution boundary", () => {
   const valid = {
     type: "saveSettings",

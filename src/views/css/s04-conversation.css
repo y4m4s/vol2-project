@@ -510,6 +510,14 @@
   height: auto;
 }
 
+.s04-stateless-note {
+  padding: 4px 12px 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .s04-mermaid-fallback-message {
   margin: 6px 0;
   padding: 7px 9px;

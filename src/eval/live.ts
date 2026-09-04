@@ -3,6 +3,7 @@ import type { ConnectionService } from "../services/ConnectionService";
 import { deriveModelProfile } from "../services/ModelProfile";
 import { SCENARIOS } from "./fixtures";
 import { formatReport, runLive, type Responder } from "./runner";
+import { AI_OUTPUT_TOKEN_LIMITS } from "../services/AiRequestPolicy";
 
 /**
  * 評価ハーネスのライブモード配線（開発者専用）。
@@ -32,7 +33,12 @@ export function createModelResponder(connectionService: ConnectionService): Resp
 
     const tokenSource = new vscode.CancellationTokenSource();
     try {
-      return (await model.requestText(prompt, tokenSource.token)).text;
+      return (await model.requestText({
+        systemPrompt: "Follow the NaviCom evaluation prompt supplied in the user message.",
+        userPrompt: prompt,
+        purpose: "guidance",
+        maxOutputTokens: AI_OUTPUT_TOKEN_LIMITS.guidance
+      }, tokenSource.token)).text;
     } finally {
       tokenSource.dispose();
     }

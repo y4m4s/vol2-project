@@ -3,13 +3,21 @@ import type { NavigatorStatusMessage } from "../../../shared/types";
 
 type FloatingToastKind = NavigatorStatusMessage["kind"] | "success";
 type FloatingToastPhase = "hidden" | "show" | "leaving";
+type FloatingToastIcon = "auto_awesome" | "check_circle" | "crisis_alert" | "warning";
+
+const DEFAULT_ICONS: Record<FloatingToastKind, { icon: FloatingToastIcon }> = {
+  error: { icon: "crisis_alert" },
+  warning: { icon: "warning" },
+  success: { icon: "check_circle" },
+  info: { icon: "check_circle" }
+};
 
 interface FloatingToastProps {
   open: boolean;
   message: string;
   kind?: FloatingToastKind;
   title?: string;
-  icon?: string;
+  icon?: FloatingToastIcon;
   persist?: boolean;
   durationMs?: number;
   progress?: "running" | "done";
@@ -104,15 +112,5 @@ export function FloatingToast({
 }
 
 function getDefaultIcon(kind: FloatingToastKind): string {
-  switch (kind) {
-    case "error":
-      return "error";
-    case "warning":
-      return "warning";
-    case "success":
-      return "check_circle";
-    case "info":
-    default:
-      return "info";
-  }
+  return DEFAULT_ICONS[kind].icon;
 }

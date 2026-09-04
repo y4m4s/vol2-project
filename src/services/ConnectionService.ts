@@ -17,6 +17,13 @@ import {
 import { OrcaRouterCredentialStore } from "./OrcaRouterCredentialStore";
 import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
+import {
+  AiResponseLimitError,
+  AiTextRequest,
+  MAX_PROVIDER_MODEL_COUNT,
+  getResponseCharacterLimit,
+  normalizeProviderField
+} from "./AiRequestPolicy";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
 export type CopilotConnectionIssue = "timeout" | "noPermissions" | "blocked" | "notFound" | "other";
@@ -45,7 +52,7 @@ export interface ConnectedProviderModel {
   modelLabel: string;
   profileSource: ModelProfileSource;
   requestText(
-    prompt: string,
+    request: AiTextRequest,
     token: vscode.CancellationToken,
     metadata?: ProviderRequestMetadata
   ): Promise<ProviderTextResponse>;
@@ -453,10 +460,12 @@ export class ConnectionService {
         contextLength: model.contextLength
       });
     }
-    return [...options.values()].sort((a, b) => {
-      if (a.isRouter !== b.isRouter) return a.isRouter ? -1 : 1;
-      return a.label.localeCompare(b.label);
-    });
+    return [...options.values()]
+      .sort((a, b) => {
+        if (a.isRouter !== b.isRouter) return a.isRouter ? -1 : 1;
+        return a.label.localeCompare(b.label);
+      })
+      .slice(0, MAX_PROVIDER_MODEL_COUNT);
   }
 
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
@@ -465,10 +474,20 @@ export class ConnectionService {
       modelId: model.id,
       modelLabel: this.toModelLabel(model),
       profileSource: model,
-      requestText: async (prompt, token) => {
-        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, token);
+      requestText: async (request, token) => {
+        const response = await model.sendRequest(
+          [
+            vscode.LanguageModelChatMessage.User(request.systemPrompt),
+            vscode.LanguageModelChatMessage.User(request.userPrompt)
+          ],
+          { modelOptions: { max_tokens: request.maxOutputTokens } },
+          token
+        );
         let text = "";
         for await (const chunk of response.text) {
+          if (text.length + chunk.length > getResponseCharacterLimit(request.purpose)) {
+            throw new AiResponseLimitError();
+          }
           text += chunk;
         }
         return { text };
@@ -487,11 +506,11 @@ export class ConnectionService {
         name: model.label,
         vendor: "lmstudio"
       },
-      requestText: async (prompt, cancellationToken, metadata) => {
+      requestText: async (request, cancellationToken, metadata) => {
         return this.lmStudioClient.createCompletion(
           baseUrl,
           model.key,
-          prompt,
+          request,
           metadata?.referencedFilePaths,
           cancellationToken
         );
@@ -510,12 +529,12 @@ export class ConnectionService {
         vendor: model.provider,
         maxInputTokens: model.contextLength
       },
-      requestText: async (prompt, cancellationToken) => {
+      requestText: async (request, cancellationToken) => {
         const currentApiKey = await this.orcaRouterCredentials.getApiKey();
         if (!currentApiKey) {
           throw new OrcaRouterError("auth", "OrcaRouter API key is not configured.");
         }
-        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, prompt, cancellationToken);
+        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, request, cancellationToken);
       }
     };
   }
@@ -559,7 +578,9 @@ export class ConnectionService {
       seenLabelIndexes.set(labelKey, selectable.length);
       selectable.push(model);
     }
-    return selectable.sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)));
+    return selectable
+      .sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)))
+      .slice(0, MAX_PROVIDER_MODEL_COUNT);
   }
 
   private selectAutoRoutingCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
@@ -575,7 +596,7 @@ export class ConnectionService {
   }
 
   private toModelLabel(model: vscode.LanguageModelChat): string {
-    return model.name || model.family || model.id;
+    return normalizeProviderField(model.name || model.family || model.id);
   }
 
   private toModelLabelKey(model: vscode.LanguageModelChat): string {
@@ -583,7 +604,7 @@ export class ConnectionService {
   }
 
   private toTokenLimitText(model: vscode.LanguageModelChat): string {
-    return Number.isFinite(model.maxInputTokens) && model.maxInputTokens > 0
+    return Number.isSafeInteger(model.maxInputTokens) && model.maxInputTokens > 0
       ? `${Math.floor(model.maxInputTokens).toLocaleString()} tokens`
       : "Token limit unavailable";
   }
@@ -594,9 +615,19 @@ export class ConnectionService {
     try {
       const prompt = "Respond with exactly: ready";
       const probe = async (): Promise<string> => {
-        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, tokenSource.token);
+        const response = await model.sendRequest(
+          [vscode.LanguageModelChatMessage.User(prompt)],
+          { modelOptions: { max_tokens: 16 } },
+          tokenSource.token
+        );
         let responseText = "";
-        for await (const chunk of response.text) responseText += chunk;
+        for await (const chunk of response.text) {
+          if (responseText.length + chunk.length > 128) {
+            tokenSource.cancel();
+            throw new AiResponseLimitError("Copilot probe response exceeded the size limit.");
+          }
+          responseText += chunk;
+        }
         return responseText;
       };
       const timeout = new Promise<never>((_, reject) => {

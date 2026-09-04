@@ -1,4 +1,13 @@
 import type * as vscode from "vscode";
+import {
+  AiResponseLimitError,
+  AiTextRequest,
+  MAX_MODEL_LIST_RESPONSE_BYTES,
+  MAX_PROVIDER_MODEL_COUNT,
+  MAX_PROVIDER_RESPONSE_BYTES,
+  normalizeProviderField,
+  readResponseTextWithLimit
+} from "./AiRequestPolicy";
 
 export const ORCA_ROUTER_BASE_URL = "https://api.orcarouter.ai/v1";
 export const ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS = 10_000;
@@ -75,21 +84,22 @@ export class OrcaRouterClient {
       { method: "GET", headers: this.createHeaders(apiKey) },
       ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS,
       cancellationToken,
-      "read"
+      "read",
+      MAX_MODEL_LIST_RESPONSE_BYTES
     );
     const data = isRecord(payload) && Array.isArray(payload.data) ? payload.data : undefined;
     if (!data) {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter model response did not include data.");
     }
 
-    return data.flatMap((value) => {
+    return data.slice(0, MAX_PROVIDER_MODEL_COUNT).flatMap((value) => {
       if (!isRecord(value) || typeof value.id !== "string" || !value.id.trim()) {
         return [];
       }
       const architecture = isRecord(value.architecture) ? value.architecture : undefined;
       return [{
-        id: value.id.trim(),
-        ownedBy: typeof value.owned_by === "string" && value.owned_by.trim() ? value.owned_by.trim() : "unknown",
+        id: normalizeProviderField(value.id),
+        ownedBy: typeof value.owned_by === "string" && value.owned_by.trim() ? normalizeProviderField(value.owned_by) : "unknown",
         supportedEndpointTypes: readStringArray(value.supported_endpoint_types),
         contextLength: readPositiveInteger(value.context_length),
         maxCompletionTokens: readPositiveInteger(value.max_completion_tokens),
@@ -102,9 +112,10 @@ export class OrcaRouterClient {
   public async createCompletion(
     apiKey: string,
     modelId: string,
-    prompt: string,
+    prompt: string | AiTextRequest,
     cancellationToken?: vscode.CancellationToken
   ): Promise<OrcaRouterCompletion> {
+    const request = normalizeTextRequest(prompt);
     const {
       payload,
       requestId,
@@ -117,13 +128,20 @@ export class OrcaRouterClient {
         headers: this.createHeaders(apiKey, true),
         body: JSON.stringify({
           model: modelId,
-          messages: [{ role: "user", content: prompt }],
-          stream: false
+          messages: request.systemPrompt
+            ? [
+                { role: "system", content: request.systemPrompt },
+                { role: "user", content: request.userPrompt }
+              ]
+            : [{ role: "user", content: request.userPrompt }],
+          stream: false,
+          ...(request.maxOutputTokens ? { max_tokens: request.maxOutputTokens } : {})
         })
       },
       ORCA_ROUTER_COMPLETION_TIMEOUT_MS,
       cancellationToken,
-      isFreeModel(modelId) ? "freeCompletion" : "completion"
+      isFreeModel(modelId) ? "freeCompletion" : "completion",
+      MAX_PROVIDER_RESPONSE_BYTES
     );
 
     const responseRecord = isRecord(payload) ? payload : undefined;
@@ -131,17 +149,17 @@ export class OrcaRouterClient {
     const firstChoice = choices?.[0];
     const message = isRecord(firstChoice) && isRecord(firstChoice.message) ? firstChoice.message : undefined;
     const text = message ? readMessageContent(message.content) : undefined;
-    if (!text) {
+    if (text === undefined) {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter completion response did not include text.");
     }
     const usage = responseRecord && isRecord(responseRecord.usage) ? responseRecord.usage : undefined;
     const resolvedModelId = headerResolvedModelId ?? (
       typeof responseRecord?.model === "string" && responseRecord.model.trim()
-        ? responseRecord.model.trim()
+        ? normalizeProviderField(responseRecord.model)
         : undefined
     );
     const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
-      ? firstChoice.finish_reason
+      ? normalizeProviderField(firstChoice.finish_reason, 100)
       : undefined;
     return {
       text,
@@ -172,11 +190,12 @@ export class OrcaRouterClient {
     init: RequestInit,
     timeoutMs: number,
     cancellationToken?: vscode.CancellationToken,
-    retryMode: OrcaRouterRetryMode = "none"
+    retryMode: OrcaRouterRetryMode = "none",
+    maxResponseBytes = MAX_PROVIDER_RESPONSE_BYTES
   ): Promise<OrcaRouterJsonResponse> {
     for (let attempt = 0; ; attempt += 1) {
       try {
-        const response = await this.requestJsonOnce(url, init, timeoutMs, cancellationToken);
+        const response = await this.requestJsonOnce(url, init, timeoutMs, cancellationToken, maxResponseBytes);
         return { ...response, attemptCount: attempt + 1 };
       } catch (error) {
         const retryDelayMs = this.resolveRetryDelay(error, retryMode, attempt, cancellationToken);
@@ -192,14 +211,15 @@ export class OrcaRouterClient {
     url: string,
     init: RequestInit,
     timeoutMs: number,
-    cancellationToken?: vscode.CancellationToken
+    cancellationToken?: vscode.CancellationToken,
+    maxResponseBytes = MAX_PROVIDER_RESPONSE_BYTES
   ): Promise<OrcaRouterJsonResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     const cancellation = cancellationToken?.onCancellationRequested(() => controller.abort());
     try {
       const response = await fetch(url, { ...init, redirect: "error", signal: controller.signal });
-      const rawText = await response.text();
+      const rawText = await readResponseTextWithLimit(response, maxResponseBytes);
       if (!response.ok) {
         const detail = readErrorDetail(rawText);
         throw new OrcaRouterError(
@@ -222,6 +242,9 @@ export class OrcaRouterClient {
       }
     } catch (error) {
       if (error instanceof OrcaRouterError) {
+        throw error;
+      }
+      if (error instanceof AiResponseLimitError) {
         throw error;
       }
       if (controller.signal.aborted) {
@@ -326,7 +349,7 @@ function readErrorDetail(rawText: string): { message?: string; code?: string } {
 
 function readMessageContent(value: unknown): string | undefined {
   if (typeof value === "string") {
-    return value.trim() || undefined;
+    return value.trim();
   }
   if (!Array.isArray(value)) {
     return undefined;
@@ -335,28 +358,49 @@ function readMessageContent(value: unknown): string | undefined {
     .flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : [])
     .join("")
     .trim();
-  return text || undefined;
+  return text;
 }
 
 function readStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === "string")
+        .slice(0, 20)
+        .map((item) => normalizeProviderField(item, 100))
+    : [];
+}
+
+function normalizeTextRequest(value: string | AiTextRequest): {
+  systemPrompt?: string;
+  userPrompt: string;
+  maxOutputTokens?: number;
+} {
+  return typeof value === "string"
+    ? { userPrompt: value }
+    : {
+        systemPrompt: value.systemPrompt,
+        userPrompt: value.userPrompt,
+        maxOutputTokens: value.maxOutputTokens
+      };
 }
 
 function readPositiveInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : undefined;
 }
 
 function readNonNegativeInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
 function readNonNegativeNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER
+    ? value
+    : undefined;
 }
 
 function readHeader(headers: Headers, name: string): string | undefined {
   const value = headers.get(name)?.trim();
-  return value || undefined;
+  return value ? normalizeProviderField(value) : undefined;
 }
 
 function isFreeModel(modelId: string): boolean {

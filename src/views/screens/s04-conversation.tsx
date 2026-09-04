@@ -66,7 +66,7 @@ export function S04Conversation() {
             <img src={window.__ICON_URI__} alt="NaviCom" className="s04-empty-icon" />
             <div className="s04-empty-title">ここから会話が始まります</div>
             <div className="s04-empty-desc">
-              送信した質問と回答は、この画面だけに積み上がります
+              質問と回答はここに保存されます。過去の発言は次のAI入力へ自動送信されません
             </div>
           </div>
         )}
@@ -86,6 +86,10 @@ export function S04Conversation() {
         {isThinking && <ThinkingIndicator />}
 
         <div ref={chatBottomRef} />
+      </div>
+
+      <div className="s04-stateless-note">
+        各質問は、その時点の作業文脈と入力内容だけをAIへ送信します。
       </div>
 
       <ChatInputComposer resetKey={activeConversationStreamId} />

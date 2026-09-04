@@ -1,4 +1,13 @@
 import type * as vscode from "vscode";
+import {
+  AiResponseLimitError,
+  AiTextRequest,
+  MAX_MODEL_LIST_RESPONSE_BYTES,
+  MAX_PROVIDER_MODEL_COUNT,
+  MAX_PROVIDER_RESPONSE_BYTES,
+  normalizeProviderField,
+  readResponseTextWithLimit
+} from "./AiRequestPolicy";
 
 export const LM_STUDIO_MODEL_LIST_TIMEOUT_MS = 5_000;
 export const LM_STUDIO_COMPLETION_TIMEOUT_MS = 120_000;
@@ -60,7 +69,8 @@ export class LmStudioClient {
       `${normalizedBaseUrl}/api/v1/models`,
       { method: "GET", headers: this.createHeaders() },
       LM_STUDIO_MODEL_LIST_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      MAX_MODEL_LIST_RESPONSE_BYTES
     );
 
     const models = isRecord(payload) && Array.isArray(payload.models) ? payload.models : undefined;
@@ -68,17 +78,17 @@ export class LmStudioClient {
       throw new LmStudioError("invalidResponse", "LM Studio model response did not include models.");
     }
 
-    return models.flatMap((value) => {
+    return models.slice(0, MAX_PROVIDER_MODEL_COUNT).flatMap((value) => {
       if (!isRecord(value) || typeof value.key !== "string" || !value.key.trim()) {
         return [];
       }
 
-      const key = value.key.trim();
-      const type = typeof value.type === "string" ? value.type : "unknown";
+      const key = normalizeProviderField(value.key);
+      const type = typeof value.type === "string" ? normalizeProviderField(value.type, 100) : "unknown";
       const label = typeof value.display_name === "string" && value.display_name.trim()
-        ? value.display_name.trim()
+        ? normalizeProviderField(value.display_name)
         : typeof value.name === "string" && value.name.trim()
-          ? value.name.trim()
+          ? normalizeProviderField(value.name)
           : key;
       const loadedInstanceCount = Array.isArray(value.loaded_instances) ? value.loaded_instances.length : 0;
       return [{ key, label, type, loadedInstanceCount }];
@@ -88,11 +98,12 @@ export class LmStudioClient {
   public async createCompletion(
     baseUrl: string,
     modelKey: string,
-    prompt: string,
+    prompt: string | AiTextRequest,
     referencedFilePaths?: string[],
     cancellationToken?: vscode.CancellationToken
   ): Promise<LmStudioCompletion> {
     const normalizedBaseUrl = this.normalizeBaseUrl(baseUrl);
+    const request = normalizeTextRequest(prompt);
     const payload = await this.requestJson(
       `${normalizedBaseUrl}/v1/chat/completions`,
       {
@@ -100,29 +111,36 @@ export class LmStudioClient {
         headers: this.createHeaders(),
         body: JSON.stringify({
           model: modelKey,
-          messages: [{ role: "user", content: prompt }],
+          messages: request.systemPrompt
+            ? [
+                { role: "system", content: request.systemPrompt },
+                { role: "user", content: request.userPrompt }
+              ]
+            : [{ role: "user", content: request.userPrompt }],
           stream: false,
+          ...(request.maxOutputTokens ? { max_tokens: request.maxOutputTokens } : {}),
           ...(referencedFilePaths ? { navicom_referenced_files: referencedFilePaths } : {})
         })
       },
       LM_STUDIO_COMPLETION_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      MAX_PROVIDER_RESPONSE_BYTES
     );
 
     const choices = isRecord(payload) && Array.isArray(payload.choices) ? payload.choices : undefined;
     const firstChoice = choices?.[0];
     const message = isRecord(firstChoice) && isRecord(firstChoice.message) ? firstChoice.message : undefined;
     const text = message ? this.readMessageContent(message.content) : undefined;
-    if (!text) {
+    if (text === undefined) {
       throw new LmStudioError("invalidResponse", "LM Studio completion response did not include text.");
     }
 
     const usage = isRecord(payload) && isRecord(payload.usage) ? payload.usage : undefined;
     const resolvedModelId = isRecord(payload) && typeof payload.model === "string" && payload.model.trim()
-      ? payload.model.trim()
+      ? normalizeProviderField(payload.model)
       : undefined;
     const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
-      ? firstChoice.finish_reason
+      ? normalizeProviderField(firstChoice.finish_reason, 100)
       : undefined;
     return {
       text,
@@ -141,7 +159,8 @@ export class LmStudioClient {
     url: string,
     init: RequestInit,
     timeoutMs: number,
-    cancellationToken?: vscode.CancellationToken
+    cancellationToken?: vscode.CancellationToken,
+    maxResponseBytes = MAX_PROVIDER_RESPONSE_BYTES
   ): Promise<unknown> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -151,7 +170,7 @@ export class LmStudioClient {
       // localhost に固定していても、そのポートを取った別プロセスが 307/308 を返せば
       // プロンプト本文ごと外部へ転送されてしまう。リダイレクトは追わない。
       const response = await fetch(url, { ...init, redirect: "error", signal: controller.signal });
-      const rawText = await response.text();
+      const rawText = await readResponseTextWithLimit(response, maxResponseBytes);
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           throw new LmStudioError("auth", "LM Studio authentication failed.", response.status);
@@ -171,6 +190,9 @@ export class LmStudioClient {
       if (error instanceof LmStudioError) {
         throw error;
       }
+      if (error instanceof AiResponseLimitError) {
+        throw error;
+      }
       if (controller.signal.aborted) {
         throw new LmStudioError("timeout", "LM Studio request timed out.");
       }
@@ -186,7 +208,7 @@ export class LmStudioClient {
 
   private readMessageContent(value: unknown): string | undefined {
     if (typeof value === "string") {
-      return value.trim() || undefined;
+      return value.trim();
     }
     if (!Array.isArray(value)) {
       return undefined;
@@ -196,8 +218,22 @@ export class LmStudioClient {
       .flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : [])
       .join("")
       .trim();
-    return text || undefined;
+    return text;
   }
+}
+
+function normalizeTextRequest(value: string | AiTextRequest): {
+  systemPrompt?: string;
+  userPrompt: string;
+  maxOutputTokens?: number;
+} {
+  return typeof value === "string"
+    ? { userPrompt: value }
+    : {
+        systemPrompt: value.systemPrompt,
+        userPrompt: value.userPrompt,
+        maxOutputTokens: value.maxOutputTokens
+      };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -205,5 +241,5 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function readNonNegativeInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }

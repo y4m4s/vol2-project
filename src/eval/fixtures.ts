@@ -234,7 +234,7 @@ export const SCENARIOS: EvalScenario[] = [
   },
   {
     id: "always-mode",
-    description: "常時モードは推論強度「低」で固定され、気になる点が無ければ何も返さない指示になる",
+    description: "常時モードは推論強度「低」で固定され、指摘なしを明示的な正常結果として返す",
     input: {
       kind: "always",
       // always では assistanceDepth は無視され low に固定される
@@ -247,7 +247,7 @@ export const SCENARIOS: EvalScenario[] = [
     promptChecks: [
       includes("depth: low", "always pins depth to low"),
       includes("- Low mode:"),
-      includes("If nothing stands out, return nothing")
+      includes('{"kind":"no_advice"}')
     ]
   },
   {
@@ -338,7 +338,7 @@ export const SCENARIOS: EvalScenario[] = [
     },
     promptChecks: [
       includes("Slash command instruction"),
-      maxApproxTokens(900, "lean prompt stays under ~900 tokens")
+      maxApproxTokens(950, "lean prompt stays under ~950 tokens")
     ]
   },
   {

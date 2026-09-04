@@ -97,6 +97,7 @@ export class NavigatorController implements vscode.Disposable {
   private nextGuidanceRequestId = 1;
   // requestState がまだ "idle" のまま進む準備区間を含めて、助言リクエストを 1 本に絞る。
   private readonly guidanceRequestGate = new SingleFlightGate();
+  private schedulerConfigurationKey?: string;
   private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
@@ -155,18 +156,13 @@ export class NavigatorController implements vscode.Disposable {
     this.conversationCoordinator = new ConversationCoordinator(
       this.conversationStore,
       this.feedbackStore,
-      this.adviceService,
-      this.connectionService,
-      this.settingsService,
-      this.usageMeter,
       {
         getState: () => this.sessionStore.getState(),
         patchSession: (partial) => this.patchSession(partial),
         resolveHomeScreen: () => resolveHomeScreen(this.sessionStore.getState().connectionState),
         resetAutomaticFingerprint: () => { this.lastAutomaticContextFingerprint = undefined; },
         createGuidanceCard: (entry) => this.createGuidanceCard(entry),
-        getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state),
-        getCurrentProviderId: () => this.connectionSettingsCoordinator.getCurrentProviderId()
+        getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state)
       }
     );
     this.navigationCoordinator = new NavigationCoordinator({
@@ -182,7 +178,7 @@ export class NavigatorController implements vscode.Disposable {
         pushFeedbackForm: () => this.navigationCoordinator.pushScreen("feedback_form"),
         navigateBack: () => this.navigationCoordinator.navigateBack(),
         createGuidanceCard: (entry) => this.createGuidanceCard(entry),
-        persistConversation: () => this.conversationCoordinator.persist({ summarizeTitle: false })
+        persistConversation: () => this.conversationCoordinator.persist()
       }
     );
     this.knowledgeCoordinator = new KnowledgeCoordinator(
@@ -490,6 +486,10 @@ export class NavigatorController implements vscode.Disposable {
     body: string;
   }): Promise<void> {
     await this.knowledgeCoordinator.update(input);
+  }
+
+  public async approveKnowledge(id: string): Promise<void> {
+    await this.knowledgeCoordinator.approve(id);
   }
 
   public async deleteKnowledge(id: string): Promise<void> {
@@ -939,9 +939,28 @@ export class NavigatorController implements vscode.Disposable {
       options.kind === "context" && prepared.context.selectedText
         ? this.clearSelectionPreview(rawRefreshedPreview)
         : this.rememberSelectionContext(rawRefreshedPreview);
-    const latestState = this.sessionStore.getState();
+    let latestState = this.sessionStore.getState();
+
+    if (result.ok && result.outcome === "no_advice") {
+      this.patchSession({
+        connectionState: this.connectionService.getState(),
+        requestState: "idle",
+        contextPreview: refreshedPreview,
+        ...(state.screen === "main"
+          ? {
+              activeAdditionalContext: initialState.activeAdditionalContext,
+              pendingAdditionalContext: initialState.pendingAdditionalContext
+            }
+          : { activeAdditionalContext: nextActiveAdditionalContext }),
+        statusMessage: undefined
+      });
+      return { ok: true };
+    }
 
     if (result.ok) {
+      if (options.kind === "always" && latestState.screen === "main") {
+        latestState = await this.conversationCoordinator.ensureStreamForAutomaticResult(latestState);
+      }
       const resolvedModelId = result.responseMetadata?.resolvedModelIds?.at(-1);
       const persistedModelLabel = resolvedModelId
         && responseModel?.providerId === "orcaRouter"
@@ -978,7 +997,6 @@ export class NavigatorController implements vscode.Disposable {
 
       this.patchSession({
         connectionState: this.connectionService.getState(),
-        requestState: "idle",
         screen: resolveScreenAfterSuccess(options.kind, latestState.screen),
         contextPreview: refreshedPreview,
         latestGuidance: this.createGuidanceCard(assistantEntry),
@@ -997,6 +1015,7 @@ export class NavigatorController implements vscode.Disposable {
           : undefined
       });
       await this.persistActiveConversationState();
+      this.patchSession({ requestState: "idle" });
       return { ok: true };
     }
 
@@ -1047,8 +1066,8 @@ export class NavigatorController implements vscode.Disposable {
     return this.conversationCoordinator.prepareForGuidance(state, kind);
   }
 
-  private async persistActiveConversationState(options: { summarizeTitle?: boolean } = {}): Promise<void> {
-    await this.conversationCoordinator.persist(options);
+  private async persistActiveConversationState(): Promise<void> {
+    await this.conversationCoordinator.persist();
   }
 
   private patchSession(partial: Partial<NavigatorSessionState>): void {
@@ -1059,6 +1078,17 @@ export class NavigatorController implements vscode.Disposable {
   private configureScheduler(): void {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
+    const configurationKey = [
+      settings.requestIntervalMs,
+      settings.idleDelayMs,
+      state.mode,
+      state.connectionState,
+      state.requestState
+    ].join(":");
+    if (configurationKey === this.schedulerConfigurationKey) {
+      return;
+    }
+    this.schedulerConfigurationKey = configurationKey;
     this.adviceScheduler.configure(
       {
         requestIntervalMs: settings.requestIntervalMs,
