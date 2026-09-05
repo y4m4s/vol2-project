@@ -26,12 +26,17 @@ import {
 import { buildGuidancePromptMessages, formatReferencedFileReason } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
+import { waitWithFallback } from "./BoundedWait";
 import {
   AI_OUTPUT_TOKEN_LIMITS,
+  AiInputLimitError,
   AiResponseLimitError,
   AiTextRequest,
-  assertResponseCharacterLimit
+  assertResponseCharacterLimit,
+  assertRequestInputLimit
 } from "./AiRequestPolicy";
+
+const TOKEN_COUNT_TIMEOUT_MS = 1_000;
 
 export interface GuidanceRequestSuccess {
   ok: true;
@@ -102,7 +107,13 @@ export class AdviceService {
     input: GuidanceRequestInput,
     cancellationToken?: vscode.CancellationToken
   ): Promise<GuidanceRequestResult> {
-    const prompt = this.buildPrompt(input);
+    let prompt: { systemPrompt: string; userPrompt: string };
+    try {
+      prompt = this.buildPrompt(input);
+    } catch (error) {
+      if (!(error instanceof AiInputLimitError)) throw error;
+      return { ok: false, connectionState: this.connectionService.getState(), message: error.message };
+    }
     const request: AiTextRequest = {
       ...prompt,
       purpose: "guidance",
@@ -212,6 +223,9 @@ export class AdviceService {
     }
 
     try {
+      const profile = deriveModelProfile(model.profileSource);
+      const limit = model.profileSource.maxInputTokens;
+      assertRequestInputLimit(request, limit && Number.isFinite(limit) && limit > 0 ? limit : profile.contextBudget * 2);
       const tokenSource = cancellationToken ? undefined : new vscode.CancellationTokenSource();
       const token = cancellationToken ?? tokenSource!.token;
       let response: ProviderTextResponse;
@@ -230,7 +244,10 @@ export class AdviceService {
       }
 
       assertResponseCharacterLimit(response.text, request.purpose);
-      const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response);
+      const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
+      if (cancellationToken?.isCancellationRequested) {
+        return this.cancelledResult();
+      }
 
       return {
         ok: true,
@@ -292,24 +309,27 @@ export class AdviceService {
   private async recordUsage(
     model: ConnectedProviderModel,
     prompt: string,
-    response: ProviderTextResponse
+    response: ProviderTextResponse,
+    cancellationToken?: vscode.CancellationToken
   ): Promise<{ inputTokens: number; outputTokens: number; costUsd?: number } | undefined> {
     if (!this.usageMeter) {
       return undefined;
     }
 
-    const [inputTokens, outputTokens] = response.inputTokens !== undefined && response.outputTokens !== undefined
-      ? [response.inputTokens, response.outputTokens]
-      : await Promise.all([
-          this.countTokensSafe(model, prompt),
-          this.countTokensSafe(model, response.text)
-        ]);
-    await this.usageMeter.record({
+    const [inputTokens, outputTokens] = await Promise.all([
+      response.inputTokens ?? this.countTokensSafe(model, prompt, cancellationToken),
+      response.outputTokens ?? this.countTokensSafe(model, response.text, cancellationToken)
+    ]);
+    // UsageMeter updates the in-memory limit before awaiting persistence. A disk
+    // failure must neither discard this answer nor trigger another paid request.
+    void this.usageMeter.record({
       providerId: model.providerId,
       modelId: model.modelId,
       inputTokens,
       outputTokens,
       costUsd: response.costUsd
+    }).catch(() => {
+      console.warn("NaviCom: usage persistence failed; session usage is retained in memory.");
     });
     return { inputTokens, outputTokens, costUsd: response.costUsd };
   }
@@ -367,16 +387,28 @@ export class AdviceService {
     };
   }
 
-  private async countTokensSafe(model: ConnectedProviderModel, text: string): Promise<number> {
+  private async countTokensSafe(
+    model: ConnectedProviderModel,
+    text: string,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<number> {
     if (!text) {
       return 0;
     }
 
+    const estimate = Math.ceil(text.length / 3);
+    if (!model.countTokens) return estimate;
+    const source = new vscode.CancellationTokenSource();
     try {
-      return model.countTokens ? await model.countTokens(text) : Math.ceil(text.length / 3);
-    } catch {
-      // 日本語とコードの混在を想定した粗い推定
-      return Math.ceil(text.length / 3);
+      return await waitWithFallback(
+        () => model.countTokens!(text, source.token),
+        TOKEN_COUNT_TIMEOUT_MS,
+        estimate,
+        cancellationToken,
+        () => source.cancel()
+      );
+    } finally {
+      source.dispose();
     }
   }
 
@@ -589,6 +621,7 @@ export class AdviceService {
   }
 
   private classifyGuidanceError(error: unknown): ConnectionState {
+    if (error instanceof AiInputLimitError) return this.connectionService.getState();
     if (error instanceof AiResponseLimitError) {
       return this.connectionService.getState();
     }
@@ -615,6 +648,7 @@ export class AdviceService {
   }
 
   private errorMessage(error: unknown): string {
+    if (error instanceof AiInputLimitError) return error.message;
     if (error instanceof AiResponseLimitError) {
       return "AI の応答が安全なサイズ上限を超えたため中断しました。質問や参照範囲を絞って再試行してください。";
     }

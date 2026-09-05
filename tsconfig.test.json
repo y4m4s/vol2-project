@@ -2,7 +2,9 @@
   "compilerOptions": {
     "module": "node16",
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "outDir": ".test-out",
     "rootDir": ".",
     "strict": true,
@@ -10,7 +12,9 @@
     "noUnusedParameters": true,
     "esModuleInterop": true,
     "moduleResolution": "node16",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true
   },
   "include": [
@@ -56,6 +60,8 @@
     "test/GuidanceResponsePolicy.test.ts",
     "test/UsageMeter.test.ts",
     "test/SingleFlightGate.test.ts",
-    "test/KnowledgeSearch.test.ts"
+    "test/KnowledgeSearch.test.ts",
+    "test/AdviceService.test.ts",
+    "test/EvalRunner.test.ts"
   ]
 }

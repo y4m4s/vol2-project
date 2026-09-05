@@ -27,6 +27,20 @@ export class AiResponseLimitError extends Error {
   }
 }
 
+export class AiInputLimitError extends Error {
+  public constructor() {
+    super("質問または参照情報が入力予算を超えています。質問・追加文脈・参照範囲を短くしてください。");
+    this.name = "AiInputLimitError";
+  }
+}
+
+/** Approximate guard, including system instructions, repair instructions and JSON. */
+export function assertRequestInputLimit(request: AiTextRequest, maxInputTokens: number): void {
+  if (request.systemPrompt.length + request.userPrompt.length + 2 > Math.floor(maxInputTokens * 3)) {
+    throw new AiInputLimitError();
+  }
+}
+
 export async function readResponseTextWithLimit(response: Response, maxBytes: number): Promise<string> {
   const declaredLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {

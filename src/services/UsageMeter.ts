@@ -30,6 +30,8 @@ export interface UsageRecordEntry {
 }
 
 export class UsageMeter {
+  private sessionUsage?: StoredDailyUsage;
+
   public constructor(private readonly storage: vscode.Memento) {}
 
   public getToday(providerId?: AiProviderId): DailyUsage {
@@ -64,7 +66,8 @@ export class UsageMeter {
     }
 
     const total = this.aggregate(current.date, buckets);
-    await this.storage.update(STORAGE_KEY, { ...total, buckets } satisfies StoredDailyUsage);
+    this.sessionUsage = { ...total, buckets };
+    await this.storage.update(STORAGE_KEY, this.sessionUsage);
   }
 
   /**
@@ -96,7 +99,7 @@ export class UsageMeter {
   }
 
   private getStoredToday(): StoredDailyUsage {
-    const saved = this.storage.get<Partial<StoredDailyUsage>>(STORAGE_KEY);
+    const saved = this.sessionUsage ?? this.storage.get<Partial<StoredDailyUsage>>(STORAGE_KEY);
     const date = this.todayKey();
     if (!saved || saved.date !== date) {
       return { date, requestCount: 0, inputTokens: 0, outputTokens: 0, buckets: [] };

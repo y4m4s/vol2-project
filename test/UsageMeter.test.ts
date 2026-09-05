@@ -75,6 +75,24 @@ test("LM Studio の記録料金は 0 にする", () => {
   assert.equal(createMeter().getRecordedCostUsd("lmStudio"), 0);
 });
 
+test("保存失敗中も日次上限を保持し、次の保存に未保存分を含める", async () => {
+  const storage = new MemoryMemento();
+  const update = storage.update.bind(storage);
+  let fail = true;
+  storage.update = async (key, value) => {
+    if (fail) throw new Error("disk full");
+    await update(key, value);
+  };
+  const meter = new UsageMeter(storage);
+  await assert.rejects(record(meter, "orcaRouter", 100));
+  assert.equal(meter.isTokenLimitExceeded("orcaRouter", 100), true);
+  fail = false;
+  await record(meter, "orcaRouter", 20);
+  const restored = new UsageMeter(storage);
+  assert.equal(restored.getToday("orcaRouter").inputTokens, 120);
+  assert.equal(restored.getToday("orcaRouter").requestCount, 2);
+});
+
 test("単価表で推測せず、プロバイダー料金がない場合は未取得にする", async () => {
   const meter = createMeter();
   await record(meter, "orcaRouter", 100);

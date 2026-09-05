@@ -2,6 +2,7 @@ export type PromptDelimiter = "xml" | "markdown";
 
 export interface ModelProfile {
   delimiter: PromptDelimiter;
+  /** Approximate budget for the complete guidance prompt, including instructions. */
   contextBudget: number;
   terse: boolean;
 }
@@ -59,7 +60,7 @@ function deriveContextBudget(maxInputTokens: number | undefined): number {
     return DEFAULT_MODEL_PROFILE.contextBudget;
   }
 
-  return Math.max(MIN_CONTEXT_BUDGET, Math.floor(maxInputTokens * 0.5));
+  return Math.min(Math.floor(maxInputTokens), Math.max(MIN_CONTEXT_BUDGET, Math.floor(maxInputTokens * 0.5)));
 }
 
 function isAnthropicLike(searchable: string): boolean {

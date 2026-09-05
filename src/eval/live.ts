@@ -25,7 +25,7 @@ function getOutputChannel(): vscode.OutputChannel {
 
 // 接続中のモデルへプロンプトを送り、応答テキストを返す responder。
 export function createModelResponder(connectionService: ConnectionService): Responder {
-  return async (prompt) => {
+  return async (messages, scenario) => {
     const model = connectionService.getConnectedModel();
     if (!model || connectionService.getState() !== "connected") {
       throw new Error("AI に接続されていません。");
@@ -34,10 +34,11 @@ export function createModelResponder(connectionService: ConnectionService): Resp
     const tokenSource = new vscode.CancellationTokenSource();
     try {
       return (await model.requestText({
-        systemPrompt: "Follow the NaviCom evaluation prompt supplied in the user message.",
-        userPrompt: prompt,
+        ...messages,
         purpose: "guidance",
-        maxOutputTokens: AI_OUTPUT_TOKEN_LIMITS.guidance
+        maxOutputTokens: scenario.input.slashCommand === "flow"
+          ? AI_OUTPUT_TOKEN_LIMITS.flowRepair
+          : AI_OUTPUT_TOKEN_LIMITS.guidance
       }, tokenSource.token)).text;
     } finally {
       tokenSource.dispose();

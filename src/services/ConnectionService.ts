@@ -56,7 +56,7 @@ export interface ConnectedProviderModel {
     token: vscode.CancellationToken,
     metadata?: ProviderRequestMetadata
   ): Promise<ProviderTextResponse>;
-  countTokens?(text: string): Promise<number>;
+  countTokens?(text: string, token?: vscode.CancellationToken): Promise<number>;
 }
 
 export interface ConnectionActivationResult {
@@ -492,7 +492,7 @@ export class ConnectionService {
         }
         return { text };
       },
-      countTokens: async (text) => model.countTokens(text)
+      countTokens: async (text, token) => model.countTokens(text, token)
     };
   }
 
