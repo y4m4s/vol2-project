@@ -5,6 +5,7 @@ import { setImmediate as nextTurn } from "node:timers/promises";
 import type { ConnectedProviderModel, ConnectionService } from "../src/services/ConnectionService";
 import { UsageMeter } from "../src/services/UsageMeter";
 import { SingleFlightGate } from "../src/services/SingleFlightGate";
+import { OrcaRouterError } from "../src/services/OrcaRouterClient";
 
 class TestTokenSource {
   private cancelled = false;
@@ -53,14 +54,16 @@ function harness(options: {
   inputTokens?: number;
   outputTokens?: number;
   maxInputTokens?: number;
+  requestError?: OrcaRouterError;
 } = {}) {
   let calls = 0;
   let resets = 0;
   const model: ConnectedProviderModel = {
-    providerId: "copilot", modelId: "mock", modelLabel: "mock",
+    providerId: options.requestError ? "orcaRouter" : "copilot", modelId: "mock", modelLabel: "mock",
     profileSource: { maxInputTokens: options.maxInputTokens },
     requestText: async () => {
       calls += 1;
+      if (options.requestError) throw options.requestError;
       return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens };
     },
     countTokens: options.countTokens
@@ -77,6 +80,42 @@ function harness(options: {
   });
   return { service: new AdviceService(connection, meter), meter, calls: () => calls, resets: () => resets };
 }
+
+test("OrcaRouterのRetry-Afterは検証済み秒数だけ表示し、非対応形式は一般案内にする", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  for (const code of ["free_rate_limited", "rate_limited"]) {
+    for (const value of ["42", "0", " 0042 ", "Wed, 21 Oct 2026 07:28:00 GMT", "oops", "", "-1", "Infinity", "0x10", "1.5"]) {
+      const h = harness({ requestError: new OrcaRouterError("rateLimit", "private response body", 429, code, value) });
+      const result = await h.service.requestGuidance(input);
+      assert.ok(!result.ok);
+      assert.equal(result.connectionState, "restricted");
+      if (["42", "0", " 0042 "].includes(value)) {
+        assert.ok(result.message.includes(`${Number(value)}秒後に再試行してください。`));
+      } else {
+        assert.match(result.message, /時間を置いて再試行/);
+        assert.doesNotMatch(result.message, /秒後|入力上限|private response body/);
+      }
+      if (code === "free_rate_limited") assert.match(result.message, /有料モデルへは切り替えていません/);
+    }
+  }
+});
+
+test("OrcaRouterのヘッダーなし無料制限と未知コードは既存の案内・接続分類を維持する", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  for (const [error, expected, state] of [
+    [new OrcaRouterError("rateLimit", "body", 429, "free_rate_limited"), /入力上限/, "restricted"],
+    [new OrcaRouterError("quota", "body", 403, "free_quota_exhausted"), /無料モデル容量/, "restricted"],
+    [new OrcaRouterError("quota", "body", 403, "new_free_quota"), /残高・無料容量・キー利用上限/, "restricted"],
+    [new OrcaRouterError("other", "body", 400, "new_guardrail_code"), /入力内容またはモデル設定/, "connected"]
+  ] as const) {
+    const h = harness({ requestError: error });
+    const result = await h.service.requestGuidance(input);
+    assert.ok(!result.ok);
+    assert.match(result.message, expected);
+    assert.equal(result.connectionState, state);
+    if (state === "connected") assert.equal(h.resets(), 0);
+  }
+});
 
 test("トークン計測が停止しても1秒で概算に切り替え、計測をキャンセルする", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });

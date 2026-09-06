@@ -209,3 +209,29 @@ test("OrcaRouter形式でないキーは通信前に拒否する", async () => {
   await assert.rejects(() => new OrcaRouterClient().listModels("not-a-key"), OrcaRouterError);
   assert.equal(called, false);
 });
+
+test("非対応Retry-Afterでは自動再試行せず応答受信時に警告する", async (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  for (const value of ["", "-1", "0x0", "1.5", "Wed, 21 Oct 2026 07:28:00 GMT", "invalid"]) {
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { code: "free_rate_limited" } }), {
+        status: 429, headers: { "Retry-After": value }
+      });
+    };
+    await assert.rejects(() => new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "質問"), OrcaRouterError);
+    assert.equal(calls, 1);
+  }
+  assert.equal(warn.mock.callCount(), 6);
+});
+
+test("モデル一覧の未知freeエラーも既存の通信経路で検知する", async (t) => {
+  const warn = t.mock.method(console, "warn", () => {});
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    error: { code: "free_capacity_empty", message: "private body" }
+  }), { status: 403 });
+  await assert.rejects(() => new OrcaRouterClient().listModels("sk-orca-test"), OrcaRouterError);
+  assert.equal(warn.mock.callCount(), 1);
+  assert.doesNotMatch(JSON.stringify(warn.mock.calls[0].arguments), /private body|sk-orca-test/);
+});

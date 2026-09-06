@@ -185,6 +185,7 @@ export interface OrcaRouterModelOption {
   provider: string;
   contextLength?: number;
   isRouter?: boolean;
+  availabilityWarning?: string;
 }
 
 export type LmStudioServerState =

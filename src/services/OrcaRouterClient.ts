@@ -1,4 +1,5 @@
 import type * as vscode from "vscode";
+import { classifyOrcaRouterFailure, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
 import {
   AiResponseLimitError,
   AiTextRequest,
@@ -222,13 +223,15 @@ export class OrcaRouterClient {
       const rawText = await readResponseTextWithLimit(response, maxResponseBytes);
       if (!response.ok) {
         const detail = readErrorDetail(rawText);
-        throw new OrcaRouterError(
+        const error = new OrcaRouterError(
           classifyStatus(response.status),
           detail.message ?? `OrcaRouter request failed (${response.status}).`,
           response.status,
           detail.code,
           response.headers.get("retry-after") ?? undefined
         );
+        classifyOrcaRouterFailure(error);
+        throw error;
       }
       try {
         return {
@@ -276,8 +279,9 @@ export class OrcaRouterClient {
     }
 
     if (error.kind === "rateLimit" && error.retryAfter !== undefined) {
-      const retryAfterSeconds = Number(error.retryAfter);
-      const retryAfterMs = retryAfterSeconds * 1000;
+      const seconds = retryAfterSeconds(error.retryAfter);
+      if (seconds === undefined) return undefined;
+      const retryAfterMs = seconds * 1000;
       return Number.isFinite(retryAfterMs)
         && retryAfterMs >= 0
         && retryAfterMs <= ORCA_ROUTER_MAX_AUTOMATIC_RETRY_DELAY_MS

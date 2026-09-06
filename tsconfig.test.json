@@ -48,6 +48,7 @@
     "test/LmStudioClient.test.ts",
     "test/OrcaRouterClient.test.ts",
     "test/OrcaRouterErrorPolicy.test.ts",
+    "test/OrcaRouterModelPolicy.test.ts",
     "test/OrcaRouterCredentialStore.test.ts",
     "test/LmStudioServerProtocol.test.ts",
     "test/WebviewMessages.test.ts",

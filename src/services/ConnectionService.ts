@@ -11,9 +11,9 @@ import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } fro
 import {
   OrcaRouterClient,
   OrcaRouterError,
-  OrcaRouterFailureKind,
-  OrcaRouterModel
+  OrcaRouterFailureKind
 } from "./OrcaRouterClient";
+import { createBuiltInOrcaRouterOptions, toOrcaRouterModelOptions } from "./OrcaRouterModelPolicy";
 import { OrcaRouterCredentialStore } from "./OrcaRouterCredentialStore";
 import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
@@ -203,7 +203,7 @@ export class ConnectionService {
     }
     try {
       const models = await this.orcaRouterClient.listModels(apiKey);
-      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      this.availableOrcaRouterModelOptions = toOrcaRouterModelOptions(models);
       this.lastOrcaRouterIssue = undefined;
     } catch (error) {
       this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
@@ -368,7 +368,7 @@ export class ConnectionService {
       }
 
       const models = await this.orcaRouterClient.listModels(apiKey);
-      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      this.availableOrcaRouterModelOptions = toOrcaRouterModelOptions(models);
       const selectedId = settings.orcaRouterModelId ?? "orcarouter/free";
       const selected = this.availableOrcaRouterModelOptions.find((model) => model.id === selectedId);
       if (!selected) {
@@ -442,30 +442,6 @@ export class ConnectionService {
       }
     }
     return [...options.values()].sort((a, b) => a.label.localeCompare(b.label));
-  }
-
-  private toOrcaRouterModelOptions(models: OrcaRouterModel[]): OrcaRouterModelOption[] {
-    const options = new Map(createBuiltInOrcaRouterOptions().map((option) => [option.id, option]));
-    for (const model of models) {
-      const supportsOpenAi = model.supportedEndpointTypes.length === 0 || model.supportedEndpointTypes.includes("openai");
-      const acceptsText = model.inputModalities.length === 0 || model.inputModalities.includes("text");
-      const producesText = model.outputModalities.length === 0 || model.outputModalities.includes("text");
-      if (!supportsOpenAi || !acceptsText || !producesText) {
-        continue;
-      }
-      options.set(model.id, {
-        id: model.id,
-        label: model.id.split("/").slice(1).join("/") || model.id,
-        provider: model.ownedBy,
-        contextLength: model.contextLength
-      });
-    }
-    return [...options.values()]
-      .sort((a, b) => {
-        if (a.isRouter !== b.isRouter) return a.isRouter ? -1 : 1;
-        return a.label.localeCompare(b.label);
-      })
-      .slice(0, MAX_PROVIDER_MODEL_COUNT);
   }
 
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
@@ -699,21 +675,4 @@ class CopilotProbeTimeoutError extends Error {
 
 function normalizeModelIdentifier(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-function createBuiltInOrcaRouterOptions(): OrcaRouterModelOption[] {
-  return [
-    {
-      id: "orcarouter/free",
-      label: "Free Router",
-      provider: "orcarouter",
-      isRouter: true
-    },
-    {
-      id: "orcarouter/auto",
-      label: "Auto Router",
-      provider: "orcarouter",
-      isRouter: true
-    }
-  ];
 }

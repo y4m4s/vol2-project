@@ -16,7 +16,7 @@ import {
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
 import { LmStudioError } from "./LmStudioClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
-import { classifyOrcaRouterFailure, requestRejectionMessage } from "./OrcaRouterErrorPolicy";
+import { classifyOrcaRouterFailure, requestRejectionMessage, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
 import {
   buildGuidanceFormatRepairPrompt,
@@ -669,12 +669,16 @@ export class AdviceService {
       if (rejectionMessage) {
         return rejectionMessage;
       }
+      const seconds = retryAfterSeconds(error.retryAfter);
+      const retryMessage = seconds !== undefined
+        ? `${seconds}秒後に再試行してください。`
+        : "時間を置いて再試行してください。";
       if (error.code === "free_quota_exhausted") {
         return "OrcaRouter の無料モデル容量を現在利用できません。時間を置いて再試行してください。有料モデルへは切り替えていません。";
       }
       if (error.code === "free_rate_limited") {
-        if (error.retryAfter) {
-          return `OrcaRouter の無料枠の上限に達しました。${error.retryAfter}秒後に再試行してください。有料モデルへは切り替えていません。`;
+        if (error.retryAfter !== undefined) {
+          return `OrcaRouter の無料枠の上限に達しました。${retryMessage}有料モデルへは切り替えていません。`;
         }
         return "OrcaRouter の無料モデルで1リクエストあたりの入力上限を超えました。送信する文脈を短くしてください。有料モデルへは切り替えていません。";
       }
@@ -684,7 +688,7 @@ export class AdviceService {
         case "quota":
           return "OrcaRouter の残高・無料容量・キー利用上限を確認してください。";
         case "rateLimit":
-          return `OrcaRouter のレート制限に達しました。${error.retryAfter ? `${error.retryAfter}秒後に再試行してください。` : "時間を置いて再試行してください。"}`;
+          return `OrcaRouter のレート制限に達しました。${retryMessage}`;
         case "timeout":
           return "OrcaRouter の応答がタイムアウトしました。";
         case "unavailable":

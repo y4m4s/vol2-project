@@ -814,7 +814,7 @@ function OrcaRouterModelButtonGroup({
     !normalizedQuery || `${option.id} ${option.label} ${option.provider}`.toLowerCase().includes(normalizedQuery)
   );
   const selectedMissing = !options.some((option) => option.id === value);
-  const visibleOptions = selectedMissing && (!normalizedQuery || value.toLowerCase().includes(normalizedQuery))
+  const visibleOptions: OrcaRouterModelOption[] = selectedMissing && (!normalizedQuery || value.toLowerCase().includes(normalizedQuery))
     ? [{ id: value, label: value, provider: "保存済み", isRouter: false }, ...filtered]
     : filtered;
 
@@ -837,7 +837,10 @@ function OrcaRouterModelButtonGroup({
             onClick={() => onChange(option.id)}
           >
             <span className="model-option-name">{option.label}</span>
-            <span className="model-option-meta">{option.id}<br />{contextText}</span>
+            <span className="model-option-meta">
+              {option.id}<br />{contextText}
+              {option.availabilityWarning && <><br /><span className="orcarouter-model-warning">注意: {option.availabilityWarning}</span></>}
+            </span>
           </button>
         );
       })}
