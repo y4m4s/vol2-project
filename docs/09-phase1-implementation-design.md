@@ -295,7 +295,6 @@ Phase 1 で収集しない要素:
 
 - `getState(): NavigatorSessionState`
 - `patch(partial: Partial<NavigatorSessionState>): void`
-- `resetStatusMessage(): void`
 - `onDidChangeState: Event<NavigatorSessionState>`
 
 備考:

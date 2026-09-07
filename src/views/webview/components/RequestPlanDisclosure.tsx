@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../state/AppContext";
 
-export function RequestPlanDisclosure() {
+export function RequestPlanDisclosure({ userPrompt, additionalContext }: { userPrompt: string; additionalContext: string }) {
   const { viewModel, send } = useApp();
   const [open, setOpen] = useState(false);
 
@@ -13,7 +13,8 @@ export function RequestPlanDisclosure() {
 
   useEffect(() => {
     if (open && viewModel?.requestState === "idle") {
-      send({ type: "refreshRequestPlan" });
+      const timer = window.setTimeout(() => send({ type: "refreshRequestPlan", userPrompt, additionalContext }), 150);
+      return () => window.clearTimeout(timer);
     }
   }, [
     activeFilePath,
@@ -23,6 +24,12 @@ export function RequestPlanDisclosure() {
     send,
     viewModel?.assistanceDepth,
     viewModel?.mode,
+    viewModel?.providerId,
+    viewModel?.modelLabel,
+    viewModel?.settingsRevision,
+    viewModel?.currentRequestPlan.previewInput,
+    userPrompt,
+    additionalContext,
     viewModel?.requestState
   ]);
 
@@ -31,7 +38,8 @@ export function RequestPlanDisclosure() {
   }
 
   const plan = viewModel.currentRequestPlan;
-  const visibleCategories = plan.categories.filter((category) => category.key !== "projectSummary");
+  const visibleCategories = plan.categories;
+  const pending = plan.previewInput !== userPrompt || plan.previewAdditionalContext !== additionalContext;
   const includedCategories = visibleCategories.filter((category) => category.included);
   const includedFiles = plan.targetFiles.filter((file) => file.included);
   const destinationLabel = viewModel.providerId === "lmStudio" ? "ローカル送信予定" : "外部送信予定";
@@ -54,17 +62,18 @@ export function RequestPlanDisclosure() {
           {viewModel.providerId === "lmStudio" ? "computer" : "cloud_upload"}
         </span>
         <span className="request-plan-trigger-label">
-          {destinationLabel}: {summaryParts.join("・") || "質問のみ"}
+          {destinationLabel}: {pending ? "入力内容を確認中" : summaryParts.join("・") || "質問のみ"}
         </span>
         <span className="material-symbols-outlined request-plan-chevron" aria-hidden="true">
           {open ? "expand_less" : "expand_more"}
         </span>
       </button>
 
-      {open && (
+      {open && pending && <div className="request-plan-details">送信予定を更新中です。</div>}
+      {open && !pending && (
         <div className="request-plan-details">
           <div className="request-plan-note">
-            推論強度やスラッシュコマンドに応じて、実際の送信時に最終調整されます。
+            入力中のコマンド・推論強度・モデルの入力予算を反映した予定です。チェックは情報の一部でも送る場合に付きます。編集やモデル変更時は再計算されます。ファイル名は本文を送らない場合も含まれます。
           </div>
           <div className="request-plan-section-title">送信する情報</div>
           <ul className="request-plan-list">

@@ -66,7 +66,7 @@ export function S04Conversation() {
             <img src={window.__ICON_URI__} alt="NaviCom" className="s04-empty-icon" />
             <div className="s04-empty-title">ここから会話が始まります</div>
             <div className="s04-empty-desc">
-              送信した質問と回答は、この画面だけに積み上がります
+              質問と回答はここに保存されます。過去の発言は次のAI入力へ自動送信されません
             </div>
           </div>
         )}
@@ -86,6 +86,10 @@ export function S04Conversation() {
         {isThinking && <ThinkingIndicator />}
 
         <div ref={chatBottomRef} />
+      </div>
+
+      <div className="s04-stateless-note">
+        各質問は、その時点の作業文脈と入力内容だけをAIへ送信します。
       </div>
 
       <ChatInputComposer resetKey={activeConversationStreamId} />
@@ -118,6 +122,19 @@ function ChatBubble(
     : undefined;
   const depthLabel = entry.assistanceDepth === "high" ? "推論強度: 高" : entry.assistanceDepth === "low" ? "推論強度: 低" : undefined;
   const modelLabel = !isUser ? entry.modelLabel : undefined;
+  const responseMetadata = !isUser ? entry.responseMetadata : undefined;
+  const modelDetails = [
+    modelLabel,
+    responseMetadata?.finishReasons?.length
+      ? `終了理由: ${responseMetadata.finishReasons.join(" → ")}`
+      : undefined,
+    responseMetadata?.requestIds?.length
+      ? `リクエストID: ${responseMetadata.requestIds.join(", ")}`
+      : undefined,
+    responseMetadata && responseMetadata.providerRequestCount > responseMetadata.attemptCount
+      ? `通信試行: ${responseMetadata.providerRequestCount}回`
+      : undefined
+  ].filter((value): value is string => Boolean(value)).join("\n");
 
   return (
     <div className={`s04-bubble-wrap ${isUser ? "user" : "assistant"}`}>
@@ -130,7 +147,12 @@ function ChatBubble(
         <span className="s04-bubble-role">{label}</span>
         {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
         {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
-        {modelLabel && <span className="s04-meta-pill model" title={modelLabel}>{modelLabel}</span>}
+        {modelLabel && <span className="s04-meta-pill model" title={modelDetails}>{modelLabel}</span>}
+        {responseMetadata && responseMetadata.attemptCount > 1 && (
+          <span className="s04-meta-pill depth" title="出力形式を満たさなかったため、バックエンドで1回再生成しました">
+            図を再生成済み
+          </span>
+        )}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 
@@ -167,7 +189,7 @@ function ChatBubble(
 }
 
 function MarkdownText({ text }: { text: string }) {
-  const { send } = useApp();
+  const { send, viewModel } = useApp();
   const blocks = parseMarkdownBlocks(text);
   const renderInline = (value: string) => renderInlineMarkdown(value, (path, line) => {
     send({ type: "openReferencedFile", path, line });
@@ -196,7 +218,15 @@ function MarkdownText({ text }: { text: string }) {
           }
           case "code":
             if (isMermaidBlock(block)) {
-              return <MermaidDiagram key={index} code={block.text} />;
+              return (
+                <MermaidDiagram
+                  key={index}
+                  code={block.text}
+                  onRetry={viewModel?.canAskForGuidance && !viewModel.isBusy
+                    ? () => send({ type: "ask", text: "/flow" })
+                    : undefined}
+                />
+              );
             }
             return (
               <pre key={index} className="s04-md-code">
@@ -432,7 +462,7 @@ function ResponseActions(
     onSave: () => void;
   }
 ) {
-  const hasProviderReportedCost = tokenUsage?.costSource === "providerResponse" || tokenUsage?.costIsExact === true;
+  const recordedCostUsd = tokenUsage?.costUsd;
 
   const [pendingSave, setPendingSave] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -471,7 +501,10 @@ function ResponseActions(
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
           >
-            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン（{hasProviderReportedCost ? "応答時点の記録料金" : "参考料金概算"} {formatCostUsd(tokenUsage.estimatedCostUsd)}、確定請求額ではありません）
+            約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン
+            {recordedCostUsd !== undefined && (
+              <>（応答時点の記録料金 {formatCostUsd(recordedCostUsd)}、確定請求額ではありません）</>
+            )}
           </span>
         </div>
       )}

@@ -1,13 +1,14 @@
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import {
   AdviceMode,
   AiProviderId,
   AssistanceDepth,
   ConversationEntry,
   ConversationStreamListItem,
-  GuidanceContext,
   GuidanceKind,
   NavigatorContextPreview,
+  ProviderResponseMetadata,
   RequestPlanSnapshot,
   SlashCommand,
   SlashCommandScope,
@@ -44,11 +45,11 @@ const initSqlJs = require("sql.js") as (config?: {
 }) => Promise<SqlJsStatic>;
 
 const ACTIVE_STREAM_KEY = "active_stream_id";
+const CONVERSATION_SCHEMA_VERSION = 1;
 export const DEFAULT_CONVERSATION_STREAM_TITLE = "新しい相談";
-
-export interface StoredConversationEntry extends ConversationEntry {
-  guidanceContext?: GuidanceContext;
-}
+const MAX_CONVERSATION_ENTRY_TEXT_LENGTH = 50_000;
+const MAX_ADDITIONAL_CONTEXT_LENGTH = 10_000;
+const MAX_MODEL_FIELD_LENGTH = 500;
 
 interface ConversationStreamSummary extends ConversationStreamListItem {
   additionalContext?: string;
@@ -59,9 +60,14 @@ export interface ConversationStreamRecord {
   title: string;
   createdAt: string;
   updatedAt: string;
-  entries: StoredConversationEntry[];
+  entries: ConversationEntry[];
   additionalContext?: string;
   revision: number;
+}
+
+interface ConversationPruneResult {
+  streamIds: string[];
+  entryIds: string[];
 }
 
 export class ConversationRevisionConflictError extends Error {
@@ -140,6 +146,10 @@ export class ConversationStore implements vscode.Disposable {
     )[0];
   }
 
+  public listEntryIds(): string[] {
+    return this.selectIds("SELECT id FROM conversation_entries", []);
+  }
+
   public async createStream(title = DEFAULT_CONVERSATION_STREAM_TITLE): Promise<ConversationStreamRecord> {
     return this.mutationQueue.run(async () => {
       const now = new Date().toISOString();
@@ -170,13 +180,18 @@ export class ConversationStore implements vscode.Disposable {
       if (currentRevision !== record.revision) {
         throw new ConversationRevisionConflictError(record.id);
       }
-      const normalizedEntries = record.entries.map((entry) => ({ ...entry }));
+      const normalizedEntries = record.entries.map((entry) => ({
+        ...entry,
+        text: this.normalizeEntryText(entry.text),
+        modelId: this.normalizeOptionalText(entry.modelId, MAX_MODEL_FIELD_LENGTH),
+        modelLabel: this.normalizeOptionalText(entry.modelLabel, MAX_MODEL_FIELD_LENGTH)
+      }));
       const nextRecord: ConversationStreamRecord = {
         ...record,
         title: this.normalizeTitle(record.title),
         updatedAt: this.resolveUpdatedAt(record.updatedAt, normalizedEntries),
         entries: normalizedEntries,
-        additionalContext: this.normalizeOptionalText(record.additionalContext),
+        additionalContext: this.normalizeOptionalText(record.additionalContext, MAX_ADDITIONAL_CONTEXT_LENGTH),
         revision: record.revision + 1
       };
       const lastMessagePreview = this.buildLastMessagePreview(normalizedEntries);
@@ -206,12 +221,33 @@ export class ConversationStore implements vscode.Disposable {
           ]
         );
 
-        this.getDb().run("DELETE FROM conversation_entries WHERE stream_id = ?", [nextRecord.id]);
+        // 以前は毎回この会話の全エントリを削除して入れ直していた。1 メッセージ増えるたびに
+        // 会話全体を書き直すことになるので、いなくなった行だけ消して残りは upsert する。
+        this.deleteRemovedEntries(nextRecord.id, normalizedEntries.map((entry) => entry.id));
         normalizedEntries.forEach((entry, index) => {
           this.getDb().run(
             `INSERT INTO conversation_entries
-          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json, provider_id, model_id, model_label, feedback)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           stream_id = excluded.stream_id,
+           entry_order = excluded.entry_order,
+           role = excluded.role,
+           text = excluded.text,
+           created_at = excluded.created_at,
+           kind = excluded.kind,
+           based_on_json = excluded.based_on_json,
+           mode = excluded.mode,
+           assistance_depth = excluded.assistance_depth,
+           slash_command = excluded.slash_command,
+           slash_command_scope = excluded.slash_command_scope,
+           request_plan_json = excluded.request_plan_json,
+           token_usage_json = excluded.token_usage_json,
+           provider_id = excluded.provider_id,
+           model_id = excluded.model_id,
+           model_label = excluded.model_label,
+           response_metadata_json = excluded.response_metadata_json,
+           feedback = excluded.feedback`,
             this.toEntryParams(nextRecord.id, index, entry)
           );
         });
@@ -235,10 +271,59 @@ export class ConversationStore implements vscode.Disposable {
     });
   }
 
-  public async deleteEmptyStreams(): Promise<void> {
+  public async deleteAllStreams(): Promise<void> {
     await this.mutationQueue.run(async () => {
-      this.deleteEmptyStreamsInMemory();
+      this.inTransaction(() => {
+        this.getDb().run("DELETE FROM conversation_entries");
+        this.getDb().run("DELETE FROM conversation_streams");
+        this.getDb().run("DELETE FROM conversation_metadata");
+      });
       await this.persist();
+    });
+  }
+
+  public async pruneToLimit(maxStreams: number): Promise<ConversationPruneResult> {
+    return this.mutationQueue.run(async () => {
+      const limit = Math.max(0, Math.floor(maxStreams));
+      const stmt = this.getDb().prepare(
+        "SELECT id FROM conversation_streams ORDER BY updated_at DESC LIMIT -1 OFFSET ?"
+      );
+      const removedStreamIds: string[] = [];
+      try {
+        stmt.bind([limit]);
+        while (stmt.step()) removedStreamIds.push(String(stmt.getAsObject().id));
+      } finally {
+        stmt.free();
+      }
+      if (removedStreamIds.length === 0) return { streamIds: [], entryIds: [] };
+
+      const removedEntryIds: string[] = [];
+      this.inTransaction(() => {
+        for (let index = 0; index < removedStreamIds.length; index += 200) {
+          const chunk = removedStreamIds.slice(index, index + 200);
+          const placeholders = chunk.map(() => "?").join(", ");
+          removedEntryIds.push(...this.selectIds(
+            `SELECT id FROM conversation_entries WHERE stream_id IN (${placeholders})`,
+            chunk
+          ));
+          this.getDb().run(
+            `DELETE FROM conversation_entries WHERE stream_id IN (${placeholders})`,
+            chunk
+          );
+          this.getDb().run(
+            `DELETE FROM conversation_streams WHERE id IN (${placeholders})`,
+            chunk
+          );
+        }
+        this.getDb().run(
+          `DELETE FROM conversation_metadata
+            WHERE key = ?
+              AND value NOT IN (SELECT id FROM conversation_streams)`,
+          [ACTIVE_STREAM_KEY]
+        );
+      });
+      await this.persist();
+      return { streamIds: removedStreamIds, entryIds: removedEntryIds };
     });
   }
 
@@ -276,6 +361,7 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   private migrate(): void {
+    const version = this.getUserVersion();
     this.getDb().run(`
       CREATE TABLE IF NOT EXISTS conversation_streams (
         id TEXT PRIMARY KEY,
@@ -307,6 +393,7 @@ export class ConversationStore implements vscode.Disposable {
         provider_id TEXT,
         model_id TEXT,
         model_label TEXT,
+        response_metadata_json TEXT,
         feedback TEXT
       );
 
@@ -331,7 +418,28 @@ export class ConversationStore implements vscode.Disposable {
     this.ensureColumn("conversation_entries", "provider_id", "TEXT");
     this.ensureColumn("conversation_entries", "model_id", "TEXT");
     this.ensureColumn("conversation_entries", "model_label", "TEXT");
+    this.ensureColumn("conversation_entries", "response_metadata_json", "TEXT");
     this.ensureColumn("conversation_entries", "feedback", "TEXT");
+
+    if (version < CONVERSATION_SCHEMA_VERSION) {
+      // 収集したソース断片や追加文脈は応答生成中だけメモリに保持し、履歴DBには残さない。
+      // 旧版が保存した平文データはこの移行時に一度だけ消去する。
+      this.getDb().run(`
+        UPDATE conversation_entries
+           SET guidance_context_json = NULL
+         WHERE guidance_context_json IS NOT NULL;
+        PRAGMA user_version = ${CONVERSATION_SCHEMA_VERSION};
+      `);
+    }
+  }
+
+  private getUserVersion(): number {
+    const stmt = this.getDb().prepare("PRAGMA user_version");
+    try {
+      return stmt.step() ? Number(stmt.getAsObject().user_version ?? 0) : 0;
+    } finally {
+      stmt.free();
+    }
   }
 
   private deleteEmptyStreamsInMemory(): void {
@@ -370,14 +478,14 @@ export class ConversationStore implements vscode.Disposable {
     return records;
   }
 
-  private selectEntries(streamId: string): StoredConversationEntry[] {
+  private selectEntries(streamId: string): ConversationEntry[] {
     const stmt = this.getDb().prepare(
-      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, guidance_context_json, token_usage_json, provider_id, model_id, model_label, feedback
+      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback
          FROM conversation_entries
         WHERE stream_id = ?
         ORDER BY entry_order ASC`
     );
-    const entries: StoredConversationEntry[] = [];
+    const entries: ConversationEntry[] = [];
 
     try {
       stmt.bind([streamId]);
@@ -389,6 +497,45 @@ export class ConversationStore implements vscode.Disposable {
     }
 
     return entries;
+  }
+
+  /** 保存後の一覧に残らないエントリだけを削除する。プレースホルダ数を抑えるため分割して実行する。 */
+  private deleteRemovedEntries(streamId: string, keptEntryIds: readonly string[]): void {
+    const keptIds = new Set(keptEntryIds);
+    const removedIds = this.selectEntryIds(streamId).filter((id) => !keptIds.has(id));
+    if (removedIds.length === 0) {
+      return;
+    }
+
+    for (let index = 0; index < removedIds.length; index += 200) {
+      const chunk = removedIds.slice(index, index + 200);
+      this.getDb().run(
+        `DELETE FROM conversation_entries
+          WHERE stream_id = ?
+            AND id IN (${chunk.map(() => "?").join(", ")})`,
+        [streamId, ...chunk]
+      );
+    }
+  }
+
+  private selectEntryIds(streamId: string): string[] {
+    return this.selectIds("SELECT id FROM conversation_entries WHERE stream_id = ?", [streamId]);
+  }
+
+  private selectIds(sql: string, params: SqlValue[]): string[] {
+    const stmt = this.getDb().prepare(sql);
+    const ids: string[] = [];
+
+    try {
+      stmt.bind(params);
+      while (stmt.step()) {
+        ids.push(String(stmt.getAsObject().id));
+      }
+    } finally {
+      stmt.free();
+    }
+
+    return ids;
   }
 
   private selectRevision(streamId: string): number | undefined {
@@ -416,20 +563,22 @@ export class ConversationStore implements vscode.Disposable {
   private summaryFromRow(row: Record<string, unknown>): ConversationStreamSummary {
     return {
       id: String(row.id),
-      title: String(row.title),
+      title: this.normalizeTitle(String(row.title)),
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
       messageCount: Number(row.message_count ?? 0),
-      lastMessagePreview: row.last_message_preview ? String(row.last_message_preview) : undefined,
-      additionalContext: this.normalizeOptionalText(row.additional_context)
+      lastMessagePreview: row.last_message_preview
+        ? this.buildPreview(String(row.last_message_preview), 120)
+        : undefined,
+      additionalContext: this.normalizeOptionalText(row.additional_context, MAX_ADDITIONAL_CONTEXT_LENGTH)
     };
   }
 
-  private entryFromRow(row: Record<string, unknown>): StoredConversationEntry {
+  private entryFromRow(row: Record<string, unknown>): ConversationEntry {
     return {
       id: String(row.id),
       role: this.parseRole(row.role),
-      text: String(row.text),
+      text: this.normalizeEntryText(String(row.text)),
       createdAt: String(row.created_at),
       kind: this.parseGuidanceKind(row.kind),
       basedOn: this.parseJson<NavigatorContextPreview>(row.based_on_json),
@@ -438,16 +587,16 @@ export class ConversationStore implements vscode.Disposable {
       slashCommand: this.parseSlashCommand(row.slash_command),
       slashCommandScope: this.parseSlashCommandScope(row.slash_command_scope),
       requestPlan: this.parseJson<RequestPlanSnapshot>(row.request_plan_json),
-      guidanceContext: this.parseGuidanceContext(row.guidance_context_json),
       tokenUsage: this.parseJson<TokenUsage>(row.token_usage_json),
       providerId: this.parseProviderId(row.provider_id),
-      modelId: this.normalizeOptionalText(row.model_id),
-      modelLabel: this.normalizeOptionalText(row.model_label),
+      modelId: this.normalizeOptionalText(row.model_id, MAX_MODEL_FIELD_LENGTH),
+      modelLabel: this.normalizeOptionalText(row.model_label, MAX_MODEL_FIELD_LENGTH),
+      responseMetadata: this.parseJson<ProviderResponseMetadata>(row.response_metadata_json),
       feedback: this.parseFeedbackRating(row.feedback)
     };
   }
 
-  private toEntryParams(streamId: string, index: number, entry: StoredConversationEntry): SqlValue[] {
+  private toEntryParams(streamId: string, index: number, entry: ConversationEntry): SqlValue[] {
     return [
       entry.id,
       streamId,
@@ -462,11 +611,11 @@ export class ConversationStore implements vscode.Disposable {
       entry.slashCommand ?? null,
       entry.slashCommandScope ?? null,
       entry.requestPlan ? JSON.stringify(entry.requestPlan) : null,
-      entry.guidanceContext ? JSON.stringify(entry.guidanceContext) : null,
       entry.tokenUsage ? JSON.stringify(entry.tokenUsage) : null,
       entry.providerId ?? null,
       entry.modelId ?? null,
       entry.modelLabel ?? null,
+      entry.responseMetadata ? JSON.stringify(entry.responseMetadata) : null,
       entry.feedback ?? null
     ];
   }
@@ -546,32 +695,17 @@ export class ConversationStore implements vscode.Disposable {
     }
   }
 
-  private parseGuidanceContext(value: unknown): GuidanceContext | undefined {
-    const parsed = this.parseJson<Partial<GuidanceContext>>(value);
-    if (!parsed) {
-      return undefined;
-    }
-
-    return {
-      ...parsed,
-      referencedFiles: parsed.referencedFiles ?? [],
-      diagnosticsSummary: parsed.diagnosticsSummary ?? [],
-      recentEditsSummary: parsed.recentEditsSummary ?? [],
-      relatedSymbols: parsed.relatedSymbols ?? []
-    };
-  }
-
-  private resolveUpdatedAt(currentUpdatedAt: string, entries: StoredConversationEntry[]): string {
+  private resolveUpdatedAt(currentUpdatedAt: string, entries: ConversationEntry[]): string {
     return entries.at(-1)?.createdAt ?? currentUpdatedAt ?? new Date().toISOString();
   }
 
-  private buildLastMessagePreview(entries: StoredConversationEntry[]): string | undefined {
+  private buildLastMessagePreview(entries: ConversationEntry[]): string | undefined {
     const text = entries.at(-1)?.text.replace(/\s+/g, " ").trim();
     if (!text) {
       return undefined;
     }
 
-    return text.length <= 120 ? text : `${text.slice(0, 120)}...`;
+    return this.buildPreview(text, 120);
   }
 
   private normalizeTitle(value: string): string {
@@ -580,16 +714,32 @@ export class ConversationStore implements vscode.Disposable {
       return DEFAULT_CONVERSATION_STREAM_TITLE;
     }
 
-    return normalized.length <= 60 ? normalized : `${normalized.slice(0, 60)}...`;
+    return normalized.length <= 60 ? normalized : `${normalized.slice(0, 57)}...`;
   }
 
-  private normalizeOptionalText(value: unknown): string | undefined {
+  private normalizeOptionalText(value: unknown, maxLength: number): string | undefined {
     if (typeof value !== "string") {
       return undefined;
     }
 
     const normalized = value.replace(/\r\n/g, "\n").trim();
-    return normalized.length > 0 ? normalized : undefined;
+    if (!normalized) return undefined;
+    return normalized.length <= maxLength
+      ? normalized
+      : normalized.slice(0, maxLength);
+  }
+
+  private buildPreview(value: string, maxLength: number): string {
+    return value.length <= maxLength
+      ? value
+      : `${value.slice(0, Math.max(0, maxLength - 3))}...`;
+  }
+
+  private normalizeEntryText(value: string): string {
+    const normalized = value.replace(/\r\n/g, "\n");
+    return normalized.length <= MAX_CONVERSATION_ENTRY_TEXT_LENGTH
+      ? normalized
+      : `${normalized.slice(0, MAX_CONVERSATION_ENTRY_TEXT_LENGTH - 3)}...`;
   }
 
   private async persist(): Promise<void> {
@@ -609,6 +759,6 @@ export class ConversationStore implements vscode.Disposable {
   }
 
   private createId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return randomUUID();
   }
 }

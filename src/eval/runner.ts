@@ -1,4 +1,5 @@
-import { buildGuidancePrompt } from "../services/PromptBuilder";
+import { buildGuidancePrompt, buildGuidancePromptMessages, type GuidancePromptMessages } from "../services/PromptBuilder";
+import { userExplicitlyRequestedImplementationCode, validateGuidanceResponse } from "../services/GuidanceResponsePolicy";
 import type { ModelProfile } from "../services/ModelProfile";
 import { estimateTokens } from "./assertions";
 import type { EvalScenario } from "./fixtures";
@@ -24,6 +25,7 @@ export interface ScenarioResult {
   description: string;
   promptApproxTokens: number;
   responseApproxTokens?: number;
+  responseDurationMs?: number;
   checks: CheckOutcome[];
   passed: boolean;
 }
@@ -35,7 +37,7 @@ export interface EvalReport {
   failed: number;
 }
 
-export type Responder = (prompt: string, scenario: EvalScenario) => Promise<string>;
+export type Responder = (messages: GuidancePromptMessages, scenario: EvalScenario) => Promise<string>;
 
 export function runStatic(scenarios: EvalScenario[]): EvalReport {
   const results = scenarios.map((scenario) => {
@@ -65,10 +67,34 @@ export async function runLive(
     const checks = runChecks(scenario.promptChecks, prompt, "prompt");
 
     let responseApproxTokens: number | undefined;
-    if (scenario.responseChecks && scenario.responseChecks.length > 0) {
-      const response = await responder(prompt, scenario);
-      responseApproxTokens = estimateTokens(response);
-      checks.push(...runChecks(scenario.responseChecks, response, "response"));
+    let responseDurationMs: number | undefined;
+    if (scenario.responseChecks) {
+      const messages = buildGuidancePromptMessages({
+        ...scenario.input,
+        modelProfile: modelProfile ?? scenario.input.modelProfile
+      });
+      const started = performance.now();
+      try {
+        const response = await responder(messages, scenario);
+        responseApproxTokens = estimateTokens(response);
+        const validation = validateGuidanceResponse(scenario.input.slashCommand, response, {
+          kind: scenario.input.kind,
+          allowImplementationCode: userExplicitlyRequestedImplementationCode(scenario.input.userPrompt)
+        });
+        checks.push({
+          name: "runtime output contract",
+          kind: "response",
+          passed: validation.ok,
+          detail: validation.ok ? validation.outcome : validation.reason
+        });
+        if (validation.ok && validation.outcome === "advice") {
+          checks.push(...runChecks(scenario.responseChecks, validation.text, "response"));
+        }
+      } catch {
+        checks.push({ name: "provider response", kind: "response", passed: false, detail: "request failed" });
+      } finally {
+        responseDurationMs = Math.round(performance.now() - started);
+      }
     }
 
     results.push({
@@ -76,6 +102,7 @@ export async function runLive(
       description: scenario.description,
       promptApproxTokens: estimateTokens(prompt),
       responseApproxTokens,
+      responseDurationMs,
       checks,
       passed: checks.every((check) => check.passed)
     });
@@ -97,7 +124,8 @@ export function formatReport(report: EvalReport): string {
   for (const result of report.results) {
     const head = result.passed ? "PASS" : "FAIL";
     const response = result.responseApproxTokens !== undefined ? `, resp ~${result.responseApproxTokens}t` : "";
-    lines.push(`[${head}] ${result.id}  (prompt ~${result.promptApproxTokens}t${response})`);
+    const duration = result.responseDurationMs !== undefined ? `, ${result.responseDurationMs}ms` : "";
+    lines.push(`[${head}] ${result.id}  (prompt ~${result.promptApproxTokens}t${response}${duration})`);
     lines.push(`       ${result.description}`);
     for (const check of result.checks) {
       const mark = check.passed ? "  ✓" : "  ✗";

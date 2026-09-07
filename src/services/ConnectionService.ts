@@ -11,24 +11,35 @@ import { LmStudioClient, LmStudioError, LmStudioFailureKind, LmStudioModel } fro
 import {
   OrcaRouterClient,
   OrcaRouterError,
-  OrcaRouterFailureKind,
-  OrcaRouterModel
+  OrcaRouterFailureKind
 } from "./OrcaRouterClient";
+import { createBuiltInOrcaRouterOptions, toOrcaRouterModelOptions } from "./OrcaRouterModelPolicy";
 import { OrcaRouterCredentialStore } from "./OrcaRouterCredentialStore";
 import type { ModelProfileSource } from "./ModelProfile";
 import type { UsageMeter } from "./UsageMeter";
+import {
+  AiResponseLimitError,
+  AiTextRequest,
+  MAX_PROVIDER_MODEL_COUNT,
+  getResponseCharacterLimit,
+  normalizeProviderField
+} from "./AiRequestPolicy";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
-export type CopilotConnectionIssue = "timeout" | "noPermissions" | "blocked" | "notFound" | "other";
+export type CopilotConnectionIssue = "timeout" | "autoUnavailable" | "noPermissions" | "blocked" | "notFound" | "other";
 export type OrcaRouterConnectionIssue = OrcaRouterFailureKind | "missingApiKey" | "modelNotFound";
 
-const COPILOT_PROBE_TIMEOUT_MS = 15_000;
+const COPILOT_PROBE_TIMEOUT_SECONDS = 60;
 
 export interface ProviderTextResponse {
   text: string;
   inputTokens?: number;
   outputTokens?: number;
   costUsd?: number;
+  requestId?: string;
+  resolvedModelId?: string;
+  finishReason?: string;
+  providerAttemptCount?: number;
 }
 
 export interface ProviderRequestMetadata {
@@ -41,11 +52,11 @@ export interface ConnectedProviderModel {
   modelLabel: string;
   profileSource: ModelProfileSource;
   requestText(
-    prompt: string,
+    request: AiTextRequest,
     token: vscode.CancellationToken,
     metadata?: ProviderRequestMetadata
   ): Promise<ProviderTextResponse>;
-  countTokens?(text: string): Promise<number>;
+  countTokens?(text: string, token?: vscode.CancellationToken): Promise<number>;
 }
 
 export interface ConnectionActivationResult {
@@ -60,7 +71,6 @@ interface ConnectionSnapshot {
   providerId: AiProviderId;
   copilotModel: vscode.LanguageModelChat | undefined;
   connectedModel: ConnectedProviderModel | undefined;
-  usedAutomaticModelFallback: boolean;
 }
 
 export class ConnectionService {
@@ -72,7 +82,6 @@ export class ConnectionService {
   private availableLmStudioModelOptions: LmStudioModelOption[] = [];
   private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = [];
   private pendingConnection: Promise<ConnectionActivationResult> | undefined;
-  private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
   private lastCopilotIssue: CopilotConnectionIssue | undefined;
@@ -100,11 +109,6 @@ export class ConnectionService {
 
   public getConnectedModel(): ConnectedProviderModel | undefined {
     return this.connectedModel;
-  }
-
-  // Kept temporarily for Copilot-specific callers during the provider migration.
-  public getModel(): vscode.LanguageModelChat | undefined {
-    return this.copilotModel;
   }
 
   public getModelOptions(): CopilotModelOption[] {
@@ -162,10 +166,6 @@ export class ConnectionService {
     return value;
   }
 
-  public didUseAutoFallbackModel(): boolean {
-    return this.usedAutomaticModelFallback;
-  }
-
   public async refreshAvailableModels(preferredModelId?: string): Promise<CopilotModelOption[]> {
     try {
       const models = await this.fetchCopilotModels(false);
@@ -197,18 +197,13 @@ export class ConnectionService {
     }
     try {
       const models = await this.orcaRouterClient.listModels(apiKey);
-      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      this.availableOrcaRouterModelOptions = toOrcaRouterModelOptions(models);
       this.lastOrcaRouterIssue = undefined;
     } catch (error) {
       this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
       this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
     }
     return this.availableOrcaRouterModelOptions;
-  }
-
-  public async connect(settings: NavigatorSettings): Promise<ConnectionState> {
-    const result = await this.connectAndActivate(settings);
-    return result.connectionState;
   }
 
   public async connectAndActivate(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
@@ -237,7 +232,6 @@ export class ConnectionService {
   public resetToDisconnected(): ConnectionState {
     this.copilotModel = undefined;
     this.connectedModel = undefined;
-    this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.lastCopilotIssue = undefined;
     this.lastOrcaRouterIssue = undefined;
@@ -248,7 +242,7 @@ export class ConnectionService {
   private async connectInternal(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
     const previous = this.createSnapshot();
     this.providerId = settings.providerId;
-    this.usedAutomaticModelFallback = false;
+    this.lastCopilotIssue = undefined;
     this.lastLmStudioIssue = undefined;
     this.lastOrcaRouterIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
@@ -277,8 +271,7 @@ export class ConnectionService {
       connectionState: this.connectionState,
       providerId: this.providerId,
       copilotModel: this.copilotModel,
-      connectedModel: this.connectedModel,
-      usedAutomaticModelFallback: this.usedAutomaticModelFallback
+      connectedModel: this.connectedModel
     };
   }
 
@@ -291,7 +284,6 @@ export class ConnectionService {
       this.providerId = previous.providerId;
       this.copilotModel = previous.copilotModel;
       this.connectedModel = previous.connectedModel;
-      this.usedAutomaticModelFallback = previous.usedAutomaticModelFallback;
       return {
         connectionState: previous.connectionState,
         activated: false,
@@ -311,14 +303,14 @@ export class ConnectionService {
       const automaticModel = copilotModelId ? undefined : this.selectAutoRoutingCopilotModel(models);
       const selectedModel = copilotModelId
         ? manualSelectableModels.find((model) => model.id === copilotModelId)
-        : automaticModel ?? manualSelectableModels[0];
+        : automaticModel;
 
       if (!selectedModel) {
+        this.lastCopilotIssue = copilotModelId ? "notFound" : "autoUnavailable";
         this.connectionState = "unavailable";
         return this.connectionState;
       }
 
-      this.usedAutomaticModelFallback = !copilotModelId && !automaticModel;
       this.copilotModel = selectedModel;
       this.connectedModel = this.createCopilotModel(selectedModel);
       this.connectionState = "consent_pending";
@@ -327,7 +319,6 @@ export class ConnectionService {
     } catch (error) {
       this.copilotModel = undefined;
       this.connectedModel = undefined;
-      this.usedAutomaticModelFallback = false;
       this.lastCopilotIssue = this.classifyCopilotIssue(error);
       this.connectionState = this.classifyCopilotConnectError(error);
     }
@@ -367,7 +358,7 @@ export class ConnectionService {
       }
 
       const models = await this.orcaRouterClient.listModels(apiKey);
-      this.availableOrcaRouterModelOptions = this.toOrcaRouterModelOptions(models);
+      this.availableOrcaRouterModelOptions = toOrcaRouterModelOptions(models);
       const selectedId = settings.orcaRouterModelId ?? "orcarouter/free";
       const selected = this.availableOrcaRouterModelOptions.find((model) => model.id === selectedId);
       if (!selected) {
@@ -383,7 +374,7 @@ export class ConnectionService {
     } catch (error) {
       this.connectedModel = undefined;
       this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
-      this.connectionState = this.lastOrcaRouterIssue === "quota" || this.lastOrcaRouterIssue === "rateLimit"
+      this.connectionState = ["quota", "keyQuota", "cycleLimit", "balanceQuota", "rateLimit"].includes(this.lastOrcaRouterIssue)
         ? "restricted"
         : "unavailable";
     }
@@ -443,43 +434,31 @@ export class ConnectionService {
     return [...options.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
 
-  private toOrcaRouterModelOptions(models: OrcaRouterModel[]): OrcaRouterModelOption[] {
-    const options = new Map(createBuiltInOrcaRouterOptions().map((option) => [option.id, option]));
-    for (const model of models) {
-      const supportsOpenAi = model.supportedEndpointTypes.length === 0 || model.supportedEndpointTypes.includes("openai");
-      const acceptsText = model.inputModalities.length === 0 || model.inputModalities.includes("text");
-      const producesText = model.outputModalities.length === 0 || model.outputModalities.includes("text");
-      if (!supportsOpenAi || !acceptsText || !producesText) {
-        continue;
-      }
-      options.set(model.id, {
-        id: model.id,
-        label: model.id.split("/").slice(1).join("/") || model.id,
-        provider: model.ownedBy,
-        contextLength: model.contextLength
-      });
-    }
-    return [...options.values()].sort((a, b) => {
-      if (a.isRouter !== b.isRouter) return a.isRouter ? -1 : 1;
-      return a.label.localeCompare(b.label);
-    });
-  }
-
   private createCopilotModel(model: vscode.LanguageModelChat): ConnectedProviderModel {
     return {
       providerId: "copilot",
       modelId: model.id,
       modelLabel: this.toModelLabel(model),
       profileSource: model,
-      requestText: async (prompt, token) => {
-        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, token);
+      requestText: async (request, token) => {
+        const response = await model.sendRequest(
+          [
+            vscode.LanguageModelChatMessage.User(request.systemPrompt),
+            vscode.LanguageModelChatMessage.User(request.userPrompt)
+          ],
+          { modelOptions: { max_tokens: request.maxOutputTokens } },
+          token
+        );
         let text = "";
         for await (const chunk of response.text) {
+          if (text.length + chunk.length > getResponseCharacterLimit(request.purpose)) {
+            throw new AiResponseLimitError();
+          }
           text += chunk;
         }
         return { text };
       },
-      countTokens: async (text) => model.countTokens(text)
+      countTokens: async (text, token) => model.countTokens(text, token)
     };
   }
 
@@ -493,11 +472,11 @@ export class ConnectionService {
         name: model.label,
         vendor: "lmstudio"
       },
-      requestText: async (prompt, cancellationToken, metadata) => {
+      requestText: async (request, cancellationToken, metadata) => {
         return this.lmStudioClient.createCompletion(
           baseUrl,
           model.key,
-          prompt,
+          request,
           metadata?.referencedFilePaths,
           cancellationToken
         );
@@ -514,14 +493,15 @@ export class ConnectionService {
         id: model.id,
         name: model.label,
         vendor: model.provider,
-        maxInputTokens: model.contextLength
+        maxInputTokens: model.contextLength,
+        maxOutputTokens: model.maxCompletionTokens
       },
-      requestText: async (prompt, cancellationToken) => {
+      requestText: async (request, cancellationToken) => {
         const currentApiKey = await this.orcaRouterCredentials.getApiKey();
         if (!currentApiKey) {
           throw new OrcaRouterError("auth", "OrcaRouter API key is not configured.");
         }
-        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, prompt, cancellationToken);
+        return this.orcaRouterClient.createCompletion(currentApiKey, model.id, request, cancellationToken);
       }
     };
   }
@@ -565,11 +545,14 @@ export class ConnectionService {
       seenLabelIndexes.set(labelKey, selectable.length);
       selectable.push(model);
     }
-    return selectable.sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)));
+    return selectable
+      .sort((a, b) => this.toModelLabel(a).localeCompare(this.toModelLabel(b)))
+      .slice(0, MAX_PROVIDER_MODEL_COUNT);
   }
 
   private selectAutoRoutingCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
-    return models.find((model) => model.id && this.isAutoRoutingModel(model));
+    return models.find((model) => model.id && this.isAutoRoutingModel(model)
+      && this.languageModelAccessInformation?.canSendRequest(model) !== false);
   }
 
   private isAutoRoutingModel(model: vscode.LanguageModelChat): boolean {
@@ -581,7 +564,7 @@ export class ConnectionService {
   }
 
   private toModelLabel(model: vscode.LanguageModelChat): string {
-    return model.name || model.family || model.id;
+    return normalizeProviderField(model.name || model.family || model.id);
   }
 
   private toModelLabelKey(model: vscode.LanguageModelChat): string {
@@ -589,27 +572,40 @@ export class ConnectionService {
   }
 
   private toTokenLimitText(model: vscode.LanguageModelChat): string {
-    return Number.isFinite(model.maxInputTokens) && model.maxInputTokens > 0
+    return Number.isSafeInteger(model.maxInputTokens) && model.maxInputTokens > 0
       ? `${Math.floor(model.maxInputTokens).toLocaleString()} tokens`
       : "Token limit unavailable";
   }
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {
+    const configuredSeconds = vscode.workspace.getConfiguration("aiPairNavigator").get<number>("copilotProbeTimeoutSeconds");
+    const timeoutSeconds = typeof configuredSeconds === "number" && Number.isFinite(configuredSeconds)
+      ? Math.min(180, Math.max(15, configuredSeconds)) : COPILOT_PROBE_TIMEOUT_SECONDS;
     const tokenSource = new vscode.CancellationTokenSource();
     let timeoutHandle: NodeJS.Timeout | undefined;
     try {
       const prompt = "Respond with exactly: ready";
       const probe = async (): Promise<string> => {
-        const response = await model.sendRequest([vscode.LanguageModelChatMessage.User(prompt)], {}, tokenSource.token);
+        const response = await model.sendRequest(
+          [vscode.LanguageModelChatMessage.User(prompt)],
+          { modelOptions: { max_tokens: 16 } },
+          tokenSource.token
+        );
         let responseText = "";
-        for await (const chunk of response.text) responseText += chunk;
+        for await (const chunk of response.text) {
+          if (responseText.length + chunk.length > 128) {
+            tokenSource.cancel();
+            throw new AiResponseLimitError("Copilot probe response exceeded the size limit.");
+          }
+          responseText += chunk;
+        }
         return responseText;
       };
       const timeout = new Promise<never>((_, reject) => {
         timeoutHandle = setTimeout(() => {
           tokenSource.cancel();
           reject(new CopilotProbeTimeoutError());
-        }, COPILOT_PROBE_TIMEOUT_MS);
+        }, timeoutSeconds * 1000);
       });
       const text = await Promise.race([probe(), timeout]);
       await this.recordProbeUsage(model, prompt, text);
@@ -674,21 +670,4 @@ class CopilotProbeTimeoutError extends Error {
 
 function normalizeModelIdentifier(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-function createBuiltInOrcaRouterOptions(): OrcaRouterModelOption[] {
-  return [
-    {
-      id: "orcarouter/free",
-      label: "Free Router",
-      provider: "orcarouter",
-      isRouter: true
-    },
-    {
-      id: "orcarouter/auto",
-      label: "Auto Router",
-      provider: "orcarouter",
-      isRouter: true
-    }
-  ];
 }

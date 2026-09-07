@@ -45,6 +45,7 @@ export function S05Knowledge() {
                 onClick={() => send({ type: "selectKnowledge", id: item.id })}
               >
                 <span className="knowledge-item-title">{item.title}</span>
+                {item.reviewRequired && <span className="knowledge-review-badge">確認待ち・未使用</span>}
                 <span className="knowledge-item-preview">{item.summary}</span>
                 <span className="knowledge-item-meta">
                   <span className="knowledge-item-date">

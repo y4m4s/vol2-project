@@ -151,7 +151,7 @@ export interface NavigatorSessionState {
 
 ### 13.5 LLM 要約の実装方針（FB送信時にその場で要約）
 
-要約処理は `FeedbackStore` ではなく `AdviceService` に持たせる（既存の `createKnowledgeDraft` / `createConversationTitle` と同様、LLM 呼び出しは `AdviceService` に集約する設計方針に従う）。
+要約処理は `FeedbackStore` ではなく `AdviceService` に持たせる（既存の `createKnowledgeDraft` と同様、回答・整理用途の LLM 呼び出しは `AdviceService` に集約する設計方針に従う）。会話タイトルは追加の LLM 呼び出しを行わず、ローカルで生成する。
 
 `AdviceService` に新規メソッドを追加する:
 

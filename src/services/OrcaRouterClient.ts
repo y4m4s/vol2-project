@@ -1,12 +1,29 @@
 import type * as vscode from "vscode";
+import { classifyOrcaRouterFailure, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
+import {
+  AiResponseLimitError,
+  AiTextRequest,
+  MAX_MODEL_LIST_RESPONSE_BYTES,
+  MAX_PROVIDER_MODEL_COUNT,
+  MAX_PROVIDER_RESPONSE_BYTES,
+  normalizeProviderField,
+  readResponseTextWithLimit
+} from "./AiRequestPolicy";
 
 export const ORCA_ROUTER_BASE_URL = "https://api.orcarouter.ai/v1";
 export const ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS = 10_000;
 export const ORCA_ROUTER_COMPLETION_TIMEOUT_MS = 120_000;
+export const ORCA_ROUTER_MAX_AUTOMATIC_RETRY_DELAY_MS = 10_000;
+const ORCA_ROUTER_TRANSIENT_RETRY_DELAY_MS = 400;
 
 export type OrcaRouterFailureKind =
   | "auth"
   | "quota"
+  | "keyQuota"
+  | "cycleLimit"
+  | "balanceQuota"
+  | "modelAccess"
+  | "forbidden"
   | "rateLimit"
   | "unavailable"
   | "timeout"
@@ -42,7 +59,19 @@ export interface OrcaRouterCompletion {
   outputTokens?: number;
   costUsd?: number;
   resolvedModelId?: string;
+  requestId?: string;
+  finishReason?: string;
+  providerAttemptCount?: number;
 }
+
+interface OrcaRouterJsonResponse {
+  payload: unknown;
+  requestId?: string;
+  resolvedModelId?: string;
+  attemptCount: number;
+}
+
+type OrcaRouterRetryMode = "none" | "read" | "completion" | "freeCompletion";
 
 /**
  * Minimal OpenAI-compatible client for the OrcaRouter gateway.
@@ -56,25 +85,27 @@ export class OrcaRouterClient {
     apiKey: string,
     cancellationToken?: vscode.CancellationToken
   ): Promise<OrcaRouterModel[]> {
-    const payload = await this.requestJson(
+    const { payload } = await this.requestJson(
       `${ORCA_ROUTER_BASE_URL}/models`,
       { method: "GET", headers: this.createHeaders(apiKey) },
       ORCA_ROUTER_MODEL_LIST_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      "read",
+      MAX_MODEL_LIST_RESPONSE_BYTES
     );
     const data = isRecord(payload) && Array.isArray(payload.data) ? payload.data : undefined;
     if (!data) {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter model response did not include data.");
     }
 
-    return data.flatMap((value) => {
+    return data.slice(0, MAX_PROVIDER_MODEL_COUNT).flatMap((value) => {
       if (!isRecord(value) || typeof value.id !== "string" || !value.id.trim()) {
         return [];
       }
       const architecture = isRecord(value.architecture) ? value.architecture : undefined;
       return [{
-        id: value.id.trim(),
-        ownedBy: typeof value.owned_by === "string" && value.owned_by.trim() ? value.owned_by.trim() : "unknown",
+        id: normalizeProviderField(value.id),
+        ownedBy: typeof value.owned_by === "string" && value.owned_by.trim() ? normalizeProviderField(value.owned_by) : "unknown",
         supportedEndpointTypes: readStringArray(value.supported_endpoint_types),
         contextLength: readPositiveInteger(value.context_length),
         maxCompletionTokens: readPositiveInteger(value.max_completion_tokens),
@@ -87,41 +118,66 @@ export class OrcaRouterClient {
   public async createCompletion(
     apiKey: string,
     modelId: string,
-    prompt: string,
+    prompt: string | AiTextRequest,
     cancellationToken?: vscode.CancellationToken
   ): Promise<OrcaRouterCompletion> {
-    const payload = await this.requestJson(
+    const request = normalizeTextRequest(prompt);
+    const {
+      payload,
+      requestId,
+      resolvedModelId: headerResolvedModelId,
+      attemptCount: providerAttemptCount
+    } = await this.requestJson(
       `${ORCA_ROUTER_BASE_URL}/chat/completions`,
       {
         method: "POST",
         headers: this.createHeaders(apiKey, true),
         body: JSON.stringify({
           model: modelId,
-          messages: [{ role: "user", content: prompt }],
-          stream: false
+          messages: request.systemPrompt
+            ? [
+                { role: "system", content: request.systemPrompt },
+                { role: "user", content: request.userPrompt }
+              ]
+            : [{ role: "user", content: request.userPrompt }],
+          stream: false,
+          ...(request.maxOutputTokens ? { max_tokens: request.maxOutputTokens } : {})
         })
       },
       ORCA_ROUTER_COMPLETION_TIMEOUT_MS,
-      cancellationToken
+      cancellationToken,
+      isFreeModel(modelId) ? "freeCompletion" : "completion",
+      MAX_PROVIDER_RESPONSE_BYTES
     );
 
     const responseRecord = isRecord(payload) ? payload : undefined;
     const choices = responseRecord && Array.isArray(responseRecord.choices) ? responseRecord.choices : undefined;
     const firstChoice = choices?.[0];
     const message = isRecord(firstChoice) && isRecord(firstChoice.message) ? firstChoice.message : undefined;
-    const text = message ? readMessageContent(message.content) : undefined;
-    if (!text) {
+    const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
+      ? normalizeProviderField(firstChoice.finish_reason, 100)
+      : undefined;
+    // Reasoning can exhaust the budget before any visible answer is emitted.
+    const text = message && (message.content === null || message.content === undefined) && finishReason === "length"
+      ? "" : message ? readMessageContent(message.content) : undefined;
+    if (text === undefined) {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter completion response did not include text.");
     }
     const usage = responseRecord && isRecord(responseRecord.usage) ? responseRecord.usage : undefined;
+    const resolvedModelId = headerResolvedModelId ?? (
+      typeof responseRecord?.model === "string" && responseRecord.model.trim()
+        ? normalizeProviderField(responseRecord.model)
+        : undefined
+    );
     return {
       text,
       inputTokens: readNonNegativeInteger(usage?.prompt_tokens),
       outputTokens: readNonNegativeInteger(usage?.completion_tokens),
       costUsd: readNonNegativeNumber(usage?.cost_usd),
-      resolvedModelId: typeof responseRecord?.model === "string" && responseRecord.model.trim()
-        ? responseRecord.model.trim()
-        : undefined
+      ...(resolvedModelId ? { resolvedModelId } : {}),
+      ...(requestId ? { requestId } : {}),
+      ...(finishReason ? { finishReason } : {}),
+      providerAttemptCount
     };
   }
 
@@ -141,31 +197,64 @@ export class OrcaRouterClient {
     url: string,
     init: RequestInit,
     timeoutMs: number,
-    cancellationToken?: vscode.CancellationToken
-  ): Promise<unknown> {
+    cancellationToken?: vscode.CancellationToken,
+    retryMode: OrcaRouterRetryMode = "none",
+    maxResponseBytes = MAX_PROVIDER_RESPONSE_BYTES
+  ): Promise<OrcaRouterJsonResponse> {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        const response = await this.requestJsonOnce(url, init, timeoutMs, cancellationToken, maxResponseBytes);
+        return { ...response, attemptCount: attempt + 1 };
+      } catch (error) {
+        const retryDelayMs = this.resolveRetryDelay(error, retryMode, attempt, cancellationToken);
+        if (retryDelayMs === undefined) {
+          throw error;
+        }
+        await this.waitForRetry(retryDelayMs, cancellationToken);
+      }
+    }
+  }
+
+  private async requestJsonOnce(
+    url: string,
+    init: RequestInit,
+    timeoutMs: number,
+    cancellationToken?: vscode.CancellationToken,
+    maxResponseBytes = MAX_PROVIDER_RESPONSE_BYTES
+  ): Promise<OrcaRouterJsonResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     const cancellation = cancellationToken?.onCancellationRequested(() => controller.abort());
     try {
       const response = await fetch(url, { ...init, redirect: "error", signal: controller.signal });
-      const rawText = await response.text();
+      const rawText = await readResponseTextWithLimit(response, maxResponseBytes);
       if (!response.ok) {
         const detail = readErrorDetail(rawText);
-        throw new OrcaRouterError(
-          classifyStatus(response.status),
+        const error = new OrcaRouterError(
+          classifyStatus(response.status, detail.code, detail.message),
           detail.message ?? `OrcaRouter request failed (${response.status}).`,
           response.status,
           detail.code,
           response.headers.get("retry-after") ?? undefined
         );
+        classifyOrcaRouterFailure(error);
+        throw error;
       }
       try {
-        return JSON.parse(rawText) as unknown;
+        return {
+          payload: JSON.parse(rawText) as unknown,
+          requestId: readHeader(response.headers, "x-orca-request-id"),
+          resolvedModelId: readHeader(response.headers, "x-orca-resolved-model"),
+          attemptCount: 1
+        };
       } catch {
         throw new OrcaRouterError("invalidResponse", "OrcaRouter returned invalid JSON.");
       }
     } catch (error) {
       if (error instanceof OrcaRouterError) {
+        throw error;
+      }
+      if (error instanceof AiResponseLimitError) {
         throw error;
       }
       if (controller.signal.aborted) {
@@ -180,11 +269,85 @@ export class OrcaRouterClient {
       cancellation?.dispose();
     }
   }
+
+  private resolveRetryDelay(
+    error: unknown,
+    retryMode: OrcaRouterRetryMode,
+    attempt: number,
+    cancellationToken?: vscode.CancellationToken
+  ): number | undefined {
+    if (
+      attempt > 0
+      || retryMode === "none"
+      || cancellationToken?.isCancellationRequested
+      || !(error instanceof OrcaRouterError)
+    ) {
+      return undefined;
+    }
+
+    if (error.kind === "rateLimit" && error.retryAfter !== undefined) {
+      const seconds = retryAfterSeconds(error.retryAfter);
+      if (seconds === undefined) return undefined;
+      const retryAfterMs = seconds * 1000;
+      return Number.isFinite(retryAfterMs)
+        && retryAfterMs >= 0
+        && retryAfterMs <= ORCA_ROUTER_MAX_AUTOMATIC_RETRY_DELAY_MS
+        ? retryAfterMs
+        : undefined;
+    }
+
+    const canRetryTransient = retryMode === "read" || retryMode === "freeCompletion";
+    if (!canRetryTransient) {
+      return undefined;
+    }
+    if (
+      error.kind === "invalidResponse"
+      || error.kind === "unavailable"
+      || error.status === 500
+      || error.status === 502
+      || error.status === 503
+    ) {
+      return ORCA_ROUTER_TRANSIENT_RETRY_DELAY_MS;
+    }
+    return undefined;
+  }
+
+  private async waitForRetry(
+    delayMs: number,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<void> {
+    if (delayMs <= 0) {
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        cancellation?.dispose();
+        resolve();
+      }, delayMs);
+      let cancellation: vscode.Disposable | undefined;
+      cancellation = cancellationToken?.onCancellationRequested(() => {
+        clearTimeout(timeout);
+        cancellation?.dispose();
+        const error = new Error("OrcaRouter retry was cancelled.");
+        error.name = "AbortError";
+        reject(error);
+      });
+    });
+  }
 }
 
-function classifyStatus(status: number): OrcaRouterFailureKind {
+function classifyStatus(status: number, code?: string, message?: string): OrcaRouterFailureKind {
   if (status === 401) return "auth";
-  if (status === 402 || status === 403) return "quota";
+  if (status === 403) {
+    // A cycle limit can reuse the balance code; match the documented prefix first.
+    if (message?.startsWith("token cycle spend limit reached")) return "cycleLimit";
+    if (code === "insufficient_user_quota") return "balanceQuota";
+    if (code === "pre_consume_token_quota_failed") return "keyQuota";
+    if (message?.startsWith("This token has no access to model ")) return "modelAccess";
+    if (code === "free_quota_exhausted") return "quota";
+    return "forbidden";
+  }
+  if (status === 402) return "quota";
   if (status === 429) return "rateLimit";
   if (status === 408 || status === 504) return "timeout";
   if (status === 425 || status === 500 || status === 502 || status === 503) return "unavailable";
@@ -206,7 +369,7 @@ function readErrorDetail(rawText: string): { message?: string; code?: string } {
 
 function readMessageContent(value: unknown): string | undefined {
   if (typeof value === "string") {
-    return value.trim() || undefined;
+    return value.trim();
   }
   if (!Array.isArray(value)) {
     return undefined;
@@ -215,23 +378,54 @@ function readMessageContent(value: unknown): string | undefined {
     .flatMap((part) => isRecord(part) && typeof part.text === "string" ? [part.text] : [])
     .join("")
     .trim();
-  return text || undefined;
+  return text;
 }
 
 function readStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === "string")
+        .slice(0, 20)
+        .map((item) => normalizeProviderField(item, 100))
+    : [];
+}
+
+function normalizeTextRequest(value: string | AiTextRequest): {
+  systemPrompt?: string;
+  userPrompt: string;
+  maxOutputTokens?: number;
+} {
+  return typeof value === "string"
+    ? { userPrompt: value }
+    : {
+        systemPrompt: value.systemPrompt,
+        userPrompt: value.userPrompt,
+        maxOutputTokens: value.maxOutputTokens
+      };
 }
 
 function readPositiveInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : undefined;
 }
 
 function readNonNegativeInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : undefined;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
 function readNonNegativeNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER
+    ? value
+    : undefined;
+}
+
+function readHeader(headers: Headers, name: string): string | undefined {
+  const value = headers.get(name)?.trim();
+  return value ? normalizeProviderField(value) : undefined;
+}
+
+function isFreeModel(modelId: string): boolean {
+  const normalized = modelId.trim().toLowerCase();
+  return normalized === "orcarouter/free" || normalized.endsWith("-free");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

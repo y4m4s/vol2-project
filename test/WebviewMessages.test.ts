@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseWebviewMessage } from "../src/shared/messages";
 
+test("送信予定の入力を保持し、型不正や上限超過を拒否する", () => {
+  const message = { type: "refreshRequestPlan", userPrompt: "/flow", additionalContext: "draft" };
+  assert.deepEqual(parseWebviewMessage(message), message);
+  assert.equal(parseWebviewMessage({ ...message, userPrompt: 42 }), undefined);
+  assert.equal(parseWebviewMessage({ ...message, userPrompt: "x".repeat(20001) }), undefined);
+  assert.equal(parseWebviewMessage({ ...message, additionalContext: "x".repeat(10001) }), undefined);
+});
+
 test("accepts a bounded ask message", () => {
   assert.deepEqual(parseWebviewMessage({ type: "ask", text: "help", additionalContext: "src/app.ts" }), {
     type: "ask",
@@ -26,6 +34,20 @@ test("Good／Bad共通のフィードバック理由を受け入れる", () => {
     { type: "submitFeedback", reasons: ["concise", "other"], comment: "補足" }
   );
   assert.deepEqual(parseWebviewMessage({ type: "cancelFeedback" }), { type: "cancelFeedback" });
+});
+
+test("相談履歴の一括削除メッセージを受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "deleteAllConversationStreams" }), {
+    type: "deleteAllConversationStreams"
+  });
+});
+
+test("確認済みナレッジの有効化メッセージをID上限付きで受け入れる", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "approveKnowledge", id: "knowledge-1" }), {
+    type: "approveKnowledge",
+    id: "knowledge-1"
+  });
+  assert.equal(parseWebviewMessage({ type: "approveKnowledge", id: "" }), undefined);
 });
 
 test("validates token guard settings at the execution boundary", () => {

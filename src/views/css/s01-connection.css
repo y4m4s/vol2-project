@@ -136,7 +136,7 @@
   margin-top: 0;
 }
 
-.s01-connect-btn.busy:disabled {
+.s01-provider-btn.busy:disabled {
   opacity: 0.82;
 }
 

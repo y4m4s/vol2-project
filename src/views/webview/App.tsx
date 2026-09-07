@@ -86,7 +86,7 @@ function KnowledgeSaveToast() {
     <FloatingToast
       open={Boolean(isSaving || saveCompleted)}
       kind="success"
-      icon={isSaving ? "auto_awesome_motion" : "check_circle"}
+      icon={isSaving ? "auto_awesome" : "check_circle"}
       title={title}
       message={description}
       persist={isSaving}
@@ -109,6 +109,7 @@ function StatusMessageToast() {
       open={!shouldSuppress}
       kind={statusMessage?.kind}
       message={statusMessage?.text ?? ""}
+      durationMs={statusMessage?.kind === "error" ? 10_000 : undefined}
     />
   );
 }

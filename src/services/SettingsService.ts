@@ -1,60 +1,10 @@
 import * as vscode from "vscode";
 import { NavigatorSettings } from "../shared/types";
+import { PROTECTED_EXCLUDED_GLOBS } from "./protectedGlobs";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 
 export const DEFAULT_ORCA_ROUTER_MODEL_ID = "orcarouter/free";
-
-const PROTECTED_EXCLUDED_GLOBS = [
-  "**/.git/**",
-  "**/.hg/**",
-  "**/.svn/**",
-  "**/node_modules/**",
-  "**/vendor/**",
-  "**/.venv/**",
-  "**/venv/**",
-  "**/env/**",
-  "**/__pycache__/**",
-  "**/.pytest_cache/**",
-  "**/.mypy_cache/**",
-  "**/.ruff_cache/**",
-  "**/.cache/**",
-  "**/.turbo/**",
-  "**/.next/**",
-  "**/.nuxt/**",
-  "**/.svelte-kit/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/out/**",
-  "**/coverage/**",
-  "**/target/**",
-  "**/bin/**",
-  "**/obj/**",
-  "**/.env",
-  "**/.env.*",
-  "**/.npmrc",
-  "**/.yarnrc.yml",
-  "**/.aws/**",
-  "**/.azure/**",
-  "**/.gcloud/**",
-  "**/*secret*",
-  "**/*credential*",
-  "**/*.pem",
-  "**/*.key",
-  "**/*.p12",
-  "**/*.pfx",
-  "**/id_rsa",
-  "**/id_ed25519",
-  "**/*.sqlite",
-  "**/*.sqlite3",
-  "**/*.db",
-  "**/*.zip",
-  "**/*.tar",
-  "**/*.tar.gz",
-  "**/*.tgz",
-  "**/*.7z",
-  "**/*.rar"
-];
 
 const DEFAULT_SETTINGS: NavigatorSettings = {
   providerId: "copilot",
