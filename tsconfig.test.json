@@ -55,6 +55,8 @@
     "test/GuidanceInput.test.ts",
     "test/NavigationCoordinator.test.ts",
     "test/RequestPlanner.test.ts",
+    "test/RequestPlanTransmission.test.ts",
+    "test/RequestPlanCoordinator.test.ts",
     "test/WorkspacePathPolicy.test.ts",
     "test/GlobMatch.test.ts",
     "test/PromptBuilder.test.ts",

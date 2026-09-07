@@ -47,7 +47,7 @@ export type WebviewToExtension =
   | { type: "setOrcaRouterApiKey"; apiKey: string }
   | { type: "deleteOrcaRouterApiKey" }
   | { type: "refreshOrcaRouterModels" }
-  | { type: "refreshRequestPlan" }
+  | { type: "refreshRequestPlan"; userPrompt?: string; additionalContext?: string }
   | { type: "openReferencedFile"; path: string; line?: number }
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
@@ -87,7 +87,6 @@ const SIMPLE_MESSAGE_TYPES = new Set([
   "refreshLmStudioModels",
   "deleteOrcaRouterApiKey",
   "refreshOrcaRouterModels",
-  "refreshRequestPlan",
   "resetSettings"
 ]);
 const SCREENS = new Set([
@@ -101,6 +100,9 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
   if (SIMPLE_MESSAGE_TYPES.has(value.type)) return { type: value.type } as WebviewToExtension;
 
   switch (value.type) {
+    case "refreshRequestPlan":
+      return isOptionalBoundedString(value.userPrompt, 20_000) && isOptionalBoundedString(value.additionalContext, 10_000)
+        ? value as WebviewToExtension : undefined;
     case "connect":
       return value.providerId === undefined || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter"
         ? value as WebviewToExtension : undefined;

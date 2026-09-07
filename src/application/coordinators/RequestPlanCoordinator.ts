@@ -2,6 +2,10 @@ import * as vscode from "vscode";
 import { ContextCollector } from "../../services/ContextCollector";
 import { PreparedGuidanceRequest, RequestPlanner } from "../../services/RequestPlanner";
 import { SettingsService } from "../../services/SettingsService";
+import { reconcileRequestPlan } from "../../services/RequestPlanTransmission";
+import type { ModelProfile } from "../../services/ModelProfile";
+import type { GuidancePromptInput } from "../../services/PromptBuilder";
+import { getSkill } from "../../shared/skills";
 import {
   createExternalGuidanceRequest,
   resolveWorkspaceDisplayPath,
@@ -16,6 +20,8 @@ import type {
 } from "../../shared/types";
 import {
   resolveEffectiveAssistanceDepth,
+  parseSlashInput,
+  resolveNextProjectScope,
   withAdditionalContext
 } from "../GuidanceInput";
 
@@ -29,9 +35,12 @@ export interface RequestPlanCoordinatorHost {
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext>;
   getVisibleAdditionalContext(state: NavigatorSessionState): string | undefined;
+  getModelProfile?(): ModelProfile;
+  getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency">;
 }
 
 export class RequestPlanCoordinator {
+  private draft = { userPrompt: "", additionalContext: "" };
   private detailedRequestPlan?: { key: string; plan: RequestPlanSnapshot };
   // getCurrentPlan は ViewModel を組むたびに呼ばれる。入力が変わらない限り作り直さない。
   private fallbackRequestPlan?: { key: string; plan: RequestPlanSnapshot };
@@ -55,20 +64,33 @@ export class RequestPlanCoordinator {
       return this.fallbackRequestPlan.plan;
     }
 
+    const { slashCommand, slashCommandScope, userPrompt } = parseSlashInput(this.draft.userPrompt);
     const kind: GuidanceKind = state.contextPreview.selectedTextPreview ? "context" : "manual";
     const plan = this.externalize(this.requestPlanner.prepareGuidanceRequest(
-      withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.host.getVisibleAdditionalContext(state)),
+      withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.draft.additionalContext),
       state.contextPreview,
       settings,
       kind,
-      resolveEffectiveAssistanceDepth(kind, state.assistanceDepth)
-    )).requestPlan;
+      resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand),
+      slashCommand,
+      slashCommandScope
+    ), userPrompt).requestPlan;
+    // This synchronous fallback has not collected workspace/project context yet.
+    // Leave it unstamped so the UI cannot present it as the completed preview.
     this.fallbackRequestPlan = { key, plan };
     return plan;
   }
 
-  public externalize(prepared: PreparedGuidanceRequest): PreparedGuidanceRequest {
-    return createExternalGuidanceRequest(prepared.context, prepared.requestPlan, this.getWorkspaceRoots());
+  public externalize(prepared: PreparedGuidanceRequest, userPrompt?: string): PreparedGuidanceRequest {
+    const result = createExternalGuidanceRequest(prepared.context, prepared.requestPlan, this.getWorkspaceRoots());
+    result.requestPlan = reconcileRequestPlan(result.requestPlan, {
+      ...result.requestPlan,
+      context: result.context,
+      userPrompt,
+      ...this.host.getPromptExtras?.(result.context, result.requestPlan),
+      modelProfile: this.host.getModelProfile?.()
+    });
+    return result;
   }
 
   /** 文書・診断・ワークスペースの変更で、キーに表れない収集結果も破棄する。 */
@@ -78,7 +100,8 @@ export class RequestPlanCoordinator {
     this.fallbackRequestPlan = undefined;
   }
 
-  public async refresh(): Promise<void> {
+  public async refresh(userPrompt = "", additionalContext = ""): Promise<void> {
+    this.draft = { userPrompt, additionalContext };
     const state = this.host.getState();
     if (state.requestState !== "idle") {
       return;
@@ -87,17 +110,24 @@ export class RequestPlanCoordinator {
     const settings = this.settingsService.getSettings();
     const preview = this.host.rememberSelectionContext(this.contextCollector.collectPreview());
     const kind: GuidanceKind = preview.selectedTextPreview ? "context" : "manual";
-    const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth);
+    const parsed = parseSlashInput(userPrompt);
+    const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, parsed.slashCommand);
     const requestPlanKey = this.createKey({ ...state, contextPreview: preview });
     const requestPlanGeneration = this.cacheGeneration;
-    const context = await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
+    const context = parsed.slashCommand && getSkill(parsed.slashCommand).usesProjectScope
+      ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(assistanceDepth, parsed.slashCommandScope))
+      : await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared = this.externalize(this.requestPlanner.prepareGuidanceRequest(
-      withAdditionalContext(context, this.host.getVisibleAdditionalContext(state)),
+      withAdditionalContext(context, additionalContext),
       preview,
       settings,
       kind,
-      assistanceDepth
-    ));
+      assistanceDepth,
+      parsed.slashCommand,
+      parsed.slashCommandScope
+    ), parsed.userPrompt);
+    prepared.requestPlan.previewInput = userPrompt;
+    prepared.requestPlan.previewAdditionalContext = additionalContext;
 
     const currentState = this.host.getState();
     const currentPreview = this.contextCollector.collectPreview();
@@ -145,6 +175,8 @@ export class RequestPlanCoordinator {
 
   private createKey(state: NavigatorSessionState): string {
     return JSON.stringify({
+      draft: this.draft,
+      modelProfile: this.host.getModelProfile?.(),
       mode: state.mode,
       assistanceDepth: state.assistanceDepth,
       activeFilePath: state.contextPreview.activeFilePath,

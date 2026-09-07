@@ -66,7 +66,7 @@ export function AdditionalContextPanel({ id, value, onChange, onClose }: Additio
         ref={textareaRef}
         id={id}
         className="additional-context-input"
-        placeholder="課題文、プロダクト方針、実装で守りたい前提など"
+        placeholder="課題文、プロダクト方針、実装で守りたい前提などを、ここに入力してください。"
         rows={2}
         value={value}
         onChange={(event) => onChange(event.target.value)}

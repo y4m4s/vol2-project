@@ -346,6 +346,7 @@
 }
 
 .referenced-files-card {
+  text-align: left;
   position: fixed;
   z-index: 120;
   width: min(360px, calc(100vw - 40px));
@@ -370,6 +371,7 @@
 
 .referenced-files-card-item {
   display: flex;
+  justify-content: flex-start;
   align-items: flex-start;
   gap: 7px;
   width: 100%;

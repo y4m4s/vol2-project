@@ -89,6 +89,8 @@ export type ContextCategoryKey =
   | "workspaceTree"
   | "referencedFiles"
   | "projectSummary"
+  | "knowledge"
+  | "feedback"
   | "additionalContext"
   | "conversationHistory";
 
@@ -237,6 +239,8 @@ export interface RequestPlanFile {
 }
 
 export interface RequestPlanSnapshot {
+  previewInput?: string;
+  previewAdditionalContext?: string;
   kind: GuidanceKind;
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;

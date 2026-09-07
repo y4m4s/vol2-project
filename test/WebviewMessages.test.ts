@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseWebviewMessage } from "../src/shared/messages";
 
+test("送信予定の入力を保持し、型不正や上限超過を拒否する", () => {
+  const message = { type: "refreshRequestPlan", userPrompt: "/flow", additionalContext: "draft" };
+  assert.deepEqual(parseWebviewMessage(message), message);
+  assert.equal(parseWebviewMessage({ ...message, userPrompt: 42 }), undefined);
+  assert.equal(parseWebviewMessage({ ...message, userPrompt: "x".repeat(20001) }), undefined);
+  assert.equal(parseWebviewMessage({ ...message, additionalContext: "x".repeat(10001) }), undefined);
+});
+
 test("accepts a bounded ask message", () => {
   assert.deepEqual(parseWebviewMessage({ type: "ask", text: "help", additionalContext: "src/app.ts" }), {
     type: "ask",

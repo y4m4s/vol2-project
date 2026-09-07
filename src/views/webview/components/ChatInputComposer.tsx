@@ -299,7 +299,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       </div>
 
       <div className="chat-input-wrap">
-        <RequestPlanDisclosure />
+        <RequestPlanDisclosure userPrompt={inputText} additionalContext={isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft} />
         {contextPreview.selectedTextPreview && (
           <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
             <span className="material-symbols-outlined">code</span>

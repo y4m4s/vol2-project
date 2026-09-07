@@ -12,6 +12,7 @@ import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlan
 import { SettingsService } from "../services/SettingsService";
 import { SingleFlightGate } from "../services/SingleFlightGate";
 import { UsageMeter } from "../services/UsageMeter";
+import { deriveModelProfile } from "../services/ModelProfile";
 import { LmStudioServerService } from "../services/LmStudioServerService";
 import { LmStudioCoordinator } from "./coordinators/LmStudioCoordinator";
 import { ConversationCoordinator } from "./coordinators/ConversationCoordinator";
@@ -126,7 +127,14 @@ export class NavigatorController implements vscode.Disposable {
         rememberSelectionContext: (preview) => this.rememberSelectionContext(preview),
         collectGuidanceContextForDepth: (settings, assistanceDepth, baseContext) =>
           this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext),
-        getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state)
+        getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state),
+        getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
+        getPromptExtras: (context, plan) => ({
+          knowledgeItems: this.knowledgeStore.findReusable(context),
+          feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
+            kind: plan.kind, assistanceDepth: plan.assistanceDepth, slashCommand: plan.slashCommand
+          })
+        })
       }
     );
     this.connectionSettingsCoordinator = new ConnectionSettingsCoordinator(
@@ -329,8 +337,8 @@ export class NavigatorController implements vscode.Disposable {
     await this.connectionSettingsCoordinator.connect(providerId);
   }
 
-  public async refreshCurrentRequestPlan(): Promise<void> {
-    await this.requestPlanCoordinator.refresh();
+  public async refreshCurrentRequestPlan(userPrompt?: string, additionalContext?: string): Promise<void> {
+    await this.requestPlanCoordinator.refresh(userPrompt, additionalContext);
   }
 
   public async openReferencedFile(displayPath: string, line?: number): Promise<void> {
@@ -644,7 +652,7 @@ export class NavigatorController implements vscode.Disposable {
             assistanceDepth,
             slashCommand,
             slashCommandScope
-          ))
+          ), userPrompt)
         : undefined;
 
       return {
@@ -680,7 +688,7 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth,
       slashCommand,
       slashCommandScope
-    ));
+    ), userPrompt);
 
     return {
       kind,
@@ -841,7 +849,7 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         options.slashCommand,
         options.slashCommandScope
-      ));
+      ), options.userPrompt);
     this.clearSelectionAfterContextCapture(options.kind, prepared.context);
     const contextPreviewAfterCapture =
       options.kind === "context" && prepared.context.selectedText

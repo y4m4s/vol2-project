@@ -147,7 +147,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.refreshOrcaRouterModels();
             return;
           case "refreshRequestPlan":
-            await this.controller.refreshCurrentRequestPlan();
+            await this.controller.refreshCurrentRequestPlan(message.userPrompt, message.additionalContext);
             return;
           case "openReferencedFile":
             await this.controller.openReferencedFile(message.path, message.line);
