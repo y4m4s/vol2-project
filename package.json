@@ -126,7 +126,7 @@
     "@types/vscode": "^1.99.0",
     "esbuild": "^0.28.0",
     "eslint": "^10.9.1",
-    "mermaid": "^11.16.1",
+    "mermaid": "^11.17.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "typescript": "^5.8.3",
