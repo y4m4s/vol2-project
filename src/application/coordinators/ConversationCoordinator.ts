@@ -1,17 +1,11 @@
-import { AdviceService } from "../../services/AdviceService";
-import { ConnectionService } from "../../services/ConnectionService";
 import {
   ConversationRevisionConflictError,
   ConversationStore,
   ConversationStreamRecord,
-  DEFAULT_CONVERSATION_STREAM_TITLE,
-  StoredConversationEntry
+  DEFAULT_CONVERSATION_STREAM_TITLE
 } from "../../services/ConversationStore";
-import { SettingsService } from "../../services/SettingsService";
-import { UsageMeter } from "../../services/UsageMeter";
 import { FeedbackStore } from "../../services/FeedbackStore";
 import {
-  AiProviderId,
   ConversationEntry,
   GuidanceCard,
   GuidanceContext,
@@ -21,6 +15,8 @@ import {
 } from "../../shared/types";
 import { normalizeAdditionalContext } from "../GuidanceInput";
 
+const MAX_CONVERSATION_STREAMS = 100;
+
 export interface ConversationCoordinatorHost {
   getState(): NavigatorSessionState;
   patchSession(partial: Partial<NavigatorSessionState>): void;
@@ -28,20 +24,14 @@ export interface ConversationCoordinatorHost {
   resetAutomaticFingerprint(): void;
   createGuidanceCard(entry: ConversationEntry): GuidanceCard;
   getGuidanceAdditionalContext(state: NavigatorSessionState): string | undefined;
-  getCurrentProviderId(): AiProviderId;
 }
 
 export class ConversationCoordinator {
   private readonly guidanceContexts = new Map<string, GuidanceContext>();
-  private readonly summarizedTitleStreamIds = new Set<string>();
 
   public constructor(
     private readonly store: ConversationStore,
     private readonly feedbackStore: FeedbackStore,
-    private readonly adviceService: AdviceService,
-    private readonly connectionService: ConnectionService,
-    private readonly settingsService: SettingsService,
-    private readonly usageMeter: UsageMeter,
     private readonly host: ConversationCoordinatorHost
   ) {}
 
@@ -54,6 +44,8 @@ export class ConversationCoordinator {
   }
 
   public async restore(): Promise<void> {
+    await this.reconcileFeedbackWithConversationHistory();
+    await this.enforceRetentionLimit();
     const existingStream = this.resolveInitialStream();
     if (!existingStream) {
       this.host.patchSession({
@@ -106,7 +98,6 @@ export class ConversationCoordinator {
       console.error("Failed to delete feedback associated with conversation", error);
     }
 
-    this.summarizedTitleStreamIds.delete(streamId);
     if (deletingActiveStream) this.guidanceContexts.clear();
     this.host.patchSession({
       conversationStreams: this.store.list(),
@@ -127,16 +118,54 @@ export class ConversationCoordinator {
     });
   }
 
+  public async deleteAllStreams(): Promise<void> {
+    const state = this.host.getState();
+    if (state.requestState !== "idle") return;
+
+    await this.store.deleteAllStreams();
+    let feedbackCleanupFailed = false;
+    try {
+      await this.feedbackStore.deleteAll();
+    } catch (error) {
+      feedbackCleanupFailed = true;
+      console.error("Failed to delete feedback associated with all conversations", error);
+    }
+
+    this.guidanceContexts.clear();
+    this.host.resetAutomaticFingerprint();
+    this.host.patchSession({
+      conversationStreams: [],
+      activeConversationStreamId: undefined,
+      activeAdditionalContext: undefined,
+      latestGuidance: undefined,
+      conversationHistory: [],
+      selectedConversationId: undefined,
+      pendingFeedbackEntryId: undefined,
+      pendingFeedbackRating: undefined,
+      screenHistory: state.screenHistory.filter((screen) => screen !== "conversation" && screen !== "advice_detail" && screen !== "feedback_form"),
+      screen: state.screen === "history" ? "history" : this.host.resolveHomeScreen(),
+      statusMessage: feedbackCleanupFailed
+        ? { kind: "warning", text: "相談履歴は削除しましたが、関連する評価データの削除に失敗しました。" }
+        : { kind: "info", text: "相談履歴と関連する評価データをすべて削除しました。" }
+    });
+  }
+
   public async prepareForGuidance(state: NavigatorSessionState, kind: GuidanceKind): Promise<NavigatorSessionState> {
     if (kind === "always") {
-      return state.screen === "main" ? this.createNewActiveStream() : this.ensureActiveStream();
+      // The main screen gets a stream only after automatic guidance actually has
+      // content. A no_advice result must not create and immediately delete a DB row.
+      return state.screen === "main" ? state : this.ensureActiveStream();
     }
     if (state.screen === "main") return this.createNewActiveStream();
     if (state.activeConversationStreamId) return state;
     return this.ensureActiveStream();
   }
 
-  public async persist(options: { summarizeTitle?: boolean } = {}): Promise<void> {
+  public async ensureStreamForAutomaticResult(state: NavigatorSessionState): Promise<NavigatorSessionState> {
+    return state.screen === "main" ? this.createNewActiveStream() : this.ensureActiveStream();
+  }
+
+  public async persist(): Promise<void> {
     const record = this.buildActiveRecord();
     if (!record) return;
     if (record.entries.length === 0) {
@@ -152,7 +181,9 @@ export class ConversationCoordinator {
       return;
     }
 
-    const recordToSave = options.summarizeTitle === false ? record : await this.withSummarizedTitle(record);
+    // Titles are derived locally from the first meaningful entry. Persisting a
+    // conversation never triggers a hidden, uncancellable model request.
+    const recordToSave = record;
     let saved: ConversationStreamRecord;
     try {
       saved = await this.store.saveStream(recordToSave);
@@ -162,6 +193,7 @@ export class ConversationCoordinator {
       if (!latestRecord || latestRecord.id !== record.id) return;
       saved = await this.store.saveStream({ ...latestRecord, title: recordToSave.title });
     }
+    await this.enforceRetentionLimit();
     this.host.patchSession({
       activeConversationStreamId: saved.id,
       activeAdditionalContext: saved.additionalContext,
@@ -200,6 +232,32 @@ export class ConversationCoordinator {
     return latestStream ? this.store.get(latestStream.id) : undefined;
   }
 
+  private async enforceRetentionLimit(): Promise<void> {
+    const removed = await this.store.pruneToLimit(MAX_CONVERSATION_STREAMS);
+    if (removed.streamIds.length === 0) return;
+    for (const entryId of removed.entryIds) {
+      this.guidanceContexts.delete(entryId);
+    }
+    try {
+      await this.feedbackStore.deleteByConversationEntryIds(removed.entryIds);
+    } catch (error) {
+      console.error("Failed to delete feedback for expired conversation history", error);
+    }
+  }
+
+  private async reconcileFeedbackWithConversationHistory(): Promise<void> {
+    const retainedEntryIds = new Set(this.store.listEntryIds());
+    const orphanedEntryIds = this.feedbackStore
+      .listConversationEntryIds()
+      .filter((entryId) => !retainedEntryIds.has(entryId));
+    if (orphanedEntryIds.length === 0) return;
+    try {
+      await this.feedbackStore.deleteByConversationEntryIds(orphanedEntryIds);
+    } catch (error) {
+      console.error("Failed to reconcile feedback with conversation history", error);
+    }
+  }
+
   private async createNewActiveStream(): Promise<NavigatorSessionState> {
     const additionalContext = this.host.getGuidanceAdditionalContext(this.host.getState());
     await this.discardActiveIfEmpty();
@@ -231,7 +289,7 @@ export class ConversationCoordinator {
     options: { screen?: NavigatorScreen; resetNavigation?: boolean; clearStatusMessage?: boolean } = {}
   ): void {
     this.guidanceContexts.clear();
-    const conversationHistory = this.toConversationHistory(record.entries);
+    const conversationHistory = record.entries.map((entry) => ({ ...entry }));
     const latestAssistant = [...conversationHistory].reverse().find((entry) => entry.role === "assistant");
     this.host.patchSession({
       conversationStreams: this.store.list(),
@@ -246,18 +304,6 @@ export class ConversationCoordinator {
     });
   }
 
-  private async withSummarizedTitle(record: ConversationStreamRecord): Promise<ConversationStreamRecord> {
-    if (this.summarizedTitleStreamIds.has(record.id) || this.connectionService.getState() !== "connected") return record;
-    const settings = this.settingsService.getSettings();
-    if (this.usageMeter.isTokenLimitExceeded(this.host.getCurrentProviderId(), settings.dailyTokenLimit)) return record;
-    const fallbackTitle = this.resolveTitle(undefined, record.entries);
-    if (record.title && record.title !== DEFAULT_CONVERSATION_STREAM_TITLE && record.title !== fallbackTitle) return record;
-    const title = await this.adviceService.createConversationTitle({ entries: record.entries });
-    if (!title) return record;
-    this.summarizedTitleStreamIds.add(record.id);
-    return { ...record, title };
-  }
-
   private buildActiveRecord(): ConversationStreamRecord | undefined {
     const state = this.host.getState();
     const streamId = state.activeConversationStreamId;
@@ -269,21 +315,10 @@ export class ConversationCoordinator {
       title: this.resolveTitle(existing?.title, state.conversationHistory),
       createdAt: existing?.createdAt ?? now,
       updatedAt: existing?.updatedAt ?? now,
-      entries: state.conversationHistory.map((entry) => ({
-        ...entry,
-        guidanceContext: this.guidanceContexts.get(entry.id)
-      })),
+      entries: state.conversationHistory.map((entry) => ({ ...entry })),
       additionalContext: normalizeAdditionalContext(state.activeAdditionalContext),
       revision: existing?.revision ?? 0
     };
-  }
-
-  private toConversationHistory(entries: StoredConversationEntry[]): ConversationEntry[] {
-    return entries.map((entry) => {
-      if (entry.guidanceContext) this.guidanceContexts.set(entry.id, entry.guidanceContext);
-      const { guidanceContext: _guidanceContext, ...conversationEntry } = entry;
-      return conversationEntry;
-    });
   }
 
   private resolveTitle(currentTitle: string | undefined, history: ConversationEntry[]): string {
@@ -310,5 +345,5 @@ function normalizeTitle(value: string | undefined): string | undefined {
     .map((line) => line.replace(/^#{1,6}\s+/, "").replace(/^[-*+]\s+/, "").trim())
     .find((line) => line.length > 0);
   if (!firstMeaningfulLine) return undefined;
-  return firstMeaningfulLine.length <= 60 ? firstMeaningfulLine : `${firstMeaningfulLine.slice(0, 60)}...`;
+  return firstMeaningfulLine.length <= 60 ? firstMeaningfulLine : `${firstMeaningfulLine.slice(0, 57)}...`;
 }

@@ -34,11 +34,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.languageModelAccessInformation
   );
   const contextCollector = new ContextCollector();
+  const diagnostics = vscode.window.createOutputChannel("NaviCom Diagnostics", { log: true });
+  context.subscriptions.push(diagnostics);
   const lmStudioServerService = new LmStudioServerService();
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
-    new AdviceService(connectionService, usageMeter),
+    new AdviceService(connectionService, usageMeter, (entry) => diagnostics.info(JSON.stringify(entry))),
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),

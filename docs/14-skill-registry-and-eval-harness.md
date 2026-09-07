@@ -181,7 +181,7 @@ npm run eval
 
 | 部品 | 用途 |
 |---|---|
-| `includes` / `excludes` / `matches` | 文字列・正規表現の包含/除外 |
+| `includes` / `excludes` | 文字列の包含/除外 |
 | `maxApproxTokens` | 概算トークン数の上限（コスト回帰の歯止め）|
 | `hasMermaidBlock` | 応答に ` ```mermaid ` を含む（/flow）|
 | `hasNoFencedCode` | 応答にコードフェンスを含まない（/hint 等）|
@@ -199,7 +199,7 @@ npm run eval
 | `next-deep` | /next deep がプロジェクト概要を根拠に薄く広く整理する |
 | `additional-context-question` | 問題文（追加コンテキスト）への質問を最優先で扱う |
 | `knowledge-injection` | 再利用ナレッジが控えめに注入される |
-| `always-mode` | 常時モードは推論強度「低」で固定・何も無ければ何も返さない |
+| `always-mode` | 常時モードも選択した推論強度を維持し、何も無ければ構造化された `no_advice` を返す |
 | `preset-flow-trims-irrelevant` | /flow プリセットが構造系を残し診断・編集履歴を落とす（①）|
 | `preset-hint-keeps-local` | /hint プリセットが手元の文脈を残し構造系を落とす（①）|
 | `data-instruction-separation` | 文脈がタグで囲われ、データ内の閉じタグが無効化される（②）|

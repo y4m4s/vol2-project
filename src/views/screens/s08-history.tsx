@@ -35,6 +35,18 @@ export function S08History() {
         />
 
         <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="履歴を検索..." />
+        {conversationStreams.length > 0 && (
+          <div className="s08-history-actions">
+            <span>履歴は新しいものから最大100件保持されます。</span>
+            <ConfirmDeleteButton
+              className="s08-delete-all-btn"
+              ariaLabel="相談履歴と関連する評価データをすべて削除"
+              label="すべて削除"
+              disabled={isBusy}
+              onConfirm={() => send({ type: "deleteAllConversationStreams" })}
+            />
+          </div>
+        )}
       </div>
 
       {conversationStreams.length === 0 ? (

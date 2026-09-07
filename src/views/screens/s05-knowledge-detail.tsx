@@ -41,6 +41,23 @@ export function S05KnowledgeDetail() {
         />
       </div>
 
+      {detail.reviewRequired && (
+        <div className="knowledge-review-panel">
+          <div>
+            <strong>AIが作成した確認待ちの下書きです</strong>
+            <div>内容を確認して有効化するまで、次回以降のAI回答には再利用されません。</div>
+          </div>
+          <button
+            type="button"
+            className="knowledge-approve-btn"
+            disabled={viewModel?.isBusy}
+            onClick={() => send({ type: "approveKnowledge", id: detail.id })}
+          >
+            内容を確認して有効化
+          </button>
+        </div>
+      )}
+
       <div className="knowledge-detail-section">
         <div className="knowledge-panel-title">内容プレビュー</div>
         <div className="knowledge-summary-text">{detail.summary}</div>
@@ -87,7 +104,11 @@ export function S05KnowledgeDetail() {
               <span className="material-symbols-outlined">history_off</span>
               <span className="knowledge-source-copy">
                 <span className="knowledge-source-title">元の会話履歴は削除されています</span>
-                <span className="knowledge-source-context">このナレッジ自体は引き続き利用できます</span>
+                <span className="knowledge-source-context">
+                  {detail.reviewRequired
+                    ? "内容を確認して有効化すると利用できます"
+                    : "このナレッジ自体は引き続き利用できます"}
+                </span>
               </span>
             </div>
           )}

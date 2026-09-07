@@ -108,9 +108,9 @@ interface ProviderTextResponse {
 
 - `CopilotProvider` は既存の `vscode.LanguageModelChat.sendRequest()` と `countTokens()` をこのインターフェースに包む。
 - `LmStudioProvider` は Fetch を使い、`stream: false` の chat completion を要求する。現在の Webview は応答の逐次表示をしていないため、今回ストリーミングは追加しない。
-- LM Studio の推論リクエストには選択済み `modelId`、`messages: [{ role: "user", content: prompt }]`、`stream: false` を指定する。
+- LM Studio の推論リクエストには選択済み `modelId`、制御指示の `system` メッセージ、現在の質問・作業データの `user` メッセージ、用途別 `max_tokens`、`stream: false` を指定する。
 - LM Studio の `choices[0].message.content` を本文として使う。`usage.prompt_tokens` と `usage.completion_tokens` があればその値を使い、存在しない場合だけ既存と同じ文字数ベースの概算を使う。
-- `AdviceService` のプロンプト組み立て、会話タイトル生成、ナレッジ下書き生成は変更せず、送信先だけ共通モデルに切り替える。
+- `AdviceService` の回答・ナレッジ用プロンプトを共通モデルへ送り、会話タイトルは追加のAI呼び出しをせずローカルで生成する。
 
 ### 3.2 LM Studio クライアント
 

@@ -24,14 +24,6 @@ export class SessionStore implements vscode.Disposable {
     this.didChangeStateEmitter.fire(this.state);
   }
 
-  public resetStatusMessage(): void {
-    if (!this.state.statusMessage) {
-      return;
-    }
-
-    this.patch({ statusMessage: undefined });
-  }
-
   public dispose(): void {
     this.didChangeStateEmitter.dispose();
   }

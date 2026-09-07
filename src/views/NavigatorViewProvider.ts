@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { randomUUID } from "node:crypto";
 import { NavigatorController } from "../application/NavigatorController";
 import { parseWebviewMessage } from "../shared/messages";
 
@@ -8,6 +9,8 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   private view?: vscode.WebviewView;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly viewDisposables: vscode.Disposable[] = [];
+  private updateTimer?: NodeJS.Timeout;
+  private postQueue: Promise<void> = Promise.resolve();
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
@@ -15,7 +18,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   ) {
     this.disposables.push(
       this.controller.onDidChangeState(() => {
-        void this.postViewModel();
+        this.scheduleViewModelUpdate();
       })
     );
   }
@@ -57,6 +60,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "deleteConversationStream":
             await this.controller.deleteConversationStream(message.id);
             return;
+          case "deleteAllConversationStreams":
+            await this.controller.deleteAllConversationStreams();
+            return;
           case "ask":
             await this.controller.askForGuidanceWithCurrentContext(message.text, message.additionalContext);
             return;
@@ -95,6 +101,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             return;
           case "selectKnowledge":
             this.controller.selectKnowledge(message.id);
+            return;
+          case "approveKnowledge":
+            await this.controller.approveKnowledge(message.id);
             return;
           case "updateKnowledge":
             await this.controller.updateKnowledge({
@@ -138,7 +147,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             await this.controller.refreshOrcaRouterModels();
             return;
           case "refreshRequestPlan":
-            await this.controller.refreshCurrentRequestPlan();
+            await this.controller.refreshCurrentRequestPlan(message.userPrompt, message.additionalContext);
             return;
           case "openReferencedFile":
             await this.controller.openReferencedFile(message.path, message.line);
@@ -167,9 +176,29 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   private async postViewModel(): Promise<void> {
-    if (!this.view) return;
-    const payload = this.controller.getViewModel();
-    await this.view.webview.postMessage({ type: "updateViewModel", payload });
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+      this.updateTimer = undefined;
+    }
+    const queued = this.postQueue.then(async () => {
+      if (!this.view) return;
+      const payload = this.controller.getViewModel();
+      await this.view.webview.postMessage({ type: "updateViewModel", payload });
+    });
+    this.postQueue = queued.catch(() => undefined);
+    await queued;
+  }
+
+  private scheduleViewModelUpdate(): void {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+    }
+    this.updateTimer = setTimeout(() => {
+      this.updateTimer = undefined;
+      void this.postViewModel().catch((error) => {
+        console.error("Failed to post the coalesced NaviCom view model", error);
+      });
+    }, 75);
   }
 
   private async postOperationError(message: string): Promise<void> {
@@ -177,6 +206,11 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   }
 
   public dispose(): void {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+      this.updateTimer = undefined;
+    }
+    this.view = undefined;
     this.clearViewDisposables();
     for (const disposable of this.disposables) {
       disposable.dispose();
@@ -242,7 +276,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
     <style>
       @font-face {
         font-family: "Material Symbols Outlined";
@@ -286,10 +320,5 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 }
 
 function getNonce(): string {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+  return randomUUID();
 }

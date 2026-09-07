@@ -2,7 +2,9 @@
   "compilerOptions": {
     "module": "node16",
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "outDir": ".test-out",
     "rootDir": ".",
     "strict": true,
@@ -10,7 +12,9 @@
     "noUnusedParameters": true,
     "esModuleInterop": true,
     "moduleResolution": "node16",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true
   },
   "include": [
@@ -24,6 +28,14 @@
     "src/services/RequestPlanner.ts",
     "src/services/contextPreset.ts",
     "src/services/WorkspacePathPolicy.ts",
+    "src/services/globMatch.ts",
+    "src/services/protectedGlobs.ts",
+    "src/services/PromptBuilder.ts",
+    "src/services/GuidanceResponsePolicy.ts",
+    "src/services/ModelProfile.ts",
+    "src/services/UsageMeter.ts",
+    "src/services/SingleFlightGate.ts",
+    "src/services/KnowledgeSearch.ts",
     "src/application/GuidanceInput.ts",
     "src/application/coordinators/NavigationCoordinator.ts",
     "src/application/coordinators/FeedbackCoordinator.ts",
@@ -36,12 +48,25 @@
     "test/LmStudioClient.test.ts",
     "test/OrcaRouterClient.test.ts",
     "test/OrcaRouterErrorPolicy.test.ts",
+    "test/OrcaRouterModelPolicy.test.ts",
     "test/OrcaRouterCredentialStore.test.ts",
     "test/LmStudioServerProtocol.test.ts",
     "test/WebviewMessages.test.ts",
     "test/GuidanceInput.test.ts",
     "test/NavigationCoordinator.test.ts",
     "test/RequestPlanner.test.ts",
-    "test/WorkspacePathPolicy.test.ts"
+    "test/RequestPlanTransmission.test.ts",
+    "test/RequestPlanCoordinator.test.ts",
+    "test/WorkspacePathPolicy.test.ts",
+    "test/GlobMatch.test.ts",
+    "test/PromptBuilder.test.ts",
+    "test/GuidanceResponsePolicy.test.ts",
+    "test/UsageMeter.test.ts",
+    "test/SingleFlightGate.test.ts",
+    "test/KnowledgeSearch.test.ts",
+    "test/AdviceService.test.ts",
+    "test/AutomaticGuidance.test.ts",
+    "test/ConnectionService.test.ts",
+    "test/EvalRunner.test.ts"
   ]
 }

@@ -47,7 +47,6 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     // activeAdditionalContext を deps に含めない:
     // main 画面で追加コンテキストを入力するたびにラウンドトリップで変化するため、
     // 入力中にメイン入力欄がクリアされたりパネルが閉じるのを防ぐ
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 
   useEffect(() => {
@@ -300,7 +299,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       </div>
 
       <div className="chat-input-wrap">
-        <RequestPlanDisclosure />
+        <RequestPlanDisclosure userPrompt={inputText} additionalContext={isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft} />
         {contextPreview.selectedTextPreview && (
           <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
             <span className="material-symbols-outlined">code</span>

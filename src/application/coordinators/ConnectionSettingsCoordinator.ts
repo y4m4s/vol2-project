@@ -13,6 +13,7 @@ import {
 } from "../../shared/types";
 import { resolveHomeScreen } from "./NavigationCoordinator";
 import { normalizeAdditionalContext } from "../GuidanceInput";
+import { orcaRouterAccessMessage } from "../../services/OrcaRouterErrorPolicy";
 
 export interface SettingsInput {
   providerId: AiProviderId;
@@ -56,10 +57,6 @@ export class ConnectionSettingsCoordinator {
 
   public getCurrentProviderId(): AiProviderId {
     return this.connectionService.getProviderId();
-  }
-
-  public getCurrentModelIdentifier(): string | undefined {
-    return this.connectionService.getConnectedModel()?.modelId;
   }
 
   public getCurrentModelLabel(): string | undefined {
@@ -138,7 +135,7 @@ export class ConnectionSettingsCoordinator {
         screen: "main",
         mode: effectiveSettings.defaultMode,
         assistanceDepth: effectiveSettings.defaultAssistanceDepth,
-        statusMessage: this.buildAutoModelFallbackStatusMessage(),
+        statusMessage: undefined,
         contextPreview: this.host.collectContextPreview()
       });
       return;
@@ -322,7 +319,11 @@ export class ConnectionSettingsCoordinator {
       if (connectionState === "connecting") {
         return { kind: "info", text: "OrcaRouter に接続しています..." };
       }
-      switch (this.connectionService.getLastOrcaRouterIssue()) {
+      const issue = this.connectionService.getLastOrcaRouterIssue();
+      const accessMessage = issue && issue !== "missingApiKey" && issue !== "modelNotFound"
+        ? orcaRouterAccessMessage(issue) : undefined;
+      if (accessMessage) return { kind: "warning", text: accessMessage };
+      switch (issue) {
         case "missingApiKey":
           return { kind: "warning", text: "設定画面で OrcaRouter APIキーを保存してください。" };
         case "auth":
@@ -382,8 +383,10 @@ export class ConnectionSettingsCoordinator {
         return {
           kind: "error",
           text: this.connectionService.getLastCopilotIssue() === "timeout"
-            ? "Copilot の接続確認が15秒でタイムアウトしました。通信状態を確認して再試行してください。"
-            : vscode.workspace.isTrusted
+            ? "Copilot の接続確認がタイムアウトしました。通信状態を確認するか、VS Code設定の aiPairNavigator.copilotProbeTimeoutSeconds を増やして再試行してください。"
+            : this.connectionService.getLastCopilotIssue() === "autoUnavailable"
+              ? "Copilot の自動モデルを利用できません。設定画面で利用可能なモデルを明示的に選択するか、Copilot の利用状態を確認してください。"
+              : vscode.workspace.isTrusted
               ? this.settingsService.getSettings().copilotModelId
                 ? "Copilot に接続できません。設定で指定したモデルが現在利用可能か確認するか、使用モデルを自動に戻してください。"
                 : "Copilot に接続できません。GitHub Copilot Chat がインストール・サインイン済みか、利用可能な Copilot モデルがあるか確認してください。"
@@ -441,14 +444,13 @@ export class ConnectionSettingsCoordinator {
     const connectionState = connectionResult.connectionState;
     if (connectionResult.activated) {
       const effectiveSettings = await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings));
-      const fallbackStatusMessage = this.buildAutoModelFallbackStatusMessage();
       this.host.patchSession({
         connectionState,
         requestState: "idle",
         mode: effectiveSettings.defaultMode,
         assistanceDepth: effectiveSettings.defaultAssistanceDepth,
         contextPreview: this.host.collectContextPreview(),
-        statusMessage: fallbackStatusMessage ?? {
+        statusMessage: {
           kind: "info",
           text: `設定を保存し、使用モデルを ${this.getCurrentModelLabel() ?? "指定モデル"} に切り替えました。`
         }
@@ -538,14 +540,4 @@ export class ConnectionSettingsCoordinator {
     };
   }
 
-  private buildAutoModelFallbackStatusMessage(): NavigatorStatusMessage | undefined {
-    if (!this.connectionService.didUseAutoFallbackModel()) {
-      return undefined;
-    }
-
-    return {
-      kind: "warning",
-      text: `Copilot の自動モデルルーティングが見つからなかったため、${this.getCurrentModelLabel() ?? "利用可能なモデル"} で接続しました。`
-    };
-  }
 }

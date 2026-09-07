@@ -1,6 +1,6 @@
 # 15. GitHub Copilot プランと接続制限の調査
 
-- 最終確認日: 2026-08-20
+- 最終確認日: 2026-09-07
 - 対象: NaviCom の GitHub Copilot 接続（VS Code Language Model API 経由）
 
 ## 結論
@@ -41,8 +41,10 @@ NaviCom は GitHub の課金 API を直接呼ばず、次の順で接続する�
 1. `vscode.lm.selectChatModels({ vendor: "copilot" })` で、その環境から見えるモデルを取得する。
 2. 初回結果が空なら、1.5秒後に一度だけ再取得する。
 3. モデル指定がなければ、Auto モデルが返っている場合はそれを優先する。
-4. Auto モデルがなければ、利用可能な手動選択モデルから接続対象を決める。
+4. Auto モデルがなければ接続を止め、設定画面での明示的なモデル選択を案内する。料金の異なるモデルへ自動では代替しない。
 5. ユーザー操作を起点に短い probe を送信し、同意と実リクエストの成功を確認する。
+
+接続確認の待ち時間は既定60秒。VS Code設定 `aiPairNavigator.copilotProbeTimeoutSeconds` で15〜180秒に変更できる。タイムアウトによる自動再送は行わない。
 
 この実装は Free / Student の Auto 選択に対応している。以前存在した特定の低コストモデル ID による固定優先リストは、現在の `ConnectionService` には存在しない。
 

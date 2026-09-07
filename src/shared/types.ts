@@ -35,7 +35,13 @@ export type NavigatorScreen =
   | "knowledge_detail"
   | "settings";
 
-export type RequestState = "idle" | "connecting" | "requesting_guidance" | "saving_knowledge" | "saving_feedback";
+export type RequestState =
+  | "idle"
+  | "connecting"
+  | "preparing_guidance"
+  | "requesting_guidance"
+  | "saving_knowledge"
+  | "saving_feedback";
 
 export type DiagnosticSeverityLabel = "Error" | "Warning" | "Information" | "Hint";
 
@@ -83,7 +89,10 @@ export type ContextCategoryKey =
   | "workspaceTree"
   | "referencedFiles"
   | "projectSummary"
-  | "additionalContext";
+  | "knowledge"
+  | "feedback"
+  | "additionalContext"
+  | "conversationHistory";
 
 export interface DiagnosticSummary {
   severity: DiagnosticSeverityLabel;
@@ -156,7 +165,8 @@ export interface NavigatorSettings {
   requestIntervalMs: number;
   idleDelayMs: number;
   dailyTokenLimit: number;
-  protectedExcludedGlobs: string[];
+  // ユーザーが外せない保護パターン。実体は services/protectedGlobs にあり書き換えない。
+  protectedExcludedGlobs: readonly string[];
   excludedGlobs: string[];
 }
 
@@ -176,7 +186,10 @@ export interface OrcaRouterModelOption {
   label: string;
   provider: string;
   contextLength?: number;
+  maxCompletionTokens?: number;
   isRouter?: boolean;
+  availabilityWarning?: string;
+  billingCategory?: "free" | "metered" | "unknown";
 }
 
 export type LmStudioServerState =
@@ -206,7 +219,7 @@ export interface UsageTodayViewData {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-  estimatedCostText: string;
+  recordedCostText?: string;
   tokenLimitExceeded: boolean;
 }
 
@@ -227,6 +240,8 @@ export interface RequestPlanFile {
 }
 
 export interface RequestPlanSnapshot {
+  previewInput?: string;
+  previewAdditionalContext?: string;
   kind: GuidanceKind;
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
@@ -255,10 +270,16 @@ export interface GuidanceCard {
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
-  estimatedCostUsd: number;
-  costSource?: "providerResponse";
-  /** @deprecated Kept so existing conversation records remain readable. */
-  costIsExact?: boolean;
+  costUsd?: number;
+}
+
+export interface ProviderResponseMetadata {
+  attemptCount: number;
+  providerRequestCount: number;
+  requestIds?: string[];
+  resolvedModelIds?: string[];
+  finishReasons?: string[];
+  formatNormalized?: boolean;
 }
 
 export interface ConversationEntry {
@@ -277,6 +298,7 @@ export interface ConversationEntry {
   modelLabel?: string;
   requestPlan?: RequestPlanSnapshot;
   tokenUsage?: TokenUsage;
+  responseMetadata?: ProviderResponseMetadata;
   feedback?: FeedbackRating;
 }
 
@@ -313,6 +335,7 @@ export interface KnowledgeListItem {
   modelId?: string;
   modelLabel?: string;
   updatedAt: string;
+  reviewRequired?: boolean;
 }
 
 export interface KnowledgeDetailViewData extends KnowledgeListItem {
