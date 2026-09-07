@@ -133,7 +133,7 @@ export function S01Connection() {
                 />
               )}
             </span>
-            <ConnectLabel text={isConnecting("lmStudio") ? "ローカル LLM に接続中..." : "ローカル LLM に接続"} />
+            <ConnectLabel text={isConnecting("lmStudio") ? "LM Studio に接続中..." : "LM Studio に接続"} />
           </button>
           <button
             className={`s01-local-connect-btn s01-provider-btn s01-provider-btn--orca-router${isConnecting("orcaRouter") ? " busy" : ""}`}
@@ -163,8 +163,8 @@ export function S01Connection() {
 const CONNECT_LABELS = [
   "Copilot に接続",
   "Copilot に接続中...",
-  "ローカル LLM に接続",
-  "ローカル LLM に接続中...",
+  "LM Studio に接続",
+  "LM Studio に接続中...",
   "OrcaRouter に接続",
   "OrcaRouter に接続中..."
 ];

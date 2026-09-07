@@ -26,10 +26,10 @@ import {
 } from "./AiRequestPolicy";
 
 export type LmStudioConnectionIssue = LmStudioFailureKind | "noLoadedModel" | "selectionCancelled";
-export type CopilotConnectionIssue = "timeout" | "noPermissions" | "blocked" | "notFound" | "other";
+export type CopilotConnectionIssue = "timeout" | "autoUnavailable" | "noPermissions" | "blocked" | "notFound" | "other";
 export type OrcaRouterConnectionIssue = OrcaRouterFailureKind | "missingApiKey" | "modelNotFound";
 
-const COPILOT_PROBE_TIMEOUT_MS = 15_000;
+const COPILOT_PROBE_TIMEOUT_SECONDS = 60;
 
 export interface ProviderTextResponse {
   text: string;
@@ -71,7 +71,6 @@ interface ConnectionSnapshot {
   providerId: AiProviderId;
   copilotModel: vscode.LanguageModelChat | undefined;
   connectedModel: ConnectedProviderModel | undefined;
-  usedAutomaticModelFallback: boolean;
 }
 
 export class ConnectionService {
@@ -83,7 +82,6 @@ export class ConnectionService {
   private availableLmStudioModelOptions: LmStudioModelOption[] = [];
   private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = [];
   private pendingConnection: Promise<ConnectionActivationResult> | undefined;
-  private usedAutomaticModelFallback = false;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
   private lastCopilotIssue: CopilotConnectionIssue | undefined;
@@ -168,10 +166,6 @@ export class ConnectionService {
     return value;
   }
 
-  public didUseAutoFallbackModel(): boolean {
-    return this.usedAutomaticModelFallback;
-  }
-
   public async refreshAvailableModels(preferredModelId?: string): Promise<CopilotModelOption[]> {
     try {
       const models = await this.fetchCopilotModels(false);
@@ -238,7 +232,6 @@ export class ConnectionService {
   public resetToDisconnected(): ConnectionState {
     this.copilotModel = undefined;
     this.connectedModel = undefined;
-    this.usedAutomaticModelFallback = false;
     this.lastLmStudioIssue = undefined;
     this.lastCopilotIssue = undefined;
     this.lastOrcaRouterIssue = undefined;
@@ -249,7 +242,7 @@ export class ConnectionService {
   private async connectInternal(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
     const previous = this.createSnapshot();
     this.providerId = settings.providerId;
-    this.usedAutomaticModelFallback = false;
+    this.lastCopilotIssue = undefined;
     this.lastLmStudioIssue = undefined;
     this.lastOrcaRouterIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
@@ -278,8 +271,7 @@ export class ConnectionService {
       connectionState: this.connectionState,
       providerId: this.providerId,
       copilotModel: this.copilotModel,
-      connectedModel: this.connectedModel,
-      usedAutomaticModelFallback: this.usedAutomaticModelFallback
+      connectedModel: this.connectedModel
     };
   }
 
@@ -292,7 +284,6 @@ export class ConnectionService {
       this.providerId = previous.providerId;
       this.copilotModel = previous.copilotModel;
       this.connectedModel = previous.connectedModel;
-      this.usedAutomaticModelFallback = previous.usedAutomaticModelFallback;
       return {
         connectionState: previous.connectionState,
         activated: false,
@@ -312,14 +303,14 @@ export class ConnectionService {
       const automaticModel = copilotModelId ? undefined : this.selectAutoRoutingCopilotModel(models);
       const selectedModel = copilotModelId
         ? manualSelectableModels.find((model) => model.id === copilotModelId)
-        : automaticModel ?? manualSelectableModels[0];
+        : automaticModel;
 
       if (!selectedModel) {
+        this.lastCopilotIssue = copilotModelId ? "notFound" : "autoUnavailable";
         this.connectionState = "unavailable";
         return this.connectionState;
       }
 
-      this.usedAutomaticModelFallback = !copilotModelId && !automaticModel;
       this.copilotModel = selectedModel;
       this.connectedModel = this.createCopilotModel(selectedModel);
       this.connectionState = "consent_pending";
@@ -328,7 +319,6 @@ export class ConnectionService {
     } catch (error) {
       this.copilotModel = undefined;
       this.connectedModel = undefined;
-      this.usedAutomaticModelFallback = false;
       this.lastCopilotIssue = this.classifyCopilotIssue(error);
       this.connectionState = this.classifyCopilotConnectError(error);
     }
@@ -384,7 +374,7 @@ export class ConnectionService {
     } catch (error) {
       this.connectedModel = undefined;
       this.lastOrcaRouterIssue = this.classifyOrcaRouterIssue(error);
-      this.connectionState = this.lastOrcaRouterIssue === "quota" || this.lastOrcaRouterIssue === "rateLimit"
+      this.connectionState = ["quota", "keyQuota", "cycleLimit", "balanceQuota", "rateLimit"].includes(this.lastOrcaRouterIssue)
         ? "restricted"
         : "unavailable";
     }
@@ -560,7 +550,8 @@ export class ConnectionService {
   }
 
   private selectAutoRoutingCopilotModel(models: vscode.LanguageModelChat[]): vscode.LanguageModelChat | undefined {
-    return models.find((model) => model.id && this.isAutoRoutingModel(model));
+    return models.find((model) => model.id && this.isAutoRoutingModel(model)
+      && this.languageModelAccessInformation?.canSendRequest(model) !== false);
   }
 
   private isAutoRoutingModel(model: vscode.LanguageModelChat): boolean {
@@ -586,6 +577,9 @@ export class ConnectionService {
   }
 
   private async runProbe(model: vscode.LanguageModelChat): Promise<void> {
+    const configuredSeconds = vscode.workspace.getConfiguration("aiPairNavigator").get<number>("copilotProbeTimeoutSeconds");
+    const timeoutSeconds = typeof configuredSeconds === "number" && Number.isFinite(configuredSeconds)
+      ? Math.min(180, Math.max(15, configuredSeconds)) : COPILOT_PROBE_TIMEOUT_SECONDS;
     const tokenSource = new vscode.CancellationTokenSource();
     let timeoutHandle: NodeJS.Timeout | undefined;
     try {
@@ -610,7 +604,7 @@ export class ConnectionService {
         timeoutHandle = setTimeout(() => {
           tokenSource.cancel();
           reject(new CopilotProbeTimeoutError());
-        }, COPILOT_PROBE_TIMEOUT_MS);
+        }, timeoutSeconds * 1000);
       });
       const text = await Promise.race([probe(), timeout]);
       await this.recordProbeUsage(model, prompt, text);

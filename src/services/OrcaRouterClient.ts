@@ -19,6 +19,11 @@ const ORCA_ROUTER_TRANSIENT_RETRY_DELAY_MS = 400;
 export type OrcaRouterFailureKind =
   | "auth"
   | "quota"
+  | "keyQuota"
+  | "cycleLimit"
+  | "balanceQuota"
+  | "modelAccess"
+  | "forbidden"
   | "rateLimit"
   | "unavailable"
   | "timeout"
@@ -224,7 +229,7 @@ export class OrcaRouterClient {
       if (!response.ok) {
         const detail = readErrorDetail(rawText);
         const error = new OrcaRouterError(
-          classifyStatus(response.status),
+          classifyStatus(response.status, detail.code, detail.message),
           detail.message ?? `OrcaRouter request failed (${response.status}).`,
           response.status,
           detail.code,
@@ -329,9 +334,18 @@ export class OrcaRouterClient {
   }
 }
 
-function classifyStatus(status: number): OrcaRouterFailureKind {
+function classifyStatus(status: number, code?: string, message?: string): OrcaRouterFailureKind {
   if (status === 401) return "auth";
-  if (status === 402 || status === 403) return "quota";
+  if (status === 403) {
+    // A cycle limit can reuse the balance code; match the documented prefix first.
+    if (message?.startsWith("token cycle spend limit reached")) return "cycleLimit";
+    if (code === "insufficient_user_quota") return "balanceQuota";
+    if (code === "pre_consume_token_quota_failed") return "keyQuota";
+    if (message?.startsWith("This token has no access to model ")) return "modelAccess";
+    if (code === "free_quota_exhausted") return "quota";
+    return "forbidden";
+  }
+  if (status === 402) return "quota";
   if (status === 429) return "rateLimit";
   if (status === 408 || status === 504) return "timeout";
   if (status === 425 || status === 500 || status === 502 || status === 503) return "unavailable";

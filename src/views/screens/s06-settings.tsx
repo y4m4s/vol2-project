@@ -435,6 +435,8 @@ export function S06Settings() {
             OrcaRouterの本日利用量
           </SettingTitle>
           <div className="setting-desc">
+            サブスクリプションとモデル利用料金は別です。請求額とキーの予算上限はOrcaRouter管理画面で確認・設定してください。
+            <br />
             {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン
             {viewModel.usageToday.recordedCostText
               ? <> / 応答時点の記録料金 {viewModel.usageToday.recordedCostText}（確定請求額ではありません）</>
@@ -839,6 +841,11 @@ function OrcaRouterModelButtonGroup({
             <span className="model-option-name">{option.label}</span>
             <span className="model-option-meta">
               {option.id}<br />{contextText}
+              <br />{option.billingCategory === "free"
+                ? "無料枠（容量・回数制限あり）"
+                : option.billingCategory === "metered"
+                  ? "従量課金対象（選択先モデルにより料金が変わります）"
+                  : "料金未取得（課金される可能性があります）"}
               {option.availabilityWarning && <><br /><span className="orcarouter-model-warning">注意: {option.availabilityWarning}</span></>}
             </span>
           </button>

@@ -4,8 +4,8 @@ import { MAX_PROVIDER_MODEL_COUNT } from "./AiRequestPolicy";
 
 export function createBuiltInOrcaRouterOptions(): OrcaRouterModelOption[] {
   return [
-    { id: "orcarouter/free", label: "Free Router", provider: "orcarouter", isRouter: true },
-    { id: "orcarouter/auto", label: "Auto Router", provider: "orcarouter", isRouter: true }
+    { id: "orcarouter/free", label: "Free Router", provider: "orcarouter", isRouter: true, billingCategory: "free" },
+    { id: "orcarouter/auto", label: "Auto Router", provider: "orcarouter", isRouter: true, billingCategory: "metered" }
   ];
 }
 
@@ -38,6 +38,7 @@ export function toOrcaRouterModelOptions(models: OrcaRouterModel[]): OrcaRouterM
       label: builtIn?.isRouter ? builtIn.label : model.id.split("/").slice(1).join("/") || model.id,
       provider: model.ownedBy,
       contextLength: model.contextLength,
+      billingCategory: builtIn?.billingCategory ?? (model.id.endsWith("-free") ? "free" : "unknown"),
       ...(builtIn?.isRouter ? { isRouter: true } : {})
     });
   }

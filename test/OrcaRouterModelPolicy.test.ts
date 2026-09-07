@@ -7,6 +7,16 @@ function model(id: string, overrides: Partial<OrcaRouterModel> = {}): OrcaRouter
   return { id, ownedBy: "test", supportedEndpointTypes: ["openai"], inputModalities: ["text"], outputModalities: ["text"], ...overrides };
 }
 
+test("無料ルート・課金ルート・料金未取得を区別し不明を無料扱いしない", () => {
+  const options = toOrcaRouterModelOptions([
+    model("orcarouter/free"), model("orcarouter/auto"), model("vendor/test-free"), model("vendor/test")
+  ]);
+  assert.equal(options.find((x) => x.id === "orcarouter/free")?.billingCategory, "free");
+  assert.equal(options.find((x) => x.id === "orcarouter/auto")?.billingCategory, "metered");
+  assert.equal(options.find((x) => x.id === "vendor/test-free")?.billingCategory, "free");
+  assert.equal(options.find((x) => x.id === "vendor/test")?.billingCategory, "unknown");
+});
+
 test("未取得の固定モデルには欠落警告を出さない", (t) => {
   const warn = t.mock.method(console, "warn", () => {});
   assert.ok(createBuiltInOrcaRouterOptions().every((option) => !option.availabilityWarning));

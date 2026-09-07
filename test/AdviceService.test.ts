@@ -55,6 +55,8 @@ function harness(options: {
   outputTokens?: number;
   maxInputTokens?: number;
   requestError?: OrcaRouterError;
+  onResponse?: () => void;
+  costUsd?: number;
 } = {}) {
   let calls = 0;
   let resets = 0;
@@ -64,7 +66,8 @@ function harness(options: {
     requestText: async () => {
       calls += 1;
       if (options.requestError) throw options.requestError;
-      return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens };
+      options.onResponse?.();
+      return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens, costUsd: options.costUsd };
     },
     countTokens: options.countTokens
   };
@@ -167,6 +170,42 @@ test("利用量の保存失敗で回答・接続・日次上限を失わない",
   assert.equal(h.calls(), 1);
   assert.equal(h.resets(), 0);
   assert.equal(h.meter.isTokenLimitExceeded("copilot", 120), true);
+});
+
+test("応答受信直後のキャンセルでも課金情報とトークンを一度だけ記録する", async () => {
+  const source = new TestTokenSource();
+  const h = harness({ inputTokens: 100, outputTokens: 20, costUsd: 0.25, onResponse: () => source.cancel() });
+  const result = await h.service.requestGuidance(input, source.token);
+  assert.ok(!result.ok && result.cancelled);
+  assert.equal(h.meter.getToday().requestCount, 1);
+  assert.equal(h.meter.getToday().inputTokens, 100);
+  assert.equal(h.meter.getRecordedCostUsd("copilot"), 0.25);
+  assert.equal(h.calls(), 1);
+});
+
+test("応答サイズ超過で表示を拒否しても取得済みの料金を記録する", async () => {
+  const h = harness({ response: "x".repeat(50001), inputTokens: 100, outputTokens: 20000, costUsd: 0.5 });
+  const result = await h.service.requestGuidance(input);
+  assert.ok(!result.ok);
+  assert.equal(h.meter.getToday().outputTokens, 20000);
+  assert.equal(h.meter.getRecordedCostUsd("copilot"), 0.5);
+  assert.equal(h.calls(), 1);
+});
+
+test("OrcaRouterの予算・権限エラーで原因別の案内を表示する", async () => {
+  for (const [kind, expected, state] of [
+    ["keyQuota", /キーの利用上限/, "restricted"],
+    ["balanceQuota", /月次予算/, "restricted"],
+    ["cycleLimit", /リセット時刻/, "restricted"],
+    ["modelAccess", /許可モデル一覧/, "unavailable"],
+    ["forbidden", /IP許可リスト/, "unavailable"]
+  ] as const) {
+    const h = harness({ requestError: new OrcaRouterError(kind, "private body", 403) });
+    const result = await h.service.requestGuidance(input);
+    assert.ok(!result.ok);
+    assert.match(result.message, expected);
+    assert.equal(result.connectionState, state);
+  }
 });
 
 test("利用量の保存完了を待たず回答し、返された片側の利用量を保持する", async () => {

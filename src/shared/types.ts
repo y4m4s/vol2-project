@@ -186,6 +186,7 @@ export interface OrcaRouterModelOption {
   contextLength?: number;
   isRouter?: boolean;
   availabilityWarning?: string;
+  billingCategory?: "free" | "metered" | "unknown";
 }
 
 export type LmStudioServerState =

@@ -1,4 +1,15 @@
-import type { OrcaRouterError } from "./OrcaRouterClient";
+import type { OrcaRouterError, OrcaRouterFailureKind } from "./OrcaRouterClient";
+
+export function orcaRouterAccessMessage(kind: OrcaRouterFailureKind): string | undefined {
+  switch (kind) {
+    case "balanceQuota": return "OrcaRouter の残高、またはメンバー・エージェントの月次予算に達しました。管理画面で該当する上限を確認してください。";
+    case "keyQuota": return "OrcaRouter APIキーの利用上限に達しました。キーの上限を確認してください。残高の追加だけでは解消しません。";
+    case "cycleLimit": return "OrcaRouter APIキーの期間別予算に達しました。管理画面でリセット時刻を確認するか、期間別予算を変更してください。";
+    case "modelAccess": return "OrcaRouter APIキーに、このモデルの利用が許可されていません。キーの許可モデル一覧を確認してください。ルーターはルーターID自体の許可が必要です。";
+    case "forbidden": return "OrcaRouter がアクセスを拒否しました。キーのIP許可リスト・モデル権限・期間別予算を管理画面で確認してください。";
+    default: return undefined;
+  }
+}
 
 export type OrcaRouterFailureDisposition = "requestRejected" | "restricted" | "unavailable";
 
@@ -28,7 +39,7 @@ function diagnoseFailure(error: OrcaRouterError, requestRejected: boolean): void
     console.warn("[OrcaRouter] Unrecognized request rejection; possible missed Guardrail code.", details);
   }
   if (
-    (error.kind === "quota" || error.kind === "rateLimit")
+    (error.kind === "quota" || error.kind === "rateLimit" || error.kind === "forbidden")
     && code?.includes("free")
     && error.code !== "free_quota_exhausted"
     && error.code !== "free_rate_limited"
@@ -55,7 +66,7 @@ export function classifyOrcaRouterFailure(error: OrcaRouterError): OrcaRouterFai
     && error.status >= 400
     && error.status < 500;
   diagnoseFailure(error, requestRejected);
-  if (error.kind === "quota" || error.kind === "rateLimit") {
+  if (["quota", "keyQuota", "cycleLimit", "balanceQuota", "rateLimit"].includes(error.kind)) {
     return "restricted";
   }
   if (requestRejected) {

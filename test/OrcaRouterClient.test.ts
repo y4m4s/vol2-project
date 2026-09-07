@@ -4,6 +4,27 @@ import { ORCA_ROUTER_BASE_URL, OrcaRouterClient, OrcaRouterError } from "../src/
 
 const originalFetch = globalThis.fetch;
 
+test("403を残高・キー上限・期間予算・モデル権限・IP制限に分類し再送しない", async () => {
+  for (const [code, message, kind] of [
+    ["insufficient_user_quota", "balance", "balanceQuota"],
+    ["pre_consume_token_quota_failed", "token quota is not enough", "keyQuota"],
+    ["insufficient_user_quota", "token cycle spend limit reached, resets at 2026-09-08", "cycleLimit"],
+    ["access_denied", "token cycle spend limit reached, resets at 2026-09-08", "cycleLimit"],
+    ["", "This token has no access to model openai/test", "modelAccess"],
+    ["access_denied", "IP denied", "forbidden"],
+    ["unknown", "unknown", "forbidden"]
+  ] as const) {
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls++;
+      return new Response(JSON.stringify({ error: { code, message } }), { status: 403 });
+    };
+    await assert.rejects(() => new OrcaRouterClient().createCompletion("sk-orca-test", "openai/test", "question"),
+      (error: unknown) => error instanceof OrcaRouterError && error.kind === kind);
+    assert.equal(calls, 1);
+  }
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
 });

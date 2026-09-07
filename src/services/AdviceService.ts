@@ -16,7 +16,7 @@ import {
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
 import { LmStudioError } from "./LmStudioClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
-import { classifyOrcaRouterFailure, requestRejectionMessage, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
+import { classifyOrcaRouterFailure, orcaRouterAccessMessage, requestRejectionMessage, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
 import {
   buildGuidanceFormatRepairPrompt,
@@ -239,15 +239,12 @@ export class AdviceService {
         tokenSource?.dispose();
       }
 
+      // A received response may already be billed, even when it is discarded.
+      const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
       if (token.isCancellationRequested) {
         return this.cancelledResult();
       }
-
       assertResponseCharacterLimit(response.text, request.purpose);
-      const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
-      if (cancellationToken?.isCancellationRequested) {
-        return this.cancelledResult();
-      }
 
       return {
         ok: true,
@@ -665,6 +662,8 @@ export class AdviceService {
       }
     }
     if (error instanceof OrcaRouterError) {
+      const accessMessage = orcaRouterAccessMessage(error.kind);
+      if (accessMessage) return accessMessage;
       const rejectionMessage = requestRejectionMessage(error);
       if (rejectionMessage) {
         return rejectionMessage;
