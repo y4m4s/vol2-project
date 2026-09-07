@@ -530,13 +530,14 @@ export class NavigatorController implements vscode.Disposable {
 
       const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
       const additionalContext = this.getGuidanceAdditionalContext(state);
-      const guidanceContext = await this.collectGuidanceContextForDepth(settings, "low");
+      const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
+      const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth);
       const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
         withAdditionalContext(guidanceContext, additionalContext),
         preview,
         settings,
         "always",
-        "low"
+        assistanceDepth
       ));
 
       if (!hasMeaningfulContext(prepared.context)) {
@@ -544,7 +545,7 @@ export class NavigatorController implements vscode.Disposable {
         return undefined;
       }
 
-      fingerprint = createAutomaticFingerprint(prepared.context);
+      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth);
       if (SUPPRESS_DUPLICATE_AUTO_ADVICE && fingerprint === this.lastAutomaticContextFingerprint) {
         this.patchSession({
           contextPreview: preview,
@@ -561,7 +562,7 @@ export class NavigatorController implements vscode.Disposable {
         prepared,
         preview,
         additionalContext,
-        assistanceDepth: "low"
+        assistanceDepth
       };
     }, true);
 

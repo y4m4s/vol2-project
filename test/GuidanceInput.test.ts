@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   normalizeAdditionalContext,
+  createAutomaticFingerprint,
   parseSlashInput,
   resolveEffectiveAssistanceDepth,
   resolveNextProjectScope,
@@ -27,10 +28,18 @@ test("未知のコマンドは通常のユーザー入力として保持する",
   });
 });
 
-test("常時モードと深さ固定スキルの優先順位を適用する", () => {
-  assert.equal(resolveEffectiveAssistanceDepth("always", "high", "flow"), "low");
+test("常時モードは選択した強度を維持し、手動では深さ固定スキルを優先する", () => {
+  assert.equal(resolveEffectiveAssistanceDepth("always", "high"), "high");
+  assert.equal(resolveEffectiveAssistanceDepth("always", "low"), "low");
+  assert.equal(resolveEffectiveAssistanceDepth("always", "low", "flow"), "low");
   assert.equal(resolveEffectiveAssistanceDepth("manual", "low", "flow"), "high");
   assert.equal(resolveEffectiveAssistanceDepth("manual", "low", "hint"), "low");
+});
+
+test("同じ文脈でも強度変更後の自動助言を重複扱いしない", () => {
+  const context = { referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
+  assert.notEqual(createAutomaticFingerprint(context, "low"), createAutomaticFingerprint(context, "high"));
+  assert.equal(createAutomaticFingerprint(context, "high"), createAutomaticFingerprint(context, "high"));
 });
 
 test("プロジェクト文脈の収集範囲を深さとスコープから決める", () => {

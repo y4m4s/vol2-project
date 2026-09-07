@@ -58,6 +58,21 @@ test("推論強度が低なら関連ファイルを落とし、高なら保持�
   });
 });
 
+test("全接続先の常時モードでも強度に応じた文脈と保存用プランを作成する", () => {
+  const planner = new RequestPlanner();
+  for (const providerId of ["copilot", "orcaRouter", "lmStudio"] as const) {
+    for (const depth of ["low", "high"] as const) {
+      const prepared = planner.prepareGuidanceRequest(createContext(), { diagnosticsSummary: [] },
+        { ...settings, providerId }, "always", depth);
+      assert.equal(prepared.requestPlan.assistanceDepth, depth);
+      assert.equal(prepared.context.referencedFiles.length, depth === "high" ? 1 : 0);
+      assert.equal(Boolean(prepared.context.workspaceTree), depth === "high");
+    }
+  }
+  const fallback = planner.prepareGuidanceRequest(createContext(), { diagnosticsSummary: [] }, settings, "always");
+  assert.equal(fallback.requestPlan.assistanceDepth, "low");
+});
+
 test("保護済みglobに一致するファイル本文と選択範囲を送信しない", () => {
   const planner = new RequestPlanner();
   const context = createContext();

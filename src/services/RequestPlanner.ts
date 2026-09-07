@@ -19,7 +19,7 @@ export interface PreparedGuidanceRequest {
   requestPlan: RequestPlanSnapshot;
 }
 
-// 推論強度が低の場合（常時モードを含む）は、トークン消費を抑えるため送信文脈を必要最小限に絞る。
+// 手動・常時とも、推論強度が低の場合は送信文脈を必要最小限に絞る。
 // docs/11 §11.1: 推論強度が低 = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
 // 推論強度が高 = 上記に加えて関連ファイル・ディレクトリ構造
 const LOW_DEPTH_CONTEXT_LIMITS = {
@@ -42,7 +42,7 @@ export class RequestPlanner {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
-    const effectiveDepth: AssistanceDepth = kind === "always" ? "low" : assistanceDepth ?? "low";
+    const effectiveDepth: AssistanceDepth = assistanceDepth ?? "low";
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
@@ -69,7 +69,7 @@ export class RequestPlanner {
       context: finalContext,
       requestPlan: {
         kind,
-        assistanceDepth,
+        assistanceDepth: effectiveDepth,
         slashCommand,
         slashCommandScope,
         categories: this.applyPresetNotes(

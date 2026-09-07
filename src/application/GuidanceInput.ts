@@ -71,7 +71,7 @@ export function resolveEffectiveAssistanceDepth(
   slashCommand?: SlashCommand
 ): AssistanceDepth {
   if (kind === "always") {
-    return "low";
+    return assistanceDepth;
   }
 
   const forced = slashCommand ? getSkill(slashCommand).forceDepth : undefined;
@@ -121,8 +121,9 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
   return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
 }
 
-export function createAutomaticFingerprint(context: GuidanceContext): string {
+export function createAutomaticFingerprint(context: GuidanceContext, assistanceDepth: AssistanceDepth = "low"): string {
   return JSON.stringify({
+    assistanceDepth,
     file: context.activeFilePath,
     excerpt: context.activeFileExcerpt,
     selection: context.selectedText,

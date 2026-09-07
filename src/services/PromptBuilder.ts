@@ -58,7 +58,7 @@ export function buildGuidancePromptMessages(input: GuidancePromptInput): Guidanc
 
 export function buildGuidancePrompt(input: GuidancePromptInput): string {
   const { context, kind, userPrompt, knowledgeItems, feedbackTendency, slashCommand, slashCommandScope } = input;
-  const assistanceDepth = kind === "always" ? "low" : input.assistanceDepth ?? "low";
+  const assistanceDepth = input.assistanceDepth ?? "low";
   const modelProfile = input.modelProfile ?? DEFAULT_MODEL_PROFILE;
   const delimiters = getPromptDelimiters(modelProfile.delimiter);
   const neutralize = (value: string): string => neutralizeDelimiters(value, modelProfile.delimiter);

@@ -63,6 +63,7 @@
     "test/SingleFlightGate.test.ts",
     "test/KnowledgeSearch.test.ts",
     "test/AdviceService.test.ts",
+    "test/AutomaticGuidance.test.ts",
     "test/ConnectionService.test.ts",
     "test/EvalRunner.test.ts"
   ]

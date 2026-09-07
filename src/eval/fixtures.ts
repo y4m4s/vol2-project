@@ -234,10 +234,9 @@ export const SCENARIOS: EvalScenario[] = [
   },
   {
     id: "always-mode",
-    description: "常時モードは推論強度「低」で固定され、指摘なしを明示的な正常結果として返す",
+    description: "常時モードも選択した推論強度を維持し、指摘なしを明示的な正常結果として返す",
     input: {
       kind: "always",
-      // always では assistanceDepth は無視され low に固定される
       assistanceDepth: "high",
       context: baseContext({
         activeFilePath: "src/app.ts",
@@ -245,8 +244,8 @@ export const SCENARIOS: EvalScenario[] = [
       })
     },
     promptChecks: [
-      includes("depth: low", "always pins depth to low"),
-      includes("- Low mode:"),
+      includes("depth: high", "always respects selected depth"),
+      includes("- High mode:"),
       includes('{"kind":"no_advice"}')
     ]
   },
