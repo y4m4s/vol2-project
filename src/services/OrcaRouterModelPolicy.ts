@@ -38,6 +38,7 @@ export function toOrcaRouterModelOptions(models: OrcaRouterModel[]): OrcaRouterM
       label: builtIn?.isRouter ? builtIn.label : model.id.split("/").slice(1).join("/") || model.id,
       provider: model.ownedBy,
       contextLength: model.contextLength,
+      maxCompletionTokens: model.maxCompletionTokens,
       billingCategory: builtIn?.billingCategory ?? (model.id.endsWith("-free") ? "free" : "unknown"),
       ...(builtIn?.isRouter ? { isRouter: true } : {})
     });

@@ -154,7 +154,12 @@ export class OrcaRouterClient {
     const choices = responseRecord && Array.isArray(responseRecord.choices) ? responseRecord.choices : undefined;
     const firstChoice = choices?.[0];
     const message = isRecord(firstChoice) && isRecord(firstChoice.message) ? firstChoice.message : undefined;
-    const text = message ? readMessageContent(message.content) : undefined;
+    const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
+      ? normalizeProviderField(firstChoice.finish_reason, 100)
+      : undefined;
+    // Reasoning can exhaust the budget before any visible answer is emitted.
+    const text = message && (message.content === null || message.content === undefined) && finishReason === "length"
+      ? "" : message ? readMessageContent(message.content) : undefined;
     if (text === undefined) {
       throw new OrcaRouterError("invalidResponse", "OrcaRouter completion response did not include text.");
     }
@@ -164,9 +169,6 @@ export class OrcaRouterClient {
         ? normalizeProviderField(responseRecord.model)
         : undefined
     );
-    const finishReason = isRecord(firstChoice) && typeof firstChoice.finish_reason === "string"
-      ? normalizeProviderField(firstChoice.finish_reason, 100)
-      : undefined;
     return {
       text,
       inputTokens: readNonNegativeInteger(usage?.prompt_tokens),

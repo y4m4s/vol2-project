@@ -8,6 +8,7 @@ export interface ModelProfile {
 }
 
 export interface ModelProfileSource {
+  maxOutputTokens?: number;
   id?: string;
   name?: string;
   family?: string;

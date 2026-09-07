@@ -29,6 +29,7 @@ import type { UsageMeter } from "./UsageMeter";
 import { waitWithFallback } from "./BoundedWait";
 import {
   AI_OUTPUT_TOKEN_LIMITS,
+  HIGH_DEPTH_OUTPUT_TOKEN_LIMIT,
   AiInputLimitError,
   AiResponseLimitError,
   AiTextRequest,
@@ -100,7 +101,8 @@ export type KnowledgeDraftResult =
 export class AdviceService {
   public constructor(
     private readonly connectionService: ConnectionService,
-    private readonly usageMeter?: UsageMeter
+    private readonly usageMeter?: UsageMeter,
+    private readonly diagnostic: (entry: Record<string, unknown>) => void = () => {}
   ) {}
 
   public async requestGuidance(
@@ -117,7 +119,7 @@ export class AdviceService {
     const request: AiTextRequest = {
       ...prompt,
       purpose: "guidance",
-      maxOutputTokens: input.slashCommand === "flow"
+      maxOutputTokens: input.assistanceDepth === "high" ? HIGH_DEPTH_OUTPUT_TOKEN_LIMIT : input.slashCommand === "flow"
         ? AI_OUTPUT_TOKEN_LIMITS.flowRepair
         : AI_OUTPUT_TOKEN_LIMITS.guidance
     };
@@ -154,9 +156,7 @@ export class AdviceService {
         ...request,
         systemPrompt: buildGuidanceFormatRepairPrompt(request.systemPrompt, firstValidation.reason),
         purpose: input.slashCommand === "flow" ? "flowRepair" : "guidance",
-        maxOutputTokens: input.slashCommand === "flow"
-          ? AI_OUTPUT_TOKEN_LIMITS.flowRepair
-          : AI_OUTPUT_TOKEN_LIMITS.guidance
+        maxOutputTokens: request.maxOutputTokens
       },
       cancellationToken,
       input.referencedFilePaths
@@ -167,6 +167,7 @@ export class AdviceService {
 
     const repairedValidation = validateGuidanceResponse(input.slashCommand, repaired.text, validationOptions);
     if (!repairedValidation.ok) {
+      this.logDiagnostic({ event: "validation_failed", reason: repairedValidation.reason });
       return {
         ok: false,
         connectionState: this.connectionService.getState(),
@@ -222,7 +223,12 @@ export class AdviceService {
       };
     }
 
+    const startedAt = Date.now();
     try {
+      const maxOutputTokens = model.profileSource.maxOutputTokens;
+      if (maxOutputTokens && Number.isSafeInteger(maxOutputTokens) && maxOutputTokens > 0) {
+        request = { ...request, maxOutputTokens: Math.min(request.maxOutputTokens, maxOutputTokens) };
+      }
       const profile = deriveModelProfile(model.profileSource);
       const limit = model.profileSource.maxInputTokens;
       assertRequestInputLimit(request, limit && Number.isFinite(limit) && limit > 0 ? limit : profile.contextBudget * 2);
@@ -241,8 +247,19 @@ export class AdviceService {
 
       // A received response may already be billed, even when it is discarded.
       const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
+      this.logDiagnostic({ event: "response", provider: model.providerId, model: model.modelId,
+        purpose: request.purpose, elapsedMs: Date.now() - startedAt, maxOutputTokens: request.maxOutputTokens,
+        finishReason: response.finishReason, requestId: response.requestId,
+        inputTokens: response.inputTokens, outputTokens: response.outputTokens });
       if (token.isCancellationRequested) {
         return this.cancelledResult();
+      }
+      if (response.finishReason === "length" || response.finishReason === "max_tokens") {
+        return {
+          ok: false,
+          connectionState: this.connectionService.getState(),
+          message: `AI の回答が出力上限（要求値 ${request.maxOutputTokens.toLocaleString()} トークン）に達して途中で終了しました。同じ条件での自動再送は行っていません。回答範囲を絞るか、推論強度が低なら高に切り替えて再実行してください。詳細は「出力」の NaviCom Diagnostics で確認できます。`
+        };
       }
       assertResponseCharacterLimit(response.text, request.purpose);
 
@@ -253,6 +270,11 @@ export class AdviceService {
         responseMetadata: this.buildResponseMetadata([response], false)
       };
     } catch (error) {
+      this.logDiagnostic({ event: "request_failed", provider: model.providerId, model: model.modelId,
+        purpose: request.purpose, elapsedMs: Date.now() - startedAt,
+        kind: error instanceof OrcaRouterError ? error.kind : error instanceof Error ? error.name : "unknown",
+        status: error instanceof OrcaRouterError ? error.status : undefined,
+        code: error instanceof OrcaRouterError ? error.code?.slice(0, 100) : undefined });
       if (this.isCancellation(error, cancellationToken)) {
         return this.cancelledResult();
       }
@@ -329,6 +351,11 @@ export class AdviceService {
       console.warn("NaviCom: usage persistence failed; session usage is retained in memory.");
     });
     return { inputTokens, outputTokens, costUsd: response.costUsd };
+  }
+
+  private logDiagnostic(entry: Record<string, unknown>): void {
+    // Never log prompts, response bodies or API keys; diagnostics must not affect requests.
+    try { this.diagnostic(entry); } catch { /* Logging is best effort. */ }
   }
 
   private combineUsage(

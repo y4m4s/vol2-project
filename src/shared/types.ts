@@ -186,6 +186,7 @@ export interface OrcaRouterModelOption {
   label: string;
   provider: string;
   contextLength?: number;
+  maxCompletionTokens?: number;
   isRouter?: boolean;
   availabilityWarning?: string;
   billingCategory?: "free" | "metered" | "unknown";

@@ -1,5 +1,7 @@
 export type AiRequestPurpose = "guidance" | "flowRepair" | "knowledge";
 
+export const HIGH_DEPTH_OUTPUT_TOKEN_LIMIT = 8_192;
+
 export interface AiTextRequest {
   systemPrompt: string;
   userPrompt: string;

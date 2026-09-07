@@ -109,6 +109,7 @@ function StatusMessageToast() {
       open={!shouldSuppress}
       kind={statusMessage?.kind}
       message={statusMessage?.text ?? ""}
+      durationMs={statusMessage?.kind === "error" ? 10_000 : undefined}
     />
   );
 }

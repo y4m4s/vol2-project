@@ -493,7 +493,8 @@ export class ConnectionService {
         id: model.id,
         name: model.label,
         vendor: model.provider,
-        maxInputTokens: model.contextLength
+        maxInputTokens: model.contextLength,
+        maxOutputTokens: model.maxCompletionTokens
       },
       requestText: async (request, cancellationToken) => {
         const currentApiKey = await this.orcaRouterCredentials.getApiKey();

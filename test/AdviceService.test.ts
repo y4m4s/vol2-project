@@ -6,6 +6,7 @@ import type { ConnectedProviderModel, ConnectionService } from "../src/services/
 import { UsageMeter } from "../src/services/UsageMeter";
 import { SingleFlightGate } from "../src/services/SingleFlightGate";
 import { OrcaRouterError } from "../src/services/OrcaRouterClient";
+import type { AiTextRequest } from "../src/services/AiRequestPolicy";
 
 class TestTokenSource {
   private cancelled = false;
@@ -54,20 +55,26 @@ function harness(options: {
   inputTokens?: number;
   outputTokens?: number;
   maxInputTokens?: number;
+  maxOutputTokens?: number;
   requestError?: OrcaRouterError;
   onResponse?: () => void;
   costUsd?: number;
+  finishReasons?: string[];
 } = {}) {
   let calls = 0;
+  const requests: AiTextRequest[] = [];
+  const diagnostics: Record<string, unknown>[] = [];
   let resets = 0;
   const model: ConnectedProviderModel = {
     providerId: options.requestError ? "orcaRouter" : "copilot", modelId: "mock", modelLabel: "mock",
-    profileSource: { maxInputTokens: options.maxInputTokens },
-    requestText: async () => {
+    profileSource: { maxInputTokens: options.maxInputTokens, maxOutputTokens: options.maxOutputTokens },
+    requestText: async (request) => {
+      requests.push(request);
       calls += 1;
       if (options.requestError) throw options.requestError;
       options.onResponse?.();
-      return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens, costUsd: options.costUsd };
+      return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens, costUsd: options.costUsd,
+        finishReason: options.finishReasons?.[calls - 1] };
     },
     countTokens: options.countTokens
   };
@@ -81,8 +88,47 @@ function harness(options: {
   const meter = new UsageMeter({
     keys: () => [], get: () => undefined, update: options.persist ?? (async () => {})
   });
-  return { service: new AdviceService(connection, meter), meter, calls: () => calls, resets: () => resets };
+  return { service: new AdviceService(connection, meter, (entry) => diagnostics.push(entry)), meter, requests, diagnostics, calls: () => calls, resets: () => resets };
 }
+
+test("高強度は8192トークンを要求し、低強度は2048を維持する", async () => {
+  for (const kind of ["manual", "always"] as const) {
+    for (const assistanceDepth of ["low", "high"] as const) {
+      const h = harness();
+      assert.equal((await h.service.requestGuidance({ ...input, kind, assistanceDepth })).ok, true);
+      assert.equal(h.requests[0].maxOutputTokens, assistanceDepth === "high" ? 8192 : 2048);
+    }
+  }
+});
+
+test("取得できたモデル固有の出力上限を超えて要求しない", async () => {
+  const h = harness({ maxOutputTokens: 4096 });
+  await h.service.requestGuidance({ ...input, assistanceDepth: "high" });
+  assert.equal(h.requests[0].maxOutputTokens, 4096);
+});
+
+test("length終了は形式修正を再送せず、利用量を保持し接続も維持する", async () => {
+  for (const response of ["", '{"kind":"advice","text":"unfinished', answer]) {
+    const h = harness({ response, finishReasons: ["length"], outputTokens: 2048, inputTokens: 5452, costUsd: 0 });
+    const result = await h.service.requestGuidance({ ...input, kind: "always" });
+    assert.ok(!result.ok);
+    assert.match(result.message, /出力上限/);
+    assert.equal(h.calls(), 1);
+    assert.equal(h.resets(), 0);
+    assert.equal(h.meter.getToday().outputTokens, 2048);
+    assert.equal(h.diagnostics[0].finishReason, "length");
+    assert.ok(!JSON.stringify(h.diagnostics).includes("unfinished"));
+  }
+});
+
+test("形式修正の2回目が上限に達した場合も上限エラーを返し、3回目を送らない", async () => {
+  const h = harness({ response: "invalid", finishReasons: ["stop", "length"] });
+  const result = await h.service.requestGuidance({ ...input, assistanceDepth: "high" });
+  assert.ok(!result.ok);
+  assert.match(result.message, /出力上限/);
+  assert.equal(h.calls(), 2);
+  assert.deepEqual(h.requests.map((request) => request.maxOutputTokens), [8192, 8192]);
+});
 
 test("OrcaRouterのRetry-Afterは検証済み秒数だけ表示し、非対応形式は一般案内にする", async (t) => {
   t.mock.method(console, "warn", () => {});

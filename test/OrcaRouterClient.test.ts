@@ -4,6 +4,19 @@ import { ORCA_ROUTER_BASE_URL, OrcaRouterClient, OrcaRouterError } from "../src/
 
 const originalFetch = globalThis.fetch;
 
+test("推論中に上限へ達し本文がnullでも終了理由と利用量を保持する", async () => {
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    choices: [{ message: { content: null, reasoning_content: "private reasoning" }, finish_reason: "length" }],
+    usage: { prompt_tokens: 5452, completion_tokens: 2048, cost_usd: 0 }
+  }));
+  const result = await new OrcaRouterClient().createCompletion("sk-orca-test", "orcarouter/free", "question");
+  assert.equal(result.text, "");
+  assert.equal(result.finishReason, "length");
+  assert.equal(result.outputTokens, 2048);
+  assert.equal(result.costUsd, 0);
+  assert.ok(!JSON.stringify(result).includes("private reasoning"));
+});
+
 test("403を残高・キー上限・期間予算・モデル権限・IP制限に分類し再送しない", async () => {
   for (const [code, message, kind] of [
     ["insufficient_user_quota", "balance", "balanceQuota"],
