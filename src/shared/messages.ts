@@ -44,6 +44,7 @@ export type WebviewToExtension =
   | { type: "useLmStudioRunningPort" }
   | { type: "restartLmStudioOnConfiguredPort" }
   | { type: "refreshLmStudioModels" }
+  | { type: "refreshOllamaModels"; baseUrl: string }
   | { type: "setOrcaRouterApiKey"; apiKey: string }
   | { type: "deleteOrcaRouterApiKey" }
   | { type: "refreshOrcaRouterModels" }
@@ -60,6 +61,8 @@ export interface SaveSettingsPayload {
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
   lmStudioModelKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModelKey?: string;
   orcaRouterModelId?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
@@ -100,11 +103,13 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
   if (SIMPLE_MESSAGE_TYPES.has(value.type)) return { type: value.type } as WebviewToExtension;
 
   switch (value.type) {
+    case "refreshOllamaModels":
+      return isBoundedString(value.baseUrl, 1, 2000) ? value as WebviewToExtension : undefined;
     case "refreshRequestPlan":
       return isOptionalBoundedString(value.userPrompt, 20_000) && isOptionalBoundedString(value.additionalContext, 10_000)
         ? value as WebviewToExtension : undefined;
     case "connect":
-      return value.providerId === undefined || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter"
+      return value.providerId === undefined || value.providerId === "ollama" || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter"
         ? value as WebviewToExtension : undefined;
     case "setOrcaRouterApiKey":
       return isBoundedString(value.apiKey, 9, 500) ? value as WebviewToExtension : undefined;
@@ -156,11 +161,13 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
 
 function isSaveSettingsPayload(value: unknown): value is SaveSettingsPayload {
   if (!isRecord(value)) return false;
-  return (value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter") &&
+  return (value.providerId === "ollama" || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter") &&
     (value.defaultMode === "manual" || value.defaultMode === "always") &&
     (value.defaultAssistanceDepth === "low" || value.defaultAssistanceDepth === "high") &&
     isOptionalBoundedString(value.copilotModelId, 200) &&
     isOptionalBoundedString(value.lmStudioModelKey, 500) &&
+    isOptionalBoundedString(value.ollamaModelKey, 500) &&
+    isOptionalBoundedString(value.ollamaBaseUrl, 2000) &&
     isOptionalBoundedString(value.orcaRouterModelId, 500) &&
     isFiniteInRange(value.idleDelaySec, 5, 15) &&
     isFiniteInRange(value.requestIntervalSec, 20, 180) &&

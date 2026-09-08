@@ -3,29 +3,35 @@ declare global {
     __PROVIDER_LOGO_URIS__: {
       copilotBlack: string;
       copilotWhite: string;
-      lmStudioColor: string;
       lmStudioWhite: string;
+      ollamaBlack: string;
+      ollamaWhite: string;
       icons8OrcaBlack: string;
       icons8OrcaWhite: string;
     };
   }
 }
 
-export type ProviderLogoId = "copilot" | "lmStudio" | "orcaRouter";
+export type ProviderLogoId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
 /**
  * 公式プロバイダー資産とライセンス済みの第三者アイコンを表示する。
  */
 export function ProviderLogo({
   providerId,
-  className,
-  variant = "default"
+  className
 }: {
   providerId: ProviderLogoId;
   className: string;
-  symbolClassName?: string;
-  variant?: "default" | "white";
 }) {
+  if (providerId === "ollama") {
+    return (
+      <span className={`${className} provider-logo-theme-pair`} aria-hidden="true">
+        <img src={window.__PROVIDER_LOGO_URIS__.ollamaBlack} className="provider-logo-theme-black" alt="" draggable={false} />
+        <img src={window.__PROVIDER_LOGO_URIS__.ollamaWhite} className="provider-logo-theme-white" alt="" draggable={false} />
+      </span>
+    );
+  }
   if (providerId === "orcaRouter") {
     return (
       <span className={`${className} provider-logo-theme-pair`} aria-hidden="true">
@@ -48,9 +54,7 @@ export function ProviderLogo({
   if (providerId === "lmStudio") {
     return (
       <img
-        src={variant === "white"
-          ? window.__PROVIDER_LOGO_URIS__.lmStudioWhite
-          : window.__PROVIDER_LOGO_URIS__.lmStudioColor}
+        src={window.__PROVIDER_LOGO_URIS__.lmStudioWhite}
         className={className}
         alt=""
         aria-hidden="true"

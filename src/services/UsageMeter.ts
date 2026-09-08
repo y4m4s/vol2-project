@@ -87,7 +87,7 @@ export class UsageMeter {
   }
 
   public getRecordedCostUsd(providerId: AiProviderId): number | undefined {
-    if (providerId === "lmStudio") {
+    if (providerId === "lmStudio" || providerId === "ollama") {
       return 0;
     }
     const buckets = this.getBuckets(this.getStoredToday()).filter((bucket) => bucket.providerId === providerId);
@@ -116,7 +116,7 @@ export class UsageMeter {
   private getBuckets(stored: StoredDailyUsage): UsageBucket[] {
     if (stored.buckets) {
       return stored.buckets.flatMap((bucket) => {
-        if (bucket?.providerId !== "copilot" && bucket?.providerId !== "lmStudio" && bucket?.providerId !== "orcaRouter") return [];
+        if (bucket?.providerId !== "ollama" && bucket?.providerId !== "copilot" && bucket?.providerId !== "lmStudio" && bucket?.providerId !== "orcaRouter") return [];
         return [{
           date: stored.date,
           providerId: bucket.providerId,

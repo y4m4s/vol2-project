@@ -329,15 +329,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   display: block;
 }
 
-.connection-activity-provider-logo-symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  font-size: 20px;
-  line-height: 1;
-}
-
 .connection-activity-state {
   position: absolute;
   right: 0;
@@ -411,10 +402,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 .connection-activity-tooltip-title .connection-activity-provider-logo {
   width: 16px;
   height: 16px;
-}
-
-.connection-activity-tooltip-title .connection-activity-provider-logo-symbol {
-  font-size: 16px;
 }
 
 .connection-activity-tooltip-status {

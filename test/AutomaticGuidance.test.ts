@@ -202,7 +202,7 @@ test("初回概要の既出情報を実際の履歴作成後も保持し、次�
 });
 
 test("自動助言の収集・送信・保存ラベルが高→低の切替に追従する（全接続先）", async () => {
-  for (const providerId of ["copilot", "orcaRouter", "lmStudio"] as const) {
+  for (const providerId of ["copilot", "orcaRouter", "lmStudio", "ollama"] as const) {
     const state = {
       assistanceDepth: "high", mode: "always", screen: "main", requestState: "idle",
       conversationHistory: [], contextPreview: { diagnosticsSummary: [] }

@@ -332,6 +332,10 @@ export class NavigatorController implements vscode.Disposable {
       modelLabel: this.connectionSettingsCoordinator.getCurrentModelLabel(),
       copilotModelOptions: this.connectionService.getModelOptions(),
       lmStudioModelOptions: this.connectionService.getLmStudioModelOptions(),
+      ollamaModelOptions: this.connectionService.getOllamaModelOptions(),
+      ollamaModelsBaseUrl: this.connectionService.getOllamaModelsBaseUrl(),
+      ollamaStatus: this.connectionService.getOllamaStatus(),
+      providerEndpoint: this.connectionService.getConnectedModel()?.endpoint,
       orcaRouterModelOptions: this.connectionService.getOrcaRouterModelOptions(),
       orcaRouterApiKeyConfigured: this.connectionService.isOrcaRouterApiKeyConfigured(),
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
@@ -1186,6 +1190,12 @@ export class NavigatorController implements vscode.Disposable {
         requestState: state.requestState
       }
     );
+  }
+
+  public async refreshOllamaModels(baseUrl: string): Promise<void> {
+    if (this.sessionStore.getState().requestState !== "idle") return;
+    await this.connectionService.refreshAvailableOllamaModels(baseUrl);
+    this.didChangeStateEmitter.fire();
   }
 
   public async refreshLmStudioModels(announce = true): Promise<void> {

@@ -5,7 +5,7 @@
 **ペアプログラミングのナビゲーター役を担う、VS Code 向け AI 学習支援拡張機能**
 
 NaviCom は、コーディング中の詰まりを自力で解決する力を育てることを目的とした VS Code 拡張機能です。  
-GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
+GitHub Copilot、LM Studio、Ollama、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
 
 ---
 
@@ -51,7 +51,7 @@ GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」で�
 |------|------|
 | 拡張機能ホスト | TypeScript / VS Code Extension API |
 | UI | React / WebviewView |
-| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / OrcaRouter |
+| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / Ollama / OrcaRouter |
 | ローカルストレージ | SQLite (sql.js) |
 | ビルド | esbuild / TypeScript Compiler |
 
@@ -159,3 +159,22 @@ NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定し�
 ## 商標について
 
 GitHubおよびGitHub CopilotはGitHub, Inc.の商標です。LM StudioはElement Labs, Inc.の商標です。OrcaRouterは各権利者に帰属する商標です。NaviComはこれら各社が開発、承認、後援する公式製品ではありません。プロバイダーのブランドアセットは、対応する接続先を識別する目的に限って使用しています。
+
+### Ollama
+
+Ollamaはユーザー自身でインストール・起動し、使用するモデルを事前にインストールしてください。
+接続画面または設定画面で **Ollama** を選択すると、`GET /api/tags` からインストール済みモデルを取得します。
+設定画面で接続先URL（既定: `http://localhost:11434`）とモデルを選び、設定を保存してください。
+別ホスト・ポートのHTTP(S)ルートURLも指定できます。指定先へコードのコンテキストが送信されます。
+設定はワークスペースごとに保存され、VS Codeの再起動後にも復元されます。
+モデルを追加・削除した場合は「モデル一覧を更新」を使用してください。保存済みモデルが削除されていた場合は選び直します。
+
+NaviComはOllamaのHTTP APIのみを使用し、プロセスの起動・終了、モデルのダウンロードは行いません。
+別プロバイダーへの切り替え成功時、最後に生成で使用したモデルへ `POST /api/generate`（`keep_alive: 0`）を送信します。
+アンロードは最大2秒のbest-effortで、失敗しても切り替えは継続し、Extension Hostログに記録します。
+終了時は終了処理を遅らせないためアンロードを行わず、Ollama側の保持時間に従います。
+
+生成はLM Studioと共通のOpenAI互換Chat Completions処理を利用します。
+現行NaviComのLM Studioと同様、回答は生成完了後に表示します（逐次ストリーミング表示は未対応）。
+system prompt・作業中コード・追加コンテキスト・ナレッジ等は通常の生成経路で組み立てます。
+会話履歴の保存・再閲覧にも対応しますが、既存仕様どおり過去の会話を毎回の入力に自動追加しません。
