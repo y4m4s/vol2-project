@@ -201,7 +201,7 @@ export function S06Settings() {
 
       <div className="settings-section">
         {providerId === "lmStudio" ? (
-          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" variant="white" />
+          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" />
         ) : (
           <span className="material-symbols-outlined" aria-hidden="true">tune</span>
         )}
@@ -458,11 +458,7 @@ export function S06Settings() {
       <div className="settings-scope-heading">共通設定</div>
       <div className="setting-desc">以下は、どのプロバイダーでも共通で使用する設定です。</div>
       <div className="settings-section">
-        {providerId === "lmStudio" ? (
-          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" variant="white" />
-        ) : (
-          <span className="material-symbols-outlined" aria-hidden="true">tune</span>
-        )} モード設定
+        <span className="material-symbols-outlined" aria-hidden="true">tune</span> モード設定
       </div>
 
       <div className="setting-item">
@@ -681,7 +677,7 @@ function ProviderButtonGroup({
             aria-pressed={value === provider.id}
             onClick={() => onChange(provider.id)}
           >
-            <ProviderLogo providerId={provider.id} className="settings-provider-logo" variant="white" />
+            <ProviderLogo providerId={provider.id} className="settings-provider-logo" />
           </button>
         ))}
       </div>

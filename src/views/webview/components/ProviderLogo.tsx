@@ -3,7 +3,6 @@ declare global {
     __PROVIDER_LOGO_URIS__: {
       copilotBlack: string;
       copilotWhite: string;
-      lmStudioColor: string;
       lmStudioWhite: string;
       ollamaBlack: string;
       ollamaWhite: string;
@@ -20,13 +19,10 @@ export type ProviderLogoId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
  */
 export function ProviderLogo({
   providerId,
-  className,
-  variant = "default"
+  className
 }: {
   providerId: ProviderLogoId;
   className: string;
-  symbolClassName?: string;
-  variant?: "default" | "white";
 }) {
   if (providerId === "ollama") {
     return (
@@ -58,9 +54,7 @@ export function ProviderLogo({
   if (providerId === "lmStudio") {
     return (
       <img
-        src={variant === "white"
-          ? window.__PROVIDER_LOGO_URIS__.lmStudioWhite
-          : window.__PROVIDER_LOGO_URIS__.lmStudioColor}
+        src={window.__PROVIDER_LOGO_URIS__.lmStudioWhite}
         className={className}
         alt=""
         aria-hidden="true"

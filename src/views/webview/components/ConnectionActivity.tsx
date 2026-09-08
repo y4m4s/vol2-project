@@ -38,9 +38,7 @@ export function ConnectionActivity() {
       >
         <ProviderLogo
           providerId={providerId}
-          variant="white"
           className="connection-activity-provider-logo"
-          symbolClassName="connection-activity-provider-logo-symbol"
         />
         <span className={`connection-activity-state ${isConnected ? "connected" : "switching"}`} aria-hidden="true">
           {!isConnected && <span className="material-symbols-outlined">progress_activity</span>}
@@ -51,9 +49,7 @@ export function ConnectionActivity() {
         <div className="connection-activity-tooltip-title">
           <ProviderLogo
             providerId={providerId}
-            variant="white"
             className="connection-activity-provider-logo"
-            symbolClassName="connection-activity-provider-logo-symbol"
           />
           <span>{providerName}</span>
         </div>

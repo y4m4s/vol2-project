@@ -17,11 +17,10 @@ is displayed without recoloring, distortion, filters, or other modification.
 
 ## LM Studio
 
-- `lmstudio-icon-color.svg`
 - `lmstudio-icon-outline-white.svg`
 - Source and usage terms: https://lmstudio.ai/brand
 
-LM Studio is a mark of Element Labs, Inc. The official color and white artwork
+LM Studio is a mark of Element Labs, Inc. The official white artwork
 is displayed without recoloring, distortion, filters, or other modification.
 
 ## Orca icon by Icons8 (not an OrcaRouter brand asset)

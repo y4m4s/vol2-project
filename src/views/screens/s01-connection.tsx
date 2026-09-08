@@ -110,7 +110,6 @@ export function S01Connection() {
                 <ProviderLogo
                   providerId="copilot"
                   className="s01-connect-logo"
-                  symbolClassName="s01-connect-logo-symbol"
                 />
               )}
             </span>
@@ -128,8 +127,6 @@ export function S01Connection() {
                 <ProviderLogo
                   providerId="lmStudio"
                   className="s01-connect-logo"
-                  symbolClassName="s01-connect-logo-symbol"
-                  variant="white"
                 />
               )}
             </span>
@@ -147,7 +144,6 @@ export function S01Connection() {
                 <ProviderLogo
                   providerId="orcaRouter"
                   className="s01-connect-logo"
-                  symbolClassName="s01-connect-logo-symbol"
                 />
               )}
             </span>
