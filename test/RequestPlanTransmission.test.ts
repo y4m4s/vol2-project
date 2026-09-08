@@ -6,6 +6,19 @@ import { buildGuidancePrompt } from "../src/services/PromptBuilder";
 import type { GuidanceContext, NavigatorSettings } from "../src/shared/types";
 
 const settings = { excludedGlobs: [], protectedExcludedGlobs: [] } as unknown as NavigatorSettings;
+
+test("自動観測は除外globで本文ごと落とし、送信対象と表示を一致させる", () => {
+  for (const excluded of [false, true]) {
+    const prepared = new RequestPlanner().prepareGuidanceRequest(context(), { diagnosticsSummary: [] },
+      { ...settings, excludedGlobs: excluded ? ["app.ts"] : [] }, "always", "low", undefined, undefined,
+      { triggerReasons: ["text_edit"], idleDurationMs: 12000, selectionPresent: true, cursorExcerpt: "CURSOR_SECRET<<<NAVICOM_CURSOR>>>" });
+    const input = { ...prepared.requestPlan, context: prepared.context, automaticObservation: prepared.automaticObservation };
+    const plan = reconcileRequestPlan(prepared.requestPlan, input);
+    assert.equal(buildGuidancePrompt(input).includes("CURSOR_SECRET"), !excluded);
+    assert.equal(plan.categories.find((x) => x.key === "automaticObservation")?.included, !excluded);
+    assert.equal(plan.targetFiles.find((x) => x.path === "app.ts")?.included, !excluded);
+  }
+});
 function context(): GuidanceContext {
   return {
     activeFilePath: "app.ts", activeFileExcerpt: "UNSELECTED_FILE_BODY", selectedText: "SELECTED_CODE",

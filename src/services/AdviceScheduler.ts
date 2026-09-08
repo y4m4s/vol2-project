@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {
   AdviceMode,
   AdviceTriggerReason,
+  AutomaticTriggerSignal,
   AutoAdviceState,
   ConnectionState,
   NavigatorSettings,
@@ -15,7 +16,8 @@ interface SchedulerRuntimeState {
 }
 
 export interface AutoAdviceTriggerEvent {
-  reason: AdviceTriggerReason;
+  signals: AutomaticTriggerSignal[];
+  idleDurationMs: number;
 }
 
 const DEFAULT_SETTINGS: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs"> = {
@@ -37,6 +39,7 @@ export class AdviceScheduler implements vscode.Disposable {
   private paused = false;
   private composerActive = false;
   private pendingTriggerReason?: AdviceTriggerReason;
+  private signals: AutomaticTriggerSignal[] = [];
   private lastActivityAt?: number;
   private lastAdviceAt?: number;
   private idleTimer?: NodeJS.Timeout;
@@ -67,7 +70,8 @@ export class AdviceScheduler implements vscode.Disposable {
     // エディタ操作が来たら入力一時停止を解除
     this.composerActive = false;
 
-    if (!this.isModeEnabledForUi()) {
+    if (!this.isModeEnabledForUi() || this.paused) {
+      this.clearPending();
       this.pendingTriggerReason = undefined;
       this.lastActivityAt = undefined;
       this.syncTicker();
@@ -76,6 +80,10 @@ export class AdviceScheduler implements vscode.Disposable {
     }
 
     this.lastActivityAt = Date.now();
+    // An editor switch starts a new document context; never mix signals from two files.
+    if (reason === "editor_change") this.signals = [];
+    this.signals = [...this.signals.filter((signal) => signal.reason !== reason),
+      { reason, occurredAt: this.lastActivityAt }].slice(-5);
     this.pendingTriggerReason = reason;
 
     if (this.isModeActive()) {
@@ -107,11 +115,30 @@ export class AdviceScheduler implements vscode.Disposable {
     this.didChangeStateEmitter.fire();
   }
 
+  public handleCursorActivity(): void {
+    if (this.pendingTriggerReason && this.isModeActive()) {
+      this.lastActivityAt = Date.now();
+      this.ensureScheduled();
+    }
+  }
+
+  /** Retry an already triggered request, without making cursor movement a new trigger. */
+  public requeueStaleTrigger(event: AutoAdviceTriggerEvent): void {
+    if (!this.isModeEnabledForUi() || this.paused || this.pendingTriggerReason || !event.signals.length) return;
+    this.signals = event.signals.map((signal) => ({ ...signal }));
+    this.pendingTriggerReason = this.signals[this.signals.length - 1].reason;
+    // Start a fresh idle wait; do not interrupt continued cursor navigation.
+    this.lastActivityAt = Date.now();
+    if (this.isModeActive()) this.ensureScheduled();
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
+  }
+
   public togglePaused(): void {
     this.paused = !this.paused;
 
     if (this.paused) {
-      this.clearTimers();
+      this.clearPending();
     } else if (this.pendingTriggerReason) {
       this.ensureScheduled();
     }
@@ -141,6 +168,19 @@ export class AdviceScheduler implements vscode.Disposable {
       pendingTriggerReason: this.pendingTriggerReason,
       lastAdviceAt: this.lastAdviceAt ? new Date(this.lastAdviceAt).toISOString() : undefined
     };
+  }
+
+  public getTriggerSnapshot(now = Date.now()): AutoAdviceTriggerEvent {
+    return {
+      signals: this.signals.map((signal) => ({ ...signal })),
+      idleDurationMs: this.lastActivityAt === undefined ? 0 : Math.max(0, now - this.lastActivityAt)
+    };
+  }
+
+  public cancelPending(): void {
+    this.clearPending();
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
   }
 
   public dispose(): void {
@@ -184,13 +224,14 @@ export class AdviceScheduler implements vscode.Disposable {
       return;
     }
 
-    const reason = this.pendingTriggerReason;
+    const event = this.getTriggerSnapshot();
     this.pendingTriggerReason = undefined;
+    this.signals = [];
     this.lastAdviceAt = Date.now();
     this.clearTimers();
     this.syncTicker();
     this.didChangeStateEmitter.fire();
-    this.didTriggerAdviceEmitter.fire({ reason });
+    this.didTriggerAdviceEmitter.fire(event);
   }
 
   private getIdleRemainingMs(now: number): number {
@@ -267,6 +308,7 @@ export class AdviceScheduler implements vscode.Disposable {
   }
 
   private clearPending(): void {
+    this.signals = [];
     this.pendingTriggerReason = undefined;
     this.lastActivityAt = undefined;
     this.clearTimers();
