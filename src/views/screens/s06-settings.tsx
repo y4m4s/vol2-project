@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
+import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
@@ -153,7 +154,6 @@ export function S06Settings() {
       <div className="s06-sticky-top">
         <PageHeader
           title={<PageTitleWithIcon icon="settings">設定</PageTitleWithIcon>}
-          subtitle="NaviCom の動作と除外パターンを設定できます"
           navIcons={[
             { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
             { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
@@ -177,6 +177,31 @@ export function S06Settings() {
         <ProviderButtonGroup value={providerId} onChange={handleProviderChange} />
       </div>
 
+      <div className="settings-section">
+        <span className="material-symbols-outlined">tune</span>
+        {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : "OrcaRouter"} の設定
+      </div>
+      {providerId === "copilot" && (
+        <div className="setting-item">
+          <SettingTitle
+            icon="smart_toy"
+            help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
+          >
+            使用モデル
+          </SettingTitle>
+          <div className="setting-desc">
+            自動では GitHub Copilot の自動モデルルーティングを使用します
+            <br />
+            文脈上限は、一度に参照できる入力文脈量の目安です
+          </div>
+          <ModelButtonGroup
+            value={copilotModelId}
+            onChange={setCopilotModelId}
+            options={viewModel?.copilotModelOptions ?? []}
+          />
+        </div>
+      )}
+
       {providerId === "lmStudio" && (
         <>
           <LmStudioServerControl
@@ -194,7 +219,7 @@ export function S06Settings() {
               icon="memory"
               help="LM Studioでロード済みのモデルから、NaviComが使用するモデルを1つ選びます。一覧にない場合はLM Studioでモデルをロードしてから更新してください。"
             >
-              ロード中のモデル
+              使用モデル
             </SettingTitle>
             <div className="setting-desc lmstudio-model-note">
               {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
@@ -237,7 +262,8 @@ export function S06Settings() {
               APIキー
             </SettingTitle>
             <div className="setting-desc">
-              sk-orca- で始まるキーをVS Codeの暗号化ストレージに保存し、モデル一覧を自動取得します。保存した値は画面へ再表示しません。
+              APIキーをVS Codeの暗号化ストレージに保存し、モデル一覧を自動取得します。<br />
+              保存した値は画面へ再表示しません。
             </div>
             <div className={`orcarouter-key-status ${orcaRouterApiKeyConfigured ? "configured" : "missing"}`}>
               <span className="material-symbols-outlined" aria-hidden="true">
@@ -329,6 +355,39 @@ export function S06Settings() {
             )}
           </div>
 
+          {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
+            <div className="setting-item">
+              <SettingTitle
+                icon="payments"
+                help="本日NaviComからOrcaRouterへ送ったリクエストとトークンの概算です。表示料金は応答時点の記録であり、確定請求額ではありません。"
+              >
+                OrcaRouterの本日利用量
+              </SettingTitle>
+              <dl className="orcarouter-usage-summary">
+                <div>
+                  <dt>リクエスト数</dt>
+                  <dd>{viewModel.usageToday.requestCount.toLocaleString()}<span>回</span></dd>
+                </div>
+                <div>
+                  <dt>使用トークン</dt>
+                  <dd>{formatTokenCount(viewModel.usageToday.totalTokens)}<span>トークン</span></dd>
+                </div>
+                <div className="orcarouter-usage-cost">
+                  <dt>応答時点の記録料金</dt>
+                  <dd>{viewModel.usageToday.recordedCostText ?? "未取得"}</dd>
+                </div>
+              </dl>
+              <div className="setting-desc">
+                {viewModel.usageToday.recordedCostText
+                  ? "記録料金は確定請求額ではありません。"
+                  : "料金情報はプロバイダー応答に含まれていません。"}
+              </div>
+              <div className="setting-desc">
+                サブスクリプションとモデル利用料金は別です。請求額とキーの予算上限はOrcaRouter管理画面で確認・設定してください。
+              </div>
+            </div>
+          )}
+
           <div className="setting-item orcarouter-data-note">
             <SettingTitle
               icon="cloud_upload"
@@ -346,6 +405,8 @@ export function S06Settings() {
         </>
       )}
 
+      <div className="settings-scope-heading">共通設定</div>
+      <div className="setting-desc">以下は、どのプロバイダーでも共通で使用する設定です。</div>
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span> モード設定
       </div>
@@ -368,7 +429,7 @@ export function S06Settings() {
         >
           推論強度
         </SettingTitle>
-        <div className="setting-desc">手動相談で使う調査範囲と助言の詳しさです。高では関連ファイルとディレクトリ構造も参照します</div>
+        <div className="setting-desc">手動相談で使う調査範囲と助言の詳しさです。<br />高では関連ファイルとディレクトリ構造も参照します</div>
         <DepthButtonGroup value={defaultAssistanceDepth} onChange={setDefaultAssistanceDepth} />
       </div>
 
@@ -425,46 +486,6 @@ export function S06Settings() {
           onChange={setDailyTokenLimit}
         />
       </div>
-
-      {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
-        <div className="setting-item">
-          <SettingTitle
-            icon="payments"
-            help="本日NaviComからOrcaRouterへ送ったリクエストとトークンの概算です。表示料金は応答時点の記録であり、確定請求額ではありません。"
-          >
-            OrcaRouterの本日利用量
-          </SettingTitle>
-          <div className="setting-desc">
-            サブスクリプションとモデル利用料金は別です。請求額とキーの予算上限はOrcaRouter管理画面で確認・設定してください。
-            <br />
-            {viewModel.usageToday.requestCount}回 / {formatTokenCount(viewModel.usageToday.totalTokens)}トークン
-            {viewModel.usageToday.recordedCostText
-              ? <> / 応答時点の記録料金 {viewModel.usageToday.recordedCostText}（確定請求額ではありません）</>
-              : <> / 料金情報はプロバイダー応答に含まれていません</>}
-          </div>
-        </div>
-      )}
-
-      {providerId === "copilot" && (
-        <div className="setting-item">
-          <SettingTitle
-            icon="smart_toy"
-            help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
-          >
-            使用モデル
-          </SettingTitle>
-          <div className="setting-desc">
-            自動では GitHub Copilot の自動モデルルーティングを使用します
-            <br />
-            文脈上限は、一度に参照できる入力文脈量の目安です
-          </div>
-          <ModelButtonGroup
-            value={copilotModelId}
-            onChange={setCopilotModelId}
-            options={viewModel?.copilotModelOptions ?? []}
-          />
-        </div>
-      )}
 
       <div className="settings-section">
         <span className="material-symbols-outlined">block</span> 除外設定
@@ -587,36 +608,34 @@ function ProviderButtonGroup({
   value: AiProviderId;
   onChange: (value: AiProviderId) => void;
 }) {
+  const providers: Array<{ id: AiProviderId; label: string }> = [
+    { id: "copilot", label: "GitHub Copilot" },
+    { id: "lmStudio", label: "LM Studio" },
+    { id: "orcaRouter", label: "OrcaRouter" }
+  ];
   return (
-    <div className="choice-options mode-options provider-options" role="group" aria-label="接続先">
-      <button
-        type="button"
-        className={`choice-option ${value === "copilot" ? "selected" : ""}`}
-        aria-pressed={value === "copilot"}
-        onClick={() => onChange("copilot")}
-      >
-        GitHub Copilot
-      </button>
-      <button
-        type="button"
-        className={`choice-option ${value === "lmStudio" ? "selected" : ""}`}
-        aria-pressed={value === "lmStudio"}
-        onClick={() => onChange("lmStudio")}
-      >
-        LM Studio
-      </button>
-      <button
-        type="button"
-        className={`choice-option ${value === "orcaRouter" ? "selected" : ""}`}
-        aria-pressed={value === "orcaRouter"}
-        onClick={() => onChange("orcaRouter")}
-      >
-        OrcaRouter
-      </button>
+    <div className="settings-provider-picker">
+      <div className="provider-options" role="group" aria-label="接続先">
+        {providers.map((provider) => (
+          <button
+            key={provider.id}
+            type="button"
+            className={`settings-provider-option ${provider.id} ${value === provider.id ? "selected" : ""}`}
+            title={provider.label}
+            aria-label={provider.label}
+            aria-pressed={value === provider.id}
+            onClick={() => onChange(provider.id)}
+          >
+            <ProviderLogo providerId={provider.id} className="settings-provider-logo" variant="white" />
+          </button>
+        ))}
+      </div>
+      <div className="settings-provider-selection" aria-live="polite">
+        選択中：{providers.find((provider) => provider.id === value)?.label}
+      </div>
     </div>
   );
 }
-
 function ModeButtonGroup({
   value,
   onChange

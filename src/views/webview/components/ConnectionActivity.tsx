@@ -42,7 +42,7 @@ export function ConnectionActivity() {
           symbolClassName="connection-activity-provider-logo-symbol"
         />
         <span className={`connection-activity-state ${isConnected ? "connected" : "switching"}`} aria-hidden="true">
-          <span className="material-symbols-outlined">{isConnected ? "check" : "progress_activity"}</span>
+          {!isConnected && <span className="material-symbols-outlined">progress_activity</span>}
         </span>
       </button>
 

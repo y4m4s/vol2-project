@@ -48,9 +48,6 @@ export function S04Conversation() {
     <div className="s04-root">
       <PageHeader
         title={activeStream?.title ?? "新しい相談"}
-        subtitle={conversationHistory.length > 0
-          ? `${conversationHistory.length}件のメッセージ`
-          : "この会話専用の画面です"}
         back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
@@ -148,11 +145,6 @@ function ChatBubble(
         {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
         {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
         {modelLabel && <span className="s04-meta-pill model" title={modelDetails}>{modelLabel}</span>}
-        {responseMetadata && responseMetadata.attemptCount > 1 && (
-          <span className="s04-meta-pill depth" title="出力形式を満たさなかったため、バックエンドで1回再生成しました">
-            図を再生成済み
-          </span>
-        )}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 
@@ -176,6 +168,7 @@ function ChatBubble(
           text={entry.text}
           referencedFiles={entry.requestPlan?.targetFiles}
           tokenUsage={entry.providerId === "lmStudio" ? undefined : entry.tokenUsage}
+          regenerated={Boolean(responseMetadata && responseMetadata.attemptCount > 1)}
           alreadySaved={alreadySaved}
           isSavingKnowledge={isSavingKnowledge}
           isFeedbackDisabled={isFeedbackDisabled}
@@ -444,6 +437,7 @@ function ResponseActions(
     text,
     referencedFiles,
     tokenUsage,
+    regenerated,
     alreadySaved,
     isSavingKnowledge,
     isFeedbackDisabled,
@@ -454,6 +448,7 @@ function ResponseActions(
     text: string;
     referencedFiles?: RequestPlanSnapshot["targetFiles"];
     tokenUsage?: TokenUsage;
+    regenerated: boolean;
     alreadySaved: boolean;
     isSavingKnowledge: boolean;
     isFeedbackDisabled: boolean;
@@ -495,8 +490,9 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      {tokenUsage && (
+      {(tokenUsage || regenerated) && (
         <div className="s04-response-usage-row">
+          {tokenUsage && (
           <span
             className="s04-response-usage"
             title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
@@ -506,6 +502,12 @@ function ResponseActions(
               <>（応答時点の記録料金 {formatCostUsd(recordedCostUsd)}、確定請求額ではありません）</>
             )}
           </span>
+          )}
+          {regenerated && (
+            <span className="s04-response-regenerated" title="出力形式を満たさなかったため、回答を自動で1回再生成しました">
+              回答を自動再生成済み
+            </span>
+          )}
         </div>
       )}
 

@@ -1,8 +1,16 @@
 .s06-root {
   position: relative;
   width: 100%;
+  min-width: 0;
   height: calc(100vh - 24px);
   overflow-y: auto;
+}
+
+.s06-root input,
+.s06-root select,
+.s06-root textarea {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .s06-root.with-savebar {
@@ -266,7 +274,65 @@
 }
 
 .provider-options {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 8px;
+}
+
+.settings-scope-heading {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--vscode-panel-border);
+  font-weight: 700;
+  font-size: 1.05em;
+}
+
+.settings-provider-option {
+  --provider-accent: var(--vscode-textLink-foreground);
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  flex: 0 0 52px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.settings-provider-option.lmStudio { --provider-accent: #8b5cf6; }
+.settings-provider-option.orcaRouter { --provider-accent: #2d7df6; }
+
+.settings-provider-option:hover {
+  opacity: 1;
+  border-color: var(--provider-accent);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.settings-provider-option.selected {
+  border-color: var(--provider-accent);
+  background: color-mix(in srgb, var(--provider-accent) 16%, var(--vscode-editorWidget-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
+}
+
+.settings-provider-option:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 3px;
+}
+
+.settings-provider-selection {
+  text-align: center;
+  margin: 2px 0 8px;
+  font-size: 0.9em;
+}
+
+.settings-provider-logo {
+  display: block;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  object-fit: contain;
 }
 
 .schedule-options {
@@ -365,6 +431,46 @@
 
 .orcarouter-data-note {
   border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 35%, var(--vscode-panel-border));
+}
+
+.orcarouter-usage-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.orcarouter-usage-summary > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.orcarouter-usage-summary dt {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.8em;
+}
+
+.orcarouter-usage-summary dd {
+  margin-top: 4px;
+  color: var(--vscode-foreground);
+  font-size: 1.25em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.orcarouter-usage-summary dd span {
+  margin-left: 5px;
+  font-size: 0.65em;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+.orcarouter-usage-summary .orcarouter-usage-cost {
+  grid-column: 1 / -1;
 }
 
 .model-option-name {
@@ -663,10 +769,6 @@
     flex: 1;
   }
 
-  .provider-options,
-  .orcarouter-key-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 .choice-option .choice-option-sub {

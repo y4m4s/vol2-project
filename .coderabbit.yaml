@@ -1,0 +1,150 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# CodeRabbit 設定（NaviCom / VS Code 拡張）
+# レビューコメント・要約はすべて日本語で出力する。
+language: "ja-JP"
+
+tone_instructions: >-
+  日本語で、簡潔かつ具体的にレビューする。指摘は「何が問題か」「なぜ問題か」「どう直すか」の順で書く。
+  推測で断定せず、確信度が低い場合はその旨を明記する。依頼範囲外のリファクタや設計変更の強要はしない。
+
+early_access: false
+
+reviews:
+  # 重箱の隅をつつきすぎないモード。ノイズが多ければ "assertive" に変更する。
+  profile: "chill"
+  # CodeRabbit の指摘だけで PR をブロックしない。
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  abort_on_close: true
+
+  # ビルド成果物・ロックファイル・バイナリはレビュー対象から除外する。
+  path_filters:
+    - "!out/**"
+    - "!.test-out/**"
+    - "!node_modules/**"
+    - "!package-lock.json"
+    - "!**/*.vsix"
+    - "!media/**/*.png"
+    - "!media/**/*.woff2"
+
+  path_instructions:
+    - path: "src/**/*.ts"
+      instructions: >-
+        VS Code 拡張ホスト側のコード。以下を重点的に確認する。
+        (1) Disposable の登録漏れ・リーク（vscode.Disposable、イベント購読、タイマー、child_process）。
+        (2) async 処理の未 await、未処理の Promise rejection、キャンセル（CancellationToken）の伝播漏れ。
+        (3) レイヤ責務の逸脱。services はドメイン/外部連携、application は調整、views は表示に閉じる設計を尊重し、
+            views から services の内部実装へ直接依存していないか確認する。
+        (4) 例外時にユーザーへ提示されるメッセージが妥当か、内部情報や機微情報を露出していないか。
+    - path: "src/services/**/*.ts"
+      instructions: >-
+        LM Studio / Orca Router / Copilot など外部プロセス・外部 API との連携層。
+        タイムアウト、リトライ、失敗時のフォールバック、部分的な応答（ストリーミング中断）の扱いを確認する。
+        API キーやトークンをログ出力・永続化していないか、SecretStorage 相当の保管を使っているかを必ず確認する。
+        ファイル書き込みは原子性（一時ファイル + rename）と競合状態を確認する。
+    - path: "src/views/webview/**/*.{ts,tsx}"
+      instructions: >-
+        Webview 側の React コード。以下を確認する。
+        (1) 拡張ホストとのメッセージ受け渡しが src/shared の型定義と整合しているか。
+        (2) dangerouslySetInnerHTML など CSP・XSS 上の危険がないか（LLM 応答をそのまま HTML として描画していないか）。
+        (3) useEffect の依存配列、クリーンアップ漏れ、不要な再レンダー。
+        (4) Webview は Node API を直接使えないため、拡張ホスト側の API に依存していないか。
+    - path: "src/shared/**/*.ts"
+      instructions: >-
+        拡張ホストと Webview が共有する型・メッセージ定義。破壊的変更が両側に反映されているか、
+        メッセージの判別可能なユニオン（discriminated union）が網羅されているかを確認する。
+    - path: "test/**/*.ts"
+      instructions: >-
+        node:test ベースのテスト。テスト名から検証内容が読み取れるか、異常系・境界値が含まれているか、
+        実時間 sleep や外部ネットワークに依存していないかを確認する。
+        新規テストファイルを追加した場合、package.json の test スクリプトの実行対象一覧にも
+        追加が必要な点を指摘する。
+    - path: "src/eval/**/*.ts"
+      instructions: >-
+        評価ハーネス。判定条件が決定的か、fixture の追加・変更が既存の評価結果を意図せず変えていないかを確認する。
+    - path: "docs/**/*.md"
+      instructions: >-
+        日本語の設計ドキュメント。実装差分と記述内容が矛盾していないか、
+        用語や画面名・設定キー名がコードと一致しているかを確認する。文体の好みには踏み込まない。
+    - path: ".github/workflows/**/*.yml"
+      instructions: >-
+        GitHub Actions。permissions の最小化、アクションのバージョン固定、
+        シークレットの漏洩（pull_request_target や echo によるログ出力）を確認する。
+    - path: "package.json"
+      instructions: >-
+        VS Code 拡張マニフェスト。contributes（commands / configuration / views）の追加時に
+        activationEvents や実装側の登録と対応が取れているか、設定項目の default・minimum・maximum が妥当かを確認する。
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+    base_branches:
+      - "main"
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+  tools:
+    eslint:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: true
+    semgrep:
+      enabled: true
+    # Python は scripts/ の補助スクリプトのみ。
+    ruff:
+      enabled: true
+    shellcheck:
+      enabled: true
+    # 日本語ドキュメントに対して誤検知が多いため無効化する。
+    languagetool:
+      enabled: false
+    # ESLint を使用しているため重複を避ける。
+    biome:
+      enabled: false
+    github-checks:
+      enabled: true
+      timeout_ms: 90000
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
+  pull_requests:
+    scope: "auto"
+
+code_generation:
+  docstrings:
+    language: "ja-JP"
