@@ -76,6 +76,10 @@
 
 .s04-bubble-meta {
   display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
   align-items: center;
   gap: 6px;
   font-size: 0.78em;
@@ -99,7 +103,14 @@
 }
 
 .s04-bubble-time {
+  flex-shrink: 0;
   margin-left: auto;
+}
+
+.s04-bubble-role,
+.s04-meta-pill.command,
+.s04-meta-pill.depth {
+  flex-shrink: 0;
 }
 
 .s04-meta-pill {
@@ -125,11 +136,14 @@
 }
 
 .s04-meta-pill.model {
-  min-width: 0;
+  display: block;
+  flex: 0 1 auto;
+  min-width: 36px;
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 16px;
   color: var(--vscode-descriptionForeground);
   background: color-mix(in srgb, var(--vscode-editorWidget-background) 82%, transparent);
 }
@@ -246,7 +260,16 @@
 
 .s04-response-usage-row {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   min-width: 0;
+}
+
+.s04-response-regenerated {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.72em;
+  white-space: nowrap;
 }
 
 .s04-response-tools-row {

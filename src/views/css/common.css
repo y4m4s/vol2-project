@@ -796,7 +796,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   align-items: center;
   flex: 0 1 auto;
   gap: 6px;
-  min-width: 0;
+  min-width: 62px;
   max-width: 260px;
   height: 32px;
   padding: 0 6px 0 9px;
@@ -841,9 +841,14 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   background: transparent;
 }
 
-.chat-auto-inline-toggle:hover:not(:disabled) {
+.chat-auto-inline:hover:not(:disabled) {
   opacity: 1;
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.chat-auto-inline:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
 }
 
 .chat-auto-inline-toggle .material-symbols-outlined {
@@ -1024,19 +1029,21 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 @media (max-width: 520px) {
-  .chat-input-footer {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .chat-input-footer-right {
-    width: auto;
-  }
-
   .chat-auto-inline {
-    max-width: 100%;
+    flex: 0 0 24px;
+    justify-content: center;
+    min-width: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .chat-auto-inline-text,
+  .chat-auto-inline-toggle {
+    display: none;
   }
 }
+
 /* --- 追加コンテキスト --- */
 .additional-context-toggle {
   display: inline-flex;

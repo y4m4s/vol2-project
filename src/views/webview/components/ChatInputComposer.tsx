@@ -367,22 +367,27 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
           <div className="chat-input-footer-right">
             {isAlways && (
-              <div className={`chat-auto-inline ${isPaused ? "paused" : ""}`}>
+              <button
+                type="button"
+                className={`chat-auto-inline ${isPaused ? "paused" : ""}`}
+                title={`${getAutoStatusText(autoAdvice)}（クリックで${isPaused ? "再開" : "一時停止"}）`}
+                aria-label={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
+                disabled={!autoAdvice.enabled}
+                onClick={() => send({ type: "toggleAutoPause" })}
+              >
                 <span className="material-symbols-outlined">
                   {isPaused ? "pause_circle" : "radio_button_checked"}
                 </span>
                 <span className="chat-auto-inline-text">{getAutoStatusText(autoAdvice)}</span>
-                <button
+                <span
                   className="chat-auto-inline-toggle"
-                  title={isPaused ? "常時モードを再開" : "常時モードを一時停止"}
-                  disabled={!autoAdvice.enabled}
-                  onClick={() => send({ type: "toggleAutoPause" })}
+                  aria-hidden="true"
                 >
                   <span className="material-symbols-outlined">
                     {isPaused ? "play_arrow" : "pause"}
                   </span>
-                </button>
-              </div>
+                </span>
+              </button>
             )}
 
             <button
