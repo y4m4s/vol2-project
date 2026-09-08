@@ -133,6 +133,6 @@
     "typescript-eslint": "^8.69.0"
   },
   "dependencies": {
-    "sql.js": "^1.14.1"
+    "sql.js": "^1.14.2"
   }
 }
