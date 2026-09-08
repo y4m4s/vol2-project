@@ -311,6 +311,7 @@
 }
 
 .settings-provider-option.lmStudio { --provider-accent: #8b5cf6; }
+.settings-provider-option.ollama { --provider-accent: #ffffff; }
 .settings-provider-option.orcaRouter { --provider-accent: #2d7df6; }
 
 .settings-provider-option:hover {
@@ -322,6 +323,11 @@
 .settings-provider-option.selected {
   border-color: var(--provider-accent);
   background: color-mix(in srgb, var(--provider-accent) 16%, var(--vscode-editorWidget-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
+}
+
+.settings-provider-option.ollama:hover,
+.settings-provider-option.ollama:focus-visible {
   box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
 }
 

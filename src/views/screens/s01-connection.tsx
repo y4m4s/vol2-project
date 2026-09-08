@@ -13,6 +13,10 @@ export function S01Connection() {
   const canConnect = viewModel?.canConnect ?? false;
   const isBusy = viewModel?.isBusy ?? false;
   const [connectingProviderId, setConnectingProviderId] = useState<AiProviderId>();
+  const [hoveredProviderId, setHoveredProviderId] = useState<AiProviderId>();
+  const [focusedProviderId, setFocusedProviderId] = useState<AiProviderId>();
+  const previewProvider = CONNECT_PROVIDERS.find((provider) =>
+    provider.id === (hoveredProviderId ?? focusedProviderId));
   const wasBusyRef = useRef(false);
 
   useEffect(() => {
@@ -98,93 +102,48 @@ export function S01Connection() {
         </div>
 
         <div className="s01-actions">
-          <button
-            className={`s01-connect-btn s01-provider-btn s01-provider-btn--copilot${isConnecting("copilot") ? " busy" : ""}`}
-            disabled={!canConnect}
-            onClick={() => connect("copilot")}
-          >
-            <span className="s01-connect-icon" aria-hidden="true">
-              {isConnecting("copilot") ? (
-                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
-              ) : (
-                <ProviderLogo
-                  providerId="copilot"
-                  className="s01-connect-logo"
-                />
-              )}
-            </span>
-            <ConnectLabel text={isConnecting("copilot") ? "Copilot に接続中..." : "Copilot に接続"} />
-          </button>
-          <button
-            className={`s01-local-connect-btn s01-provider-btn s01-provider-btn--lm-studio${isConnecting("lmStudio") ? " busy" : ""}`}
-            disabled={!canConnect}
-            onClick={() => connect("lmStudio")}
-          >
-            <span className="s01-connect-icon" aria-hidden="true">
-              {isConnecting("lmStudio") ? (
-                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
-              ) : (
-                <ProviderLogo
-                  providerId="lmStudio"
-                  className="s01-connect-logo"
-                />
-              )}
-            </span>
-            <ConnectLabel text={isConnecting("lmStudio") ? "LM Studio に接続中..." : "LM Studio に接続"} />
-          </button>
-          <button
-            className={`s01-local-connect-btn s01-provider-btn s01-provider-btn--orca-router${isConnecting("orcaRouter") ? " busy" : ""}`}
-            disabled={!canConnect}
-            onClick={() => connect("orcaRouter")}
-          >
-            <span className="s01-connect-icon" aria-hidden="true">
-              {isConnecting("orcaRouter") ? (
-                <span className="material-symbols-outlined s01-connect-logo-symbol s01-spin">sync</span>
-              ) : (
-                <ProviderLogo
-                  providerId="orcaRouter"
-                  className="s01-connect-logo"
-                />
-              )}
-            </span>
-            <ConnectLabel text={isConnecting("orcaRouter") ? "OrcaRouter に接続中..." : "OrcaRouter に接続"} />
-          </button>
-          <button className="s01-local-connect-btn s01-provider-btn" disabled={!canConnect}
-            onClick={() => connect("ollama")}>
-            <span className="s01-connect-icon" aria-hidden="true"><ProviderLogo providerId="ollama" className="s01-connect-logo" /></span>
-            <ConnectLabel text={isConnecting("ollama") ? "Ollama に接続中..." : "Ollama に接続"} />
-          </button>
+          <div className="s01-provider-options" role="group" aria-label="接続先">
+            {CONNECT_PROVIDERS.map((provider) => {
+              const busy = isConnecting(provider.id);
+              const label = busy ? `${provider.label} に接続中...` : `${provider.label} に接続`;
+              return (
+                <button
+                  key={provider.id}
+                  type="button"
+                  className={`s01-provider-btn ${provider.id}${busy ? " busy" : ""}`}
+                  title={label}
+                  aria-label={label}
+                  aria-busy={busy}
+                  disabled={!canConnect || isBusy}
+                  onClick={() => connect(provider.id)}
+                  onMouseEnter={() => setHoveredProviderId(provider.id)}
+                  onMouseLeave={() => setHoveredProviderId(undefined)}
+                  onFocus={() => setFocusedProviderId(provider.id)}
+                  onBlur={() => setFocusedProviderId(undefined)}
+                >
+                  {busy ? (
+                    <span className="material-symbols-outlined s01-spin" aria-hidden="true">sync</span>
+                  ) : (
+                    <ProviderLogo providerId={provider.id} className="s01-connect-logo" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="s01-connect-status" role="status">
+            {connectingProviderId && isBusy
+              ? `${CONNECT_PROVIDERS.find((provider) => provider.id === connectingProviderId)?.label} に接続中...`
+              : previewProvider ? `${previewProvider.label} に接続` : "アイコンを選んで接続"}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/** 3つのボタンで共通の文言。ラベル幅をこの中の最長に揃えるために使う。 */
-const CONNECT_LABELS = [
-  "Ollama に接続",
-  "Ollama に接続中...",
-  "Copilot に接続",
-  "Copilot に接続中...",
-  "LM Studio に接続",
-  "LM Studio に接続中...",
-  "OrcaRouter に接続",
-  "OrcaRouter に接続中..."
+const CONNECT_PROVIDERS: Array<{ id: AiProviderId; label: string }> = [
+  { id: "copilot", label: "GitHub Copilot" },
+  { id: "lmStudio", label: "LM Studio" },
+  { id: "ollama", label: "Ollama" },
+  { id: "orcaRouter", label: "OrcaRouter" }
 ];
-
-/**
- * 接続ボタンのラベル。表示されないサイザーで全文言の最長幅を確保することで、
- * ボタン内容を中央寄せしてもアイコンとラベルの開始位置が3つとも縦にそろう。
- */
-function ConnectLabel({ text }: { text: string }) {
-  return (
-    <span className="s01-connect-label">
-      <span className="s01-connect-label-text">{text}</span>
-      <span className="s01-connect-label-sizer" aria-hidden="true">
-        {CONNECT_LABELS.map((label) => (
-          <span key={label}>{label}</span>
-        ))}
-      </span>
-    </span>
-  );
-}
