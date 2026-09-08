@@ -33,7 +33,6 @@ export function S02Main() {
     <div className="s02-root">
       <PageHeader
         title="新しい相談"
-        subtitle="質問と回答を相談単位で保存します（過去の発言はAIへ自動送信しません）"
         back={false}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },

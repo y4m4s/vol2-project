@@ -30,6 +30,7 @@ body {
 
 #root {
   position: relative;
+  min-width: 0;
   width: 100%;
   max-width: var(--navicom-content-max-width);
   margin: 0 auto;
@@ -141,8 +142,9 @@ button.danger {
 /* --- ページヘッダー / 戻るボタン --- */
 .page-header {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
   width: 100%;
   min-width: 0;
   padding: 4px 0 12px;
@@ -159,13 +161,23 @@ button.danger {
 .page-title-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-bottom: 4px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.page-header .page-title {
+  min-width: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 .page-title-with-icon {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -174,13 +186,15 @@ button.danger {
 
 .page-title-with-icon > .material-symbols-outlined {
   flex-shrink: 0;
-  font-size: 20px;
+  font-size: 18px;
   color: var(--vscode-descriptionForeground);
 }
 
 .page-title-with-icon > span:last-child {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-header .page-subtitle {
@@ -192,8 +206,8 @@ button.danger {
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 2px;
 }
 
 .page-header-actions button {
@@ -326,8 +340,8 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 
 .connection-activity-state {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
+  right: 0;
+  bottom: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -494,15 +508,25 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   font-size: 20px;
 }
 
-@media (max-width: 520px) {
-  .page-header {
-    flex-wrap: wrap;
-  }
+.page-header .back-button,
+.page-header-actions button {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 5px;
+}
 
-  .page-header-actions {
-    flex-basis: 100%;
-    justify-content: flex-end;
-  }
+.page-header .back-button .material-symbols-outlined,
+.page-header-actions button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.page-header .connection-activity {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
 }
 
 
@@ -796,7 +820,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   align-items: center;
   flex: 0 1 auto;
   gap: 6px;
-  min-width: 0;
+  min-width: 62px;
   max-width: 260px;
   height: 32px;
   padding: 0 6px 0 9px;
@@ -841,9 +865,14 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   background: transparent;
 }
 
-.chat-auto-inline-toggle:hover:not(:disabled) {
+.chat-auto-inline:hover:not(:disabled) {
   opacity: 1;
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.chat-auto-inline:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
 }
 
 .chat-auto-inline-toggle .material-symbols-outlined {
@@ -1024,19 +1053,21 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 @media (max-width: 520px) {
-  .chat-input-footer {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .chat-input-footer-right {
-    width: auto;
-  }
-
   .chat-auto-inline {
-    max-width: 100%;
+    flex: 0 0 24px;
+    justify-content: center;
+    min-width: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .chat-auto-inline-text,
+  .chat-auto-inline-toggle {
+    display: none;
   }
 }
+
 /* --- 追加コンテキスト --- */
 .additional-context-toggle {
   display: inline-flex;

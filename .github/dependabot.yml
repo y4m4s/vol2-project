@@ -1,7 +1,44 @@
 version: 2
+
 updates:
-  - package-ecosystem: npm
-    directory: /
+  - package-ecosystem: "npm"
+    directory: "/"
+
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+
+    # 通常のVersion Updateはminor / patchだけ許可する。
+    # major updateはDependabot PRにせず、必要なときに手動で対応する。
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+    # VS Code APIの型定義は、サポート対象VS Codeより
+    # 勝手に先へ進ませない。
+    ignore:
+      - dependency-name: "@types/vscode"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+    # patch更新は一つのPRにまとめる。
+    groups:
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+    # minor更新は個別PRになるため、
+    # 同時に溜まりすぎないよう制限。
+    open-pull-requests-limit: 3
+
+    commit-message:
+      prefix: "build"
+      prefix-development: "build"
+      include: "scope"

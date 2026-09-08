@@ -23,7 +23,6 @@ type PageTitleWithIconProps = {
 
 type PageHeaderProps = {
   title: ReactNode;
-  subtitle?: ReactNode;
   back?: false | BackButtonProps;
   status?: ReactNode;
   extraContent?: ReactNode;
@@ -65,7 +64,6 @@ export function PageTitleWithIcon({ icon, children }: PageTitleWithIconProps) {
 }
 export function PageHeader({
   title,
-  subtitle,
   back,
   status,
   extraContent,
@@ -80,10 +78,9 @@ export function PageHeader({
       {back !== false && <BackButton {...(back === undefined ? {} : back)} />}
       <div className="page-header-copy">
         <div className="page-title-row">
-          <div className="page-title">{title}</div>
+          <div className="page-title" title={typeof title === "string" ? title : undefined}>{title}</div>
           {status}
         </div>
-        {subtitle && <div className="page-subtitle">{subtitle}</div>}
         {extraContent}
       </div>
       <div className="page-header-actions">
@@ -94,6 +91,7 @@ export function PageHeader({
             type="button"
             className="page-header-icon-btn"
             title={item.title}
+            aria-label={item.title}
             onClick={item.onClick}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
