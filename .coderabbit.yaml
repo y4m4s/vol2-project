@@ -96,8 +96,10 @@ reviews:
     ignore_title_keywords:
       - "WIP"
       - "DO NOT MERGE"
+    # デフォルトブランチ（main）は指定不要で常にレビュー対象になる。
+    # ここには main 以外の base ブランチを正規表現で列挙する。
     base_branches:
-      - "main"
+      - "^develop$"
 
   finishing_touches:
     docstrings:
@@ -131,7 +133,6 @@ reviews:
       enabled: false
     github-checks:
       enabled: true
-      timeout_ms: 90000
 
 chat:
   auto_reply: true
