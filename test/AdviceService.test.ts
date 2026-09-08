@@ -52,6 +52,7 @@ function harness(options: {
   countTokens?: ConnectedProviderModel["countTokens"];
   persist?: () => Promise<void>;
   response?: string;
+  responses?: string[];
   inputTokens?: number;
   outputTokens?: number;
   maxInputTokens?: number;
@@ -73,7 +74,7 @@ function harness(options: {
       calls += 1;
       if (options.requestError) throw options.requestError;
       options.onResponse?.();
-      return { text: options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens, costUsd: options.costUsd,
+      return { text: options.responses?.[calls - 1] ?? options.response ?? answer, inputTokens: options.inputTokens, outputTokens: options.outputTokens, costUsd: options.costUsd,
         finishReason: options.finishReasons?.[calls - 1] };
     },
     countTokens: options.countTokens
@@ -94,11 +95,20 @@ function harness(options: {
 test("高強度は8192トークンを要求し、低強度は2048を維持する", async () => {
   for (const kind of ["manual", "always"] as const) {
     for (const assistanceDepth of ["low", "high"] as const) {
-      const h = harness();
+      const h = harness({ response: kind === "always" ? JSON.stringify({ kind: "advice", focus: "continue", text: "次の判断です。" }) : answer });
       assert.equal((await h.service.requestGuidance({ ...input, kind, assistanceDepth })).ok, true);
       assert.equal(h.requests[0].maxOutputTokens, assistanceDepth === "high" ? 8192 : 2048);
     }
   }
+});
+
+test("自動回答の形式修正でもfocus契約を維持し、修正後のfocusを返す", async () => {
+  const h = harness({ responses: [answer, JSON.stringify({ kind: "advice", focus: "review", text: "値が未定義になる条件を確認してください。" })] });
+  const result = await h.service.requestGuidance({ ...input, kind: "always" });
+  assert.ok(result.ok);
+  assert.equal(result.focus, "review");
+  assert.equal(h.calls(), 2);
+  assert.match(JSON.stringify(h.requests[1]), /focus/);
 });
 
 test("取得できたモデル固有の出力上限を超えて要求しない", async () => {

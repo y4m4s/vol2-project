@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
 import { AdviceService } from "../services/AdviceService";
-import { AdviceScheduler } from "../services/AdviceScheduler";
+import { AdviceScheduler, type AutoAdviceTriggerEvent } from "../services/AdviceScheduler";
+import type { AutomaticGuidanceObservation, AutomaticGuidanceFocus } from "../shared/types";
 import { ConversationStore } from "../services/ConversationStore";
 import { ConnectionService } from "../services/ConnectionService";
 import { KnowledgeStore } from "../services/KnowledgeStore";
@@ -65,6 +66,11 @@ import {
 const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 
 interface GuidanceExecutionOptions {
+  automaticTriggerEvent?: AutoAdviceTriggerEvent;
+  automaticEditorSnapshot?: string;
+  automaticDocumentSnapshot?: string;
+  automaticFilePath?: string;
+  automaticObservation?: AutomaticGuidanceObservation;
   kind: GuidanceKind;
   userPrompt?: string;
   prepared?: PreparedGuidanceRequest;
@@ -91,6 +97,9 @@ export class NavigatorController implements vscode.Disposable {
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
+  private readonly automaticFingerprints = new Set<string>();
+  private readonly automaticFocusByFile = new Map<string, AutomaticGuidanceFocus>();
+  private readonly automaticOverviewByFile = new Map<string, string>();
   private activeGuidanceRequest?: {
     id: number;
     tokenSource: vscode.CancellationTokenSource;
@@ -129,6 +138,7 @@ export class NavigatorController implements vscode.Disposable {
           this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext),
         getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state),
         getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
+        getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
         getPromptExtras: (context, plan) => ({
           knowledgeItems: this.knowledgeStore.findReusable(context),
           feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
@@ -168,7 +178,12 @@ export class NavigatorController implements vscode.Disposable {
         getState: () => this.sessionStore.getState(),
         patchSession: (partial) => this.patchSession(partial),
         resolveHomeScreen: () => resolveHomeScreen(this.sessionStore.getState().connectionState),
-        resetAutomaticFingerprint: () => { this.lastAutomaticContextFingerprint = undefined; },
+        resetAutomaticFingerprint: () => {
+          this.lastAutomaticContextFingerprint = undefined;
+          this.automaticFingerprints.clear();
+          this.automaticFocusByFile.clear();
+          this.automaticOverviewByFile.clear();
+        },
         createGuidanceCard: (entry) => this.createGuidanceCard(entry),
         getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state)
       }
@@ -215,8 +230,8 @@ export class NavigatorController implements vscode.Disposable {
       this.adviceScheduler.onDidChangeState(() => {
         this.didChangeStateEmitter.fire();
       }),
-      this.adviceScheduler.onDidTriggerAdvice(() => {
-        void this.handleAutomaticGuidance();
+      this.adviceScheduler.onDidTriggerAdvice((event) => {
+        void this.handleAutomaticGuidance(event);
       })
     );
   }
@@ -245,6 +260,8 @@ export class NavigatorController implements vscode.Disposable {
         this.invalidateRequestPlan();
       }),
       vscode.workspace.onDidCloseTextDocument((document) => {
+        this.automaticFocusByFile.delete(document.uri.fsPath);
+        this.automaticOverviewByFile.delete(document.uri.fsPath);
         this.contextCollector.releaseDocument(document.uri);
         this.invalidateRequestPlan();
       }),
@@ -252,12 +269,15 @@ export class NavigatorController implements vscode.Disposable {
         this.refreshContextPreview();
         if (event.selections.some((selection) => !selection.isEmpty)) {
           this.adviceScheduler.handleActivity("selection_change");
+        } else {
+          this.adviceScheduler.handleCursorActivity();
         }
       }),
       vscode.workspace.onDidChangeTextDocument((event) => {
         this.contextCollector.captureDocumentChange(event);
 
         if (this.isActiveDocument(event.document.uri)) {
+          if (!this.adviceScheduler.getTriggerSnapshot().signals.length) this.contextCollector.resetAutomaticDiagnosticsBaseline();
           this.refreshContextPreview();
           this.adviceScheduler.handleActivity("text_edit");
         } else {
@@ -406,6 +426,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public cancelGuidanceRequest(): void {
+    this.adviceScheduler.cancelPending();
     const activeRequest = this.activeGuidanceRequest;
     if (!activeRequest) {
       return;
@@ -526,7 +547,7 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
-  private async handleAutomaticGuidance(): Promise<void> {
+  private async handleAutomaticGuidance(event: AutoAdviceTriggerEvent = { signals: [], idleDurationMs: 0 }): Promise<void> {
     let fingerprint: string | undefined;
     const result = await this.executeGuidanceRequest(async () => {
       const state = this.sessionStore.getState();
@@ -543,13 +564,29 @@ export class NavigatorController implements vscode.Disposable {
       const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
       const additionalContext = this.getGuidanceAdditionalContext(state);
       const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
-      const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth);
+      const baseContext = this.contextCollector.collectGuidanceContext();
+      const automaticEditorSnapshot = this.contextCollector.automaticEditorSnapshot();
+      const automaticDocumentSnapshot = this.contextCollector.automaticDocumentSnapshot();
+      const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
+      this.contextCollector.resetAutomaticDiagnosticsBaseline();
+      const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext);
+      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
+        this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
+        return undefined;
+      }
+      if (automaticObservation && baseContext.activeFilePath) {
+        automaticObservation.previousFocus = this.automaticFocusByFile.get(baseContext.activeFilePath);
+        automaticObservation.overviewAlreadyShown = automaticDocumentSnapshot !== undefined && this.automaticOverviewByFile.get(baseContext.activeFilePath) === automaticDocumentSnapshot;
+      }
       const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
         withAdditionalContext(guidanceContext, additionalContext),
         preview,
         settings,
         "always",
-        assistanceDepth
+        assistanceDepth,
+        undefined,
+        undefined,
+        automaticObservation
       ));
 
       if (!hasMeaningfulContext(prepared.context)) {
@@ -557,8 +594,8 @@ export class NavigatorController implements vscode.Disposable {
         return undefined;
       }
 
-      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth);
-      if (SUPPRESS_DUPLICATE_AUTO_ADVICE && fingerprint === this.lastAutomaticContextFingerprint) {
+      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation);
+      if (SUPPRESS_DUPLICATE_AUTO_ADVICE && (fingerprint === this.lastAutomaticContextFingerprint || this.automaticFingerprints.has(fingerprint))) {
         this.patchSession({
           contextPreview: preview,
           statusMessage: {
@@ -570,7 +607,12 @@ export class NavigatorController implements vscode.Disposable {
       }
 
       return {
+        automaticTriggerEvent: event,
+        automaticEditorSnapshot,
+        automaticDocumentSnapshot,
+        automaticFilePath: baseContext.activeFilePath,
         kind: "always",
+        automaticObservation: prepared.automaticObservation,
         prepared,
         preview,
         additionalContext,
@@ -580,6 +622,8 @@ export class NavigatorController implements vscode.Disposable {
 
     if (result.ok && fingerprint) {
       this.lastAutomaticContextFingerprint = fingerprint;
+      this.automaticFingerprints.add(fingerprint);
+      if (this.automaticFingerprints.size > 50) this.automaticFingerprints.delete(this.automaticFingerprints.values().next().value!);
     }
   }
 
@@ -791,10 +835,12 @@ export class NavigatorController implements vscode.Disposable {
         this.activeGuidanceRequest = undefined;
       }
       const requestState = this.sessionStore.getState().requestState;
+      // Returning to idle can synchronously dispatch a pending automatic request.
+      // Release the previous request's gate before allowing that dispatch.
+      release();
       if (requestState === "preparing_guidance" || requestState === "requesting_guidance") {
         this.patchSession({ requestState: "idle" });
       }
-      release();
     }
   }
 
@@ -907,6 +953,7 @@ export class NavigatorController implements vscode.Disposable {
     const result = await this.adviceService.requestGuidance(
       {
         context: prepared.context,
+        automaticObservation: prepared.automaticObservation,
         referencedFilePaths: prepared.requestPlan.targetFiles
           .filter((file) => file.included)
           .map((file) => file.path),
@@ -937,7 +984,6 @@ export class NavigatorController implements vscode.Disposable {
     if (wasCancelled || !requestIsCurrent) {
       if (requestIsCurrent) {
         this.patchSession({
-          requestState: "idle",
           statusMessage: {
             kind: "info",
             text: "回答生成を中断しました。"
@@ -954,10 +1000,18 @@ export class NavigatorController implements vscode.Disposable {
         : this.rememberSelectionContext(rawRefreshedPreview);
     let latestState = this.sessionStore.getState();
 
+    // Only successful content can become stale. Failures must still update the
+    // connection state and stop automatic guidance through the normal error path.
+    if (result.ok && options.kind === "always" && options.automaticEditorSnapshot !== this.contextCollector.automaticEditorSnapshot()) {
+      this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
+      this.patchSession({ contextPreview: refreshedPreview });
+      return { ok: false };
+    }
+
     if (result.ok && result.outcome === "no_advice") {
+      this.rememberAutomaticFocus(options, result.focus);
       this.patchSession({
         connectionState: this.connectionService.getState(),
-        requestState: "idle",
         contextPreview: refreshedPreview,
         ...(state.screen === "main"
           ? {
@@ -993,7 +1047,8 @@ export class NavigatorController implements vscode.Disposable {
         persistedModelLabel,
         responseModel?.providerId,
         responseModel?.modelId,
-        result.responseMetadata
+        result.responseMetadata,
+        result.focus
       );
       if (result.usage) {
         const reportedCostUsd = result.usage.costUsd;
@@ -1028,7 +1083,9 @@ export class NavigatorController implements vscode.Disposable {
           : undefined
       });
       await this.persistActiveConversationState();
-      this.patchSession({ requestState: "idle" });
+      // Stream creation resets these caches, so record the displayed focus only
+      // after the stream has been created and its answer persisted.
+      this.rememberAutomaticFocus(options, result.focus);
       return { ok: true };
     }
 
@@ -1037,7 +1094,6 @@ export class NavigatorController implements vscode.Disposable {
 
     this.patchSession({
       connectionState: nextConnectionState,
-      requestState: "idle",
       screen: resolveScreenAfterFailure(
         options.kind,
         latestState.screen,
@@ -1058,6 +1114,27 @@ export class NavigatorController implements vscode.Disposable {
     });
     await this.persistActiveConversationState();
     return { ok: false };
+  }
+
+  private requeueStaleAutomaticTrigger(event?: AutoAdviceTriggerEvent, documentSnapshot?: string): void {
+    // A new edit/editor switch owns its own signals. Never replay the old file's
+    // editing intent into a different document or document version.
+    if (event?.signals.length && documentSnapshot !== undefined &&
+        this.contextCollector.automaticDocumentSnapshot() === documentSnapshot) {
+      this.adviceScheduler.requeueStaleTrigger(event);
+    }
+  }
+
+  private rememberAutomaticFocus(options: GuidanceExecutionOptions, focus?: AutomaticGuidanceFocus): void {
+    const file = options.automaticFilePath;
+    if (options.kind !== "always" || !file || !focus) return;
+    this.automaticFocusByFile.set(file, focus);
+    if (focus === "overview" && options.automaticDocumentSnapshot) {
+      this.automaticOverviewByFile.set(file, options.automaticDocumentSnapshot);
+    }
+    for (const cache of [this.automaticFocusByFile, this.automaticOverviewByFile]) {
+      if (cache.size > 50) cache.delete(cache.keys().next().value!);
+    }
   }
 
   private refreshContextPreview(): void {
@@ -1250,7 +1327,8 @@ export class NavigatorController implements vscode.Disposable {
     modelLabel?: string,
     providerId?: AiProviderId,
     modelId?: string,
-    responseMetadata?: ProviderResponseMetadata
+    responseMetadata?: ProviderResponseMetadata,
+    focus?: AutomaticGuidanceFocus
   ): ConversationEntry {
     return {
       id: this.createId(),
@@ -1267,12 +1345,14 @@ export class NavigatorController implements vscode.Disposable {
       modelId,
       modelLabel,
       requestPlan,
-      responseMetadata
+      responseMetadata,
+      focus
     };
   }
 
   private createGuidanceCard(entry: ConversationEntry): GuidanceCard {
     return {
+      focus: entry.focus,
       id: entry.id,
       requestedAt: entry.createdAt,
       mode: entry.mode ?? "manual",

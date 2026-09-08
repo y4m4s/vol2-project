@@ -1,5 +1,6 @@
 import {
   ContextCategoryKey,
+  AutomaticGuidanceObservation,
   AssistanceDepth,
   GuidanceContext,
   GuidanceKind,
@@ -15,6 +16,7 @@ import { applySkillContextPreset, getSkillContextPreset } from "./contextPreset"
 import { isPathExcluded } from "./globMatch";
 
 export interface PreparedGuidanceRequest {
+  automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   requestPlan: RequestPlanSnapshot;
 }
@@ -37,12 +39,15 @@ export class RequestPlanner {
     kind: GuidanceKind,
     assistanceDepth?: AssistanceDepth,
     slashCommand?: SlashCommand,
-    slashCommandScope?: SlashCommandScope
+    slashCommandScope?: SlashCommandScope,
+    automaticObservation?: AutomaticGuidanceObservation
   ): PreparedGuidanceRequest {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
     const effectiveDepth: AssistanceDepth = assistanceDepth ?? "low";
+    const observation = kind === "always" && !fileExcluded && context.activeFilePath
+      ? automaticObservation : undefined;
     const filteredContext: GuidanceContext = {
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
@@ -66,20 +71,35 @@ export class RequestPlanner {
     const finalContext = applySkillContextPreset(filteredContext, slashCommand);
 
     return {
+      automaticObservation: observation,
       context: finalContext,
       requestPlan: {
         kind,
         assistanceDepth: effectiveDepth,
         slashCommand,
         slashCommandScope,
-        categories: this.applyPresetNotes(
+        categories: [...this.applyPresetNotes(
           this.buildCategories(context, finalContext, fileExcluded),
           presetAllow,
           slashCommand
-        ),
-        targetFiles: this.buildTargetFiles(context, finalContext, fileExcluded, excludedGlobs),
+        ), ...(kind === "always" ? [{
+          key: "automaticObservation" as const, label: "自動判断情報",
+          description: "発火理由・カーソル周辺・編集範囲・診断の増減・選択範囲",
+          enabled: !fileExcluded, included: Boolean(observation),
+          note: observation
+            ? `${observation.triggerReasons.join(", ")} / L${observation.cursor?.line ?? "?"} / 選択${observation.selectionPresent ? "あり" : "なし"} / 診断追加${observation.diagnostics?.added.length ?? 0}・解消${observation.diagnostics?.resolvedCount ?? 0}`
+            : "対象の観測情報がないか、除外設定に一致したため送信しません"
+        }] : [])],
+        targetFiles: this.buildTargetFiles(context, finalContext, fileExcluded, excludedGlobs).map((file) =>
+          observation && file.path === context.activeFilePath
+            ? { ...file, included: true, excludedReason: undefined,
+                sizeText: this.toReadableSize(this.byteLength(JSON.stringify(observation)) + this.byteLength(
+                  `${finalContext.activeFileExcerpt ?? ""}${finalContext.selectedText ?? ""}${finalContext.diagnosticsSummary.map((item) => item.message).join("")}${finalContext.recentEditsSummary.join("")}${finalContext.relatedSymbols.join("")}`
+                )) }
+            : file),
         excludedGlobs,
-        estimatedSizeText: this.estimateSizeText(finalContext, preview)
+        estimatedSizeText: this.estimateSizeText(finalContext, preview) + (observation
+          ? ` + 自動判断 ${this.toReadableSize(this.byteLength(JSON.stringify(observation)))}` : "")
       }
     };
   }

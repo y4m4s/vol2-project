@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runLive } from "../src/eval/runner";
 import { hasMermaidBlock, maxBulletLines } from "../src/eval/assertions";
-import type { EvalScenario } from "../src/eval/fixtures";
+import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
+
+test("自動評価fixtureの挿入・削除文字数が変更内容と一致する", () => {
+  for (const [id, inserted, deleted] of [["automatic-review", 0, 1], ["automatic-cosmetic", 2, 0]] as const) {
+    const edit = SCENARIOS.find((item) => item.id === id)!.input.automaticObservation!.lastEdit!;
+    assert.equal(edit.insertedCharCount, inserted);
+    assert.equal(edit.deletedCharCount, deleted);
+    assert.equal(edit.afterPreview!.length - edit.beforePreview!.length, inserted - deleted);
+  }
+});
 
 const scenario: EvalScenario = {
   id: "hint", description: "short hints",
@@ -29,9 +38,16 @@ test("本文チェックが空でも不正JSONを合格にせず、後続シナ�
 
 test("no_adviceは常時モードだけ正常とし、本文チェックは実行しない", async () => {
   const always = { ...scenario, input: { ...scenario.input, kind: "always" as const }, responseChecks: [hasMermaidBlock()] };
-  const report = await runLive([always, scenario], async () => '{"kind":"no_advice"}');
+  const report = await runLive([always, scenario], async () => '{"kind":"no_advice","focus":"none"}');
   assert.equal(report.results[0].passed, true);
   assert.equal(report.results[1].passed, false);
+});
+
+test("次の一手の評価をno_adviceで通過できず、focusの集計に残る", async () => {
+  const report = await runLive([{ ...scenario, expectedFocus: ["continue"], input: { ...scenario.input, kind: "always" } }],
+    async () => '{"kind":"no_advice","focus":"none"}');
+  assert.equal(report.failed, 1);
+  assert.equal(report.results[0].focus, "none");
 });
 
 test("本番同様に制御指示と参照データを分け、未依頼コードを拒否する", async () => {

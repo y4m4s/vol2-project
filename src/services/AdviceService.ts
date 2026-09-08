@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import {
   AdviceMode,
+  AutomaticGuidanceObservation,
+  AutomaticGuidanceFocus,
   AssistanceDepth,
   ConnectionState,
   ConversationEntry,
@@ -40,6 +42,7 @@ import {
 const TOKEN_COUNT_TIMEOUT_MS = 1_000;
 
 export interface GuidanceRequestSuccess {
+  focus?: AutomaticGuidanceFocus;
   ok: true;
   text: string;
   outcome?: "advice" | "no_advice";
@@ -61,6 +64,7 @@ export interface GuidanceRequestFailure {
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
 
 export interface GuidanceRequestInput {
+  automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   referencedFilePaths?: string[];
   kind: GuidanceKind;
@@ -138,6 +142,7 @@ export class AdviceService {
         ...first,
         text: firstValidation.text,
         outcome: firstValidation.outcome,
+        focus: firstValidation.focus,
         responseMetadata: this.buildResponseMetadata(
           [first.responseMetadata],
           firstValidation.normalized
@@ -154,7 +159,7 @@ export class AdviceService {
     const repaired = await this.requestText(
       {
         ...request,
-        systemPrompt: buildGuidanceFormatRepairPrompt(request.systemPrompt, firstValidation.reason),
+        systemPrompt: buildGuidanceFormatRepairPrompt(request.systemPrompt, firstValidation.reason, input.kind),
         purpose: input.slashCommand === "flow" ? "flowRepair" : "guidance",
         maxOutputTokens: request.maxOutputTokens
       },
@@ -179,6 +184,7 @@ export class AdviceService {
       ...repaired,
       text: repairedValidation.text,
       outcome: repairedValidation.outcome,
+      focus: repairedValidation.focus,
       usage: this.combineUsage(first.usage, repaired.usage),
       responseMetadata: this.buildResponseMetadata(
         [first.responseMetadata, repaired.responseMetadata],

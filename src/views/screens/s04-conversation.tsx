@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { automaticGuidanceLabel } from "../../shared/automaticGuidance";
 import type { ReactNode } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
@@ -111,7 +112,7 @@ function ChatBubble(
   }
 ) {
   const isUser = entry.role === "user";
-  const label = isUser ? "あなた" : entry.kind === "always" ? "NaviCom (自動)" : "NaviCom";
+  const label = isUser ? "あなた" : entry.kind === "always" ? automaticGuidanceLabel(entry.focus) : "NaviCom";
   const selectedText = entry.basedOn?.selectedTextPreview;
   const isSelectionRequest = isUser && entry.kind === "context" && Boolean(selectedText);
   const slashCommandLabel = entry.slashCommand

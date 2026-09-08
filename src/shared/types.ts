@@ -23,6 +23,43 @@ export type ProjectContextScope = "project-lite" | "project" | "deep";
 
 export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
 
+export type AutomaticGuidanceFocus = "continue" | "review" | "explain" | "overview" | "none";
+
+export interface AutomaticTriggerSignal {
+  reason: AdviceTriggerReason;
+  occurredAt: number;
+}
+
+export interface AutomaticEditObservation {
+  lineStart: number;
+  lineEnd: number;
+  changedLineCount: number;
+  insertedCharCount: number;
+  deletedCharCount: number;
+  cursorDistanceLines?: number;
+  beforePreview?: string;
+  afterPreview?: string;
+}
+
+export interface AutomaticDiagnosticsObservation {
+  added: DiagnosticSummary[];
+  resolvedCount: number;
+  remainingCount: number;
+}
+
+export interface AutomaticGuidanceObservation {
+  triggerReasons: AdviceTriggerReason[];
+  idleDurationMs: number;
+  cursor?: { line: number; column: number };
+  cursorExcerpt?: string;
+  selectionPresent: boolean;
+  selectionLineCount?: number;
+  lastEdit?: AutomaticEditObservation;
+  diagnostics?: AutomaticDiagnosticsObservation;
+  previousFocus?: AutomaticGuidanceFocus;
+  overviewAlreadyShown?: boolean;
+}
+
 export type NavigatorScreen =
   | "onboarding"
   | "main"
@@ -81,6 +118,7 @@ export interface FeedbackTendencySummary {
 }
 
 export type ContextCategoryKey =
+  | "automaticObservation"
   | "activeFile"
   | "selection"
   | "diagnostics"
@@ -255,6 +293,7 @@ export interface RequestPlanSnapshot {
 }
 
 export interface GuidanceCard {
+  focus?: AutomaticGuidanceFocus;
   id: string;
   requestedAt: string;
   mode: AdviceMode;
@@ -285,6 +324,7 @@ export interface ProviderResponseMetadata {
 }
 
 export interface ConversationEntry {
+  focus?: AutomaticGuidanceFocus;
   id: string;
   role: ConversationRole;
   text: string;
