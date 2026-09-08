@@ -290,6 +290,7 @@
 
 .settings-provider-option {
   --provider-accent: var(--vscode-textLink-foreground);
+
   width: 52px;
   height: 52px;
   min-width: 52px;
