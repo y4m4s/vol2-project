@@ -122,6 +122,18 @@ export class AdviceScheduler implements vscode.Disposable {
     }
   }
 
+  /** Retry an already triggered request, without making cursor movement a new trigger. */
+  public requeueStaleTrigger(event: AutoAdviceTriggerEvent): void {
+    if (!this.isModeEnabledForUi() || this.paused || this.pendingTriggerReason || !event.signals.length) return;
+    this.signals = event.signals.map((signal) => ({ ...signal }));
+    this.pendingTriggerReason = this.signals[this.signals.length - 1].reason;
+    // Start a fresh idle wait; do not interrupt continued cursor navigation.
+    this.lastActivityAt = Date.now();
+    if (this.isModeActive()) this.ensureScheduled();
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
+  }
+
   public togglePaused(): void {
     this.paused = !this.paused;
 

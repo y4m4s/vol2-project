@@ -66,6 +66,7 @@ import {
 const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 
 interface GuidanceExecutionOptions {
+  automaticTriggerEvent?: AutoAdviceTriggerEvent;
   automaticEditorSnapshot?: string;
   automaticDocumentSnapshot?: string;
   automaticFilePath?: string;
@@ -565,7 +566,10 @@ export class NavigatorController implements vscode.Disposable {
       const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
       this.contextCollector.resetAutomaticDiagnosticsBaseline();
       const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext);
-      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) return undefined;
+      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
+        this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
+        return undefined;
+      }
       if (automaticObservation && baseContext.activeFilePath) {
         automaticObservation.previousFocus = this.automaticFocusByFile.get(baseContext.activeFilePath);
         automaticObservation.overviewAlreadyShown = automaticDocumentSnapshot !== undefined && this.automaticOverviewByFile.get(baseContext.activeFilePath) === automaticDocumentSnapshot;
@@ -599,6 +603,7 @@ export class NavigatorController implements vscode.Disposable {
       }
 
       return {
+        automaticTriggerEvent: event,
         automaticEditorSnapshot,
         automaticDocumentSnapshot,
         automaticFilePath: baseContext.activeFilePath,
@@ -994,6 +999,7 @@ export class NavigatorController implements vscode.Disposable {
     // Only successful content can become stale. Failures must still update the
     // connection state and stop automatic guidance through the normal error path.
     if (result.ok && options.kind === "always" && options.automaticEditorSnapshot !== this.contextCollector.automaticEditorSnapshot()) {
+      this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
       this.patchSession({ contextPreview: refreshedPreview });
       return { ok: false };
     }
@@ -1104,6 +1110,15 @@ export class NavigatorController implements vscode.Disposable {
     });
     await this.persistActiveConversationState();
     return { ok: false };
+  }
+
+  private requeueStaleAutomaticTrigger(event?: AutoAdviceTriggerEvent, documentSnapshot?: string): void {
+    // A new edit/editor switch owns its own signals. Never replay the old file's
+    // editing intent into a different document or document version.
+    if (event?.signals.length && documentSnapshot !== undefined &&
+        this.contextCollector.automaticDocumentSnapshot() === documentSnapshot) {
+      this.adviceScheduler.requeueStaleTrigger(event);
+    }
   }
 
   private rememberAutomaticFocus(options: GuidanceExecutionOptions, focus?: AutomaticGuidanceFocus): void {

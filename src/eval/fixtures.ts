@@ -409,7 +409,8 @@ function automaticScenarios(): EvalScenario[] {
         cursorExcerpt: sample.code.includes("<<<NAVICOM_CURSOR>>>") ? sample.code : sample.code + "<<<NAVICOM_CURSOR>>>",
         selectionPresent: Boolean(sample.selected), selectionLineCount: sample.selected ? 1 : undefined,
         lastEdit: sample.trigger === "text_edit" ? { lineStart: 1, lineEnd: 1, cursorDistanceLines: 0,
-          changedLineCount: 1, insertedCharCount: 10, deletedCharCount: sample.review ? 1 : 0,
+          changedLineCount: 1, insertedCharCount: sample.review ? 0 : sample.id === "cosmetic" ? 2 : 10,
+          deletedCharCount: sample.review ? 1 : 0,
           beforePreview: sample.review ? "user.profile?.name" : sample.id === "cosmetic" ? "const title='Users';" : "return",
           afterPreview: sample.review ? "user.profile.name" : sample.id === "cosmetic" ? sample.code : "return response." } : undefined,
         diagnostics: { added: sample.review ? [{ severity: "Error", line: 1, message: "user.profile is possibly undefined" }] : [], resolvedCount: 0, remainingCount: sample.review ? 1 : 0 }

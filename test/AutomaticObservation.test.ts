@@ -73,6 +73,36 @@ test("編集と診断更新を集約し、カーソル操作で待機し、発�
   scheduler.dispose();
 });
 
+test("再予約は新しいイベント・一時停止・手動モード・チャット入力を尊重する", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setTimeout", "setInterval"], now: 1000 });
+  const scheduler = new AdviceScheduler();
+  t.after(() => scheduler.dispose());
+  const settings = { idleDelayMs: 100, requestIntervalMs: 0 };
+  const state = { mode: "always" as const, connectionState: "connected" as const, requestState: "idle" as const };
+  const event = { signals: [{ reason: "text_edit" as const, occurredAt: 1000 }], idleDurationMs: 100 };
+  scheduler.configure(settings, state);
+  scheduler.handleActivity("editor_change");
+  scheduler.requeueStaleTrigger(event);
+  assert.deepEqual(scheduler.getTriggerSnapshot().signals.map((signal) => signal.reason), ["editor_change"]);
+  scheduler.togglePaused();
+  scheduler.requeueStaleTrigger(event);
+  assert.equal(scheduler.getTriggerSnapshot().signals.length, 0);
+  scheduler.togglePaused();
+  scheduler.configure(settings, { ...state, mode: "manual" });
+  scheduler.requeueStaleTrigger(event);
+  assert.equal(scheduler.getTriggerSnapshot().signals.length, 0);
+  scheduler.configure(settings, state);
+  scheduler.setComposerActive(true);
+  let fired = 0;
+  scheduler.onDidTriggerAdvice(() => { fired++; });
+  scheduler.requeueStaleTrigger(event);
+  t.mock.timers.tick(500);
+  assert.equal(fired, 0);
+  scheduler.setComposerActive(false);
+  t.mock.timers.tick(100);
+  assert.equal(fired, 1);
+});
+
 function editorFor(text: string, line: number, column: number): vscode.TextEditor {
   const lines = text.split("\n");
   const offsetAt = (p: Position) => lines.slice(0, p.line).reduce((n, s) => n + s.length + 1, 0) + p.character;
@@ -136,8 +166,17 @@ test("既存DBにfocus列を追加し、旧履歴と新しいfocusをSQLiteで�
   migrate();
   // Recreate the previous schema shape, then exercise the additive migration.
   db.run("ALTER TABLE conversation_entries DROP COLUMN automatic_focus");
+  db.run("INSERT INTO conversation_streams (id, title, created_at, updated_at, message_count) VALUES (?, ?, ?, ?, ?)",
+    ["legacy-stream", "旧履歴", "2026-09-01T00:00:00Z", "2026-09-01T00:00:00Z", 1]);
+  db.run("INSERT INTO conversation_entries (id, stream_id, entry_order, role, text, created_at, kind) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ["legacy-entry", "legacy-stream", 0, "assistant", "移行前の助言", "2026-09-01T00:00:00Z", "always"]);
   migrate();
   migrate();
+  const legacy = store.get("legacy-stream")!;
+  assert.equal(legacy.entries[0].id, "legacy-entry");
+  assert.equal(legacy.entries[0].text, "移行前の助言");
+  assert.equal(legacy.entries[0].focus, undefined);
+  assert.equal(automaticGuidanceLabel(legacy.entries[0].focus), "NaviCom（自動）");
   const stream = await store.createStream("test");
   const entries = [undefined, "continue", "review", "explain", "overview"] as const;
   await store.saveStream({ ...stream, entries: entries.map((focus, i) => ({

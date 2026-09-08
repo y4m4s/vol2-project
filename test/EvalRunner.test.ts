@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runLive } from "../src/eval/runner";
 import { hasMermaidBlock, maxBulletLines } from "../src/eval/assertions";
-import type { EvalScenario } from "../src/eval/fixtures";
+import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
+
+test("自動評価fixtureの挿入・削除文字数が変更内容と一致する", () => {
+  for (const [id, inserted, deleted] of [["automatic-review", 0, 1], ["automatic-cosmetic", 2, 0]] as const) {
+    const edit = SCENARIOS.find((item) => item.id === id)!.input.automaticObservation!.lastEdit!;
+    assert.equal(edit.insertedCharCount, inserted);
+    assert.equal(edit.deletedCharCount, deleted);
+    assert.equal(edit.afterPreview!.length - edit.beforePreview!.length, inserted - deleted);
+  }
+});
 
 const scenario: EvalScenario = {
   id: "hint", description: "short hints",

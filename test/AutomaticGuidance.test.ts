@@ -89,9 +89,54 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
   Object.assign(driver, { conversationCoordinator: coordinator });
   driver.patchSession({});
   return { driver, state, scheduler, store, context,
+    moveCursor: () => { snapshot = "v1:cursor2"; },
     changeEditor: () => { snapshot = "v2:cursor2"; context.activeFileExcerpt = "const x = 2;"; },
     restrict: () => { connection = "restricted"; },
     dispose: () => { scheduler.dispose(); store.dispose(); } };
+}
+
+for (const phase of ["preparing", "requesting"] as const) {
+  test(`カーソルだけ移動した${phase}中の自動助言を再予約する`, async (t) => {
+    let unblock!: () => void;
+    const blocked = new Promise<void>((resolve) => { unblock = resolve; });
+    let started!: () => void;
+    const firstStarted = new Promise<void>((resolve) => { started = resolve; });
+    let calls = 0;
+    const h = await lifecycleHarness(async () => {
+      calls++;
+      if (phase === "requesting" && calls === 1) { started(); await blocked; }
+      return { ok: true, text: "現在のカーソルへの助言", focus: "continue" };
+    });
+    t.after(h.dispose);
+    if (phase === "preparing") {
+      let collections = 0;
+      Object.assign(h.driver, { collectGuidanceContextForDepth: async () => {
+        if (++collections === 1) { started(); await blocked; }
+        return h.context;
+      } });
+    }
+    t.mock.timers.enable({ apis: ["Date", "setTimeout", "setInterval"], now: 1000 });
+    const runs: Promise<void>[] = [];
+    h.scheduler.onDidTriggerAdvice((event) => { runs.push(h.driver.handleAutomaticGuidance(event)); });
+    h.scheduler.handleActivity("text_edit");
+    t.mock.timers.tick(100);
+    await firstStarted;
+    h.moveCursor();
+    h.scheduler.handleCursorActivity();
+    assert.equal(h.scheduler.getTriggerSnapshot().signals.length, 0);
+    t.mock.timers.tick(500);
+    unblock();
+    await runs[0];
+    assert.equal(h.state.conversationHistory.length, 0);
+    assert.deepEqual(h.scheduler.getTriggerSnapshot().signals.map((signal) => signal.reason), ["text_edit"]);
+    t.mock.timers.tick(99);
+    assert.equal(runs.length, 1);
+    t.mock.timers.tick(1);
+    await Promise.all(runs);
+    assert.equal(runs.length, 2);
+    assert.equal(calls, phase === "requesting" ? 2 : 1);
+    assert.equal(h.state.conversationHistory.length, 1);
+  });
 }
 
 test("生成中の編集を古い回答の破棄後に再実行する（実スケジューラと排他制御）", async (t) => {
