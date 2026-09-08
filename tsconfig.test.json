@@ -18,6 +18,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/AutomaticObservation.test.ts",
     "src/shared/feedback.ts",
     "src/services/SerialTaskQueue.ts",
     "src/services/LmStudioClient.ts",

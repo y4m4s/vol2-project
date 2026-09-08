@@ -80,17 +80,41 @@ test("修正再生成プロンプトは元の文脈と完全なflowchart契約�
 });
 
 test("常時モードのno_adviceを正常結果として扱い、手動では拒否する", () => {
-  const response = JSON.stringify({ kind: "no_advice" });
+  const response = JSON.stringify({ kind: "no_advice", focus: "none" });
   assert.deepEqual(validateGuidanceResponse(undefined, response, { kind: "always" }), {
     ok: true,
     outcome: "no_advice",
+    focus: "none",
     text: "",
     normalized: false
   });
   assert.deepEqual(validateGuidanceResponse(undefined, response, { kind: "manual" }), {
     ok: false,
-    reason: "unexpectedNoAdvice"
+    reason: "invalidEnvelope"
   });
+});
+
+test("自動focusを厳密に検証し、手動への混入と不正な組み合わせを拒否する", () => {
+  for (const focus of ["continue", "review", "explain", "overview"]) {
+    const json = JSON.stringify({ kind: "advice", focus, text: "確認の観点です。" });
+    const result = validateGuidanceResponse(undefined, json, { kind: "always" });
+    assert.ok(result.ok);
+    assert.equal(result.focus, focus);
+    assert.equal(validateGuidanceResponse(undefined, json, { kind: "manual" }).ok, false);
+  }
+  for (const value of [
+    { kind: "advice", text: "missing focus" },
+    { kind: "advice", focus: "none", text: "bad" },
+    { kind: "advice", focus: "unknown", text: "bad" },
+    { kind: "advice", focus: "constructor", text: "bad" },
+    { kind: "advice", focus: "continue", text: "" },
+    { kind: "advice", focus: "continue", text: "text", extra: true },
+    { kind: "no_advice", focus: "review" },
+    { kind: "no_advice", focus: "none", text: "" }
+  ]) assert.equal(validateGuidanceResponse(undefined, JSON.stringify(value), { kind: "always" }).ok, false);
+  const repair = buildGuidanceFormatRepairPrompt("original", "invalidEnvelope", "always");
+  assert.match(repair, /"focus":"none"/);
+  assert.match(repair, /continue\|review\|explain\|overview/);
 });
 
 test("JSON外のテキストと未依頼の実装コードを拒否する", () => {

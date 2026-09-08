@@ -1,4 +1,4 @@
-import type { GuidanceContext } from "../shared/types";
+import type { AutomaticGuidanceFocus, GuidanceContext } from "../shared/types";
 import { deriveModelProfile } from "../services/ModelProfile";
 import type { GuidancePromptInput } from "../services/PromptBuilder";
 import { applySkillContextPreset } from "../services/contextPreset";
@@ -19,6 +19,7 @@ import {
  * ここを増やすほど、プロンプト設計やモデル切替の影響を回帰的に測れるようになる。
  */
 export interface EvalScenario {
+  expectedFocus?: AutomaticGuidanceFocus[];
   id: string;
   description: string;
   input: GuidancePromptInput;
@@ -64,6 +65,7 @@ function richContext(): GuidanceContext {
 }
 
 export const SCENARIOS: EvalScenario[] = [
+  ...automaticScenarios(),
   {
     id: "flow",
     description: "/flow は深さに関わらずフロー整理に専念し Mermaid を出す",
@@ -246,7 +248,7 @@ export const SCENARIOS: EvalScenario[] = [
     promptChecks: [
       includes("depth: high", "always respects selected depth"),
       includes("- High mode:"),
-      includes('{"kind":"no_advice"}')
+      includes('{"kind":"no_advice","focus":"none"}')
     ]
   },
   {
@@ -383,3 +385,38 @@ export const SCENARIOS: EvalScenario[] = [
     ]
   }
 ];
+
+function automaticScenarios(): EvalScenario[] {
+  const samples: { id: string; code: string; expected: AutomaticGuidanceFocus[];
+    trigger: "text_edit" | "selection_change" | "editor_change"; additional?: string; selected?: string; review?: boolean }[] = [
+    { id: "continue", code: "async function load() { const response = await fetch(url); return response.<<<NAVICOM_CURSOR>>> }", expected: ["continue"], trigger: "text_edit" },
+    { id: "additional-context", code: "async function load() { const response = await fetch(url); return response.<<<NAVICOM_CURSOR>>> }", expected: ["continue"], trigger: "text_edit", additional: "API仕様: GET /users はユーザー配列を返す。氏名とIDを含む。".repeat(30) },
+    { id: "review", code: "function title(user: { profile?: { name: string } }) { return user.profile.name; }", expected: ["review"], trigger: "text_edit", review: true },
+    { id: "explain", code: "const total = prices.reduce((sum, price) => sum + price, 0);", selected: "prices.reduce((sum, price) => sum + price, 0)", expected: ["explain"], trigger: "selection_change" },
+    { id: "open-only", code: "const x = 1;", expected: ["none"], trigger: "editor_change" },
+    { id: "overview", code: "export async function main() { const users = await loadUsers(); const active = users.filter(u => u.active); render(active); }", expected: ["overview", "none"], trigger: "editor_change" },
+    { id: "cosmetic", code: "const title = 'Users';", expected: ["none"], trigger: "text_edit" }
+  ];
+  return samples.map((sample) => ({
+    id: `automatic-${sample.id}`, description: `自動助言: ${sample.id}`, expectedFocus: sample.expected,
+    input: {
+      kind: "always", context: baseContext({ activeFilePath: "src/example.ts", activeFileExcerpt: sample.code.replace("<<<NAVICOM_CURSOR>>>", ""),
+        selectedText: sample.selected, additionalContext: sample.additional,
+        diagnosticsSummary: sample.review ? [{ severity: "Error", line: 1, message: "user.profile is possibly undefined" }] : [] }),
+      automaticObservation: {
+        triggerReasons: sample.review ? ["text_edit", "diagnostics_change"] : [sample.trigger],
+        idleDurationMs: 12000, cursor: { line: 1, column: sample.code.indexOf("<<<NAVICOM_CURSOR>>>") + 1 || sample.code.length + 1 },
+        cursorExcerpt: sample.code.includes("<<<NAVICOM_CURSOR>>>") ? sample.code : sample.code + "<<<NAVICOM_CURSOR>>>",
+        selectionPresent: Boolean(sample.selected), selectionLineCount: sample.selected ? 1 : undefined,
+        lastEdit: sample.trigger === "text_edit" ? { lineStart: 1, lineEnd: 1, cursorDistanceLines: 0,
+          changedLineCount: 1, insertedCharCount: 10, deletedCharCount: sample.review ? 1 : 0,
+          beforePreview: sample.review ? "user.profile?.name" : sample.id === "cosmetic" ? "const title='Users';" : "return",
+          afterPreview: sample.review ? "user.profile.name" : sample.id === "cosmetic" ? sample.code : "return response." } : undefined,
+        diagnostics: { added: sample.review ? [{ severity: "Error", line: 1, message: "user.profile is possibly undefined" }] : [], resolvedCount: 0, remainingCount: sample.review ? 1 : 0 }
+      }
+    },
+    promptChecks: [includes("First choose exactly one focus"), includes("Automatic guidance observation"),
+      excludes("Ignore noise from in-progress editing"), includes("Do not choose explain merely because additional context is available")],
+    responseChecks: [hasNoFencedCode(), maxBulletLines(3)]
+  }));
+}

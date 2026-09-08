@@ -1,6 +1,7 @@
 import { getSkill, isSlashCommand } from "../shared/skills";
 import {
   AssistanceDepth,
+  AutomaticGuidanceObservation,
   GuidanceContext,
   GuidanceKind,
   ProjectContextScope,
@@ -121,8 +122,16 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
   return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
 }
 
-export function createAutomaticFingerprint(context: GuidanceContext, assistanceDepth: AssistanceDepth = "low"): string {
+export function createAutomaticFingerprint(context: GuidanceContext, assistanceDepth: AssistanceDepth = "low", observation?: AutomaticGuidanceObservation): string {
   return JSON.stringify({
+    observation: observation ? {
+      triggerReasons: [...observation.triggerReasons].sort(),
+      cursor: observation.cursor,
+      cursorExcerpt: observation.cursorExcerpt,
+      selectionPresent: observation.selectionPresent,
+      lastEdit: observation.lastEdit
+      // Exclude time, previousFocus and changing diagnostic deltas. Current diagnostics are below.
+    } : undefined,
     assistanceDepth,
     file: context.activeFilePath,
     excerpt: context.activeFileExcerpt,

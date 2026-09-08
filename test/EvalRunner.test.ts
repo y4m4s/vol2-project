@@ -29,9 +29,16 @@ test("本文チェックが空でも不正JSONを合格にせず、後続シナ�
 
 test("no_adviceは常時モードだけ正常とし、本文チェックは実行しない", async () => {
   const always = { ...scenario, input: { ...scenario.input, kind: "always" as const }, responseChecks: [hasMermaidBlock()] };
-  const report = await runLive([always, scenario], async () => '{"kind":"no_advice"}');
+  const report = await runLive([always, scenario], async () => '{"kind":"no_advice","focus":"none"}');
   assert.equal(report.results[0].passed, true);
   assert.equal(report.results[1].passed, false);
+});
+
+test("次の一手の評価をno_adviceで通過できず、focusの集計に残る", async () => {
+  const report = await runLive([{ ...scenario, expectedFocus: ["continue"], input: { ...scenario.input, kind: "always" } }],
+    async () => '{"kind":"no_advice","focus":"none"}');
+  assert.equal(report.failed, 1);
+  assert.equal(report.results[0].focus, "none");
 });
 
 test("本番同様に制御指示と参照データを分け、未依頼コードを拒否する", async () => {

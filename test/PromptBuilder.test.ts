@@ -13,7 +13,7 @@ test("常時モードも高・低の生成指示を維持し、no_advice契約�
     assert.ok(prompt.includes(`- depth: ${depth}`));
     assert.ok(prompt.includes(depth === "high" ? "- High mode:" : "- Low mode:"));
     assert.ok(!prompt.includes(depth === "high" ? "- Low mode:" : "- High mode:"));
-    assert.ok(prompt.includes('{"kind":"no_advice"}'));
+    assert.ok(prompt.includes('{"kind":"no_advice","focus":"none"}'));
   }
 });
 
@@ -29,6 +29,38 @@ function createContext(overrides: Partial<GuidanceContext> = {}): GuidanceContex
     ...overrides
   };
 }
+
+test("自動観測を参照データに隔離し、カーソルを広いコードより優先する", () => {
+  const observation = { triggerReasons: ["text_edit" as const], idleDurationMs: 10000,
+    selectionPresent: false, cursor: { line: 3, column: 8 },
+    cursorExcerpt: "return items.<<<NAVICOM_CURSOR>>>" + BREAKOUT };
+  const messages = buildGuidancePromptMessages({ kind: "always", automaticObservation: observation,
+    context: createContext({ activeFileExcerpt: "broad".repeat(6000), additionalContext: "API仕様" }) });
+  assert.match(messages.systemPrompt, /First choose exactly one focus/);
+  assert.doesNotMatch(messages.systemPrompt, /return items/);
+  assert.match(messages.userPrompt, /<<<NAVICOM_CURSOR>>>/);
+  assert.equal(messages.userPrompt.split("</context>").length - 1, 1);
+  assert.ok(messages.userPrompt.indexOf("Code around cursor") < messages.userPrompt.indexOf("Active file excerpt"));
+  const manual = buildGuidancePrompt({ kind: "manual", automaticObservation: observation, context: createContext() });
+  assert.doesNotMatch(manual, /Automatic guidance observation|First choose exactly one focus/);
+});
+
+test("自動観測が長くても入力予算とカーソル直近の位置を維持する", () => {
+  for (const delimiter of ["xml", "markdown"] as const) {
+    const profile = { delimiter, contextBudget: 2600, terse: true };
+    const prompt = buildGuidancePrompt({ kind: "always", modelProfile: profile,
+      context: createContext({ activeFileExcerpt: "broad".repeat(10000), additionalContext: "API仕様".repeat(10000) }),
+      automaticObservation: { triggerReasons: ["text_edit"], idleDurationMs: 12000, selectionPresent: false,
+        cursor: { line: 10, column: 10 }, cursorExcerpt: "before".repeat(1000) + "NEAR<<<NAVICOM_CURSOR>>>NEXT" + "after".repeat(1000),
+        lastEdit: { lineStart: 10, lineEnd: 10, changedLineCount: 1, insertedCharCount: 1, deletedCharCount: 0,
+          beforePreview: BREAKOUT.repeat(1000), afterPreview: BREAKOUT.repeat(1000) } }
+    });
+    assert.ok(prompt.length <= profile.contextBudget * 3);
+    assert.ok(prompt.includes("NEAR<<<NAVICOM_CURSOR>>>NEXT"));
+    assert.ok(prompt.includes(delimiter === "xml" ? "\n</context>" : "\n<!-- navicom-context-end -->"));
+    assert.ok(prompt.endsWith(delimiter === "xml" ? "</additional_context>" : "<!-- navicom-additional-context-end -->"));
+  }
+});
 
 // Guidance ブロックの説明文にも "<context>" という語が出てくるので、
 // 実際の開始タグは最後の出現を取る。
