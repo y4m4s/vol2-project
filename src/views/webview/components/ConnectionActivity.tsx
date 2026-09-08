@@ -38,6 +38,7 @@ export function ConnectionActivity() {
       >
         <ProviderLogo
           providerId={providerId}
+          variant="white"
           className="connection-activity-provider-logo"
           symbolClassName="connection-activity-provider-logo-symbol"
         />
@@ -50,6 +51,7 @@ export function ConnectionActivity() {
         <div className="connection-activity-tooltip-title">
           <ProviderLogo
             providerId={providerId}
+            variant="white"
             className="connection-activity-provider-logo"
             symbolClassName="connection-activity-provider-logo-symbol"
           />

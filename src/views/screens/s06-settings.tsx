@@ -200,7 +200,11 @@ export function S06Settings() {
       </div>
 
       <div className="settings-section">
-        <span className="material-symbols-outlined">tune</span>
+        {providerId === "lmStudio" ? (
+          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" variant="white" />
+        ) : (
+          <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+        )}
         {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : providerId === "ollama" ? "Ollama" : "OrcaRouter"} の設定
       </div>
       {providerId === "copilot" && (
@@ -454,7 +458,11 @@ export function S06Settings() {
       <div className="settings-scope-heading">共通設定</div>
       <div className="setting-desc">以下は、どのプロバイダーでも共通で使用する設定です。</div>
       <div className="settings-section">
-        <span className="material-symbols-outlined">tune</span> モード設定
+        {providerId === "lmStudio" ? (
+          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" variant="white" />
+        ) : (
+          <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+        )} モード設定
       </div>
 
       <div className="setting-item">
@@ -1011,13 +1019,8 @@ function LmStudioServerControl({
   const actionDisabled = showStop
     ? !server.canStop || stopBlockedByPendingChanges
     : !server.canStart;
-  const statusIcon = getLmStudioServerStatusIcon(server.state);
+  const statusIcon = LM_STUDIO_SERVER_ICONS[server.state].icon;
   const statusText = server.message ?? getLmStudioServerStatusText(server);
-  const actionIcon = isTransitioning
-    ? "progress_activity"
-    : showStop
-      ? "stop_circle"
-      : "power_settings_new";
   const actionText = server.state === "starting"
     ? "起動しています…"
     : server.state === "stopping"
@@ -1057,7 +1060,7 @@ function LmStudioServerControl({
           className={`material-symbols-outlined${isTransitioning ? " is-spinning" : ""}`}
           aria-hidden="true"
         >
-          {actionIcon}
+          {isTransitioning ? "progress_activity" : showStop ? "stop" : "power"}
         </span>
         {actionText}
       </button>
@@ -1086,29 +1089,19 @@ function LmStudioServerControl({
   );
 }
 
-function getLmStudioServerStatusIcon(state: LmStudioServerViewData["state"]): string {
-  switch (state) {
-    case "running":
-      return "check_circle";
-    case "stopped":
-      return "power_off";
-    case "checking":
-    case "starting":
-    case "stopping":
-      return "progress_activity";
-    case "cliUnavailable":
-      return "terminal_off";
-    case "authRequired":
-      return "lock";
-    case "portConflict":
-      return "device_unknown";
-    case "portMismatch":
-      return "sync_problem";
-    case "error":
-    default:
-      return "error";
-  }
-}
+// Keep literal icon properties visible to check-icon-subset.mjs.
+const LM_STUDIO_SERVER_ICONS: Record<LmStudioServerViewData["state"], { icon: string }> = {
+  running: { icon: "check_circle" },
+  stopped: { icon: "stop" },
+  checking: { icon: "progress_activity" },
+  starting: { icon: "progress_activity" },
+  stopping: { icon: "progress_activity" },
+  cliUnavailable: { icon: "key_off" },
+  authRequired: { icon: "lock" },
+  portConflict: { icon: "warning" },
+  portMismatch: { icon: "sync" },
+  error: { icon: "warning" }
+};
 
 function getLmStudioServerStatusText(server: LmStudioServerViewData): string {
   switch (server.state) {
