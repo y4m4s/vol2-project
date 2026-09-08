@@ -42,7 +42,7 @@ export function RequestPlanDisclosure({ userPrompt, additionalContext }: { userP
   const pending = plan.previewInput !== userPrompt || plan.previewAdditionalContext !== additionalContext;
   const includedCategories = visibleCategories.filter((category) => category.included);
   const includedFiles = plan.targetFiles.filter((file) => file.included);
-  const destinationLabel = viewModel.providerId === "lmStudio" ? "ローカル送信予定" : "外部送信予定";
+  const destinationLabel = viewModel.providerId === "lmStudio" ? "ローカル送信予定" : viewModel.providerId === "ollama" ? `Ollamaへ送信予定（${viewModel.providerEndpoint ?? "接続先未確定"}）` : "外部送信予定";
   const summaryParts = [
     includedFiles.length > 0 ? `ファイル${includedFiles.length}件` : undefined,
     includedCategories.some((category) => category.key === "selection") ? "選択範囲" : undefined,

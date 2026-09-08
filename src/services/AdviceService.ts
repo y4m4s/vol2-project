@@ -14,7 +14,7 @@ import {
   FeedbackTendencySummary
 } from "../shared/types";
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
-import { LmStudioError } from "./LmStudioClient";
+import { OpenAICompatibleError } from "./OpenAICompatibleClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
 import { classifyOrcaRouterFailure, orcaRouterAccessMessage, requestRejectionMessage, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
@@ -287,7 +287,7 @@ export class AdviceService {
         this.connectionService.resetToDisconnected();
       } else if (
         connectionState === "unavailable"
-        && (model.providerId === "lmStudio" || model.providerId === "orcaRouter")
+        && (model.providerId === "lmStudio" || model.providerId === "ollama" || model.providerId === "orcaRouter")
       ) {
         this.connectionService.markUnavailable();
       }
@@ -649,7 +649,7 @@ export class AdviceService {
     if (error instanceof AiResponseLimitError) {
       return this.connectionService.getState();
     }
-    if (error instanceof LmStudioError) {
+    if (error instanceof OpenAICompatibleError) {
       return "unavailable";
     }
     if (error instanceof OrcaRouterError) {
@@ -676,7 +676,14 @@ export class AdviceService {
     if (error instanceof AiResponseLimitError) {
       return "AI の応答が安全なサイズ上限を超えたため中断しました。質問や参照範囲を絞って再試行してください。";
     }
-    if (error instanceof LmStudioError) {
+    if (error instanceof OpenAICompatibleError && this.connectionService.getProviderId() === "ollama") {
+      return error.kind === "timeout"
+        ? "Ollama の応答がタイムアウトしました。モデルのサイズと空きメモリを確認してください。"
+        : error.kind === "unreachable"
+          ? "Ollama との通信が切断されました。起動状態と接続先を確認してください。"
+          : "Ollama の生成に失敗しました。選択モデルがインストール済みか、ロードに必要なメモリがあるか確認してください。";
+    }
+    if (error instanceof OpenAICompatibleError) {
       switch (error.kind) {
         case "auth":
           return "LM Studio の認証設定を確認してください。";

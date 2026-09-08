@@ -779,3 +779,15 @@
   font-weight: 500;
   opacity: 0.75;
 }
+
+
+.ollama-endpoint-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 4px;
+}

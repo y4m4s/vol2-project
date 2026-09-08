@@ -34,3 +34,16 @@ is displayed without recoloring, distortion, filters, or other modification.
 This third-party orca icon is used as a generic provider indicator. It is not an
 OrcaRouter logo or official asset. NaviCom includes a visible Icons8 attribution
 link in Settings as required for free use.
+
+## Ollama
+
+- `ollama-icon.svg`: original SVG from the official repository.
+- `ollama-icon-white.svg`: same geometry, with the black fill changed to white
+  for dark backgrounds. This variant is produced by NaviCom.
+- Source: https://github.com/ollama/ollama/blob/main/docs/ollama-logo.svg
+- Repository license: https://github.com/ollama/ollama/blob/main/LICENSE
+- Copyright (c) Ollama. MIT license text is included in `OLLAMA-LICENSE.txt`.
+- Retrieved: 2026-09-08.
+
+The logo is used only to identify the Ollama provider; it is not NaviCom branding
+and does not imply endorsement by Ollama. The SVG aspect ratio is preserved.

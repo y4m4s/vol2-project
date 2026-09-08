@@ -315,7 +315,7 @@ export class KnowledgeStore implements vscode.Disposable {
       body: this.normalizeBody(String(row.body)),
       status: row.status === "disabled" ? "disabled" : "active",
       sourceAdviceId: this.normalizeOptionalText(row.source_advice_id, MAX_SOURCE_ADVICE_ID_LENGTH),
-      providerId: row.provider_id === "copilot" || row.provider_id === "lmStudio" || row.provider_id === "orcaRouter" ? row.provider_id : undefined,
+      providerId: row.provider_id === "ollama" || row.provider_id === "copilot" || row.provider_id === "lmStudio" || row.provider_id === "orcaRouter" ? row.provider_id : undefined,
       modelId: this.normalizeOptionalText(row.model_id, MAX_KNOWLEDGE_MODEL_FIELD_LENGTH),
       modelLabel: this.normalizeOptionalText(row.model_label, MAX_KNOWLEDGE_MODEL_FIELD_LENGTH),
       createdAt: String(row.created_at),

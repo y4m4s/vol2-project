@@ -7,6 +7,7 @@ export function S07Error() {
 
   const isBusy = viewModel?.isBusy ?? false;
   const providerId = viewModel?.providerId ?? "copilot";
+  const isOllama = providerId === "ollama";
   const isLmStudio = providerId === "lmStudio";
   const isOrcaRouter = providerId === "orcaRouter";
 
@@ -17,21 +18,25 @@ export function S07Error() {
   }
 
   const isUnavailable = stableStateRef.current === "unavailable";
-  const title = isLmStudio
+  const title = isOllama ? "Ollama に接続できません" : isLmStudio
     ? "ローカル LLM に接続できません"
     : isOrcaRouter
       ? isUnavailable ? "OrcaRouterに接続できません" : "OrcaRouterの利用が制限されています"
     : isUnavailable
       ? "Copilotに接続できません"
       : "現在は利用が制限されています";
-  const description = isLmStudio
+  const description = isOllama ? "Ollama の接続先とモデルを設定画面で確認してください。" : isLmStudio
     ? "LM Studio 側で次の項目を確認してください。"
     : isOrcaRouter
       ? "OrcaRouterの設定と利用状態を確認してください。"
     : isUnavailable
       ? "次の項目が完了していない可能性があります。"
       : "Copilot へのリクエストが一時的に制限されている可能性があります。";
-  const possibleCauses = isLmStudio
+  const possibleCauses = isOllama ? [
+    { icon: "dns", text: "Ollamaが起動していない、または接続先URLが正しくない" },
+    { icon: "memory", text: "モデルが未インストール、またはロードに必要なメモリが不足している" },
+    { icon: "verified_user", text: "ワークスペースが信頼済みになっていない" }
+  ] : isLmStudio
     ? [
         {
           icon: "dns",

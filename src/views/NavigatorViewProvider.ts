@@ -134,6 +134,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "restartLmStudioOnConfiguredPort":
             await this.controller.restartLmStudioOnConfiguredPort();
             return;
+          case "refreshOllamaModels":
+            await this.controller.refreshOllamaModels(message.baseUrl);
+            break;
           case "refreshLmStudioModels":
             await this.controller.refreshLmStudioModels();
             return;
@@ -262,6 +265,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       ).toString(),
       lmStudioWhite: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-outline-white.svg")
+      ).toString(),
+      ollamaBlack: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "ollama-icon.svg")
+      ).toString(),
+      ollamaWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "ollama-icon-white.svg")
       ).toString(),
       icons8OrcaBlack: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-black.png")

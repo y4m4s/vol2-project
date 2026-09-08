@@ -34,7 +34,7 @@ async function record(meter: UsageMeter, providerId: AiProviderId, tokens: numbe
 
 // 以前は Copilot 限定だったため、実費の出る OrcaRouter で常時モードを止める手段がなかった。
 test("日次トークン上限はすべての接続先に適用される", async () => {
-  for (const providerId of ["copilot", "orcaRouter", "lmStudio"] as const) {
+  for (const providerId of ["copilot", "orcaRouter", "lmStudio", "ollama"] as const) {
     const meter = createMeter();
     assert.equal(meter.isTokenLimitExceeded(providerId, 1000), false);
 

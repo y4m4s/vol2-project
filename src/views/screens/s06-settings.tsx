@@ -39,6 +39,8 @@ export function S06Settings() {
   const savedDefaultMode = settings?.defaultMode ?? "manual";
   const savedDefaultAssistanceDepth = settings?.defaultAssistanceDepth ?? "low";
   const savedCopilotModelId = settings?.copilotModelId ?? "auto";
+  const savedOllamaBaseUrl = settings?.ollamaBaseUrl ?? "http://localhost:11434";
+  const savedOllamaModelKey = settings?.ollamaModelKey ?? "";
   const savedLmStudioModelKey = settings?.lmStudioModelKey ?? "";
   const savedOrcaRouterModelId = settings?.orcaRouterModelId ?? "orcarouter/free";
   const savedIdleDelaySec = settings ? normalizeIdleDelaySec(settings.idleDelayMs / 1000) : 10;
@@ -50,6 +52,9 @@ export function S06Settings() {
   const [defaultMode, setDefaultMode] = useState<AdviceMode>(savedDefaultMode);
   const [defaultAssistanceDepth, setDefaultAssistanceDepth] = useState<AssistanceDepth>(savedDefaultAssistanceDepth);
   const [copilotModelId, setCopilotModelId] = useState(savedCopilotModelId);
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState(savedOllamaBaseUrl);
+  const [ollamaModelKey, setOllamaModelKey] = useState(savedOllamaModelKey);
+  const [ollamaRefreshKey, setOllamaRefreshKey] = useState(0);
   const [lmStudioModelKey, setLmStudioModelKey] = useState(savedLmStudioModelKey);
   const [orcaRouterModelId, setOrcaRouterModelId] = useState(savedOrcaRouterModelId);
   const [orcaRouterApiKey, setOrcaRouterApiKey] = useState("");
@@ -75,12 +80,14 @@ export function S06Settings() {
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
     setLmStudioModelKey(savedLmStudioModelKey);
+    setOllamaBaseUrl(savedOllamaBaseUrl);
+    setOllamaModelKey(savedOllamaModelKey);
     setOrcaRouterModelId(savedOrcaRouterModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
     setDailyTokenLimit(savedDailyTokenLimit);
     setExcludeGlobs(savedExcludeGlobs);
-  }, [savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedOrcaRouterModelId, savedIdleDelaySec, savedRequestIntervalSec, savedDailyTokenLimit, savedExcludeGlobs, viewModel?.settingsRevision]);
+  }, [savedOllamaBaseUrl, savedOllamaModelKey, savedProviderId, savedDefaultMode, savedDefaultAssistanceDepth, savedCopilotModelId, savedLmStudioModelKey, savedOrcaRouterModelId, savedIdleDelaySec, savedRequestIntervalSec, savedDailyTokenLimit, savedExcludeGlobs, viewModel?.settingsRevision]);
 
   useEffect(() => {
     if (
@@ -92,7 +99,18 @@ export function S06Settings() {
     }
   }, [providerId, lmStudioModelKey, lmStudioModelOptions]);
 
+  useEffect(() => {
+    if (providerId !== "ollama") return;
+    const timer = setTimeout(() => send({ type: "refreshOllamaModels", baseUrl: ollamaBaseUrl }), 400);
+    return () => clearTimeout(timer);
+  }, [providerId, ollamaBaseUrl, ollamaRefreshKey, send]);
+
+  let ollamaOrigin: string | undefined;
+  try { ollamaOrigin = new URL(ollamaBaseUrl).origin; } catch { /* The host reports invalid URLs. */ }
+  const ollamaModelOptions = ollamaOrigin && viewModel?.ollamaModelsBaseUrl === ollamaOrigin
+    ? viewModel?.ollamaModelOptions ?? [] : [];
   const hasPendingChanges =
+    ollamaBaseUrl !== savedOllamaBaseUrl || ollamaModelKey !== savedOllamaModelKey ||
     providerId !== savedProviderId ||
     defaultMode !== savedDefaultMode ||
     defaultAssistanceDepth !== savedDefaultAssistanceDepth ||
@@ -116,6 +134,8 @@ export function S06Settings() {
         defaultAssistanceDepth,
         copilotModelId: copilotModelId === "auto" ? undefined : copilotModelId,
         lmStudioModelKey: lmStudioModelKey || undefined,
+        ollamaBaseUrl,
+        ollamaModelKey: ollamaModelKey || undefined,
         orcaRouterModelId,
         idleDelaySec,
         requestIntervalSec,
@@ -131,6 +151,8 @@ export function S06Settings() {
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
     setCopilotModelId(savedCopilotModelId);
     setLmStudioModelKey(savedLmStudioModelKey);
+    setOllamaBaseUrl(savedOllamaBaseUrl);
+    setOllamaModelKey(savedOllamaModelKey);
     setOrcaRouterModelId(savedOrcaRouterModelId);
     setIdleDelaySec(savedIdleDelaySec);
     setRequestIntervalSec(savedRequestIntervalSec);
@@ -179,7 +201,7 @@ export function S06Settings() {
 
       <div className="settings-section">
         <span className="material-symbols-outlined">tune</span>
-        {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : "OrcaRouter"} の設定
+        {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : providerId === "ollama" ? "Ollama" : "OrcaRouter"} の設定
       </div>
       {providerId === "copilot" && (
         <div className="setting-item">
@@ -200,6 +222,30 @@ export function S06Settings() {
             options={viewModel?.copilotModelOptions ?? []}
           />
         </div>
+      )}
+
+      {providerId === "ollama" && (
+        <>
+          <div className="setting-item">
+            <label className="setting-title" htmlFor="ollama-endpoint">接続先URL</label>
+            <input id="ollama-endpoint" className="ollama-endpoint-input" type="url" value={ollamaBaseUrl} maxLength={2000}
+              onChange={event => { setOllamaBaseUrl(event.target.value); setOllamaModelKey(""); }} />
+            <div className="setting-desc">Ollamaはご自身でインストール・起動し、モデルを事前にインストールしてください。NaviComは自動起動しません。</div>
+          </div>
+          <div className="setting-item">
+            <SettingTitle icon="memory" help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
+            <div className="setting-desc" role="status">{viewModel?.ollamaStatus}</div>
+            {ollamaModelKey && !ollamaModelOptions.some(option => option.key === ollamaModelKey) && (
+              <div className="setting-desc">選択したモデルが一覧にありません。接続先を確認し、モデルを選び直してください。</div>
+            )}
+            <LmStudioModelButtonGroup value={ollamaModelKey} options={ollamaModelOptions}
+              disabled={viewModel?.isBusy ?? false} onChange={setOllamaModelKey} />
+            <button type="button" className="btn-gray lmstudio-refresh-models"
+              disabled={viewModel?.isBusy} onClick={() => setOllamaRefreshKey(key => key + 1)}>
+              <span className="material-symbols-outlined" aria-hidden="true">refresh</span>モデル一覧を更新
+            </button>
+          </div>
+        </>
       )}
 
       {providerId === "lmStudio" && (
@@ -611,6 +657,7 @@ function ProviderButtonGroup({
   const providers: Array<{ id: AiProviderId; label: string }> = [
     { id: "copilot", label: "GitHub Copilot" },
     { id: "lmStudio", label: "LM Studio" },
+    { id: "ollama", label: "Ollama" },
     { id: "orcaRouter", label: "OrcaRouter" }
   ];
   return (
@@ -797,7 +844,7 @@ function LmStudioModelButtonGroup({
   }
 
   return (
-    <div className="choice-options model-options lmstudio-model-options" role="radiogroup" aria-label="LM Studio の使用モデルを1つ選択">
+    <div className="choice-options model-options lmstudio-model-options" role="radiogroup" aria-label="使用モデルを1つ選択">
       {options.map((option) => {
         const selected = option.key === value;
         return (

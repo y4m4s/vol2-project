@@ -106,7 +106,7 @@ export function S02Main() {
       )}
 
       {/* ローカル実行は普段の利用量を出さないが、上限に当たって自動助言が止まったことは伝える。 */}
-      {providerId === "lmStudio" && usageToday?.tokenLimitExceeded && (
+      {(providerId === "lmStudio" || providerId === "ollama") && usageToday?.tokenLimitExceeded && (
         <div className="s02-usage exceeded">
           <span className="material-symbols-outlined">data_usage</span>
           <span className="s02-usage-text">

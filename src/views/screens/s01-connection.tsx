@@ -153,6 +153,11 @@ export function S01Connection() {
             </span>
             <ConnectLabel text={isConnecting("orcaRouter") ? "OrcaRouter に接続中..." : "OrcaRouter に接続"} />
           </button>
+          <button className="s01-local-connect-btn s01-provider-btn" disabled={!canConnect}
+            onClick={() => connect("ollama")}>
+            <span className="s01-connect-icon" aria-hidden="true"><ProviderLogo providerId="ollama" className="s01-connect-logo" /></span>
+            <ConnectLabel text={isConnecting("ollama") ? "Ollama に接続中..." : "Ollama に接続"} />
+          </button>
         </div>
       </div>
     </div>
@@ -161,6 +166,8 @@ export function S01Connection() {
 
 /** 3つのボタンで共通の文言。ラベル幅をこの中の最長に揃えるために使う。 */
 const CONNECT_LABELS = [
+  "Ollama に接続",
+  "Ollama に接続中...",
   "Copilot に接続",
   "Copilot に接続中...",
   "LM Studio に接続",

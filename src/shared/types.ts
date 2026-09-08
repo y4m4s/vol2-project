@@ -6,7 +6,7 @@ export type ConnectionState =
   | "restricted"
   | "unavailable";
 
-export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter";
+export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
 export type AdviceMode = "manual" | "always";
 
@@ -161,6 +161,8 @@ export interface NavigatorSettings {
   copilotModelId?: string;
   lmStudioBaseUrl: string;
   lmStudioModelKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModelKey?: string;
   orcaRouterModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
@@ -385,6 +387,10 @@ export interface NavigatorViewModel {
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
   lmStudioModelOptions: LmStudioModelOption[];
+  ollamaModelOptions?: LmStudioModelOption[];
+  ollamaModelsBaseUrl?: string;
+  providerEndpoint?: string;
+  ollamaStatus?: string;
   orcaRouterModelOptions: OrcaRouterModelOption[];
   orcaRouterApiKeyConfigured: boolean;
   lmStudioServer: LmStudioServerViewData;

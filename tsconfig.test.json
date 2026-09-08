@@ -46,6 +46,7 @@
     "test/FeedbackCoordinator.test.ts",
     "test/SerialTaskQueue.test.ts",
     "test/LmStudioClient.test.ts",
+    "test/OllamaClient.test.ts",
     "test/OrcaRouterClient.test.ts",
     "test/OrcaRouterErrorPolicy.test.ts",
     "test/OrcaRouterModelPolicy.test.ts",

@@ -1,7 +1,7 @@
 import { useApp } from "../state/AppContext";
 import { ProviderLogo } from "./ProviderLogo";
 
-type ProviderId = "copilot" | "lmStudio" | "orcaRouter";
+type ProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
 export function ConnectionActivity() {
   const { viewModel, send } = useApp();
@@ -19,13 +19,13 @@ export function ConnectionActivity() {
 
   const isConnected = viewModel.connectionState === "connected";
   const providerId: ProviderId = viewModel.providerId;
-  const providerName = providerId === "lmStudio"
+  const providerName = providerId === "ollama" ? "Ollama" : providerId === "lmStudio"
     ? "ローカル LLM"
     : providerId === "orcaRouter"
       ? "OrcaRouter"
       : "GitHub Copilot";
   const stateLabel = isConnected ? "接続中" : "切り替え中";
-  const modelLabel = viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio|OrcaRouter)\s*[·：:]\s*/, "");
+  const modelLabel = viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, "");
 
   return (
     <div className="connection-activity">

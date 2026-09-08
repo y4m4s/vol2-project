@@ -6,6 +6,7 @@ import type * as vscode from "vscode";
 import type { NavigatorSettings } from "../src/shared/types";
 
 let models: vscode.LanguageModelChat[] = [];
+let trusted = true;
 let timeoutSeconds: number | undefined;
 class TokenSource {
   public token = { isCancellationRequested: false, onCancellationRequested: () => ({ dispose() {} }) };
@@ -15,7 +16,7 @@ class TokenSource {
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
 loader._load = (id, parent, isMain) => id === "vscode" ? {
-  workspace: { isTrusted: true, getConfiguration: () => ({ get: () => timeoutSeconds }) },
+  workspace: { get isTrusted() { return trusted; }, getConfiguration: () => ({ get: () => timeoutSeconds }) },
   lm: { selectChatModels: async () => models },
   CancellationTokenSource: TokenSource,
   LanguageModelChatMessage: { User: (content: string) => ({ content }) },
@@ -79,4 +80,124 @@ test("設定した待ち時間で接続確認をキャンセルし、再送し�
   assert.equal(h.service.getLastCopilotIssue(), "timeout");
   assert.equal(token?.isCancellationRequested, true);
   assert.equal(h.calls(), 1);
+});
+
+
+function ollamaHarness() {
+  const { settings } = harness("auto");
+  let available = [{ key: "qwen3:8b", label: "qwen3:8b" }];
+  const unloaded: string[] = [];
+  let failUnload = false;
+  const service = new ConnectionService(undefined, {} as never, {} as never,
+    { isConfigured: () => false } as never, undefined, {
+      normalizeBaseUrl: (url: string) => new URL(url).origin,
+      listModels: async () => available,
+      createCompletion: async () => ({ text: "回答" }),
+      unloadModel: async (url: string, model: string) => {
+        unloaded.push(`${url}/${model}`);
+        if (failUnload) throw new Error("unload failed");
+      }
+    } as never);
+  const ollamaSettings = { ...settings, providerId: "ollama", ollamaBaseUrl: "http://localhost:11434", ollamaModelKey: "qwen3:8b" } as NavigatorSettings;
+  const generate = () => service.getConnectedModel()!.requestText({ systemPrompt: "system", userPrompt: "user", purpose: "guidance", maxOutputTokens: 128 }, new TokenSource().token as vscode.CancellationToken);
+  return { service, settings, ollamaSettings, unloaded, generate,
+    setModels: (models: typeof available) => { available = models; },
+    failUnload: () => { failUnload = true; }
+  };
+}
+
+test("Ollamaから切り替えると最後に使用したモデルだけをアンロードする", async () => {
+  const h = ollamaHarness();
+  assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, true);
+  assert.equal(h.service.getConnectedModel()?.providerId, "ollama");
+  await h.generate();
+  assert.equal((await h.service.connectAndActivate(h.settings)).activated, true);
+  assert.deepEqual(h.unloaded, ["http://localhost:11434/qwen3:8b"]);
+  assert.equal(h.service.getProviderId(), "copilot");
+  assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, true);
+  assert.equal((await h.generate()).text, "回答");
+});
+
+test("Ollamaに接続しただけならモデルをアンロードしない", async () => {
+  const h = ollamaHarness();
+  await h.service.connectAndActivate(h.ollamaSettings);
+  await h.service.connectAndActivate(h.settings);
+  assert.deepEqual(h.unloaded, []);
+});
+
+test("アンロード失敗でも別プロバイダーへの切り替えが成功する", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  const h = ollamaHarness(); h.failUnload();
+  await h.service.connectAndActivate(h.ollamaSettings);
+  await h.generate();
+  assert.equal((await h.service.connectAndActivate(h.settings)).activated, true);
+  assert.equal(h.service.getProviderId(), "copilot");
+  assert.equal(h.unloaded.length, 1);
+});
+
+test("切り替え先の接続失敗でOllamaを復元した場合はアンロードしない", async () => {
+  const h = ollamaHarness();
+  await h.service.connectAndActivate(h.ollamaSettings); await h.generate();
+  const result = await h.service.connectAndActivate({ ...h.settings, copilotModelId: "missing-model" });
+  assert.equal(result.activated, false);
+  assert.equal(h.service.getProviderId(), "ollama");
+  assert.equal(h.unloaded.length, 0);
+});
+
+test("Ollamaの保存済みモデル削除時は自動代替せず選び直す", async () => {
+  const h = ollamaHarness();
+  h.setModels([{ key: "other-model", label: "other-model" }]);
+  assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, false);
+  assert.equal(h.service.consumeOllamaModelKeyChange(), null);
+  assert.match(h.service.getOllamaStatus(), /選び直/);
+  assert.equal(h.service.getConnectedModel(), undefined);
+});
+
+test("モデルなしを通知し、未選択で1件ならモデル選択を保存用に返す", async () => {
+  const h = ollamaHarness(); h.setModels([]);
+  assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, false);
+  assert.match(h.service.getOllamaStatus(), /モデルがありません/);
+  h.setModels([{ key: "model", label: "model" }]);
+  assert.equal((await h.service.connectAndActivate({ ...h.ollamaSettings, ollamaModelKey: undefined })).activated, true);
+  assert.equal(h.service.consumeOllamaModelKeyChange(), "model");
+});
+
+
+test("接続済みOllamaモデルの削除確認後は無効な接続を復元しない", async () => {
+  const h = ollamaHarness();
+  await h.service.connectAndActivate(h.ollamaSettings);
+  h.setModels([]);
+  const result = await h.service.connectAndActivate(h.ollamaSettings);
+  assert.equal(result.activated, false);
+  assert.equal(h.service.getState(), "unavailable");
+  assert.equal(h.service.getConnectedModel(), undefined);
+});
+
+
+test("非信頼ワークスペースではOllamaへモデル取得も接続も行わない", async () => {
+  const h = ollamaHarness();
+  trusted = false;
+  try {
+    assert.deepEqual(await h.service.refreshAvailableOllamaModels("http://localhost:11434"), []);
+    assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, false);
+    assert.match(h.service.getOllamaStatus(), /信頼/);
+  } finally { trusted = true; }
+});
+
+test("Ollama一覧の更新失敗で古いモデル候補を消し、詳細をログに分離する", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  let fail = false;
+  const service = new ConnectionService(undefined, {} as never, {} as never, { isConfigured: () => false } as never, undefined, {
+    normalizeBaseUrl: (url: string) => url,
+    listModels: async () => {
+      if (fail) throw new Error("internal connection detail");
+      return [{ key: "model", label: "model" }];
+    }
+  } as never);
+  assert.equal((await service.refreshAvailableOllamaModels("http://localhost:11434")).length, 1);
+  fail = true;
+  assert.deepEqual(await service.refreshAvailableOllamaModels("http://localhost:11434"), []);
+  assert.equal(service.getOllamaModelsBaseUrl(), undefined);
+  assert.match(service.getOllamaStatus(), /接続できません/);
+  assert.doesNotMatch(service.getOllamaStatus(), /internal/);
 });
