@@ -8,6 +8,10 @@ export const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 export class OllamaClient extends OpenAICompatibleClient {
   public constructor() { super("Ollama"); }
 
+  protected override getCompletionExtraBody(): Record<string, unknown> {
+    return { reasoning_effort: "none" };
+  }
+
   public normalizeBaseUrl(value: string): string {
     let url: URL;
     try { url = new URL(value.trim()); }

@@ -51,6 +51,7 @@ export abstract class OpenAICompatibleClient {
         method: "POST",
         headers: this.createHeaders(),
         body: JSON.stringify({
+          ...this.getCompletionExtraBody(),
           model: modelKey,
           messages: request.systemPrompt
             ? [
@@ -90,6 +91,10 @@ export abstract class OpenAICompatibleClient {
       ...(resolvedModelId ? { resolvedModelId } : {}),
       ...(finishReason ? { finishReason } : {})
     };
+  }
+
+  protected getCompletionExtraBody(): Record<string, unknown> {
+    return {};
   }
 
   protected createHeaders(): Record<string, string> {

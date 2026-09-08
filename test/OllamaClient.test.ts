@@ -61,7 +61,7 @@ test("Ollamaの生成でsystem prompt、コード・追加文脈、参照メタ�
     assert.equal(String(url), `${endpoint}/v1/chat/completions`);
     assert.deepEqual(JSON.parse(String(init?.body)), {
       model: "qwen3:8b", messages: [{ role: "system", content: "制御指示" }, { role: "user", content: "コードと追加コンテキスト" }],
-      stream: false, max_tokens: 2048, navicom_referenced_files: ["src/main.ts"]
+      stream: false, max_tokens: 2048, navicom_referenced_files: ["src/main.ts"], reasoning_effort: "none"
     });
     return Response.json({ model: "qwen3:8b", choices: [{ message: { content: "回答" }, finish_reason: "stop" }], usage: { prompt_tokens: 30, completion_tokens: 5 } });
   };
@@ -71,6 +71,24 @@ test("Ollamaの生成でsystem prompt、コード・追加文脈、参照メタ�
   assert.equal(result.text, "回答");
   assert.equal(result.inputTokens, 30);
   assert.equal(result.outputTokens, 5);
+});
+
+test("Ollamaのナレッジ生成・形式修正でもThinkingを無効にし、既存の生成条件を保持する", async () => {
+  for (const purpose of ["knowledge", "flowRepair"] as const) {
+    const maxOutputTokens = purpose === "knowledge" ? 2048 : 3072;
+    globalThis.fetch = async (_url, init) => {
+      assert.deepEqual(JSON.parse(String(init?.body)), {
+        model: "qwen3:8b",
+        messages: [{ role: "system", content: "指示" }, { role: "user", content: "入力" }],
+        stream: false, max_tokens: maxOutputTokens, reasoning_effort: "none"
+      });
+      return Response.json({ choices: [{ message: { content: "回答", reasoning: "表示しない推論" } }] });
+    };
+    const result = await client.createCompletion(endpoint, "qwen3:8b", {
+      systemPrompt: "指示", userPrompt: "入力", purpose, maxOutputTokens
+    });
+    assert.equal(result.text, "回答");
+  }
 });
 
 test("Ollama生成中のキャンセルでHTTPを中断しリスナーを破棄する", async () => {
