@@ -48,9 +48,6 @@ export function S04Conversation() {
     <div className="s04-root">
       <PageHeader
         title={activeStream?.title ?? "新しい相談"}
-        subtitle={conversationHistory.length > 0
-          ? `${conversationHistory.length}件のメッセージ`
-          : "この会話専用の画面です"}
         back={{ title: "相談ホームへ戻る", ariaLabel: "相談ホームへ戻る", onClick: () => send({ type: "navigate", screen: "main" }) }}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },

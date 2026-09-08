@@ -1,8 +1,16 @@
 .s06-root {
   position: relative;
   width: 100%;
+  min-width: 0;
   height: calc(100vh - 24px);
   overflow-y: auto;
+}
+
+.s06-root input,
+.s06-root select,
+.s06-root textarea {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .s06-root.with-savebar {

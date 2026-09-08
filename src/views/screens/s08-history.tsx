@@ -26,7 +26,6 @@ export function S08History() {
       <div className="s08-sticky-top">
         <PageHeader
           title={<PageTitleWithIcon icon="history">相談履歴</PageTitleWithIcon>}
-          subtitle="過去の相談を開いて、続きから質問できます。"
           navIcons={[
             { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
             { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },

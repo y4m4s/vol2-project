@@ -1,6 +1,6 @@
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { useApp } from "../webview/state/AppContext";
-import { formatDateTime, formatRelativeTime } from "../webview/utils/formatTime";
+import { formatRelativeTime } from "../webview/utils/formatTime";
 import { ConfirmDeleteButton } from "../webview/components/ConfirmDeleteButton";
 
 export function S05KnowledgeDetail() {
@@ -30,7 +30,6 @@ export function S05KnowledgeDetail() {
       <div className="s05-sticky-top">
         <PageHeader
           title={<PageTitleWithIcon icon="auto_stories">{detail.title}</PageTitleWithIcon>}
-          subtitle={formatDateTime(detail.updatedAt)}
           actions={(
             <ConfirmDeleteButton
               className="knowledge-detail-delete-btn"
