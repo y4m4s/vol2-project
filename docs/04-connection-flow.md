@@ -12,7 +12,7 @@
 - ワークスペースが `Trusted` であること
 - ネットワーク接続が利用可能であること
 
-Free / Student ではモデルが Auto 選択に限定される。NaviCom はプラン名ではなく、`vscode.lm.selectChatModels` が実行時に返すモデルを接続可否の基準とする。詳細は [15-copilot-plan-limitation-investigation.md](15-copilot-plan-limitation-investigation.md) を参照する。
+Free / Student ではモデルが Auto 選択に限定される。NaviCom はプラン名ではなく、`vscode.lm.selectChatModels` が実行時に返すモデルを接続可否の基準とする。詳細は [GitHub Copilotの現状実装](provider/github-copilot.md) を参照する。
 
 ## 初期表示
 
