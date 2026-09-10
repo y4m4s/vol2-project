@@ -49,6 +49,7 @@ const input = {
 const answer = JSON.stringify({ kind: "advice", text: "確認の観点です。" });
 
 function harness(options: {
+  providerId?: "ollama" | "copilot";
   countTokens?: ConnectedProviderModel["countTokens"];
   persist?: () => Promise<void>;
   response?: string;
@@ -67,7 +68,7 @@ function harness(options: {
   const diagnostics: Record<string, unknown>[] = [];
   let resets = 0;
   const model: ConnectedProviderModel = {
-    providerId: options.requestError ? "orcaRouter" : "copilot", modelId: "mock", modelLabel: "mock",
+    providerId: options.requestError ? "orcaRouter" : options.providerId ?? "copilot", modelId: "mock", modelLabel: "mock",
     profileSource: { maxInputTokens: options.maxInputTokens, maxOutputTokens: options.maxOutputTokens },
     requestText: async (request) => {
       requests.push(request);
@@ -98,8 +99,37 @@ test("高強度は8192トークンを要求し、低強度は2048を維持する
       const h = harness({ response: kind === "always" ? JSON.stringify({ kind: "advice", focus: "continue", text: "次の判断です。" }) : answer });
       assert.equal((await h.service.requestGuidance({ ...input, kind, assistanceDepth })).ok, true);
       assert.equal(h.requests[0].maxOutputTokens, assistanceDepth === "high" ? 8192 : 2048);
+      assert.equal(h.requests[0].reasoningEffort, assistanceDepth === "high" ? "high" : "none");
     }
   }
+});
+
+test("実サービスは既存コード再提案を再送なしで控え、利用量と内容を含まない診断を残す", async () => {
+  const text = '「■」を5つ並べて表示させるためには、print("■" * 5)のように文字列を繰り返し表示する必要があります。';
+  const h = harness({ response: JSON.stringify({ kind: "advice", focus: "continue", text }), inputTokens: 70, outputTokens: 20 });
+  const result = await h.service.requestGuidance({ ...input, kind: "always", context: { ...input.context,
+    activeFileExcerpt: 'print("■" * 5)', additionalContext: "秘密の課題: ■を5つ表示" } });
+  assert.ok(result.ok && result.outcome === "no_advice");
+  assert.equal(result.text, "");
+  assert.equal(result.focus, "none");
+  assert.equal(h.calls(), 1);
+  assert.equal(result.usage?.outputTokens, 20);
+  assert.equal(result.responseMetadata?.attemptCount, 1);
+  assert.ok(h.diagnostics.some(item => item.event === "automatic_advice_suppressed"));
+  assert.ok(h.diagnostics.some(item => item.event === "automatic_decision" && item.outcome === "no_advice" && item.repaired === false));
+  assert.match(String(h.diagnostics.find(item => item.event === "automatic_context")?.promptHash), /^[a-f0-9]{64}$/);
+  assert.doesNotMatch(JSON.stringify(h.diagnostics), /秘密|print|■/);
+});
+
+test("形式修復後に出た既存コード再提案も抑制する", async () => {
+  const h = harness({ responses: ["invalid JSON", JSON.stringify({ kind: "advice", focus: "continue",
+    text: 'print("Hi")のように出力してください。' })] });
+  const result = await h.service.requestGuidance({ ...input, kind: "always", context: { ...input.context,
+    activeFileExcerpt: 'print("Hi")', additionalContext: "Hiを表示" } });
+  assert.ok(result.ok && result.outcome === "no_advice");
+  assert.equal(h.calls(), 2);
+  assert.equal(result.responseMetadata?.attemptCount, 2);
+  assert.ok(h.diagnostics.some(item => item.event === "automatic_decision" && item.outcome === "no_advice" && item.repaired === true));
 });
 
 test("自動回答の形式修正でもfocus契約を維持し、修正後のfocusを返す", async () => {
@@ -115,6 +145,24 @@ test("取得できたモデル固有の出力上限を超えて要求しない",
   const h = harness({ maxOutputTokens: 4096 });
   await h.service.requestGuidance({ ...input, assistanceDepth: "high" });
   assert.equal(h.requests[0].maxOutputTokens, 4096);
+});
+
+test("高設定の形式修復でもThinking指定を維持する", async () => {
+  const h = harness({ responses: ["invalid", JSON.stringify({ kind: "no_advice", focus: "none" })] });
+  await h.service.requestGuidance({ ...input, kind: "always", assistanceDepth: "high" });
+  assert.equal(h.calls(), 2);
+  assert.deepEqual(h.requests.map(r => r.reasoningEffort), ["high", "high"]);
+});
+
+test("Ollamaの低と高は同じ高相当の指示・出力枠を使いThinkingだけ切り替える", async () => {
+  const h = harness({ providerId: "ollama" });
+  await h.service.requestGuidance({ ...input, assistanceDepth: "low" });
+  await h.service.requestGuidance({ ...input, assistanceDepth: "high" });
+  assert.equal(h.requests[0].systemPrompt, h.requests[1].systemPrompt);
+  assert.equal(h.requests[0].userPrompt, h.requests[1].userPrompt);
+  assert.match(h.requests[0].systemPrompt, /High mode/);
+  assert.deepEqual(h.requests.map(r => r.maxOutputTokens), [8192, 8192]);
+  assert.deepEqual(h.requests.map(r => r.reasoningEffort), ["none", "high"]);
 });
 
 test("length終了は形式修正を再送せず、利用量を保持し接続も維持する", async () => {

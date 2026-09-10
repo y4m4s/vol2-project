@@ -31,6 +31,8 @@ const LOW_DEPTH_CONTEXT_LIMITS = {
   relatedSymbols: 8
 } as const;
 
+import { guidanceContentDepth } from "./GuidanceDepthPolicy";
+
 export class RequestPlanner {
   public prepareGuidanceRequest(
     context: GuidanceContext,
@@ -45,7 +47,7 @@ export class RequestPlanner {
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
-    const effectiveDepth: AssistanceDepth = assistanceDepth ?? "low";
+    const effectiveDepth = guidanceContentDepth(settings.providerId, assistanceDepth);
     const observation = kind === "always" && !fileExcluded && context.activeFilePath
       ? automaticObservation : undefined;
     const filteredContext: GuidanceContext = {
@@ -75,7 +77,7 @@ export class RequestPlanner {
       context: finalContext,
       requestPlan: {
         kind,
-        assistanceDepth: effectiveDepth,
+        assistanceDepth: assistanceDepth ?? "low",
         slashCommand,
         slashCommandScope,
         categories: [...this.applyPresetNotes(

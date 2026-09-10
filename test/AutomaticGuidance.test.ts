@@ -198,7 +198,45 @@ test("初回概要の既出情報を実際の履歴作成後も保持し、次�
   assert.equal(sent[1].automaticObservation?.overviewAlreadyShown, true);
   assert.equal(h.driver.automaticFocusByFile.get("/repo/app.ts"), "none");
   assert.equal(h.store.list().length, 1);
-  assert.equal(h.state.conversationHistory.length, 1);
+  assert.equal(h.state.conversationHistory.length, 2);
+  assert.equal(h.state.conversationHistory[1].focus, "none");
+  assert.equal(h.store.get(h.state.activeConversationStreamId!)!.entries.length, 2);
+});
+
+test("初回の助言不要は追加コンテキストを保持し、会話を作らず通知する", async (t) => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "", outcome: "no_advice", focus: "none" }));
+  t.after(h.dispose);
+  h.state.pendingAdditionalContext = "問題文";
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(h.state.screen, "main");
+  assert.equal(h.state.pendingAdditionalContext, "問題文");
+  assert.equal(h.state.conversationHistory.length, 0);
+  assert.equal(h.store.list().length, 0);
+  assert.match(h.state.statusMessage!.text, /追加すべき内容はありませんでした/);
+  assert.equal(h.state.requestState, "idle");
+});
+
+test("会話の助言不要は保存し、連続した助言不要は通知だけにする", async (t) => {
+  let calls = 0;
+  const h = await lifecycleHarness(async () => ++calls === 1
+    ? { ok: true, text: "最初の助言", focus: "continue" }
+    : { ok: true, text: "", outcome: "no_advice", focus: "none", usage: { inputTokens: 10, outputTokens: 12 } });
+  t.after(h.dispose);
+  await h.driver.handleAutomaticGuidance();
+  h.state.screen = "advice_detail";
+  const selected = h.state.selectedConversationId;
+  h.context.activeFileExcerpt = "const x = 2;";
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(h.state.screen, "advice_detail");
+  assert.equal(h.state.selectedConversationId, selected);
+  assert.equal(h.state.conversationHistory.length, 2);
+  assert.equal(h.state.conversationHistory[1].tokenUsage?.outputTokens, 12);
+  assert.match(h.store.get(h.state.activeConversationStreamId!)!.entries[1].text, /追加すべき内容はありませんでした/);
+  h.context.activeFileExcerpt = "const x = 3;";
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(calls, 3);
+  assert.equal(h.state.conversationHistory.length, 2);
+  assert.match(h.state.statusMessage!.text, /追加すべき内容はありませんでした/);
 });
 
 test("自動助言の収集・送信・保存ラベルが高→低の切替に追従する（全接続先）", async () => {

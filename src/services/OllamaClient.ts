@@ -1,4 +1,5 @@
 import type * as vscode from "vscode";
+import type { AiTextRequest } from "./AiRequestPolicy";
 import { MAX_MODEL_LIST_RESPONSE_BYTES, MAX_PROVIDER_MODEL_COUNT } from "./AiRequestPolicy";
 import { OpenAICompatibleClient, OpenAICompatibleError } from "./OpenAICompatibleClient";
 import type { LmStudioModelOption } from "../shared/types";
@@ -8,8 +9,8 @@ export const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 export class OllamaClient extends OpenAICompatibleClient {
   public constructor() { super("Ollama"); }
 
-  protected override getCompletionExtraBody(): Record<string, unknown> {
-    return { reasoning_effort: "none" };
+  protected override getCompletionExtraBody(request?: AiTextRequest): Record<string, unknown> {
+    return { reasoning_effort: request?.reasoningEffort ?? "none" };
   }
 
   public normalizeBaseUrl(value: string): string {

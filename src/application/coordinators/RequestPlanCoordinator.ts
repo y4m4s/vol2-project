@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { guidanceContentDepth } from "../../services/GuidanceDepthPolicy";
 import { ContextCollector } from "../../services/ContextCollector";
 import { PreparedGuidanceRequest, RequestPlanner } from "../../services/RequestPlanner";
 import { SettingsService } from "../../services/SettingsService";
@@ -122,7 +123,7 @@ export class RequestPlanCoordinator {
     const requestPlanKey = this.createKey({ ...state, contextPreview: preview });
     const requestPlanGeneration = this.cacheGeneration;
     const context = parsed.slashCommand && getSkill(parsed.slashCommand).usesProjectScope
-      ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(assistanceDepth, parsed.slashCommandScope))
+      ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), parsed.slashCommandScope))
       : await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(context, additionalContext),

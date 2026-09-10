@@ -3,6 +3,8 @@ export type AiRequestPurpose = "guidance" | "flowRepair" | "knowledge";
 export const HIGH_DEPTH_OUTPUT_TOKEN_LIMIT = 8_192;
 
 export interface AiTextRequest {
+  /** Requested by guidance depth; only providers with explicit support consume it. */
+  reasoningEffort?: "none" | "high";
   systemPrompt: string;
   userPrompt: string;
   purpose: AiRequestPurpose;

@@ -1,5 +1,5 @@
 import { buildGuidancePrompt, buildGuidancePromptMessages, type GuidancePromptMessages } from "../services/PromptBuilder";
-import { userExplicitlyRequestedImplementationCode, validateGuidanceResponse } from "../services/GuidanceResponsePolicy";
+import { guidanceResponseValidationOptions, validateGuidanceResponse } from "../services/GuidanceResponsePolicy";
 import type { ModelProfile } from "../services/ModelProfile";
 import { estimateTokens } from "./assertions";
 import type { EvalScenario } from "./fixtures";
@@ -80,10 +80,8 @@ export async function runLive(
       try {
         const response = await responder(messages, scenario);
         responseApproxTokens = estimateTokens(response);
-        const validation = validateGuidanceResponse(scenario.input.slashCommand, response, {
-          kind: scenario.input.kind,
-          allowImplementationCode: userExplicitlyRequestedImplementationCode(scenario.input.userPrompt)
-        });
+        const validation = validateGuidanceResponse(scenario.input.slashCommand, response,
+          guidanceResponseValidationOptions(scenario.input));
         checks.push({
           name: "runtime output contract",
           kind: "response",

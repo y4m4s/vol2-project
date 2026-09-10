@@ -204,7 +204,7 @@ Controller 側では、送信テキストを以下のように解析する。
 
 ### 12.2 コマンド別の文脈プリセット（実装済み）
 
-コマンドごとに送信カテゴリを最適化する。スキルレジストリ（`SkillDefinition.contextPreset`）で宣言し、`RequestPlanner` が送信前に許可リスト外のカテゴリを落とす。関連性の向上と送信トークン削減を両立する。詳細は `docs/14`。
+コマンドごとに送信カテゴリを最適化する。スキルレジストリ（`SkillDefinition.contextPreset`）で宣言し、`RequestPlanner` が送信前に許可リスト外のカテゴリを落とす。関連性の向上と送信トークン削減を両立する。詳細は [スキルレジストリと評価ハーネス](13-skill-registry-and-eval-harness.md)。
 
 現在のプリセット:
 

@@ -1,8 +1,10 @@
-# 17. OrcaRouter導入設計・実装
+# OrcaRouterの現状実装
 
 ## 目的
 
-OpenAI互換の推論ゲートウェイOrcaRouterを、GitHub Copilot、LM Studioに続く3つ目のAIプロバイダとして利用する。
+確認日: 2026-09-09。[プロバイダー一覧](README.md)
+
+OpenAI互換の推論ゲートウェイOrcaRouterを、4種類のAIプロバイダーの1つとして利用する。
 
 ## 実装構成
 
@@ -11,15 +13,18 @@ AdviceService
   -> ConnectedProviderModel.requestText()
      -> Copilot: VS Code Language Model API
      -> LM Studio: LmStudioClient
+     -> Ollama: OllamaClient
      -> OrcaRouter: OrcaRouterClient
 ```
 
-- `AiProviderId`は `"copilot" | "lmStudio" | "orcaRouter"`。
+- `AiProviderId`は `"copilot" | "lmStudio" | "ollama" | "orcaRouter"`。
 - OrcaRouterのAPIベースURLは `https://api.orcarouter.ai/v1` に固定する。
 - モデル一覧は `GET /models`、推論は `POST /chat/completions` を利用する。
 - OpenAI SDKは追加せず、既存のLM Studio連携と同様に `fetch` でOpenAI互換JSONを扱う。
 
 ## APIキー
+
+設定項目は `orcaRouterModelId`（既定 `orcarouter/free`）。接続時はキーとモデル一覧を確認し、選択モデルを解決して接続済みにする。生成probeは送らない。キー未設定なら設定画面へ案内する。接続切り替え失敗時は既存の接続を保持し、無料モデルから有料モデルへ自動移行しない。
 
 - APIキーは `vscode.ExtensionContext.secrets` のSecretStorageへ保存する。
 - `workspaceState`、ViewModel、会話履歴、ログには保存しない。
@@ -46,6 +51,8 @@ APIキー保存後は、固定のルーター選択肢として以下も表示�
 
 ## 推論と利用量
 
+モデル一覧取得のタイムアウトは10秒、推論は120秒。system/userのテキストメッセージと用途別 `max_tokens`、`stream: false` を送る。キャンセル、受信サイズ制限、リダイレクト拒否に対応する。
+
 推論リクエストには `X-OrcaRouter-Include-Cost: true` を付け、応答の以下を記録する。
 
 - `usage.prompt_tokens`
@@ -55,7 +62,7 @@ APIキー保存後は、固定のルーター選択肢として以下も表示�
 - `X-Orca-Request-Id`
 - `X-Orca-Resolved-Model`
 
-`usage.cost_usd` がある会話では「応答時点の記録料金」として表示する。これは応答生成時の計算値であり、確定請求額とは限らない。確定した請求情報の確認先はOrcaRouter側の利用履歴またはGeneration情報とする。過去データなど応答コストがない場合のみ既存の概算処理を利用する。LM Studio専用の `navicom_referenced_files` はOrcaRouterへ送信しない。
+`usage.cost_usd` がある会話では「応答時点の記録料金」として表示する。これは応答生成時の計算値であり、確定請求額とは限らない。確定した請求情報の確認先はOrcaRouter側の利用履歴またはGeneration情報とする。過去データなど応答コストがない場合のみ既存の概算処理を利用する。LM Studio・Ollamaで使う `navicom_referenced_files` はOrcaRouterへ送信しない。
 
 ## エラー分類
 
@@ -105,8 +112,16 @@ OrcaRouter利用時、回答生成とナレッジ作成のプロンプトはOrca
 - 未知コード・非対応 `Retry-After` のログ、値非依存の案内、自動再試行の抑止
 - 取得一覧にない固定ルーターの警告、再取得での解消、固定表示名・先頭配置の保持
 - リクエスト単位の4xxおよびGuardrail拒否で接続を維持すること
-- LM Studio専用パス情報を送信しないこと
+- ローカル互換クライアントの参照パス追加項目を送信しないこと
 - Webviewメッセージのプロバイダ・APIキー境界検証
 - TypeScriptコンパイル、Webview型検査、Webviewビルド
 
 実APIキーを使った通信試験は自動テストに含めない。手動試験では最初に `orcarouter/free` を使い、有料モデルを選択していないことを確認する。
+
+## 実装・検証箇所
+
+- [OrcaRouterClient.ts](../../src/services/OrcaRouterClient.ts): 固定URL、認証、応答解析、再試行
+- [OrcaRouterCredentialStore.ts](../../src/services/OrcaRouterCredentialStore.ts): SecretStorage
+- [OrcaRouterModelPolicy.ts](../../src/services/OrcaRouterModelPolicy.ts)、[OrcaRouterErrorPolicy.ts](../../src/services/OrcaRouterErrorPolicy.ts): モデルとエラーの分類
+- [OrcaRouterClient.test.ts](../../test/OrcaRouterClient.test.ts)、[OrcaRouterCredentialStore.test.ts](../../test/OrcaRouterCredentialStore.test.ts)
+- [OrcaRouterModelPolicy.test.ts](../../test/OrcaRouterModelPolicy.test.ts)、[OrcaRouterErrorPolicy.test.ts](../../test/OrcaRouterErrorPolicy.test.ts)

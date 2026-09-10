@@ -73,7 +73,20 @@ test("Ollamaの生成でsystem prompt、コード・追加文脈、参照メタ�
   assert.equal(result.outputTokens, 5);
 });
 
-test("Ollamaのナレッジ生成・形式修正でもThinkingを無効にし、既存の生成条件を保持する", async () => {
+test("Ollamaの高設定はThinkingを有効にし、低設定へ戻すと無効にする", async () => {
+  for (const reasoningEffort of ["high", "none"] as const) {
+    globalThis.fetch = async (_url, init) => {
+      assert.equal(JSON.parse(String(init?.body)).reasoning_effort, reasoningEffort);
+      return Response.json({ choices: [{ message: { content: "回答", reasoning: "内部推論" } }] });
+    };
+    const result = await client.createCompletion(endpoint, "qwen3:8b", {
+      systemPrompt: "指示", userPrompt: "入力", purpose: "guidance", reasoningEffort, maxOutputTokens: 8192
+    });
+    assert.equal(result.text, "回答");
+  }
+});
+
+test("Ollamaのナレッジ生成・明示指定のない形式修正ではThinkingを無効にする", async () => {
   for (const purpose of ["knowledge", "flowRepair"] as const) {
     const maxOutputTokens = purpose === "knowledge" ? 2048 : 3072;
     globalThis.fetch = async (_url, init) => {

@@ -2,9 +2,94 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildGuidanceFormatRepairPrompt,
+  guidanceResponseValidationOptions,
   userExplicitlyRequestedImplementationCode,
   validateGuidanceResponse
 } from "../src/services/GuidanceResponsePolicy";
+
+const repeatedAnswer = '「■」を5つ並べて表示させるためには、print("■" * 5)のように文字列を繰り返し表示する必要があります。';
+const automaticInput = {
+  kind: "always" as const,
+  context: { activeFileExcerpt: 'print("■" * 5)', additionalContext: "■を横に5つ表示", referencedFiles: [],
+    diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] }
+};
+
+test("縦並びへの改行の助言を既存コードの再提案として抑制しない", () => {
+  const text = "print関数は末尾に改行を出力するため、横一列にするには改行の扱いに着目してください。";
+  const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text }),
+    guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context,
+      activeFileExcerpt: Array(5).fill('print("■")').join('\n') } }));
+  assert.ok(result.ok && result.outcome === "advice");
+});
+
+test("再報告の既存コード再提案をモデルの生成に依存せず表示前に抑制する", () => {
+  for (const code of ['print("■" * 5)', "print( '■' * 5 )"]) {
+    for (const text of [repeatedAnswer, repeatedAnswer.replace("*", "\\*")]) {
+      const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text }),
+        guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context, activeFileExcerpt: code } }));
+      assert.deepEqual(result, { ok: true, outcome: "no_advice", text: "", focus: "none", normalized: false,
+        suppressionReason: "existingCodeProposal" });
+    }
+  }
+});
+
+test("現在のコードと違う提案・コメント・文字列中の例・関数定義を既存の呼び出しと誤認しない", () => {
+  for (const code of ['print("■")', 'print("■" * 4)', '# print("■" * 5)',
+    '// print("■" * 5)', '/* print("■" * 5) */', `example = 'print("■" * 5)'`,
+    'print("■ " * 5)']) {
+    const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text: repeatedAnswer }),
+      guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context, activeFileExcerpt: code } }));
+    assert.ok(result.ok && result.outcome === "advice", code);
+  }
+  const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text: "render()のように呼び出してください。" }),
+    guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context, activeFileExcerpt: "def render():\n    pass" } }));
+  assert.ok(result.ok && result.outcome === "advice");
+  const literalMarker = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text: 'print("")のように表示してください。' }),
+    guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context, activeFileExcerpt: 'print("<<<NAVICOM_CURSOR>>>")' } }));
+  assert.ok(literalMarker.ok && literalMarker.outcome === "advice");
+});
+
+test("手動・解説・レビュー・明示的コード依頼と別の処理を含む提案は抑制しない", () => {
+  for (const focus of ["explain", "review"] as const) {
+    const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus, text: repeatedAnswer }), guidanceResponseValidationOptions(automaticInput));
+    assert.ok(result.ok && result.outcome === "advice");
+  }
+  for (const extra of [{ kind: "manual" as const }, { userPrompt: "コードを書いてください" },
+    { context: { ...automaticInput.context, additionalContext: undefined } }]) {
+    const options = guidanceResponseValidationOptions({ ...automaticInput, ...extra });
+    const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", text: repeatedAnswer,
+      ...(options.kind === "always" ? { focus: "continue" } : {}) }), options);
+    assert.ok(result.ok && result.outcome === "advice");
+  }
+  for (const text of [repeatedAnswer + "ただしエラーの場合は入力を確認します。",
+    'print("■" * 5)のように表示し、save()を実行してください。', 'print("■" * 5)ではなく別の出力を考えましょう。',
+    'print("■" * 5)を実行して結果を記録してください。']) {
+    const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text }), guidanceResponseValidationOptions(automaticInput));
+    assert.ok(result.ok && result.outcome === "advice");
+  }
+});
+
+test("過去の編集だけにあるコードは抑制根拠にせず、現在のカーソル周辺は根拠にする", () => {
+  const current = { ...automaticInput, context: { ...automaticInput.context, activeFileExcerpt: 'print("■")',
+    recentEditsSummary: ['変更前 print("■" * 5)'] } };
+  const raw = JSON.stringify({ kind: "advice", focus: "continue", text: repeatedAnswer });
+  const first = validateGuidanceResponse(undefined, raw, guidanceResponseValidationOptions(current));
+  assert.ok(first.ok && first.outcome === "advice");
+  const second = validateGuidanceResponse(undefined, raw, guidanceResponseValidationOptions({ ...current,
+    automaticObservation: { triggerReasons: ["text_edit"], idleDurationMs: 10000, selectionPresent: true,
+      cursorExcerpt: 'print("■" * 5<<<NAVICOM_CURSOR>>>)' } }));
+  assert.ok(second.ok && second.outcome === "no_advice");
+});
+
+test("同じ呼び出しをもう一度行う必要がある助言は既存コードというだけで抑制しない", () => {
+  for (const text of ['print("Hi")のように出力する行をもう一度書いてみてください。',
+    'print("Hi")を追加してください。', 'print("Hi")のように2回表示してみてください。']) {
+    const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text }),
+      guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context,
+        activeFileExcerpt: 'print("Hi")', additionalContext: "Hiを2回表示する" } }));
+    assert.ok(result.ok && result.outcome === "advice");
+  }
+});
 
 function advice(text: string): string {
   return JSON.stringify({ kind: "advice", text });
