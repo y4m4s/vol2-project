@@ -255,6 +255,44 @@ test("会話途中の追加コンテキストを保存し、次の自動助言�
   assert.equal(h.store.get(h.state.activeConversationStreamId!)?.additionalContext, undefined);
 });
 
+test("助言リクエスト中の追加コンテキスト更新を無視し、開始前の編集内容を保持する", async (t) => {
+  let unblock!: () => void;
+  const blocked = new Promise<void>((resolve) => { unblock = resolve; });
+  let secondRequestStarted!: () => void;
+  const secondStarted = new Promise<void>((resolve) => { secondRequestStarted = resolve; });
+  let calls = 0;
+  const h = await lifecycleHarness(async () => {
+    calls++;
+    if (calls === 2) {
+      secondRequestStarted();
+      await blocked;
+    }
+    return { ok: true, text: "助言", focus: "continue" };
+  });
+  t.after(h.dispose);
+
+  await h.driver.handleAutomaticGuidance();
+  await h.driver.setAdditionalContext("開始前の要件");
+  const streamId = h.state.activeConversationStreamId!;
+  assert.equal(h.store.get(streamId)?.additionalContext, "開始前の要件");
+
+  const pending = h.driver.handleAutomaticGuidance({
+    signals: [{ reason: "text_edit", occurredAt: 1 }],
+    idleDurationMs: 100
+  });
+  await secondStarted;
+  assert.equal(h.state.requestState, "requesting_guidance");
+
+  await h.driver.setAdditionalContext("処理中の変更");
+  assert.equal(h.state.activeAdditionalContext, "開始前の要件");
+  assert.equal(h.store.get(streamId)?.additionalContext, "開始前の要件");
+
+  unblock();
+  await pending;
+  assert.equal(h.state.activeAdditionalContext, "開始前の要件");
+  assert.equal(h.store.get(streamId)?.additionalContext, "開始前の要件");
+});
+
 test("会話の助言不要は保存し、連続した助言不要は通知だけにする", async (t) => {
   let calls = 0;
   const h = await lifecycleHarness(async () => ++calls === 1

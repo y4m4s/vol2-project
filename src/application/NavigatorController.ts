@@ -493,6 +493,10 @@ export class NavigatorController implements vscode.Disposable {
 
   public async setAdditionalContext(additionalContext: string): Promise<void> {
     const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return;
+    }
+
     const normalized = normalizeAdditionalContext(additionalContext);
     if (state.screen === "main") {
       this.patchSession({
