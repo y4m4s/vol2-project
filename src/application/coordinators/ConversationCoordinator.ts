@@ -194,9 +194,14 @@ export class ConversationCoordinator {
       saved = await this.store.saveStream({ ...latestRecord, title: recordToSave.title });
     }
     await this.enforceRetentionLimit();
+    const latestState = this.host.getState();
     this.host.patchSession({
       activeConversationStreamId: saved.id,
-      activeAdditionalContext: saved.additionalContext,
+      // 追加コンテキスト編集中に古い保存が完了しても、より新しい入力へ巻き戻さない。
+      ...(latestState.activeConversationStreamId === saved.id
+        && normalizeAdditionalContext(latestState.activeAdditionalContext) === recordToSave.additionalContext
+        ? { activeAdditionalContext: saved.additionalContext }
+        : {}),
       conversationStreams: this.store.list()
     });
   }

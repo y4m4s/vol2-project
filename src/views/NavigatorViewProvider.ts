@@ -162,7 +162,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             this.controller.searchKnowledge(message.query);
             return;
           case "setAdditionalContext":
-            this.controller.setAdditionalContext(message.additionalContext);
+            await this.controller.setAdditionalContext(message.additionalContext);
             return;
           default:
             return;

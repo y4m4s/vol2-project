@@ -38,6 +38,7 @@ interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanc
 interface Driver {
   handleAutomaticGuidance(event?: AutoAdviceTriggerEvent): Promise<void>;
   runGuidanceRequest(options: Options, state: NavigatorSessionState): Promise<{ ok: boolean }>;
+  setAdditionalContext(additionalContext: string): Promise<void>;
 }
 
 // Keep the real scheduler, request gate, controller execution and stream lifecycle.
@@ -78,13 +79,19 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
       resetAutomaticDiagnosticsBaseline: () => {}, automaticEditorSnapshot: () => snapshot, automaticDocumentSnapshot: () => "v1" },
     requestPlanner: new RequestPlanner(), requestPlanCoordinator: { externalize: (prepared: PreparedGuidanceRequest) => prepared },
     knowledgeStore: { findReusable: () => [] }, adviceService: { requestGuidance: respond },
-    rememberSelectionContext: (preview: unknown) => preview, getGuidanceAdditionalContext: () => undefined,
+    rememberSelectionContext: (preview: unknown) => preview,
+    getGuidanceAdditionalContext: (currentState: NavigatorSessionState) => currentState.screen === "main"
+      ? currentState.pendingAdditionalContext ?? currentState.activeAdditionalContext
+      : currentState.activeAdditionalContext,
     collectGuidanceContextForDepth: async () => context
   });
   const coordinator = new ConversationCoordinator(store, {} as never, {
     getState: () => state, patchSession: (patch) => driver.patchSession(patch), resolveHomeScreen: () => "main",
     resetAutomaticFingerprint: () => { driver.automaticFingerprints.clear(); driver.automaticFocusByFile.clear(); driver.automaticOverviewByFile.clear(); },
-    createGuidanceCard: (entry) => driver.createGuidanceCard(entry), getGuidanceAdditionalContext: () => undefined
+    createGuidanceCard: (entry) => driver.createGuidanceCard(entry),
+    getGuidanceAdditionalContext: (currentState) => currentState.screen === "main"
+      ? currentState.pendingAdditionalContext ?? currentState.activeAdditionalContext
+      : currentState.activeAdditionalContext
   });
   Object.assign(driver, { conversationCoordinator: coordinator });
   driver.patchSession({});
@@ -214,6 +221,38 @@ test("初回の助言不要は追加コンテキストを保持し、会話を�
   assert.equal(h.store.list().length, 0);
   assert.match(h.state.statusMessage!.text, /追加すべき内容はありませんでした/);
   assert.equal(h.state.requestState, "idle");
+});
+
+test("会話途中の追加コンテキストを保存し、次の自動助言から使用する", async (t) => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async (input) => {
+    sent.push(input);
+    return { ok: true, text: "助言", focus: "continue" };
+  });
+  t.after(h.dispose);
+
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(h.state.screen, "conversation");
+  assert.equal(sent.length, 1);
+
+  await h.driver.setAdditionalContext("  変更後の要件\r\n横一列で表示  ");
+  assert.equal(sent.length, 1, "追加コンテキストの編集だけではAIを呼び出さない");
+  assert.equal(h.state.activeAdditionalContext, "変更後の要件\n横一列で表示");
+  assert.equal(
+    h.store.get(h.state.activeConversationStreamId!)?.additionalContext,
+    "変更後の要件\n横一列で表示"
+  );
+
+  await h.driver.handleAutomaticGuidance({
+    signals: [{ reason: "text_edit", occurredAt: 1 }],
+    idleDurationMs: 100
+  });
+  assert.equal(sent.length, 2);
+  assert.equal(sent[1].context.additionalContext, "変更後の要件\n横一列で表示");
+
+  await h.driver.setAdditionalContext("   ");
+  assert.equal(h.state.activeAdditionalContext, undefined);
+  assert.equal(h.store.get(h.state.activeConversationStreamId!)?.additionalContext, undefined);
 });
 
 test("会話の助言不要は保存し、連続した助言不要は通知だけにする", async (t) => {

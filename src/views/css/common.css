@@ -1192,20 +1192,11 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   overflow-y: auto;
 }
 
-.additional-context-panel.readonly {
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 92%, var(--vscode-input-background));
-}
-
-.additional-context-readonly {
-  max-height: 150px;
-  overflow-y: auto;
-  padding: 6px 0 2px;
-  color: var(--vscode-foreground);
-  font-size: 0.86em;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  cursor: not-allowed;
+.additional-context-note {
+  margin-top: 5px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.74em;
+  line-height: 1.4;
 }
 
 /* --- リスト --- */

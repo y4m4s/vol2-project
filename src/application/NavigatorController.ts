@@ -491,14 +491,33 @@ export class NavigatorController implements vscode.Disposable {
     });
   }
 
-  public setAdditionalContext(additionalContext: string): void {
+  public async setAdditionalContext(additionalContext: string): Promise<void> {
     const state = this.sessionStore.getState();
-    if (state.screen !== "main") {
+    const normalized = normalizeAdditionalContext(additionalContext);
+    if (state.screen === "main") {
+      this.patchSession({
+        pendingAdditionalContext: normalized
+      });
       return;
     }
+
+    if (state.screen !== "conversation" && state.screen !== "advice_detail") {
+      return;
+    }
+
+    if (normalized === state.activeAdditionalContext) {
+      return;
+    }
+
     this.patchSession({
-      pendingAdditionalContext: normalizeAdditionalContext(additionalContext)
+      activeAdditionalContext: normalized
     });
+
+    // 空の新規相談は、最初の質問が送られるまでメモリ上の下書きとして保持する。
+    // 既存の相談では、画面を移動しても編集内容が残るよう会話単位で保存する。
+    if (state.activeConversationStreamId && state.conversationHistory.length > 0) {
+      await this.persistActiveConversationState();
+    }
   }
 
   public searchKnowledge(query: string): void {

@@ -4,8 +4,7 @@ import type { AutoAdviceState } from "../../../shared/types";
 import { useApp } from "../state/AppContext";
 import {
   AdditionalContextButton,
-  AdditionalContextPanel,
-  AdditionalContextReadonlyPanel
+  AdditionalContextPanel
 } from "./AdditionalContextComposer";
 import {
   getMatchingSlashCommands,
@@ -31,11 +30,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const isComposingRef = useRef(false);
   const textareaRef = useAutoResizeTextarea(inputText);
   const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
-  const isConversationComposer = viewModel?.screen === "conversation" || viewModel?.screen === "advice_detail";
-  const isAdditionalContextReadonly = isConversationComposer && activeAdditionalContext.trim().length > 0;
-  const hasAdditionalContext = (
-    isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft
-  ).trim().length > 0;
+  const hasAdditionalContext = additionalContextDraft.trim().length > 0;
 
   useEffect(() => {
     setInputText("");
@@ -272,20 +267,13 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
         {/* スラッシュ候補・追加コンテキストは入力ボックスの上に浮かせ、main の内容を押し上げない */}
         <div className="chat-input-overlays">
         {isAdditionalContextOpen && (
-          isAdditionalContextReadonly ? (
-            <AdditionalContextReadonlyPanel
-              id="chat-additional-context"
-              value={activeAdditionalContext}
-              onClose={() => setAdditionalContextOpen(false)}
-            />
-          ) : (
-            <AdditionalContextPanel
-              id="chat-additional-context"
-              value={additionalContextDraft}
-              onChange={setAdditionalContextDraft}
-              onClose={() => setAdditionalContextOpen(false)}
-            />
-          )
+          <AdditionalContextPanel
+            id="chat-additional-context"
+            value={additionalContextDraft}
+            disabled={isBusy}
+            onChange={setAdditionalContextDraft}
+            onClose={() => setAdditionalContextOpen(false)}
+          />
         )}
 
         <SlashCommandSuggest
@@ -299,7 +287,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       </div>
 
       <div className="chat-input-wrap">
-        <RequestPlanDisclosure userPrompt={inputText} additionalContext={isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft} />
+        <RequestPlanDisclosure userPrompt={inputText} additionalContext={additionalContextDraft} />
         {contextPreview.selectedTextPreview && (
           <div className="chat-selected-context" title={contextPreview.selectedTextPreview}>
             <span className="material-symbols-outlined">code</span>
@@ -327,26 +315,24 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
 
         <div className="chat-input-footer">
           <div className="chat-input-footer-left">
-            {(!isConversationComposer || hasAdditionalContext) && (
-              <AdditionalContextButton
-                open={isAdditionalContextOpen}
-                hasValue={hasAdditionalContext}
-                readOnly={isAdditionalContextReadonly}
-                onClick={() =>
-                  setAdditionalContextOpen((open) => {
-                    const next = !open;
-                    if (next) {
-                      // 追加コンテキストを開くときはスラッシュ候補を閉じる(同時表示を防ぐ)。
-                      // `/...` 入力中の自動オープンも抑止するため dismissed に積む。
-                      setSlashCommandOpen(false);
-                      setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
-                      setEnterSendConfirmation(undefined);
-                    }
-                    return next;
-                  })
-                }
-              />
-            )}
+            <AdditionalContextButton
+              open={isAdditionalContextOpen}
+              hasValue={hasAdditionalContext}
+              disabled={isBusy}
+              onClick={() =>
+                setAdditionalContextOpen((open) => {
+                  const next = !open;
+                  if (next) {
+                    // 追加コンテキストを開くときはスラッシュ候補を閉じる(同時表示を防ぐ)。
+                    // `/...` 入力中の自動オープンも抑止するため dismissed に積む。
+                    setSlashCommandOpen(false);
+                    setDismissedSlashInput(slashCommandQuery !== undefined ? inputText : undefined);
+                    setEnterSendConfirmation(undefined);
+                  }
+                  return next;
+                })
+              }
+            />
             <SlashCommandButton
               open={slashCommandMenuOpen}
               disabled={isBusy}
@@ -411,7 +397,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
               onClick={() => send({
                 type: "setMode",
                 mode: isAlways ? "manual" : "always",
-                additionalContext: isAdditionalContextReadonly ? activeAdditionalContext : additionalContextDraft
+                additionalContext: additionalContextDraft
               })}
             >
               <span className="material-symbols-outlined">bolt</span>
