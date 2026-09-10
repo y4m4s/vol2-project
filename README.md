@@ -5,7 +5,7 @@
 **ペアプログラミングのナビゲーター役を担う、VS Code 向け AI 学習支援拡張機能**
 
 NaviCom は、コーディング中の詰まりを自力で解決する力を育てることを目的とした VS Code 拡張機能です。  
-GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
+GitHub Copilot、LM Studio、Ollama、OrcaRouterを利用し、「答えの代行」ではなく「考え方・観点・切り分け方」の提示に特化したアドバイスを提供します。
 
 ---
 
@@ -28,7 +28,7 @@ GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」で�
 
 ### 相談履歴の保存・再閲覧
 
-相談ごとに独立した履歴が作成され、質問と回答を専用画面へ保存して後から再閲覧できます。コンテキスト増大や過去回答への過度な依存を防ぐため、各AIリクエストはステートレスです。履歴画面から同じ相談へ戻って質問を追加しても、過去の発言はAI入力へ自動送信されません。必要な内容は現在の質問または追加コンテキストへ含めてください。回答に表示された参照ファイルは、一覧からクリックしてVS Codeのエディタで開けます。履歴とナレッジの削除は、誤操作を防ぐため二度押しで確定します。
+相談ごとに独立した履歴が作成され、質問と回答を専用画面へ保存して後から再閲覧できます。コンテキスト増大や過去回答への過度な依存を防ぐため、各AIリクエストはステートレスです。履歴画面から同じ相談へ戻って質問を追加しても、過去の発言はAI入力へ自動送信されません。必要な内容は現在の質問または追加コンテキストへ含めてください。追加コンテキストは相談途中でも編集でき、変更内容は次回の質問または自動助言から使用されます。回答に表示された参照ファイルは、一覧からクリックしてVS Codeのエディタで開けます。履歴とナレッジの削除は、誤操作を防ぐため二度押しで確定します。
 
 ### 常時モードと必要時モード
 
@@ -51,7 +51,7 @@ GitHub Copilot、LM Studio、OrcaRouterを利用し、「答えの代行」で�
 |------|------|
 | 拡張機能ホスト | TypeScript / VS Code Extension API |
 | UI | React / WebviewView |
-| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / OrcaRouter |
+| AI 呼び出し | VS Code Language Model API (GitHub Copilot) / LM Studio / Ollama / OrcaRouter |
 | ローカルストレージ | SQLite (sql.js) |
 | ビルド | esbuild / TypeScript Compiler |
 
@@ -156,6 +156,38 @@ NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定し�
 
 応答の `usage.cost_usd` は「応答時点の記録料金」として表示します。この値は応答生成時に計算された情報であり、確定請求額とは限りません。確定した請求情報はOrcaRouter側の利用履歴、または[`GET /v1/generation`](https://docs.orcarouter.ai/operations/per-request-cost)で確認してください。`usage.cost_usd` がない応答や過去データは、NaviComの参考料金概算を表示します。
 
+## 実装ドキュメント
+
+プロバイダーごとの接続・モデル選択・推論・設定・制約は [AIプロバイダーの実装](docs/provider/README.md) にまとめています。
+
+- [LM Studio](docs/provider/lm-studio.md)
+- [Ollama](docs/provider/ollama.md)
+- [GitHub Copilot](docs/provider/github-copilot.md)
+- [OrcaRouter](docs/provider/orca-router.md)
+
+常時モードの役割選択・観測情報・古い回答の抑止は [自動助言のフォーカス判定](docs/15-automatic-guidance-focus.md) を参照してください。
+
+機能設計書は `docs/01`〜`docs/15` の連番で管理し、プロバイダー文書は `docs/provider` に分離しています。
+
 ## 商標について
 
 GitHubおよびGitHub CopilotはGitHub, Inc.の商標です。LM StudioはElement Labs, Inc.の商標です。OrcaRouterは各権利者に帰属する商標です。NaviComはこれら各社が開発、承認、後援する公式製品ではありません。プロバイダーのブランドアセットは、対応する接続先を識別する目的に限って使用しています。
+
+### Ollama
+
+Ollamaはユーザー自身でインストール・起動し、使用するモデルを事前にインストールしてください。
+接続画面または設定画面で **Ollama** を選択すると、`GET /api/tags` からインストール済みモデルを取得します。
+設定画面で接続先URL（既定: `http://localhost:11434`）とモデルを選び、設定を保存してください。
+別ホスト・ポートのHTTP(S)ルートURLも指定できます。指定先へコードのコンテキストが送信されます。
+設定はワークスペースごとに保存され、VS Codeの再起動後にも復元されます。
+モデルを追加・削除した場合は「モデル一覧を更新」を使用してください。保存済みモデルが削除されていた場合は選び直します。
+
+NaviComはOllamaのHTTP APIのみを使用し、プロセスの起動・終了、モデルのダウンロードは行いません。
+別プロバイダーへの切り替え成功時、最後に生成で使用したモデルへ `POST /api/generate`（`keep_alive: 0`）を送信します。
+アンロードは最大2秒のbest-effortで、失敗しても切り替えは継続し、Extension Hostログに記録します。
+終了時は終了処理を遅らせないためアンロードを行わず、Ollama側の保持時間に従います。
+
+生成はLM Studioと共通のOpenAI互換Chat Completions処理を利用します。
+現行NaviComのLM Studioと同様、回答は生成完了後に表示します（逐次ストリーミング表示は未対応）。
+system prompt・作業中コード・追加コンテキスト・ナレッジ等は通常の生成経路で組み立てます。
+会話履歴の保存・再閲覧にも対応しますが、既存仕様どおり過去の会話を毎回の入力に自動追加しません。

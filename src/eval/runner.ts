@@ -1,8 +1,9 @@
 import { buildGuidancePrompt, buildGuidancePromptMessages, type GuidancePromptMessages } from "../services/PromptBuilder";
-import { userExplicitlyRequestedImplementationCode, validateGuidanceResponse } from "../services/GuidanceResponsePolicy";
+import { guidanceResponseValidationOptions, validateGuidanceResponse } from "../services/GuidanceResponsePolicy";
 import type { ModelProfile } from "../services/ModelProfile";
 import { estimateTokens } from "./assertions";
 import type { EvalScenario } from "./fixtures";
+import type { AutomaticGuidanceFocus } from "../shared/types";
 
 /**
  * 評価ランナー。
@@ -21,6 +22,7 @@ export interface CheckOutcome {
 }
 
 export interface ScenarioResult {
+  focus?: AutomaticGuidanceFocus;
   id: string;
   description: string;
   promptApproxTokens: number;
@@ -68,7 +70,8 @@ export async function runLive(
 
     let responseApproxTokens: number | undefined;
     let responseDurationMs: number | undefined;
-    if (scenario.responseChecks) {
+    let focus: AutomaticGuidanceFocus | undefined;
+    if (scenario.responseChecks || scenario.expectedFocus) {
       const messages = buildGuidancePromptMessages({
         ...scenario.input,
         modelProfile: modelProfile ?? scenario.input.modelProfile
@@ -77,18 +80,24 @@ export async function runLive(
       try {
         const response = await responder(messages, scenario);
         responseApproxTokens = estimateTokens(response);
-        const validation = validateGuidanceResponse(scenario.input.slashCommand, response, {
-          kind: scenario.input.kind,
-          allowImplementationCode: userExplicitlyRequestedImplementationCode(scenario.input.userPrompt)
-        });
+        const validation = validateGuidanceResponse(scenario.input.slashCommand, response,
+          guidanceResponseValidationOptions(scenario.input));
         checks.push({
           name: "runtime output contract",
           kind: "response",
           passed: validation.ok,
           detail: validation.ok ? validation.outcome : validation.reason
         });
+        if (validation.ok) {
+          focus = validation.focus;
+          if (scenario.expectedFocus) checks.push({
+            name: "automatic focus", kind: "response",
+            passed: focus !== undefined && scenario.expectedFocus.includes(focus),
+            detail: `expected ${scenario.expectedFocus.join("/")}, received ${focus ?? "missing"}`
+          });
+        }
         if (validation.ok && validation.outcome === "advice") {
-          checks.push(...runChecks(scenario.responseChecks, validation.text, "response"));
+          checks.push(...runChecks(scenario.responseChecks ?? [], validation.text, "response"));
         }
       } catch {
         checks.push({ name: "provider response", kind: "response", passed: false, detail: "request failed" });
@@ -103,6 +112,7 @@ export async function runLive(
       promptApproxTokens: estimateTokens(prompt),
       responseApproxTokens,
       responseDurationMs,
+      focus,
       checks,
       passed: checks.every((check) => check.passed)
     });
@@ -136,6 +146,9 @@ export function formatReport(report: EvalReport): string {
   }
 
   lines.push(`Total: ${report.total}  Passed: ${report.passed}  Failed: ${report.failed}`);
+  const routed = report.results.filter((result) => result.focus);
+  if (routed.length) lines.push("Focus: " + ["continue", "review", "explain", "overview", "none"]
+    .map((focus) => `${focus}=${routed.filter((result) => result.focus === focus).length}`).join(", "));
   return lines.join("\n");
 }
 

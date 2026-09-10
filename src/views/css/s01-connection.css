@@ -104,145 +104,77 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  justify-content: center;
+  gap: 4px;
 }
 
-/* 3つの接続ボタンで、内容を中央寄せしつつアイコンとラベルの位置を縦にそろえる */
-.s01-connect-btn,
-.s01-local-connect-btn {
-  display: inline-flex;
-  align-items: center;
+.s01-provider-options {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 0 12px;
-  min-width: 210px;
-  padding: 9px 18px;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  gap: 16px;
+  padding: 12px 0;
 }
 
 .s01-provider-btn {
-  border-width: 2px;
-  border-style: solid;
+  --provider-accent: var(--vscode-textLink-foreground);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  flex: 0 0 52px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 12px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
 }
 
-.s01-provider-btn--copilot {
-  border-color: #464646;
-  color: #ffffff;
-  background: #464646;
+.s01-provider-btn.lmStudio { --provider-accent: #8b5cf6; }
+.s01-provider-btn.ollama { --provider-accent: #ffffff; }
+.s01-provider-btn.orcaRouter { --provider-accent: #2d7df6; }
+
+.s01-provider-btn:hover:not(:disabled) {
+  opacity: 1;
+  border-color: var(--provider-accent);
+  background: var(--vscode-toolbar-hoverBackground);
 }
 
-.s01-connect-btn {
-  margin-top: 0;
+.s01-provider-btn:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 3px;
 }
 
 .s01-provider-btn.busy:disabled {
   opacity: 0.82;
+  border-color: var(--provider-accent);
 }
 
-.s01-local-connect-btn {
-  margin: 0;
-  border-color: var(--vscode-panel-border);
-  color: var(--vscode-foreground);
-  background: var(--vscode-input-background);
-}
-
-.s01-local-connect-btn.s01-provider-btn--lm-studio {
-  border-color: #8b5cf6;
-  color: #ffffff;
-  background: #8b5cf6;
-}
-
-.s01-local-connect-btn.s01-provider-btn--orca-router {
-  border-color: #2D7DF6;
-  color: #ffffff;
-  background: #2D7DF6;
-}
-
-.s01-local-connect-btn:hover:not(:disabled) {
-  background: var(--vscode-toolbar-hoverBackground);
-}
-
-.s01-provider-btn--copilot:hover:not(:disabled) {
-  opacity: 1;
-  background: #292929;
-}
-
-.s01-provider-btn--lm-studio:hover:not(:disabled) {
-  opacity: 1;
-  background: #7c3aed;
-}
-
-.s01-provider-btn--orca-router:hover:not(:disabled) {
-  opacity: 1;
-  background: #2655d8;
-}
-
-.s01-provider-btn.s01-provider-btn--copilot .provider-logo-theme-black,
-.s01-provider-btn.s01-provider-btn--orca-router .provider-logo-theme-black {
-  display: none;
-}
-
-.s01-provider-btn.s01-provider-btn--copilot .provider-logo-theme-white,
-.s01-provider-btn.s01-provider-btn--orca-router .provider-logo-theme-white {
-  display: block;
+.s01-provider-btn.ollama:hover:not(:disabled),
+.s01-provider-btn.ollama:focus-visible,
+.s01-provider-btn.ollama.busy:disabled {
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
 }
 
 body.vscode-high-contrast .s01-provider-btn {
   border-color: var(--vscode-contrastBorder, var(--vscode-foreground));
 }
 
-.s01-connect-icon {
-  flex: 0 0 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-}
-
-.s01-connect-label {
-  display: grid;
-  min-width: 0;
-  text-align: left;
-}
-
-.s01-connect-label-text,
-.s01-connect-label-sizer {
-  grid-area: 1 / 1;
-}
-
-/* 最長の文言ぶんの幅だけを確保する非表示要素 */
-.s01-connect-label-sizer {
-  min-width: 0;
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.s01-connect-label-sizer > span {
-  display: block;
-  white-space: nowrap;
-}
-
 .s01-connect-logo {
   display: block;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
   object-fit: contain;
 }
 
-.s01-connect-logo-symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: none;
-  font-size: 18px;
-  line-height: 1;
+.s01-connect-status {
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
 }
 
 @keyframes s01-spin {
@@ -250,16 +182,18 @@ body.vscode-high-contrast .s01-provider-btn {
 }
 
 .s01-spin {
+  font-size: 26px;
   animation: s01-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s01-spin {
+    animation: none;
+  }
 }
 
 @media (max-width: 520px) {
   .s01-panel {
     padding: 24px 16px;
-  }
-
-  .s01-connect-btn,
-  .s01-local-connect-btn {
-    width: 100%;
   }
 }

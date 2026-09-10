@@ -21,6 +21,8 @@ export interface SettingsInput {
   defaultAssistanceDepth: AssistanceDepth;
   copilotModelId?: string;
   lmStudioModelKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModelKey?: string;
   orcaRouterModelId?: string;
   idleDelaySec: number;
   requestIntervalSec: number;
@@ -64,7 +66,7 @@ export class ConnectionSettingsCoordinator {
     if (!model) {
       return undefined;
     }
-    const providerLabel = model.providerId === "lmStudio"
+    const providerLabel = model.providerId === "ollama" ? "Ollama" : model.providerId === "lmStudio"
       ? "LM Studio"
       : model.providerId === "orcaRouter"
         ? "OrcaRouter"
@@ -111,6 +113,9 @@ export class ConnectionSettingsCoordinator {
       : currentSettings;
     const connectionResult = await this.connectionService.connectAndActivate(settings);
     const connectionState = connectionResult.connectionState;
+    if (settings.providerId === "ollama" && !connectionResult.activated) {
+      await this.applyLocalModelKeyChange(await this.saveSettingsWithRevision(settings));
+    }
     if (!connectionResult.activated && settings.providerId === "lmStudio") {
       const fallback = await this.restoreCopilotAfterLmStudioFailure(settings, connectionResult);
       this.host.patchSession({
@@ -125,7 +130,7 @@ export class ConnectionSettingsCoordinator {
       return;
     }
     const effectiveSettings = connectionResult.activated
-      ? await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings))
+      ? await this.applyLocalModelKeyChange(await this.saveSettingsWithRevision(settings))
       : currentSettings;
 
     if (connectionResult.activated) {
@@ -144,7 +149,7 @@ export class ConnectionSettingsCoordinator {
     this.host.patchSession({
       connectionState,
       requestState: "idle",
-      screen: resolveHomeScreen(connectionState),
+      screen: settings.providerId === "ollama" ? "settings" : resolveHomeScreen(connectionState),
       statusMessage: this.buildConnectionAttemptStatusMessage(settings.providerId, connectionResult)
     });
   }
@@ -158,6 +163,8 @@ export class ConnectionSettingsCoordinator {
       defaultAssistanceDepth: input.defaultAssistanceDepth,
       copilotModelId: input.copilotModelId,
       lmStudioModelKey: input.lmStudioModelKey,
+      ollamaBaseUrl: input.ollamaBaseUrl ?? previousSettings.ollamaBaseUrl,
+      ollamaModelKey: input.ollamaModelKey,
       orcaRouterModelId: input.orcaRouterModelId,
       idleDelayMs: input.idleDelaySec * 1000,
       requestIntervalMs: input.requestIntervalSec * 1000,
@@ -174,6 +181,8 @@ export class ConnectionSettingsCoordinator {
       previousSettings.providerId !== nextSettings.providerId ||
       previousSettings.copilotModelId !== nextSettings.copilotModelId ||
       previousSettings.lmStudioModelKey !== nextSettings.lmStudioModelKey ||
+      previousSettings.ollamaBaseUrl !== nextSettings.ollamaBaseUrl ||
+      previousSettings.ollamaModelKey !== nextSettings.ollamaModelKey ||
       previousSettings.orcaRouterModelId !== nextSettings.orcaRouterModelId;
     const connectionSettingChanged =
       modelSettingChanged ||
@@ -288,7 +297,11 @@ export class ConnectionSettingsCoordinator {
     return saved;
   }
 
-  private async applyLmStudioModelKeyChange(settings: NavigatorSettings): Promise<NavigatorSettings> {
+  private async applyLocalModelKeyChange(settings: NavigatorSettings): Promise<NavigatorSettings> {
+    if (settings.providerId === "ollama") {
+      const change = this.connectionService.consumeOllamaModelKeyChange();
+      return change === undefined ? settings : this.saveSettingsWithRevision({ ...settings, ollamaModelKey: change ?? undefined });
+    }
     if (settings.providerId !== "lmStudio") {
       this.connectionService.consumeLmStudioModelKeyChange();
       return settings;
@@ -309,6 +322,9 @@ export class ConnectionSettingsCoordinator {
     providerId: AiProviderId,
     connectionState: ConnectionState
   ): NavigatorStatusMessage {
+    if (providerId === "ollama") {
+      return { kind: connectionState === "connected" ? "info" : "warning", text: this.connectionService.getOllamaStatus() };
+    }
     if (providerId === "orcaRouter") {
       if (!vscode.workspace.isTrusted) {
         return { kind: "error", text: "Workspace Trust を有効にしてから OrcaRouter に接続してください。" };
@@ -442,8 +458,11 @@ export class ConnectionSettingsCoordinator {
 
     const connectionResult = await this.connectionService.connectAndActivate(settings);
     const connectionState = connectionResult.connectionState;
+    if (settings.providerId === "ollama" && !connectionResult.activated) {
+      await this.applyLocalModelKeyChange(await this.saveSettingsWithRevision(settings));
+    }
     if (connectionResult.activated) {
-      const effectiveSettings = await this.applyLmStudioModelKeyChange(await this.saveSettingsWithRevision(settings));
+      const effectiveSettings = await this.applyLocalModelKeyChange(await this.saveSettingsWithRevision(settings));
       this.host.patchSession({
         connectionState,
         requestState: "idle",

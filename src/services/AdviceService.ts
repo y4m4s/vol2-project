@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
+import { createHash } from "node:crypto";
+import { guidanceContentDepth } from "./GuidanceDepthPolicy";
 import {
   AdviceMode,
+  AutomaticGuidanceObservation,
+  AutomaticGuidanceFocus,
   AssistanceDepth,
   ConnectionState,
   ConversationEntry,
@@ -14,16 +18,16 @@ import {
   FeedbackTendencySummary
 } from "../shared/types";
 import { ConnectedProviderModel, ConnectionService, ProviderTextResponse } from "./ConnectionService";
-import { LmStudioError } from "./LmStudioClient";
+import { OpenAICompatibleError } from "./OpenAICompatibleClient";
 import { OrcaRouterError } from "./OrcaRouterClient";
 import { classifyOrcaRouterFailure, orcaRouterAccessMessage, requestRejectionMessage, retryAfterSeconds } from "./OrcaRouterErrorPolicy";
 import { deriveModelProfile } from "./ModelProfile";
 import {
   buildGuidanceFormatRepairPrompt,
-  userExplicitlyRequestedImplementationCode,
+  guidanceResponseValidationOptions,
   validateGuidanceResponse
 } from "./GuidanceResponsePolicy";
-import { buildGuidancePromptMessages, formatReferencedFileReason } from "./PromptBuilder";
+import { buildGuidancePromptMessages, formatReferencedFileReason, GUIDANCE_POLICY_REVISION } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
 import { waitWithFallback } from "./BoundedWait";
@@ -40,6 +44,7 @@ import {
 const TOKEN_COUNT_TIMEOUT_MS = 1_000;
 
 export interface GuidanceRequestSuccess {
+  focus?: AutomaticGuidanceFocus;
   ok: true;
   text: string;
   outcome?: "advice" | "no_advice";
@@ -61,6 +66,7 @@ export interface GuidanceRequestFailure {
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
 
 export interface GuidanceRequestInput {
+  automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   referencedFilePaths?: string[];
   kind: GuidanceKind;
@@ -116,10 +122,20 @@ export class AdviceService {
       if (!(error instanceof AiInputLimitError)) throw error;
       return { ok: false, connectionState: this.connectionService.getState(), message: error.message };
     }
+    if (input.kind === "always" && input.context.additionalContext?.trim()) {
+      this.logDiagnostic({ event: "automatic_context", policyRevision: GUIDANCE_POLICY_REVISION,
+        promptHash: createHash("sha256").update(JSON.stringify(prompt)).digest("hex"),
+        activeCodeHash: createHash("sha256").update(input.context.activeFileExcerpt ?? "").digest("hex"),
+        activeCodeChars: input.context.activeFileExcerpt?.length ?? 0,
+        cursorCodeChars: input.automaticObservation?.cursorExcerpt?.length ?? 0,
+        selectedChars: input.context.selectedText?.length ?? 0,
+        additionalContextChars: input.context.additionalContext.length });
+    }
     const request: AiTextRequest = {
       ...prompt,
       purpose: "guidance",
-      maxOutputTokens: input.assistanceDepth === "high" ? HIGH_DEPTH_OUTPUT_TOKEN_LIMIT : input.slashCommand === "flow"
+      reasoningEffort: input.assistanceDepth === "high" ? "high" : "none",
+      maxOutputTokens: guidanceContentDepth(this.connectionService.getConnectedModel()?.providerId, input.assistanceDepth) === "high" ? HIGH_DEPTH_OUTPUT_TOKEN_LIMIT : input.slashCommand === "flow"
         ? AI_OUTPUT_TOKEN_LIMITS.flowRepair
         : AI_OUTPUT_TOKEN_LIMITS.guidance
     };
@@ -128,16 +144,22 @@ export class AdviceService {
       return first;
     }
 
-    const validationOptions = {
-      kind: input.kind,
-      allowImplementationCode: userExplicitlyRequestedImplementationCode(input.userPrompt)
-    };
+    const validationOptions = guidanceResponseValidationOptions(input);
     const firstValidation = validateGuidanceResponse(input.slashCommand, first.text, validationOptions);
     if (firstValidation.ok) {
+      if (input.kind === "always") {
+        this.logDiagnostic({ event: "automatic_decision", outcome: firstValidation.outcome,
+          focus: firstValidation.focus, repaired: false, policyRevision: GUIDANCE_POLICY_REVISION });
+      }
+      if (firstValidation.outcome === "no_advice" && firstValidation.suppressionReason) {
+        this.logDiagnostic({ event: "automatic_advice_suppressed", reason: firstValidation.suppressionReason,
+          policyRevision: GUIDANCE_POLICY_REVISION });
+      }
       return {
         ...first,
         text: firstValidation.text,
         outcome: firstValidation.outcome,
+        focus: firstValidation.focus,
         responseMetadata: this.buildResponseMetadata(
           [first.responseMetadata],
           firstValidation.normalized
@@ -154,7 +176,7 @@ export class AdviceService {
     const repaired = await this.requestText(
       {
         ...request,
-        systemPrompt: buildGuidanceFormatRepairPrompt(request.systemPrompt, firstValidation.reason),
+        systemPrompt: buildGuidanceFormatRepairPrompt(request.systemPrompt, firstValidation.reason, input.kind),
         purpose: input.slashCommand === "flow" ? "flowRepair" : "guidance",
         maxOutputTokens: request.maxOutputTokens
       },
@@ -175,10 +197,20 @@ export class AdviceService {
       };
     }
 
+    if (input.kind === "always") {
+      this.logDiagnostic({ event: "automatic_decision", outcome: repairedValidation.outcome,
+        focus: repairedValidation.focus, repaired: true, policyRevision: GUIDANCE_POLICY_REVISION });
+    }
+    if (repairedValidation.outcome === "no_advice" && repairedValidation.suppressionReason) {
+      this.logDiagnostic({ event: "automatic_advice_suppressed", reason: repairedValidation.suppressionReason,
+        policyRevision: GUIDANCE_POLICY_REVISION });
+    }
+
     return {
       ...repaired,
       text: repairedValidation.text,
       outcome: repairedValidation.outcome,
+      focus: repairedValidation.focus,
       usage: this.combineUsage(first.usage, repaired.usage),
       responseMetadata: this.buildResponseMetadata(
         [first.responseMetadata, repaired.responseMetadata],
@@ -249,6 +281,7 @@ export class AdviceService {
       const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
       this.logDiagnostic({ event: "response", provider: model.providerId, model: model.modelId,
         purpose: request.purpose, elapsedMs: Date.now() - startedAt, maxOutputTokens: request.maxOutputTokens,
+        ...(model.providerId === "ollama" ? { reasoningEffort: request.reasoningEffort ?? "none" } : {}),
         finishReason: response.finishReason, requestId: response.requestId,
         inputTokens: response.inputTokens, outputTokens: response.outputTokens });
       if (token.isCancellationRequested) {
@@ -287,7 +320,7 @@ export class AdviceService {
         this.connectionService.resetToDisconnected();
       } else if (
         connectionState === "unavailable"
-        && (model.providerId === "lmStudio" || model.providerId === "orcaRouter")
+        && (model.providerId === "lmStudio" || model.providerId === "ollama" || model.providerId === "orcaRouter")
       ) {
         this.connectionService.markUnavailable();
       }
@@ -440,6 +473,7 @@ export class AdviceService {
     // プロンプト組み立ては純粋ロジック（PromptBuilder）に委譲する（評価ハーネスから直接計測可能）。
     return buildGuidancePromptMessages({
       ...input,
+      assistanceDepth: guidanceContentDepth(this.connectionService.getConnectedModel()?.providerId, input.assistanceDepth),
       modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource)
     });
   }
@@ -649,7 +683,7 @@ export class AdviceService {
     if (error instanceof AiResponseLimitError) {
       return this.connectionService.getState();
     }
-    if (error instanceof LmStudioError) {
+    if (error instanceof OpenAICompatibleError) {
       return "unavailable";
     }
     if (error instanceof OrcaRouterError) {
@@ -676,7 +710,14 @@ export class AdviceService {
     if (error instanceof AiResponseLimitError) {
       return "AI の応答が安全なサイズ上限を超えたため中断しました。質問や参照範囲を絞って再試行してください。";
     }
-    if (error instanceof LmStudioError) {
+    if (error instanceof OpenAICompatibleError && this.connectionService.getProviderId() === "ollama") {
+      return error.kind === "timeout"
+        ? "Ollama の応答がタイムアウトしました。モデルのサイズと空きメモリを確認してください。"
+        : error.kind === "unreachable"
+          ? "Ollama との通信が切断されました。起動状態と接続先を確認してください。"
+          : "Ollama の生成に失敗しました。選択モデルがインストール済みか、ロードに必要なメモリがあるか確認してください。";
+    }
+    if (error instanceof OpenAICompatibleError) {
       switch (error.kind) {
         case "auth":
           return "LM Studio の認証設定を確認してください。";

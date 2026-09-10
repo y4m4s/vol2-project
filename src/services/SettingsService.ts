@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { NavigatorSettings } from "../shared/types";
+import { DEFAULT_OLLAMA_BASE_URL } from "./OllamaClient";
 import { PROTECTED_EXCLUDED_GLOBS } from "./protectedGlobs";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
@@ -52,6 +53,9 @@ export class SettingsService {
       defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
       copilotModelId: this.normalizeCopilotModelId(partial?.copilotModelId),
       lmStudioBaseUrl: this.normalizeLmStudioBaseUrl(partial?.lmStudioBaseUrl),
+      ollamaBaseUrl: typeof partial?.ollamaBaseUrl === "string" && partial.ollamaBaseUrl.trim()
+        ? partial.ollamaBaseUrl.trim().replace(/\/$/, "") : DEFAULT_OLLAMA_BASE_URL,
+      ollamaModelKey: this.normalizeLmStudioModelKey(partial?.ollamaModelKey),
       lmStudioModelKey: this.normalizeLmStudioModelKey(partial?.lmStudioModelKey),
       orcaRouterModelId: this.normalizeOrcaRouterModelId(partial?.orcaRouterModelId),
       requestIntervalMs: this.normalizeRequestIntervalMs(partial?.requestIntervalMs ?? DEFAULT_SETTINGS.requestIntervalMs),
@@ -96,7 +100,7 @@ export class SettingsService {
   }
 
   private normalizeProviderId(value: unknown): NavigatorSettings["providerId"] {
-    return value === "lmStudio" || value === "orcaRouter" ? value : "copilot";
+    return value === "ollama" || value === "lmStudio" || value === "orcaRouter" ? value : "copilot";
   }
 
   private normalizeLmStudioBaseUrl(value: unknown): string {

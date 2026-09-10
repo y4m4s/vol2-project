@@ -99,3 +99,11 @@ test("送信計画の更新とワークスペース相対の参照ファイル�
   assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "src/app.ts", line: 0 }), undefined);
   assert.equal(parseWebviewMessage({ type: "openReferencedFile", path: "x".repeat(2_001) }), undefined);
 });
+
+
+test("Ollamaの接続とモデル再取得は型と長さを検証する", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "connect", providerId: "ollama" }), { type: "connect", providerId: "ollama" });
+  assert.ok(parseWebviewMessage({ type: "refreshOllamaModels", baseUrl: "http://localhost:11434" }));
+  assert.equal(parseWebviewMessage({ type: "refreshOllamaModels", baseUrl: 11434 }), undefined);
+  assert.equal(parseWebviewMessage({ type: "refreshOllamaModels", baseUrl: "x".repeat(2001) }), undefined);
+});

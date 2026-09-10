@@ -38,6 +38,14 @@
   opacity: 0.7;
 }
 
+.settings-section-provider-logo {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+
 .settings-section:first-of-type {
   margin-top: 4px;
 }
@@ -303,6 +311,7 @@
 }
 
 .settings-provider-option.lmStudio { --provider-accent: #8b5cf6; }
+.settings-provider-option.ollama { --provider-accent: #ffffff; }
 .settings-provider-option.orcaRouter { --provider-accent: #2d7df6; }
 
 .settings-provider-option:hover {
@@ -314,6 +323,11 @@
 .settings-provider-option.selected {
   border-color: var(--provider-accent);
   background: color-mix(in srgb, var(--provider-accent) 16%, var(--vscode-editorWidget-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
+}
+
+.settings-provider-option.ollama:hover,
+.settings-provider-option.ollama:focus-visible {
   box-shadow: 0 0 0 1px var(--provider-accent), 0 0 12px color-mix(in srgb, var(--provider-accent) 40%, transparent);
 }
 
@@ -778,4 +792,16 @@
   font-size: 0.82em;
   font-weight: 500;
   opacity: 0.75;
+}
+
+
+.ollama-endpoint-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 4px;
 }

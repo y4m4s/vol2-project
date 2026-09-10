@@ -6,7 +6,7 @@ export type ConnectionState =
   | "restricted"
   | "unavailable";
 
-export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter";
+export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
 export type AdviceMode = "manual" | "always";
 
@@ -22,6 +22,43 @@ export type SlashCommandScope = "standard" | "deep";
 export type ProjectContextScope = "project-lite" | "project" | "deep";
 
 export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
+
+export type AutomaticGuidanceFocus = "continue" | "review" | "explain" | "overview" | "none";
+
+export interface AutomaticTriggerSignal {
+  reason: AdviceTriggerReason;
+  occurredAt: number;
+}
+
+export interface AutomaticEditObservation {
+  lineStart: number;
+  lineEnd: number;
+  changedLineCount: number;
+  insertedCharCount: number;
+  deletedCharCount: number;
+  cursorDistanceLines?: number;
+  beforePreview?: string;
+  afterPreview?: string;
+}
+
+export interface AutomaticDiagnosticsObservation {
+  added: DiagnosticSummary[];
+  resolvedCount: number;
+  remainingCount: number;
+}
+
+export interface AutomaticGuidanceObservation {
+  triggerReasons: AdviceTriggerReason[];
+  idleDurationMs: number;
+  cursor?: { line: number; column: number };
+  cursorExcerpt?: string;
+  selectionPresent: boolean;
+  selectionLineCount?: number;
+  lastEdit?: AutomaticEditObservation;
+  diagnostics?: AutomaticDiagnosticsObservation;
+  previousFocus?: AutomaticGuidanceFocus;
+  overviewAlreadyShown?: boolean;
+}
 
 export type NavigatorScreen =
   | "onboarding"
@@ -81,6 +118,7 @@ export interface FeedbackTendencySummary {
 }
 
 export type ContextCategoryKey =
+  | "automaticObservation"
   | "activeFile"
   | "selection"
   | "diagnostics"
@@ -161,6 +199,8 @@ export interface NavigatorSettings {
   copilotModelId?: string;
   lmStudioBaseUrl: string;
   lmStudioModelKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModelKey?: string;
   orcaRouterModelId?: string;
   requestIntervalMs: number;
   idleDelayMs: number;
@@ -253,6 +293,7 @@ export interface RequestPlanSnapshot {
 }
 
 export interface GuidanceCard {
+  focus?: AutomaticGuidanceFocus;
   id: string;
   requestedAt: string;
   mode: AdviceMode;
@@ -283,6 +324,7 @@ export interface ProviderResponseMetadata {
 }
 
 export interface ConversationEntry {
+  focus?: AutomaticGuidanceFocus;
   id: string;
   role: ConversationRole;
   text: string;
@@ -385,6 +427,10 @@ export interface NavigatorViewModel {
   modelLabel?: string;
   copilotModelOptions: CopilotModelOption[];
   lmStudioModelOptions: LmStudioModelOption[];
+  ollamaModelOptions?: LmStudioModelOption[];
+  ollamaModelsBaseUrl?: string;
+  providerEndpoint?: string;
+  ollamaStatus?: string;
   orcaRouterModelOptions: OrcaRouterModelOption[];
   orcaRouterApiKeyConfigured: boolean;
   lmStudioServer: LmStudioServerViewData;

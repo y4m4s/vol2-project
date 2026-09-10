@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { OllamaClient, DEFAULT_OLLAMA_BASE_URL } from "./OllamaClient";
 import {
   AiProviderId,
   ConnectionState,
@@ -51,6 +52,7 @@ export interface ConnectedProviderModel {
   modelId: string;
   modelLabel: string;
   profileSource: ModelProfileSource;
+  endpoint?: string;
   requestText(
     request: AiTextRequest,
     token: vscode.CancellationToken,
@@ -81,6 +83,12 @@ export class ConnectionService {
   private availableModelOptions: CopilotModelOption[] = [];
   private availableLmStudioModelOptions: LmStudioModelOption[] = [];
   private availableOrcaRouterModelOptions: OrcaRouterModelOption[] = [];
+  private availableOllamaModelOptions: LmStudioModelOption[] = [];
+  private ollamaModelsBaseUrl: string | undefined;
+  private ollamaStatus = "Ollama に接続してモデル一覧を取得してください。";
+  private ollamaModelKeyChange: string | null | undefined;
+  private lastUsedOllama: { baseUrl: string; model: string } | undefined;
+  private ollamaRefreshRevision = 0;
   private pendingConnection: Promise<ConnectionActivationResult> | undefined;
   private lastLmStudioIssue: LmStudioConnectionIssue | undefined;
   private lmStudioModelKeyChange: string | null | undefined;
@@ -92,11 +100,57 @@ export class ConnectionService {
     private readonly lmStudioClient: LmStudioClient,
     private readonly orcaRouterClient: OrcaRouterClient,
     private readonly orcaRouterCredentials: OrcaRouterCredentialStore,
-    private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation
+    private readonly languageModelAccessInformation?: vscode.LanguageModelAccessInformation,
+    private readonly ollamaClient = new OllamaClient()
   ) {
     if (this.orcaRouterCredentials.isConfigured()) {
       this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
     }
+  }
+
+  public getOllamaModelOptions(): LmStudioModelOption[] { return this.availableOllamaModelOptions; }
+  public getOllamaModelsBaseUrl(): string | undefined { return this.ollamaModelsBaseUrl; }
+  public getOllamaStatus(): string { return this.ollamaStatus; }
+  public consumeOllamaModelKeyChange(): string | null | undefined {
+    const change = this.ollamaModelKeyChange;
+    this.ollamaModelKeyChange = undefined;
+    return change;
+  }
+
+  public async refreshAvailableOllamaModels(baseUrl: string): Promise<LmStudioModelOption[]> {
+    const revision = ++this.ollamaRefreshRevision;
+    if (!vscode.workspace.isTrusted) {
+      this.availableOllamaModelOptions = [];
+      this.ollamaModelsBaseUrl = undefined;
+      this.ollamaStatus = "ワークスペースを信頼してから Ollama に接続してください。";
+      return [];
+    }
+    try {
+      const origin = this.ollamaClient.normalizeBaseUrl(baseUrl);
+      const options = await this.ollamaClient.listModels(origin);
+      if (revision !== this.ollamaRefreshRevision) return [];
+      this.availableOllamaModelOptions = options;
+      this.ollamaModelsBaseUrl = origin;
+      this.ollamaStatus = options.length
+        ? `Ollama に接続しました。インストール済みモデル: ${options.length} 件。`
+        : "インストール済みのOllamaモデルがありません。Ollamaでモデルをインストールしてから再度お試しください。";
+      return options;
+    } catch (error) {
+      if (revision !== this.ollamaRefreshRevision) return [];
+      console.warn("NaviCom Ollama model discovery failed", error);
+      this.availableOllamaModelOptions = [];
+      this.ollamaModelsBaseUrl = undefined;
+      this.ollamaStatus = "Ollamaに接続できませんでした。接続先URLと、Ollamaがインストール・起動済みであることを確認してください。";
+      return [];
+    }
+  }
+
+  private async unloadLastOllamaModel(): Promise<void> {
+    const used = this.lastUsedOllama;
+    this.lastUsedOllama = undefined;
+    if (!used) return;
+    try { await this.ollamaClient.unloadModel(used.baseUrl, used.model); }
+    catch (error) { console.warn("NaviCom Ollama model unload failed", error); }
   }
 
   public getState(): ConnectionState {
@@ -226,6 +280,7 @@ export class ConnectionService {
     this.copilotModel = undefined;
     this.connectedModel = undefined;
     this.connectionState = "unavailable";
+    if (this.providerId === "ollama") this.ollamaStatus = "Ollama の生成に失敗しました。接続先とモデルを確認し、再接続してください。";
     return this.connectionState;
   }
 
@@ -246,23 +301,36 @@ export class ConnectionService {
     this.lastLmStudioIssue = undefined;
     this.lastOrcaRouterIssue = undefined;
     this.lmStudioModelKeyChange = undefined;
+    this.ollamaModelKeyChange = undefined;
 
     if (!vscode.workspace.isTrusted) {
+      if (settings.providerId === "ollama") this.ollamaStatus = "ワークスペースを信頼してから Ollama に接続してください。";
       this.connectionState = "unavailable";
       return this.finishFailedActivation(previous, this.connectionState);
     }
 
     this.connectionState = "connecting";
-    const connectionState = await (settings.providerId === "lmStudio"
+    const connectionState = await (settings.providerId === "ollama"
+      ? this.connectOllama(settings)
+      : settings.providerId === "lmStudio"
       ? this.connectLmStudio(settings)
       : settings.providerId === "orcaRouter"
         ? this.connectOrcaRouter(settings)
         : this.connectCopilot(settings.copilotModelId));
 
     if (connectionState === "connected") {
+      if (settings.providerId !== "ollama") await this.unloadLastOllamaModel();
       return { connectionState, activated: true };
     }
 
+    // A successful tags response proves that this previously active model was removed.
+    // Do not restore a connection that is now known to be invalid.
+    if (settings.providerId === "ollama" && this.ollamaModelKeyChange === null &&
+        previous.connectedModel?.providerId === "ollama" &&
+        previous.connectedModel.endpoint === this.ollamaModelsBaseUrl &&
+        !this.availableOllamaModelOptions.some(option => option.key === previous.connectedModel?.modelId)) {
+      return { connectionState, activated: false, failureState: connectionState };
+    }
     return this.finishFailedActivation(previous, connectionState);
   }
 
@@ -322,6 +390,42 @@ export class ConnectionService {
       this.lastCopilotIssue = this.classifyCopilotIssue(error);
       this.connectionState = this.classifyCopilotConnectError(error);
     }
+    return this.connectionState;
+  }
+
+  private async connectOllama(settings: NavigatorSettings): Promise<ConnectionState> {
+    const baseUrl = settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL;
+    const options = await this.refreshAvailableOllamaModels(baseUrl);
+    let selected = options.find(option => option.key === settings.ollamaModelKey);
+    if (!selected && settings.ollamaModelKey && this.ollamaModelsBaseUrl) {
+      this.ollamaModelKeyChange = null;
+      if (options.length) this.ollamaStatus = "保存されたOllamaモデルが見つかりません。モデル一覧から選び直してください。";
+    } else if (!selected && options.length) {
+      selected = options.length === 1 ? options[0] : (await vscode.window.showQuickPick(
+        options.map(option => ({ label: option.label, option })),
+        { title: "Ollama のモデルを選択", placeHolder: "インストール済みモデルを選択してください" }
+      ))?.option;
+      if (selected) this.ollamaModelKeyChange = selected.key;
+      else this.ollamaStatus = "使用するOllamaモデルを選択してください。";
+    }
+    if (!selected) {
+      this.connectedModel = undefined;
+      this.connectionState = "unavailable";
+      return this.connectionState;
+    }
+    const origin = this.ollamaClient.normalizeBaseUrl(baseUrl);
+    const modelKey = selected.key;
+    this.copilotModel = undefined;
+    this.connectedModel = {
+      providerId: "ollama", modelId: modelKey, modelLabel: selected.label, endpoint: origin,
+      profileSource: { id: modelKey, name: selected.label, vendor: "ollama" },
+      requestText: async (request, token, metadata) => {
+        if (token.isCancellationRequested) throw new Error("Cancelled");
+        this.lastUsedOllama = { baseUrl: origin, model: modelKey };
+        return this.ollamaClient.createCompletion(origin, modelKey, request, metadata?.referencedFilePaths, token);
+      }
+    };
+    this.connectionState = "connected";
     return this.connectionState;
   }
 

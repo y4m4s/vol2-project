@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { guidanceContentDepth } from "../../services/GuidanceDepthPolicy";
 import { ContextCollector } from "../../services/ContextCollector";
 import { PreparedGuidanceRequest, RequestPlanner } from "../../services/RequestPlanner";
 import { SettingsService } from "../../services/SettingsService";
@@ -13,6 +14,7 @@ import {
 } from "../../services/WorkspacePathPolicy";
 import type {
   AssistanceDepth,
+  AutomaticGuidanceObservation,
   GuidanceContext,
   GuidanceKind,
   NavigatorSessionState,
@@ -36,6 +38,7 @@ export interface RequestPlanCoordinatorHost {
   ): Promise<GuidanceContext>;
   getVisibleAdditionalContext(state: NavigatorSessionState): string | undefined;
   getModelProfile?(): ModelProfile;
+  getAutomaticObservation?(): AutomaticGuidanceObservation | undefined;
   getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency">;
 }
 
@@ -65,7 +68,8 @@ export class RequestPlanCoordinator {
     }
 
     const { slashCommand, slashCommandScope, userPrompt } = parseSlashInput(this.draft.userPrompt);
-    const kind: GuidanceKind = state.contextPreview.selectedTextPreview ? "context" : "manual";
+    const kind: GuidanceKind = state.mode === "always" && !this.draft.userPrompt.trim()
+      ? "always" : state.contextPreview.selectedTextPreview ? "context" : "manual";
     const plan = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.draft.additionalContext),
       state.contextPreview,
@@ -73,7 +77,8 @@ export class RequestPlanCoordinator {
       kind,
       resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand),
       slashCommand,
-      slashCommandScope
+      slashCommandScope,
+      kind === "always" ? this.host.getAutomaticObservation?.() : undefined
     ), userPrompt).requestPlan;
     // This synchronous fallback has not collected workspace/project context yet.
     // Leave it unstamped so the UI cannot present it as the completed preview.
@@ -86,11 +91,12 @@ export class RequestPlanCoordinator {
     result.requestPlan = reconcileRequestPlan(result.requestPlan, {
       ...result.requestPlan,
       context: result.context,
+      automaticObservation: prepared.automaticObservation,
       userPrompt,
       ...this.host.getPromptExtras?.(result.context, result.requestPlan),
       modelProfile: this.host.getModelProfile?.()
     });
-    return result;
+    return { ...result, automaticObservation: prepared.automaticObservation };
   }
 
   /** 文書・診断・ワークスペースの変更で、キーに表れない収集結果も破棄する。 */
@@ -109,13 +115,15 @@ export class RequestPlanCoordinator {
 
     const settings = this.settingsService.getSettings();
     const preview = this.host.rememberSelectionContext(this.contextCollector.collectPreview());
-    const kind: GuidanceKind = preview.selectedTextPreview ? "context" : "manual";
+    const kind: GuidanceKind = state.mode === "always" && !userPrompt.trim()
+      ? "always" : preview.selectedTextPreview ? "context" : "manual";
+    const automaticObservation = kind === "always" ? this.host.getAutomaticObservation?.() : undefined;
     const parsed = parseSlashInput(userPrompt);
     const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, parsed.slashCommand);
     const requestPlanKey = this.createKey({ ...state, contextPreview: preview });
     const requestPlanGeneration = this.cacheGeneration;
     const context = parsed.slashCommand && getSkill(parsed.slashCommand).usesProjectScope
-      ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(assistanceDepth, parsed.slashCommandScope))
+      ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), parsed.slashCommandScope))
       : await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(context, additionalContext),
@@ -124,7 +132,8 @@ export class RequestPlanCoordinator {
       kind,
       assistanceDepth,
       parsed.slashCommand,
-      parsed.slashCommandScope
+      parsed.slashCommandScope,
+      automaticObservation
     ), parsed.userPrompt);
     prepared.requestPlan.previewInput = userPrompt;
     prepared.requestPlan.previewAdditionalContext = additionalContext;

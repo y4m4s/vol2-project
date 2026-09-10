@@ -18,6 +18,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/AutomaticObservation.test.ts",
     "src/shared/feedback.ts",
     "src/services/SerialTaskQueue.ts",
     "src/services/LmStudioClient.ts",
@@ -46,6 +47,7 @@
     "test/FeedbackCoordinator.test.ts",
     "test/SerialTaskQueue.test.ts",
     "test/LmStudioClient.test.ts",
+    "test/OllamaClient.test.ts",
     "test/OrcaRouterClient.test.ts",
     "test/OrcaRouterErrorPolicy.test.ts",
     "test/OrcaRouterModelPolicy.test.ts",

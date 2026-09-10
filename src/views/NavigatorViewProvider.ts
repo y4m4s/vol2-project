@@ -134,6 +134,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "restartLmStudioOnConfiguredPort":
             await this.controller.restartLmStudioOnConfiguredPort();
             return;
+          case "refreshOllamaModels":
+            await this.controller.refreshOllamaModels(message.baseUrl);
+            break;
           case "refreshLmStudioModels":
             await this.controller.refreshLmStudioModels();
             return;
@@ -159,7 +162,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
             this.controller.searchKnowledge(message.query);
             return;
           case "setAdditionalContext":
-            this.controller.setAdditionalContext(message.additionalContext);
+            await this.controller.setAdditionalContext(message.additionalContext);
             return;
           default:
             return;
@@ -257,11 +260,14 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
       copilotWhite: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "github-copilot-icon-white.svg")
       ).toString(),
-      lmStudioColor: webview.asWebviewUri(
-        vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-color.svg")
-      ).toString(),
       lmStudioWhite: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "lmstudio-icon-outline-white.svg")
+      ).toString(),
+      ollamaBlack: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "ollama-icon.svg")
+      ).toString(),
+      ollamaWhite: webview.asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "media", "ollama-icon-white.svg")
       ).toString(),
       icons8OrcaBlack: webview.asWebviewUri(
         vscode.Uri.joinPath(this.extensionUri, "media", "icons8-orca-black.png")

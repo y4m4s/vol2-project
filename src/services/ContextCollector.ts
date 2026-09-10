@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { isPathExcluded } from "./globMatch";
 import {
+  AutomaticGuidanceObservation,
+  AutomaticEditObservation,
   DiagnosticSeverityLabel,
   DiagnosticSummary,
   GuidanceContext,
@@ -11,6 +13,7 @@ import {
   ReferencedFileReason,
   NavigatorContextPreview
 } from "../shared/types";
+import type { AutoAdviceTriggerEvent } from "./AdviceScheduler";
 
 const MAX_PREVIEW_TEXT_LENGTH = 240;
 const MAX_SELECTED_TEXT_LENGTH = 4000;
@@ -34,6 +37,7 @@ const MAX_DOCUMENT_SNAPSHOT_CHARS = 200_000;
 const REFERENCED_FILE_CONTEXT_RADIUS = 20;
 
 interface RecentEditRecord {
+  observation: AutomaticEditObservation;
   lineStart: number;
   lineEnd: number;
   preview: string;
@@ -101,6 +105,7 @@ const NEXT_CONTEXT_LIMITS: Record<ProjectContextScope, NextContextLimits> = {
 };
 
 export class ContextCollector {
+  private readonly diagnosticBaselines = new Map<string, Map<string, DiagnosticSummary>>();
   private readonly recentEditsByDocument = new Map<string, RecentEditRecord[]>();
   private readonly documentSnapshotsByUri = new Map<string, string>();
 
@@ -116,6 +121,7 @@ export class ContextCollector {
     }
 
     const key = document.uri.toString();
+    if (!this.diagnosticBaselines.has(key)) this.diagnosticBaselines.set(key, this.diagnosticSnapshot(document.uri));
     const snapshot = this.captureBoundedSnapshot(document);
     if (snapshot === undefined) {
       this.documentSnapshotsByUri.delete(key);
@@ -125,6 +131,7 @@ export class ContextCollector {
   }
 
   public releaseDocument(uri: vscode.Uri): void {
+    this.diagnosticBaselines.delete(uri.toString());
     const key = uri.toString();
     this.documentSnapshotsByUri.delete(key);
     this.recentEditsByDocument.delete(key);
@@ -172,6 +179,72 @@ export class ContextCollector {
       recentEditsSummary: this.collectRecentEdits(editor.document.uri),
       relatedSymbols: this.collectRelatedSymbols(editor, selectedText)
     };
+  }
+
+  /** Capture synchronously with the base context, before workspace collection can change editors. */
+  public collectAutomaticObservation(event: AutoAdviceTriggerEvent): AutomaticGuidanceObservation | undefined {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !this.isWorkspaceFile(editor.document.uri)) return undefined;
+    const { document, selection } = editor;
+    const cursor = selection.active;
+    const before: string[] = [];
+    const after: string[] = [];
+    const escape = (text: string): string => text.replaceAll("<<<NAVICOM_CURSOR>>>", "[literal cursor marker]");
+    for (let line = Math.max(0, cursor.line - 12); line <= cursor.line; line++) {
+      const value = document.lineAt(line).text;
+      before.push(escape((line === cursor.line ? value.slice(0, cursor.character) : value).slice(-1400)));
+    }
+    for (let line = cursor.line; line <= Math.min(document.lineCount - 1, cursor.line + 8); line++) {
+      const value = document.lineAt(line).text;
+      after.push(escape((line === cursor.line ? value.slice(cursor.character) : value).slice(0, 1400)));
+    }
+    const record = this.pruneRecentEdits(this.recentEditsByDocument.get(document.uri.toString()) ?? [])[0];
+    const current = this.diagnosticSnapshot(document.uri);
+    const baseline = this.diagnosticBaselines.get(document.uri.toString()) ?? current;
+    return {
+      triggerReasons: event.signals.map((signal) => signal.reason),
+      idleDurationMs: event.idleDurationMs,
+      cursor: { line: cursor.line + 1, column: cursor.character + 1 },
+      cursorExcerpt: before.join("\n").slice(-1400) + "<<<NAVICOM_CURSOR>>>" + after.join("\n").slice(0, 1400),
+      selectionPresent: Boolean(this.getSelectedText(editor)),
+      selectionLineCount: selection.isEmpty ? undefined : selection.end.line - selection.start.line + 1,
+      lastEdit: record ? {
+        ...record.observation,
+        cursorDistanceLines: Math.max(record.lineStart - cursor.line - 1, cursor.line + 1 - record.lineEnd, 0)
+      } : undefined,
+      diagnostics: {
+        added: [...current].filter(([key]) => !baseline.has(key)).map(([, value]) => value).slice(0, 5),
+        resolvedCount: [...baseline.keys()].filter((key) => !current.has(key)).length,
+        remainingCount: current.size
+      }
+    };
+  }
+
+  public resetAutomaticDiagnosticsBaseline(): void {
+    const uri = vscode.window.activeTextEditor?.document.uri;
+    if (uri && this.isWorkspaceFile(uri)) this.diagnosticBaselines.set(uri.toString(), this.diagnosticSnapshot(uri));
+  }
+
+  public automaticEditorSnapshot(): string | undefined {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !this.isWorkspaceFile(editor.document.uri)) return undefined;
+    return JSON.stringify([editor.document.uri.toString(), editor.document.version,
+      editor.selection.anchor.line, editor.selection.anchor.character,
+      editor.selection.active.line, editor.selection.active.character]);
+  }
+
+  public automaticDocumentSnapshot(): string | undefined {
+    const document = vscode.window.activeTextEditor?.document;
+    return document ? JSON.stringify([document.uri.toString(), document.version]) : undefined;
+  }
+
+  private diagnosticSnapshot(uri: vscode.Uri): Map<string, DiagnosticSummary> {
+    return new Map(vscode.languages.getDiagnostics(uri).slice(0, 100).map((item) => [
+      JSON.stringify([uri.toString(), item.severity, item.message, item.range.start.line,
+        item.range.start.character, item.range.end.line, item.range.end.character]),
+      { severity: this.mapSeverity(item.severity), message: item.message.slice(0, 500),
+        line: item.range.start.line + 1, source: item.source }
+    ]));
   }
 
   public async collectGuidanceContextWithWorkspace(
@@ -895,7 +968,16 @@ export class ContextCollector {
 
     return {
       lineStart: change.range.start.line + 1,
-      lineEnd: Math.max(change.range.end.line + 1, change.range.start.line + 1),
+      lineEnd: change.range.start.line + change.text.split(/\r?\n/).length,
+      observation: {
+        lineStart: change.range.start.line + 1,
+        lineEnd: change.range.start.line + change.text.split(/\r?\n/).length,
+        changedLineCount: Math.max(change.range.end.line - change.range.start.line + 1, change.text.split(/\r?\n/).length),
+        insertedCharCount: change.text.length,
+        deletedCharCount: change.rangeLength,
+        beforePreview: this.toRecentEditFragment(beforeText),
+        afterPreview: this.toRecentEditFragment(change.text)
+      },
       preview: this.toRecentEditPreview(beforeText, change.text),
       timestamp: Date.now()
     };

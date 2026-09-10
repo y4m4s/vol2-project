@@ -1,9 +1,11 @@
-import type { GuidanceKind, SlashCommand } from "../shared/types";
+import type { AutomaticGuidanceFocus, AutomaticGuidanceObservation, GuidanceContext, GuidanceKind, SlashCommand } from "../shared/types";
+import { repeatsExistingCallProposal } from "./AutomaticAdviceGrounding";
+import { parseAutomaticFocus } from "../shared/automaticGuidance";
 import { MAX_GUIDANCE_RESPONSE_CHARS } from "./AiRequestPolicy";
 
 export type GuidanceResponseValidation =
-  | { ok: true; outcome: "advice"; text: string; normalized: boolean }
-  | { ok: true; outcome: "no_advice"; text: ""; normalized: boolean }
+  | { ok: true; outcome: "advice"; text: string; normalized: boolean; focus?: AutomaticGuidanceFocus }
+  | { ok: true; outcome: "no_advice"; text: ""; normalized: boolean; focus?: AutomaticGuidanceFocus; suppressionReason?: "existingCodeProposal" }
   | { ok: false; reason: GuidanceResponseFailureReason };
 
 export type FlowResponseFailureReason =
@@ -25,6 +27,21 @@ export type GuidanceResponseFailureReason =
 export interface GuidanceResponseValidationOptions {
   kind?: GuidanceKind;
   allowImplementationCode?: boolean;
+  automaticCurrentCode?: readonly string[];
+}
+
+export function guidanceResponseValidationOptions(input: {
+  kind: GuidanceKind; userPrompt?: string; context: GuidanceContext; automaticObservation?: AutomaticGuidanceObservation;
+}): GuidanceResponseValidationOptions {
+  const allowImplementationCode = userExplicitlyRequestedImplementationCode(input.userPrompt);
+  return {
+    kind: input.kind, allowImplementationCode,
+    ...(input.kind === "always" && input.context.additionalContext?.trim() && !allowImplementationCode
+      ? { automaticCurrentCode: [input.context.activeFileExcerpt,
+          input.automaticObservation?.cursorExcerpt?.replaceAll("<<<NAVICOM_CURSOR>>>", "")]
+          .filter((code): code is string => Boolean(code)) }
+      : {})
+  };
 }
 
 const MERMAID_OPENING_FENCE = /^[ \t]*```[ \t]*mermaid[ \t]*$/gim;
@@ -42,14 +59,14 @@ export function validateGuidanceResponse(
   rawText: string,
   options: GuidanceResponseValidationOptions = {}
 ): GuidanceResponseValidation {
-  const envelope = parseEnvelope(rawText);
+  const envelope = parseEnvelope(rawText, options.kind === "always");
   if (!envelope) {
     return { ok: false, reason: rawText.trim() ? "invalidEnvelope" : "emptyResponse" };
   }
 
   if (envelope.kind === "no_advice") {
     return options.kind === "always"
-      ? { ok: true, outcome: "no_advice", text: "", normalized: envelope.normalized }
+      ? { ok: true, outcome: "no_advice", text: "", normalized: envelope.normalized, focus: "none" }
       : { ok: false, reason: "unexpectedNoAdvice" };
   }
 
@@ -59,6 +76,11 @@ export function validateGuidanceResponse(
   }
   if (text.length > MAX_GUIDANCE_RESPONSE_CHARS) {
     return { ok: false, reason: "responseTooLong" };
+  }
+  if (options.kind === "always" && envelope.focus === "continue" && options.allowImplementationCode === false
+      && options.automaticCurrentCode && repeatsExistingCallProposal(text, options.automaticCurrentCode)) {
+    return { ok: true, outcome: "no_advice", text: "", focus: "none", normalized: envelope.normalized,
+      suppressionReason: "existingCodeProposal" };
   }
   if (
     options.allowImplementationCode === false
@@ -71,7 +93,8 @@ export function validateGuidanceResponse(
   }
 
   if (slashCommand !== "flow") {
-    return { ok: true, outcome: "advice", text, normalized: envelope.normalized };
+    return { ok: true, outcome: "advice", text, normalized: envelope.normalized,
+      ...(envelope.focus ? { focus: envelope.focus } : {}) };
   }
 
   const flowValidation = validateFlowResponse(text);
@@ -82,13 +105,15 @@ export function validateGuidanceResponse(
     ok: true,
     outcome: "advice",
     text: flowValidation.text,
+    ...(envelope.focus ? { focus: envelope.focus } : {}),
     normalized: envelope.normalized || flowValidation.normalized
   };
 }
 
 export function buildGuidanceFormatRepairPrompt(
   originalSystemPrompt: string,
-  reason: GuidanceResponseFailureReason
+  reason: GuidanceResponseFailureReason,
+  kind?: GuidanceKind
 ): string {
   return [
     originalSystemPrompt,
@@ -96,7 +121,9 @@ export function buildGuidanceFormatRepairPrompt(
     "## Output contract correction",
     `The previous response failed the required output contract (${reason}).`,
     "Generate the complete answer again from the supplied current-request data.",
-    '{"kind":"advice","text":"..."} のみを返してください。常時モードで有用な指摘がない場合だけ {"kind":"no_advice"} を返してください。',
+    kind === "always"
+      ? '{"kind":"advice","focus":"continue|review|explain|overview","text":"..."} の focus は候補から1つ選んでください。有用な助言がなければ {"kind":"no_advice","focus":"none"} のみを返してください。'
+      : '{"kind":"advice","text":"..."} のみを返してください。',
     "JSON object を Markdown fence で囲まず、失敗した応答には言及しないでください。",
     ...(reason === "missingMermaidBlock" || reason === "unclosedMermaidBlock" ||
       reason === "multipleMermaidBlocks" || reason === "wrongDiagramType" || reason === "emptyDiagram"
@@ -108,8 +135,8 @@ export function buildGuidanceFormatRepairPrompt(
   ].join("\n");
 }
 
-function parseEnvelope(rawText: string):
-  | { kind: "advice"; text: string; normalized: boolean }
+function parseEnvelope(rawText: string, automatic: boolean):
+  | { kind: "advice"; text: string; normalized: boolean; focus?: AutomaticGuidanceFocus }
   | { kind: "no_advice"; normalized: boolean }
   | undefined {
   const trimmed = rawText.trim();
@@ -119,14 +146,17 @@ function parseEnvelope(rawText: string):
     const value = JSON.parse(candidate) as unknown;
     if (!isRecord(value) || typeof value.kind !== "string") return undefined;
     const keys = Object.keys(value).sort();
+    const focus = parseAutomaticFocus(value.focus);
     if (value.kind === "no_advice") {
-      return keys.length === 1 && keys[0] === "kind"
+      return (automatic ? keys.join(",") === "focus,kind" && focus === "none" : keys.join(",") === "kind")
         ? { kind: "no_advice", normalized: Boolean(fenceMatch) }
         : undefined;
     }
     if (value.kind !== "advice" || typeof value.text !== "string") return undefined;
-    if (keys.length !== 2 || keys[0] !== "kind" || keys[1] !== "text") return undefined;
-    return { kind: "advice", text: value.text, normalized: Boolean(fenceMatch) };
+    if (automatic
+      ? keys.join(",") !== "focus,kind,text" || !focus || focus === "none"
+      : keys.join(",") !== "kind,text") return undefined;
+    return { kind: "advice", text: value.text, normalized: Boolean(fenceMatch), focus };
   } catch {
     return undefined;
   }
