@@ -31,6 +31,25 @@ Workspace Trust未許可では操作できず、生成などの処理中は起�
 
 ## 実装・検証箇所
 
+### 課題達成判定の実機評価
+
+LM Studioのローカルサーバーを起動し、モデルをロードしてから実行する。APIキーは不要なローカル構成を対象とする。サーバー設定・モデル・Thinking設定は評価ツールから変更しない。本番と同じ `LmStudioClient` を使い、低は2,048、高は8,192トークンを要求する。Thinkingはサーバー設定に従い、Ollama用の `reasoning_effort` は送らない。
+
+```powershell
+npm run eval:lmstudio-completion -- --list-models
+npm run eval:lmstudio-completion -- --model qwen/qwen3-8b --filter vertical --depth low --repeat 3 --output lmstudio-low.json
+npm run eval:lmstudio-completion -- --model qwen/qwen3-8b --filter vertical --depth high --repeat 3 --output lmstudio-high.json
+npm run eval:lmstudio-completion -- --model qwen/qwen3-8b --filter hello-reported --depth low --output lmstudio-hello.json
+```
+
+`--model` は一覧にあるキーを指定する。既定の接続先は `http://127.0.0.1:1234`。異なるローカルポートには `--base-url` を指定する。`--filter` はケースIDの部分一致、未指定なら全課題ケース。`--suite automatic` で既存の自動助言ケースも使える。各ケースに最大1回の形式修復を行うため、最大リクエスト数はケース数×反復数×2。評価するのは合成したコードと課題で、エディターや個人ファイルは収集しない。
+
+結果には接続先種別、モデル、生成応答、表示前検証結果、利用トークン、応答時間、推論フィールドの文字数を保存する。内部推論の本文は保存しない。`--capture-prompts` と `--replay-prompts` で同じプロンプトを保存・再利用できる。失敗ケースがあれば終了コード1。通信テストは `npm run test:local-eval` で実行でき、模擬サーバーだけを使用する。
+
+Ollamaは低でも高相当の文脈・指示を使うため、UIの「低」が同じでも送信条件は同一ではない。モデルや実行環境だけの差を測る場合は、保存プロンプトやThinking設定も揃えて比較する。
+
+2026-09-10にロード済みのQwen3 8B（Q4_K_M、コンテキスト8,192）で検証した。低の縦並び3件はすべてcontinue、うち2件は完成コード提示で不合格。高の縦並び2件はcontinue、完成済みHelloは低・高各1件ともno_adviceだった。高の回答にも「printを1つに統合する必要がある」と実装方法を限定する表現が残り、機械評価の合格は内容の完全な正確性を保証しない。記録は `.test-out/lmstudio-vertical-low.json`、`lmstudio-vertical-high.json`、`lmstudio-hello-low.json`、`lmstudio-hello-high.json`。既存テスト214件、追加通信テスト5件、lint、ビルド成功。
+
 - [LmStudioClient.ts](../../src/services/LmStudioClient.ts)、[OpenAICompatibleClient.ts](../../src/services/OpenAICompatibleClient.ts)
 - [LmStudioServerService.ts](../../src/services/LmStudioServerService.ts)、[LmStudioServerProtocol.ts](../../src/services/LmStudioServerProtocol.ts)
 - [LmStudioCoordinator.ts](../../src/application/coordinators/LmStudioCoordinator.ts)
