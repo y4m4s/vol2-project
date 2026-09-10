@@ -14,6 +14,14 @@ const automaticInput = {
     diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] }
 };
 
+test("縦並びへの改行の助言を既存コードの再提案として抑制しない", () => {
+  const text = "print関数は末尾に改行を出力するため、横一列にするには改行の扱いに着目してください。";
+  const result = validateGuidanceResponse(undefined, JSON.stringify({ kind: "advice", focus: "continue", text }),
+    guidanceResponseValidationOptions({ ...automaticInput, context: { ...automaticInput.context,
+      activeFileExcerpt: Array(5).fill('print("■")').join('\n') } }));
+  assert.ok(result.ok && result.outcome === "advice");
+});
+
 test("再報告の既存コード再提案をモデルの生成に依存せず表示前に抑制する", () => {
   for (const code of ['print("■" * 5)', "print( '■' * 5 )"]) {
     for (const text of [repeatedAnswer, repeatedAnswer.replace("*", "\\*")]) {

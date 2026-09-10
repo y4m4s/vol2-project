@@ -20,7 +20,11 @@ Ollama本体のインストール・起動とモデルのインストールは�
 
 ## 推論とモデル解放
 
-`OpenAICompatibleClient` を共有し、`POST /v1/chat/completions` にsystem/userメッセージ、モデル、用途別 `max_tokens`、`stream: false` を送る。Ollama固有の追加項目は `reasoning_effort: "none"`。参照パスの `navicom_referenced_files` も共通処理から付加する。
+`OpenAICompatibleClient` を共有し、`POST /v1/chat/completions` にsystem/userメッセージ、モデル、用途別 `max_tokens`、`stream: false` を送る。Ollamaの助言では推論強度「高」を `reasoning_effort: "high"`、「低」を `"none"` に対応させる。形式修復でも元の指定を保持し、ナレッジ生成など指定のない用途は `"none"`。Thinking対応モデルで有効になり、モデルによって対応状況は異なる。専用のreasoningフィールドは回答として表示・保存せず、contentだけを処理する。出力上限は低・高とも8,192で、上限到達・キャンセル・タイムアウトは既存のエラー処理を維持する。参照パスの `navicom_referenced_files` も共通処理から付加する。
+
+低・高とも従来の高相当の文脈収集と回答指示を使い、Thinkingだけ切り替える。UI・履歴・送信計画の低／高ラベルはユーザーの選択を維持する。識別子は `2026-09-10-ollama-content-depth-v1`。実機評価で新しい低は縦並び3条件中2条件を検出、1件はno_adviceとなり、完成済みHelloはno_adviceだった。記録は `.test-out/ollama-new-low.json`、`.test-out/ollama-new-low-hello.json`。単体テスト210件・lint・ビルド成功。
+
+公式仕様: https://docs.ollama.com/api/openai-compatibility 、https://docs.ollama.com/capabilities/thinking 。この変更はOllama用であり、他プロバイダーに未対応のパラメーターは送らない。
 
 生成タイムアウトは120秒。キャンセル・受信サイズ制限・リダイレクト拒否に対応し、本文・トークン数・解決後モデル・終了理由を読む。表示は生成完了後で、日次トークンガードも適用する。
 

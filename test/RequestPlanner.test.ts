@@ -16,6 +16,19 @@ const settings: NavigatorSettings = {
   excludedGlobs: []
 };
 
+test("Ollama低でも高と同じ文脈を保持し、送信計画の表示は低を維持する", () => {
+  const planner = new RequestPlanner();
+  const context = createContext();
+  context.activeFileExcerpt = "x".repeat(4000);
+  const preview = { diagnosticsSummary: [] };
+  const low = planner.prepareGuidanceRequest(context, preview, { ...settings, providerId: "ollama" }, "always", "low");
+  const high = planner.prepareGuidanceRequest(context, preview, { ...settings, providerId: "ollama" }, "always", "high");
+  assert.deepEqual(low.context, high.context);
+  assert.equal(low.context.activeFileExcerpt?.length, 4000);
+  assert.equal(low.context.referencedFiles.length, 1);
+  assert.equal(low.requestPlan.assistanceDepth, "low");
+});
+
 function createContext(): GuidanceContext {
   return {
     activeFilePath: "C:/workspace/src/app.ts",

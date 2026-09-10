@@ -13,7 +13,16 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   { id: "complete-selection", code: 'print("■" * 5)', selected: '"■" * 5', expected: "none" },
   { id: "complete-next-line", code: 'print("■" * 5)\n', expected: "none" },
   { id: "complete-initial-read", code: 'print("■" * 5)', openOnly: true, expected: "none" },
+  { id: "complete-initial-read-start", code: 'print("■" * 5)', cursorCode: '<<<NAVICOM_CURSOR>>>print("■" * 5)', openOnly: true, expected: "none" },
+  { id: "complete-initial-read-next-line", code: 'print("■" * 5)\n', openOnly: true, expected: "none" },
+  { id: "complete-initial-read-hello", code: 'print("Hello")', problem: "Helloを表示してください。", openOnly: true, expected: "none" },
+  { id: "complete-initial-read-hello-reported", code: 'print("Hello")', problem: "Helloと表示するコードを書きなさい。", openOnly: true, expected: "none" },
+  { id: "incomplete-initial-read", code: 'print("■")', openOnly: true, expected: "continue" },
   { id: "wrong-count", code: 'print("■" * 4)', expected: "continue" },
+  { id: "vertical-five", code: Array(5).fill('print("■")').join('\n'), before: 'print("■")', previousFocus: "continue", expected: "continue" },
+  { id: "vertical-five-initial", code: Array(5).fill('print("■")').join('\n'), openOnly: true, expected: "continue" },
+  { id: "vertical-loop", code: 'for i in range(5):\n    print("■")', expected: "continue" },
+  { id: "horizontal-five", code: Array(5).fill('print("■", end="")').join('\n'), expected: "none" },
   { id: "missing-output", code: 'squares = "■" * 5', expected: "continue" },
   { id: "complete-loop", code: 'for i in range(5):\n    print("■", end="")', expected: "none" },
   { id: "complete-high", code: 'print("■" * 5)', expected: "none", high: true },
@@ -49,7 +58,11 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
     }
   },
   promptChecks: [includes(sample.selected ?? sample.code), includes(sample.problem ?? problem)],
-  responseChecks: [hasNoFencedCode(), maxBulletLines(3), ...(sample.expected === "continue" ? [{
+  responseChecks: [hasNoFencedCode(), maxBulletLines(3), ...(sample.id.startsWith("vertical") ? [{
+    name: "identifies output layout rather than only counting symbols",
+    run: (text: string) => ({ passed: /改行|縦|横|同じ行|同一行|1行|一行|end/.test(text)
+      && !/要件を満たしています|要件を満たしている|要件を満たす[。です]|修正は不要|変更は不要/.test(text) })
+  }] : []), ...(sample.expected === "continue" ? [{
     name: "hint does not prescribe duplicated lines or a completed expression",
     run: (text: string) => ({ passed: !/(?:行|print文).{0,20}(?:コピー|複製)|(?:コピー|複製).{0,20}(?:行|print)|print\s*\(\s*[^)\s]|["'「]■["'」]\s*\*\s*5/.test(text) })
   }] : [])]

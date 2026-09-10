@@ -51,7 +51,7 @@ export abstract class OpenAICompatibleClient {
         method: "POST",
         headers: this.createHeaders(),
         body: JSON.stringify({
-          ...this.getCompletionExtraBody(),
+          ...this.getCompletionExtraBody(typeof prompt === "string" ? undefined : prompt),
           model: modelKey,
           messages: request.systemPrompt
             ? [
@@ -93,7 +93,7 @@ export abstract class OpenAICompatibleClient {
     };
   }
 
-  protected getCompletionExtraBody(): Record<string, unknown> {
+  protected getCompletionExtraBody(_request?: AiTextRequest): Record<string, unknown> {
     return {};
   }
 

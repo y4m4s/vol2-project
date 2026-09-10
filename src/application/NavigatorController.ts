@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
 import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
@@ -684,7 +685,7 @@ export class NavigatorController implements vscode.Disposable {
     const kind: GuidanceKind = requireContext || hasSelection ? "context" : "manual";
     const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, slashCommand);
     const projectScope = slashCommand && getSkill(slashCommand).usesProjectScope
-      ? resolveNextProjectScope(assistanceDepth, slashCommandScope)
+      ? resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), slashCommandScope)
       : undefined;
 
     if (kind !== "context") {
@@ -883,7 +884,7 @@ export class NavigatorController implements vscode.Disposable {
       : usesProjectScope
         ? await this.contextCollector.collectNextActionContext(
             settings,
-            resolveNextProjectScope(assistanceDepth, options.slashCommandScope)
+            resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), options.slashCommandScope)
           )
         : await this.collectGuidanceContextForDepth(settings, assistanceDepth);
     const prepared =
@@ -1008,7 +1009,13 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
 
-    if (result.ok && result.outcome === "no_advice") {
+    const noAdviceText = "今回の確認では、追加すべき内容はありませんでした。";
+    const isNoAdvice = result.ok && result.outcome === "no_advice";
+    const lastEntry = latestState.conversationHistory.at(-1);
+    const recordNoAdvice = isNoAdvice && latestState.screen !== "main"
+      && Boolean(latestState.activeConversationStreamId) && latestState.conversationHistory.length > 0
+      && !(lastEntry?.kind === "always" && lastEntry.focus === "none");
+    if (isNoAdvice && !recordNoAdvice) {
       this.rememberAutomaticFocus(options, result.focus);
       this.patchSession({
         connectionState: this.connectionService.getState(),
@@ -1019,7 +1026,7 @@ export class NavigatorController implements vscode.Disposable {
               pendingAdditionalContext: initialState.pendingAdditionalContext
             }
           : { activeAdditionalContext: nextActiveAdditionalContext }),
-        statusMessage: undefined
+        statusMessage: { kind: "info", text: noAdviceText }
       });
       return { ok: true };
     }
@@ -1036,7 +1043,7 @@ export class NavigatorController implements vscode.Disposable {
         : responseModelLabel;
       const assistantEntry = this.createConversationEntry(
         "assistant",
-        result.text,
+        isNoAdvice ? noAdviceText : result.text,
         options.kind,
         preview,
         state.mode,
@@ -1080,7 +1087,7 @@ export class NavigatorController implements vscode.Disposable {
               kind: "warning",
               text: "NaviCom内の本日の概算トークン数が設定上限を超えています。設定から上限を確認できます。"
             }
-          : undefined
+          : isNoAdvice ? { kind: "info", text: noAdviceText } : undefined
       });
       await this.persistActiveConversationState();
       // Stream creation resets these caches, so record the displayed focus only
@@ -1265,7 +1272,7 @@ export class NavigatorController implements vscode.Disposable {
     assistanceDepth: AssistanceDepth,
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
-    if (assistanceDepth !== "high") {
+    if (guidanceContentDepth(settings.providerId, assistanceDepth) !== "high") {
       return baseContext ?? this.contextCollector.collectGuidanceContext();
     }
 

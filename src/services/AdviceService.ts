@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { createHash } from "node:crypto";
+import { guidanceContentDepth } from "./GuidanceDepthPolicy";
 import {
   AdviceMode,
   AutomaticGuidanceObservation,
@@ -133,7 +134,8 @@ export class AdviceService {
     const request: AiTextRequest = {
       ...prompt,
       purpose: "guidance",
-      maxOutputTokens: input.assistanceDepth === "high" ? HIGH_DEPTH_OUTPUT_TOKEN_LIMIT : input.slashCommand === "flow"
+      reasoningEffort: input.assistanceDepth === "high" ? "high" : "none",
+      maxOutputTokens: guidanceContentDepth(this.connectionService.getConnectedModel()?.providerId, input.assistanceDepth) === "high" ? HIGH_DEPTH_OUTPUT_TOKEN_LIMIT : input.slashCommand === "flow"
         ? AI_OUTPUT_TOKEN_LIMITS.flowRepair
         : AI_OUTPUT_TOKEN_LIMITS.guidance
     };
@@ -145,6 +147,10 @@ export class AdviceService {
     const validationOptions = guidanceResponseValidationOptions(input);
     const firstValidation = validateGuidanceResponse(input.slashCommand, first.text, validationOptions);
     if (firstValidation.ok) {
+      if (input.kind === "always") {
+        this.logDiagnostic({ event: "automatic_decision", outcome: firstValidation.outcome,
+          focus: firstValidation.focus, repaired: false, policyRevision: GUIDANCE_POLICY_REVISION });
+      }
       if (firstValidation.outcome === "no_advice" && firstValidation.suppressionReason) {
         this.logDiagnostic({ event: "automatic_advice_suppressed", reason: firstValidation.suppressionReason,
           policyRevision: GUIDANCE_POLICY_REVISION });
@@ -191,6 +197,10 @@ export class AdviceService {
       };
     }
 
+    if (input.kind === "always") {
+      this.logDiagnostic({ event: "automatic_decision", outcome: repairedValidation.outcome,
+        focus: repairedValidation.focus, repaired: true, policyRevision: GUIDANCE_POLICY_REVISION });
+    }
     if (repairedValidation.outcome === "no_advice" && repairedValidation.suppressionReason) {
       this.logDiagnostic({ event: "automatic_advice_suppressed", reason: repairedValidation.suppressionReason,
         policyRevision: GUIDANCE_POLICY_REVISION });
@@ -271,6 +281,7 @@ export class AdviceService {
       const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
       this.logDiagnostic({ event: "response", provider: model.providerId, model: model.modelId,
         purpose: request.purpose, elapsedMs: Date.now() - startedAt, maxOutputTokens: request.maxOutputTokens,
+        ...(model.providerId === "ollama" ? { reasoningEffort: request.reasoningEffort ?? "none" } : {}),
         finishReason: response.finishReason, requestId: response.requestId,
         inputTokens: response.inputTokens, outputTokens: response.outputTokens });
       if (token.isCancellationRequested) {
@@ -462,6 +473,7 @@ export class AdviceService {
     // プロンプト組み立ては純粋ロジック（PromptBuilder）に委譲する（評価ハーネスから直接計測可能）。
     return buildGuidancePromptMessages({
       ...input,
+      assistanceDepth: guidanceContentDepth(this.connectionService.getConnectedModel()?.providerId, input.assistanceDepth),
       modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource)
     });
   }

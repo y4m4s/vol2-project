@@ -14,7 +14,7 @@ import { AiInputLimitError } from "./AiRequestPolicy";
 import { DEFAULT_MODEL_PROFILE } from "./ModelProfile";
 import type { ModelProfile, PromptDelimiter } from "./ModelProfile";
 
-export const GUIDANCE_POLICY_REVISION = "2026-09-09-existing-code-proposal-v1";
+export const GUIDANCE_POLICY_REVISION = "2026-09-10-ollama-content-depth-v1";
 
 /**
  * 助言リクエストのプロンプト組み立てを担う純粋ロジック。
@@ -77,7 +77,7 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
       Boolean(context.additionalContext?.trim()))
   ].join("\n");
   const automaticDecision = kind === "always" && context.additionalContext?.trim()
-    ? '\n\n## Automatic decision\n現在のコード全体と課題要件を照合してください。課題達成済みで具体的なリスクや解説意図もなければ {"kind":"no_advice","focus":"none"} だけを返してください。値を作っただけで要求された出力がない場合は未完成です。例えば「Helloを表示」という課題で message = "Hello" だけなら未完成で、print("Hello") なら完成です。不足がある場合は、その不足に気づく短いヒントをcontinueで返してください。変更後の値やコードを教える必要はありません。正しいコードへの実行確認・追加作業の提案は不要です。'
+    ? '\n\n## Automatic decision\n現在のコード全体から実際に出力される文字列を、改行・空白・順序を含めて読み取り、課題要件と照合してください。Pythonのprintは既定で末尾に改行を出力します。文字の個数が合っていても、横一列という要件に対して複数行に出力するコードは未完成です。改行を抑制して同じ行に出力するコードは、複数のprintやループでも要件を満たせます。課題達成済みで具体的なリスクや解説意図もなければ {"kind":"no_advice","focus":"none"} だけを返してください。値を作っただけで要求された出力がない場合は未完成です。例えば「Helloを表示」という課題で message = "Hello" だけなら未完成で、print("Hello") なら完成です。不足がある場合は、その不足に気づく短いヒントをcontinueで返してください。変更後の値やコードを教える必要はありません。正しいコードへの実行確認・追加作業の提案は不要です。'
     : "";
   const question = automaticDecision + (userPrompt?.trim() ? "\n\n## User's question\n" + userPrompt.trim() : "");
   const contextStart = "\n\n" + delimiters.contextStart.join("\n") + "\n";
@@ -343,6 +343,7 @@ function getAutomaticTaskInstruction(): string {
     "First choose exactly one focus from continue, review, explain, overview, or none using the automatic guidance observation. Choose and answer in this single request; do not reveal reasoning steps.",
     "追加コンテキストは課題要件・背景を知るための資料であり、解説依頼ではない。Do not choose explain merely because additional context is available.",
     "最初に課題の要件と現在のコードを照合する。式の一部だけでなく外側の呼び出しと出力処理まで読む。値の作成と画面への出力を区別する。変更前後の断片は履歴であり、現在のコードを優先する。",
+    "低・高は説明の詳しさの設定であり、課題の達成条件は同じ。低でも出力の不一致を見落とさず短いヒントを返し、高でも完成コードを提示する必要はない。",
     "以下から最小限の介入を1つだけ選ぶ。高設定でも種類を混ぜない。カーソル・編集観測が欠けている場合は推測で補わず、具体的な根拠がなければnone。",
     "review: 直近の変更による具体的なリスクや新たな持続的診断があるとき、その場所と発生条件を1つ示す。無関係な全体監査や一時的な書きかけの構文への指摘はしない。",
     "explain: 編集箇所から離れた意味のある選択など、コードを読み解く意図が明確なとき、対象の式・関数・データの流れだけを説明する。コピー目的かもしれない選択はnone。",

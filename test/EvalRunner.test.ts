@@ -5,6 +5,17 @@ import { hasMermaidBlock, maxBulletLines } from "../src/eval/assertions";
 import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
 import { TASK_COMPLETION_SCENARIOS } from "../src/eval/taskCompletionScenarios";
 
+test("縦並びの評価は要件達成の誤説明と未達の指摘を区別する", async () => {
+  const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-vertical-five")!;
+  for (const [text, passed] of [
+    ["改行が含まれた出力は横一列の要件を満たしていません。末尾の改行に着目してください。", true],
+    ["1行に表示しているため要件を満たしています。", false]
+  ] as const) {
+    const report = await runLive([scenario], async () => JSON.stringify({ kind: "advice", focus: "continue", text }));
+    assert.equal(report.results[0].passed, passed);
+  }
+});
+
 test("再報告の同一コード再提案は本番と同じ表示前判定を通して評価する", async () => {
   const complete = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-complete")!;
   const single = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-single")!;
@@ -18,6 +29,10 @@ test("再報告の同一コード再提案は本番と同じ表示前判定を�
 });
 
 test("完成済み課題への不要な確認助言を不合格にし、未完成への一律沈黙も検出する", async () => {
+  const hello = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-complete-initial-read-hello-reported")!;
+  const reported = await runLive([hello], async () => JSON.stringify({ kind: "advice", focus: "continue",
+    text: 'print文の引数に"Hello"が正しく渡されているか確認してください。' }));
+  assert.equal(reported.failed, 1);
   const complete = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-complete")!;
   for (const text of [
     "「■」を5つ並べるために、文字列の繰り返し回数を正しく指定していますか？",
@@ -28,7 +43,8 @@ test("完成済み課題への不要な確認助言を不合格にし、未完�
   }
   const silent = await runLive(TASK_COMPLETION_SCENARIOS, async () => '{"kind":"no_advice","focus":"none"}');
   assert.deepEqual(silent.results.filter(r => !r.passed).map(r => r.id), [
-    "task-completion-single", "task-completion-wrong-count", "task-completion-missing-output"
+    "task-completion-single", "task-completion-incomplete-initial-read", "task-completion-wrong-count",
+    "task-completion-vertical-five", "task-completion-vertical-five-initial", "task-completion-vertical-loop", "task-completion-missing-output"
   ]);
 });
 
