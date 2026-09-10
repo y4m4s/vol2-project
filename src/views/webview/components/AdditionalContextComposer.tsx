@@ -3,29 +3,20 @@ import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 interface AdditionalContextButtonProps {
   open: boolean;
   hasValue: boolean;
-  readOnly?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }
 
 interface AdditionalContextPanelProps {
   id: string;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onClose: () => void;
 }
 
-interface AdditionalContextReadonlyPanelProps {
-  id: string;
-  value: string;
-  onClose: () => void;
-}
-
-export function AdditionalContextButton({ open, hasValue, readOnly = false, onClick }: AdditionalContextButtonProps) {
-  const label = readOnly
-    ? "追加コンテキストを表示"
-    : hasValue
-      ? "追加コンテキストを編集"
-      : "追加コンテキストを追加";
+export function AdditionalContextButton({ open, hasValue, disabled = false, onClick }: AdditionalContextButtonProps) {
+  const label = hasValue ? "追加コンテキストを編集" : "追加コンテキストを追加";
 
   return (
     <button
@@ -34,6 +25,7 @@ export function AdditionalContextButton({ open, hasValue, readOnly = false, onCl
       title={label}
       aria-label={label}
       aria-expanded={open}
+      disabled={disabled}
       onClick={onClick}
     >
       <span className="material-symbols-outlined">description</span>
@@ -41,7 +33,7 @@ export function AdditionalContextButton({ open, hasValue, readOnly = false, onCl
   );
 }
 
-export function AdditionalContextPanel({ id, value, onChange, onClose }: AdditionalContextPanelProps) {
+export function AdditionalContextPanel({ id, value, disabled = false, onChange, onClose }: AdditionalContextPanelProps) {
   const textareaRef = useAutoResizeTextarea(value);
 
   return (
@@ -69,32 +61,12 @@ export function AdditionalContextPanel({ id, value, onChange, onClose }: Additio
         placeholder="課題文、プロダクト方針、実装で守りたい前提などを、ここに入力してください。"
         rows={2}
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
-    </div>
-  );
-}
-
-export function AdditionalContextReadonlyPanel({ id, value, onClose }: AdditionalContextReadonlyPanelProps) {
-  return (
-    <div className="additional-context-panel readonly" id={id}>
-      <div className="additional-context-head">
-        <div className="additional-context-title">
-          <span className="material-symbols-outlined">description</span>
-          追加コンテキスト
-        </div>
-        <button
-          type="button"
-          className="additional-context-clear"
-          title="追加コンテキストを閉じる"
-          aria-label="追加コンテキストを閉じる"
-          onClick={onClose}
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
+      <div className="additional-context-note">
+        変更内容は次回の質問・自動助言から反映されます。
       </div>
-
-      <div className="additional-context-readonly">{value}</div>
     </div>
   );
 }
