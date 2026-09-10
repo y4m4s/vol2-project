@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { AutoAdviceState } from "../../../shared/types";
+import { getAutoAdviceWaitStatus } from "../../../shared/automaticGuidance";
 import { useApp } from "../state/AppContext";
 import {
   AdditionalContextButton,
@@ -456,13 +457,14 @@ function getAutoStatusText(autoAdvice: AutoAdviceState): string {
     return "常時モードは一時停止中です";
   }
 
-  if (autoAdvice.waitingForIdle) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.idleRemainingMs / 1000));
+  const waitStatus = getAutoAdviceWaitStatus(autoAdvice);
+  if (waitStatus.kind === "idle") {
+    const seconds = Math.max(1, Math.ceil(waitStatus.remainingMs / 1000));
     return `入力待ちです... ${seconds}秒`;
   }
 
-  if (autoAdvice.cooldownRemainingMs > 0) {
-    const seconds = Math.max(1, Math.ceil(autoAdvice.cooldownRemainingMs / 1000));
+  if (waitStatus.kind === "cooldown") {
+    const seconds = Math.max(1, Math.ceil(waitStatus.remainingMs / 1000));
     return `次の自動助言まで ${seconds}秒`;
   }
 
