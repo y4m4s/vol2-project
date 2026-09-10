@@ -42,8 +42,7 @@ export class AdviceScheduler implements vscode.Disposable {
   private signals: AutomaticTriggerSignal[] = [];
   private lastActivityAt?: number;
   private lastAdviceAt?: number;
-  private idleTimer?: NodeJS.Timeout;
-  private cooldownTimer?: NodeJS.Timeout;
+  private eligibilityTimer?: NodeJS.Timeout;
   private ticker?: NodeJS.Timeout;
 
   public readonly onDidTriggerAdvice = this.didTriggerAdviceEmitter.event;
@@ -101,10 +100,10 @@ export class AdviceScheduler implements vscode.Disposable {
     this.composerActive = active;
 
     if (active) {
-      // 入力開始: タイマーだけ止め、ペンディングトリガーは保持
-      this.clearTimers();
+      // 入力中は発火だけを止める。クールダウンの絶対期限は lastAdviceAt に保持する。
+      this.clearEligibilityTimer();
     } else {
-      // 入力終了: アイドルタイマーをリセットして再開
+      // 入力終了時点からのアイドル期限と、既存のクールダウン期限の遅い方まで待つ。
       this.lastActivityAt = Date.now();
       if (this.pendingTriggerReason) {
         this.ensureScheduled();
@@ -195,24 +194,18 @@ export class AdviceScheduler implements vscode.Disposable {
       return;
     }
 
-    // 入力中はタイマーを止めてペンディングを保持
+    // 入力中は発火しない。クールダウンは絶対時刻で継続する。
     if (this.composerActive) {
-      this.clearTimers();
+      this.clearEligibilityTimer();
       return;
     }
 
     const now = Date.now();
     const idleRemaining = this.getIdleRemainingMs(now);
-    if (idleRemaining > 0) {
-      this.armIdleTimer(idleRemaining);
-      this.clearCooldownTimer();
-      return;
-    }
-
     const cooldownRemaining = this.getCooldownRemainingMs(now);
-    if (cooldownRemaining > 0) {
-      this.armCooldownTimer(cooldownRemaining);
-      this.clearIdleTimer();
+    const eligibilityRemaining = Math.max(idleRemaining, cooldownRemaining);
+    if (eligibilityRemaining > 0) {
+      this.armEligibilityTimer(eligibilityRemaining);
       return;
     }
 
@@ -269,20 +262,10 @@ export class AdviceScheduler implements vscode.Disposable {
     );
   }
 
-  private armIdleTimer(delayMs: number): void {
-    this.clearIdleTimer();
-    this.idleTimer = setTimeout(() => {
-      this.idleTimer = undefined;
-      this.ensureScheduled();
-      this.syncTicker();
-      this.didChangeStateEmitter.fire();
-    }, delayMs);
-  }
-
-  private armCooldownTimer(delayMs: number): void {
-    this.clearCooldownTimer();
-    this.cooldownTimer = setTimeout(() => {
-      this.cooldownTimer = undefined;
+  private armEligibilityTimer(delayMs: number): void {
+    this.clearEligibilityTimer();
+    this.eligibilityTimer = setTimeout(() => {
+      this.eligibilityTimer = undefined;
       this.ensureScheduled();
       this.syncTicker();
       this.didChangeStateEmitter.fire();
@@ -315,22 +298,14 @@ export class AdviceScheduler implements vscode.Disposable {
   }
 
   private clearTimers(): void {
-    this.clearIdleTimer();
-    this.clearCooldownTimer();
+    this.clearEligibilityTimer();
     this.syncTicker();
   }
 
-  private clearIdleTimer(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = undefined;
-    }
-  }
-
-  private clearCooldownTimer(): void {
-    if (this.cooldownTimer) {
-      clearTimeout(this.cooldownTimer);
-      this.cooldownTimer = undefined;
+  private clearEligibilityTimer(): void {
+    if (this.eligibilityTimer) {
+      clearTimeout(this.eligibilityTimer);
+      this.eligibilityTimer = undefined;
     }
   }
 }

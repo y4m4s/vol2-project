@@ -4,7 +4,7 @@ import test from "node:test";
 import type * as vscode from "vscode";
 import type { AutoAdviceTriggerEvent } from "../src/services/AdviceScheduler";
 import { createAutomaticFingerprint } from "../src/application/GuidanceInput";
-import { automaticGuidanceLabel } from "../src/shared/automaticGuidance";
+import { automaticGuidanceLabel, getAutoAdviceWaitStatus } from "../src/shared/automaticGuidance";
 
 class Emitter<T> {
   private listeners: ((value: T) => void)[] = [];
@@ -101,6 +101,49 @@ test("再予約は新しいイベント・一時停止・手動モード・チ�
   scheduler.setComposerActive(false);
   t.mock.timers.tick(100);
   assert.equal(fired, 1);
+});
+
+test("インターバルと入力待ちを独立して進め、遅い期限で発火する", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setTimeout", "setInterval"], now: 1000 });
+  const scheduler = new AdviceScheduler();
+  t.after(() => scheduler.dispose());
+  const events: AutoAdviceTriggerEvent[] = [];
+  scheduler.onDidTriggerAdvice((event) => events.push(event));
+  scheduler.configure(
+    { idleDelayMs: 100, requestIntervalMs: 1000 },
+    { mode: "always", connectionState: "connected", requestState: "idle" }
+  );
+
+  scheduler.handleActivity("text_edit");
+  t.mock.timers.tick(100);
+  assert.equal(events.length, 1);
+
+  scheduler.handleActivity("text_edit");
+  scheduler.setComposerActive(true);
+  t.mock.timers.tick(600);
+  assert.equal(scheduler.getState().cooldownRemainingMs, 400, "入力中もインターバルは進む");
+
+  scheduler.setComposerActive(false);
+  const resumed = scheduler.getState();
+  assert.equal(resumed.idleRemainingMs, 100);
+  assert.equal(resumed.cooldownRemainingMs, 400);
+  assert.deepEqual(getAutoAdviceWaitStatus(resumed), { kind: "cooldown", remainingMs: 400 });
+
+  t.mock.timers.tick(399);
+  assert.equal(events.length, 1);
+  t.mock.timers.tick(1);
+  assert.equal(events.length, 2);
+});
+
+test("自動助言の表示は実際に発火を止める遅い待ち時間を優先する", () => {
+  assert.deepEqual(
+    getAutoAdviceWaitStatus({ waitingForIdle: true, idleRemainingMs: 10000, cooldownRemainingMs: 45000 }),
+    { kind: "cooldown", remainingMs: 45000 }
+  );
+  assert.deepEqual(
+    getAutoAdviceWaitStatus({ waitingForIdle: true, idleRemainingMs: 10000, cooldownRemainingMs: 3000 }),
+    { kind: "idle", remainingMs: 10000 }
+  );
 });
 
 function editorFor(text: string, line: number, column: number): vscode.TextEditor {
