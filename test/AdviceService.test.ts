@@ -102,6 +102,32 @@ test("高強度は8192トークンを要求し、低強度は2048を維持する
   }
 });
 
+test("実サービスは既存コード再提案を再送なしで控え、利用量と内容を含まない診断を残す", async () => {
+  const text = '「■」を5つ並べて表示させるためには、print("■" * 5)のように文字列を繰り返し表示する必要があります。';
+  const h = harness({ response: JSON.stringify({ kind: "advice", focus: "continue", text }), inputTokens: 70, outputTokens: 20 });
+  const result = await h.service.requestGuidance({ ...input, kind: "always", context: { ...input.context,
+    activeFileExcerpt: 'print("■" * 5)', additionalContext: "秘密の課題: ■を5つ表示" } });
+  assert.ok(result.ok && result.outcome === "no_advice");
+  assert.equal(result.text, "");
+  assert.equal(result.focus, "none");
+  assert.equal(h.calls(), 1);
+  assert.equal(result.usage?.outputTokens, 20);
+  assert.equal(result.responseMetadata?.attemptCount, 1);
+  assert.ok(h.diagnostics.some(item => item.event === "automatic_advice_suppressed"));
+  assert.match(String(h.diagnostics.find(item => item.event === "automatic_context")?.promptHash), /^[a-f0-9]{64}$/);
+  assert.doesNotMatch(JSON.stringify(h.diagnostics), /秘密|print|■/);
+});
+
+test("形式修復後に出た既存コード再提案も抑制する", async () => {
+  const h = harness({ responses: ["invalid JSON", JSON.stringify({ kind: "advice", focus: "continue",
+    text: 'print("Hi")のように出力してください。' })] });
+  const result = await h.service.requestGuidance({ ...input, kind: "always", context: { ...input.context,
+    activeFileExcerpt: 'print("Hi")', additionalContext: "Hiを表示" } });
+  assert.ok(result.ok && result.outcome === "no_advice");
+  assert.equal(h.calls(), 2);
+  assert.equal(result.responseMetadata?.attemptCount, 2);
+});
+
 test("自動回答の形式修正でもfocus契約を維持し、修正後のfocusを返す", async () => {
   const h = harness({ responses: [answer, JSON.stringify({ kind: "advice", focus: "review", text: "値が未定義になる条件を確認してください。" })] });
   const result = await h.service.requestGuidance({ ...input, kind: "always" });

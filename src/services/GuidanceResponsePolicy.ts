@@ -1,10 +1,11 @@
-import type { AutomaticGuidanceFocus, GuidanceKind, SlashCommand } from "../shared/types";
+import type { AutomaticGuidanceFocus, AutomaticGuidanceObservation, GuidanceContext, GuidanceKind, SlashCommand } from "../shared/types";
+import { repeatsExistingCallProposal } from "./AutomaticAdviceGrounding";
 import { parseAutomaticFocus } from "../shared/automaticGuidance";
 import { MAX_GUIDANCE_RESPONSE_CHARS } from "./AiRequestPolicy";
 
 export type GuidanceResponseValidation =
   | { ok: true; outcome: "advice"; text: string; normalized: boolean; focus?: AutomaticGuidanceFocus }
-  | { ok: true; outcome: "no_advice"; text: ""; normalized: boolean; focus?: AutomaticGuidanceFocus }
+  | { ok: true; outcome: "no_advice"; text: ""; normalized: boolean; focus?: AutomaticGuidanceFocus; suppressionReason?: "existingCodeProposal" }
   | { ok: false; reason: GuidanceResponseFailureReason };
 
 export type FlowResponseFailureReason =
@@ -26,6 +27,21 @@ export type GuidanceResponseFailureReason =
 export interface GuidanceResponseValidationOptions {
   kind?: GuidanceKind;
   allowImplementationCode?: boolean;
+  automaticCurrentCode?: readonly string[];
+}
+
+export function guidanceResponseValidationOptions(input: {
+  kind: GuidanceKind; userPrompt?: string; context: GuidanceContext; automaticObservation?: AutomaticGuidanceObservation;
+}): GuidanceResponseValidationOptions {
+  const allowImplementationCode = userExplicitlyRequestedImplementationCode(input.userPrompt);
+  return {
+    kind: input.kind, allowImplementationCode,
+    ...(input.kind === "always" && input.context.additionalContext?.trim() && !allowImplementationCode
+      ? { automaticCurrentCode: [input.context.activeFileExcerpt,
+          input.automaticObservation?.cursorExcerpt?.replaceAll("<<<NAVICOM_CURSOR>>>", "")]
+          .filter((code): code is string => Boolean(code)) }
+      : {})
+  };
 }
 
 const MERMAID_OPENING_FENCE = /^[ \t]*```[ \t]*mermaid[ \t]*$/gim;
@@ -60,6 +76,11 @@ export function validateGuidanceResponse(
   }
   if (text.length > MAX_GUIDANCE_RESPONSE_CHARS) {
     return { ok: false, reason: "responseTooLong" };
+  }
+  if (options.kind === "always" && envelope.focus === "continue" && options.allowImplementationCode === false
+      && options.automaticCurrentCode && repeatsExistingCallProposal(text, options.automaticCurrentCode)) {
+    return { ok: true, outcome: "no_advice", text: "", focus: "none", normalized: envelope.normalized,
+      suppressionReason: "existingCodeProposal" };
   }
   if (
     options.allowImplementationCode === false

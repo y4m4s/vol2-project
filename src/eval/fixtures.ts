@@ -2,6 +2,7 @@ import type { AutomaticGuidanceFocus, GuidanceContext } from "../shared/types";
 import { deriveModelProfile } from "../services/ModelProfile";
 import type { GuidancePromptInput } from "../services/PromptBuilder";
 import { applySkillContextPreset } from "../services/contextPreset";
+import { TASK_COMPLETION_SCENARIOS } from "./taskCompletionScenarios";
 import {
   Check,
   excludes,
@@ -65,6 +66,7 @@ function richContext(): GuidanceContext {
 }
 
 export const SCENARIOS: EvalScenario[] = [
+  ...TASK_COMPLETION_SCENARIOS,
   ...automaticScenarios(),
   {
     id: "flow",

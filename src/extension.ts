@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { NavigatorController } from "./application/NavigatorController";
 import { ContextCollector } from "./services/ContextCollector";
 import { AdviceService } from "./services/AdviceService";
+import { GUIDANCE_POLICY_REVISION } from "./services/PromptBuilder";
 import { AdviceScheduler } from "./services/AdviceScheduler";
 import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
@@ -36,6 +37,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const contextCollector = new ContextCollector();
   const diagnostics = vscode.window.createOutputChannel("NaviCom Diagnostics", { log: true });
   context.subscriptions.push(diagnostics);
+  diagnostics.info(JSON.stringify({ event: "activation", policyRevision: GUIDANCE_POLICY_REVISION,
+    extensionPath: context.extensionUri.fsPath }));
   const lmStudioServerService = new LmStudioServerService();
   const controller = new NavigatorController(
     contextCollector,

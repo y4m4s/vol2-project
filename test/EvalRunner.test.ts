@@ -3,6 +3,50 @@ import test from "node:test";
 import { runLive } from "../src/eval/runner";
 import { hasMermaidBlock, maxBulletLines } from "../src/eval/assertions";
 import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
+import { TASK_COMPLETION_SCENARIOS } from "../src/eval/taskCompletionScenarios";
+
+test("再報告の同一コード再提案は本番と同じ表示前判定を通して評価する", async () => {
+  const complete = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-complete")!;
+  const single = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-single")!;
+  const response = JSON.stringify({ kind: "advice", focus: "continue",
+    text: '「■」を5つ並べて表示させるためには、print("■" * 5)のように文字列を繰り返し表示する必要があります。' });
+  const report = await runLive([complete, single], async () => response);
+  assert.equal(report.results[0].passed, true);
+  assert.equal(report.results[0].focus, "none");
+  assert.equal(report.results[1].passed, false); // 未完成には不適切な完成コード提示として残す。
+  assert.equal(report.results[1].focus, "continue");
+});
+
+test("完成済み課題への不要な確認助言を不合格にし、未完成への一律沈黙も検出する", async () => {
+  const complete = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-complete")!;
+  for (const text of [
+    "「■」を5つ並べるために、文字列の繰り返し回数を正しく指定していますか？",
+    "「■」を5つ繰り返す式が正しく表示されているようです。次はこの表示を出力するためのprint文を確認してください。"
+  ]) {
+    const report = await runLive([complete], async () => JSON.stringify({ kind: "advice", focus: "continue", text }));
+    assert.equal(report.failed, 1);
+  }
+  const silent = await runLive(TASK_COMPLETION_SCENARIOS, async () => '{"kind":"no_advice","focus":"none"}');
+  assert.deepEqual(silent.results.filter(r => !r.passed).map(r => r.id), [
+    "task-completion-single", "task-completion-wrong-count", "task-completion-missing-output"
+  ]);
+});
+
+test("未完成へのcontinueでも行コピーや完成式を提示するヒントは不合格にする", async () => {
+  const single = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-single")!;
+  for (const text of ["何行かコピーして繰り返す方法はどうでしょうか。", '"■" * 5 にしてみましょう。']) {
+    const report = await runLive([single], async () => JSON.stringify({ kind: "advice", focus: "continue", text }));
+    assert.equal(report.failed, 1);
+    assert.equal(report.results[0].checks.at(-1)!.passed, false);
+  }
+});
+
+test("出力が未実装のときの一般的なprint()への言及は完成コードと判定しない", async () => {
+  const missing = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-missing-output")!;
+  const report = await runLive([missing], async () => JSON.stringify({ kind: "advice", focus: "continue",
+    text: "生成した文字列とprint()をどのようにつなげられそうでしょうか。" }));
+  assert.equal(report.passed, 1);
+});
 
 test("自動評価fixtureの挿入・削除文字数が変更内容と一致する", () => {
   for (const [id, inserted, deleted] of [["automatic-review", 0, 1], ["automatic-cosmetic", 2, 0]] as const) {

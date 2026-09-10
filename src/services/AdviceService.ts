@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { createHash } from "node:crypto";
 import {
   AdviceMode,
   AutomaticGuidanceObservation,
@@ -22,10 +23,10 @@ import { classifyOrcaRouterFailure, orcaRouterAccessMessage, requestRejectionMes
 import { deriveModelProfile } from "./ModelProfile";
 import {
   buildGuidanceFormatRepairPrompt,
-  userExplicitlyRequestedImplementationCode,
+  guidanceResponseValidationOptions,
   validateGuidanceResponse
 } from "./GuidanceResponsePolicy";
-import { buildGuidancePromptMessages, formatReferencedFileReason } from "./PromptBuilder";
+import { buildGuidancePromptMessages, formatReferencedFileReason, GUIDANCE_POLICY_REVISION } from "./PromptBuilder";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
 import { waitWithFallback } from "./BoundedWait";
@@ -120,6 +121,15 @@ export class AdviceService {
       if (!(error instanceof AiInputLimitError)) throw error;
       return { ok: false, connectionState: this.connectionService.getState(), message: error.message };
     }
+    if (input.kind === "always" && input.context.additionalContext?.trim()) {
+      this.logDiagnostic({ event: "automatic_context", policyRevision: GUIDANCE_POLICY_REVISION,
+        promptHash: createHash("sha256").update(JSON.stringify(prompt)).digest("hex"),
+        activeCodeHash: createHash("sha256").update(input.context.activeFileExcerpt ?? "").digest("hex"),
+        activeCodeChars: input.context.activeFileExcerpt?.length ?? 0,
+        cursorCodeChars: input.automaticObservation?.cursorExcerpt?.length ?? 0,
+        selectedChars: input.context.selectedText?.length ?? 0,
+        additionalContextChars: input.context.additionalContext.length });
+    }
     const request: AiTextRequest = {
       ...prompt,
       purpose: "guidance",
@@ -132,12 +142,13 @@ export class AdviceService {
       return first;
     }
 
-    const validationOptions = {
-      kind: input.kind,
-      allowImplementationCode: userExplicitlyRequestedImplementationCode(input.userPrompt)
-    };
+    const validationOptions = guidanceResponseValidationOptions(input);
     const firstValidation = validateGuidanceResponse(input.slashCommand, first.text, validationOptions);
     if (firstValidation.ok) {
+      if (firstValidation.outcome === "no_advice" && firstValidation.suppressionReason) {
+        this.logDiagnostic({ event: "automatic_advice_suppressed", reason: firstValidation.suppressionReason,
+          policyRevision: GUIDANCE_POLICY_REVISION });
+      }
       return {
         ...first,
         text: firstValidation.text,
@@ -178,6 +189,11 @@ export class AdviceService {
         connectionState: this.connectionService.getState(),
         message: "AI は応答しましたが、出力の安全性・形式契約を2回とも満たせませんでした。入力を短くしてもう一度実行してください。"
       };
+    }
+
+    if (repairedValidation.outcome === "no_advice" && repairedValidation.suppressionReason) {
+      this.logDiagnostic({ event: "automatic_advice_suppressed", reason: repairedValidation.suppressionReason,
+        policyRevision: GUIDANCE_POLICY_REVISION });
     }
 
     return {
