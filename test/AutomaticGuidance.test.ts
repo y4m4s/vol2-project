@@ -32,6 +32,8 @@ const { NavigatorController } = require("../src/application/NavigatorController"
 const { AdviceScheduler } = require("../src/services/AdviceScheduler") as typeof import("../src/services/AdviceScheduler");
 const { ConversationCoordinator } = require("../src/application/coordinators/ConversationCoordinator") as typeof import("../src/application/coordinators/ConversationCoordinator");
 const { ConversationStore } = require("../src/services/ConversationStore") as typeof import("../src/services/ConversationStore");
+const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
+const { ConversationMemoryCoordinator } = require("../src/application/coordinators/ConversationMemoryCoordinator") as typeof import("../src/application/coordinators/ConversationMemoryCoordinator");
 loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
@@ -72,7 +74,7 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
     sessionStore: { getState: () => state, patch: (patch: Partial<NavigatorSessionState>) => Object.assign(state, patch) },
     settingsService: { getSettings: () => settings }, usageMeter: { isTokenLimitExceeded: () => false },
     connectionSettingsCoordinator: { getCurrentProviderId: () => "copilot", getCurrentModelLabel: () => "test" },
-    connectionService: { getState: () => connection, getConnectedModel: () => ({ providerId: "copilot", modelId: "test" }) },
+    connectionService: { getProviderId: () => "copilot", getState: () => connection, getConnectedModel: () => ({ providerId: "copilot", modelId: "test" }) },
     contextCollector: { collectPreview: () => state.contextPreview, collectGuidanceContext: () => context,
       collectAutomaticObservation: (event: AutoAdviceTriggerEvent) => ({ triggerReasons: event.signals.map((x) => x.reason),
         idleDurationMs: event.idleDurationMs, selectionPresent: false, cursor: { line: 1, column: 1 }, cursorExcerpt: "<<<NAVICOM_CURSOR>>>" + context.activeFileExcerpt }),
@@ -94,6 +96,11 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
       : currentState.activeAdditionalContext
   });
   Object.assign(driver, { conversationCoordinator: coordinator });
+  const internals = driver as unknown as { connectionService: ConstructorParameters<typeof ProviderRoutingCoordinator>[0]; usageMeter: ConstructorParameters<typeof ProviderRoutingCoordinator>[1] };
+  Object.assign(driver, {
+    providerRoutingCoordinator: new ProviderRoutingCoordinator(internals.connectionService, internals.usageMeter),
+    conversationMemoryCoordinator: new ConversationMemoryCoordinator(internals.connectionService, store, internals.usageMeter)
+  });
   driver.patchSession({});
   return { driver, state, scheduler, store, context,
     moveCursor: () => { snapshot = "v1:cursor2"; },
@@ -145,6 +152,25 @@ for (const phase of ["preparing", "requesting"] as const) {
     assert.equal(h.state.conversationHistory.length, 1);
   });
 }
+
+test("SQLite memory rejects stale revisions, round-trips policy and removes memory with the conversation", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "決定事項", focus: "continue" }));
+  t.after(h.dispose);
+  await h.driver.handleAutomaticGuidance();
+  const id = h.state.activeConversationStreamId!;
+  const record = h.store.get(id)!;
+  record.entries[0].transmissionClass = "localOnly";
+  record.entries[0].routeReason = "設定上限で切り替え";
+  const saved = await h.store.saveStream(record);
+  const items = [{ text: "決定事項", sourceEntryIds: [record.entries[0].id] }];
+  assert.equal(await h.store.saveMemory(id, record.revision, items[0].sourceEntryIds, items), false);
+  assert.equal(await h.store.saveMemory(id, saved.revision, items[0].sourceEntryIds, items), true);
+  assert.deepEqual(h.store.getMemory(id)?.items, items);
+  assert.equal(h.store.get(id)?.entries[0].transmissionClass, "localOnly");
+  assert.equal(h.store.get(id)?.entries[0].routeReason, "設定上限で切り替え");
+  await h.store.deleteStream(id);
+  assert.equal(h.store.getMemory(id), undefined);
+});
 
 test("生成中の編集を古い回答の破棄後に再実行する（実スケジューラと排他制御）", async (t) => {
   let finishFirst!: (result: GuidanceRequestResult) => void;
@@ -341,7 +367,7 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
       settingsService: { getSettings: () => settings },
       usageMeter: { isTokenLimitExceeded: () => false },
       connectionSettingsCoordinator: { getCurrentProviderId: () => providerId, getCurrentModelLabel: () => "test model" },
-      connectionService: { getState: () => "connected", getConnectedModel: () => ({ providerId, modelId: "test" }) },
+      connectionService: { getProviderId: () => providerId, getState: () => "connected", getConnectedModel: () => ({ providerId, modelId: "test" }) },
       contextCollector: {
         collectPreview: () => state.contextPreview,
         collectGuidanceContext: () => context,
@@ -355,6 +381,8 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
       requestPlanCoordinator: { externalize: (prepared: PreparedGuidanceRequest) => prepared },
       knowledgeStore: { findReusable: () => [] },
       conversationCoordinator: { ensureStreamForAutomaticResult: async () => state, setGuidanceContext: () => {} },
+      providerRoutingCoordinator: new ProviderRoutingCoordinator({ getState: () => "connected" } as never, {} as never),
+      conversationMemoryCoordinator: new ConversationMemoryCoordinator({ getConnectedModel: () => ({ providerId, profileSource: {} }) } as never, {} as never, {} as never),
       adviceService: { requestGuidance: async (input: GuidanceRequestInput) => {
         sent.push(input);
         if (editWhileResponding) editorSnapshot = "app.ts:v3:1:15";

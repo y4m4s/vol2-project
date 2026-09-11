@@ -8,6 +8,23 @@ export type ConnectionState =
 
 export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
+export interface AutomaticRoutingSettings {
+  mode: "manual" | "automaticSuggest" | "automatic";
+  allowedProviderIds: AiProviderId[];
+  preferredProviderId?: AiProviderId;
+  thresholdPercent: number;
+  dailyProviderTokenSoftLimits: Partial<Record<AiProviderId, number>>;
+  dailyCloudTokenSoftLimit: number;
+  orcaDailyCostSoftLimit: number;
+  compressionStrategy: "automatic" | "localPreferred" | "cloudOnly";
+  localHelperProviderId?: "ollama" | "lmStudio";
+}
+
+export interface ConversationRoutingPreference {
+  mode?: AutomaticRoutingSettings["mode"];
+  providerId?: AiProviderId;
+}
+
 export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
@@ -193,6 +210,7 @@ export interface GuidanceContext {
 }
 
 export interface NavigatorSettings {
+  routing?: AutomaticRoutingSettings;
   providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
@@ -324,6 +342,8 @@ export interface ProviderResponseMetadata {
 }
 
 export interface ConversationEntry {
+  transmissionClass?: "localOnly" | "cloudAllowed" | "excluded";
+  routeReason?: string;
   focus?: AutomaticGuidanceFocus;
   id: string;
   role: ConversationRole;
@@ -411,6 +431,8 @@ export interface NavigatorSessionState {
 }
 
 export interface NavigatorViewModel {
+  conversationRoutingPreference?: ConversationRoutingPreference;
+  testedProviderIds?: AiProviderId[];
   screen: NavigatorScreen;
   connectionState: ConnectionState;
   requestState: RequestState;

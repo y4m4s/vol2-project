@@ -48,6 +48,12 @@ const input = {
 };
 const answer = JSON.stringify({ kind: "advice", text: "確認の観点です。" });
 
+test("conversation memory is included as reference data in real provider requests", async () => {
+  const h = harness();
+  await h.service.requestGuidance({ ...input, conversationMemory: '{"requirement":"削除は禁止"}' });
+  assert.ok(h.requests[0].userPrompt.includes("削除は禁止"));
+});
+
 function harness(options: {
   providerId?: "ollama" | "copilot";
   countTokens?: ConnectedProviderModel["countTokens"];

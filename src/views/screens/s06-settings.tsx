@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
+import { RoutingSettings } from "../webview/components/RoutingSettings";
+import { normalizeRoutingSettings } from "../../services/ProviderRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
@@ -34,6 +36,9 @@ const DEPTH_OPTIONS: Array<{ value: AssistanceDepth; label: string }> = [
 export function S06Settings() {
   const { viewModel, send } = useApp();
   const settings = viewModel?.settings;
+  const savedRouting = JSON.stringify(normalizeRoutingSettings(settings?.routing));
+  const [routing, setRouting] = useState(() => normalizeRoutingSettings(settings?.routing));
+  useEffect(() => { setRouting(normalizeRoutingSettings(JSON.parse(savedRouting))); }, [savedRouting, viewModel?.settingsRevision]);
 
   const savedProviderId = settings?.providerId ?? "copilot";
   const savedDefaultMode = settings?.defaultMode ?? "manual";
@@ -110,6 +115,7 @@ export function S06Settings() {
   const ollamaModelOptions = ollamaOrigin && viewModel?.ollamaModelsBaseUrl === ollamaOrigin
     ? viewModel?.ollamaModelOptions ?? [] : [];
   const hasPendingChanges =
+    JSON.stringify(routing) !== savedRouting ||
     ollamaBaseUrl !== savedOllamaBaseUrl || ollamaModelKey !== savedOllamaModelKey ||
     providerId !== savedProviderId ||
     defaultMode !== savedDefaultMode ||
@@ -129,6 +135,7 @@ export function S06Settings() {
     send({
       type: "saveSettings",
       payload: {
+        routing,
         providerId,
         defaultMode,
         defaultAssistanceDepth,
@@ -146,6 +153,7 @@ export function S06Settings() {
   }
 
   function handleRevertDraft() {
+    setRouting(normalizeRoutingSettings(JSON.parse(savedRouting)));
     setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
@@ -190,6 +198,19 @@ export function S06Settings() {
 
       <div className="setting-item">
         <SettingTitle
+          help="手動・提案型・完全自動型から、プロバイダーの切り替え方法を選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
+        >
+          プロバイダーの切り替え
+        </SettingTitle>
+        <div className="setting-desc">作業中は同じ接続先を維持し、必要なときだけ切り替えます。</div>
+        <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
+          currentProviderId={providerId} disabled={viewModel?.isBusy ?? false}
+          connectProvider={id => send({ type: "testRoutingProvider", providerId: id })} />
+      </div>
+
+      {routing.mode === "manual" && (
+      <div className="setting-item">
+        <SettingTitle
           icon="cable"
           help="回答生成に使うAIプロバイダーを選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
         >
@@ -198,6 +219,7 @@ export function S06Settings() {
         <div className="setting-desc">助言を生成する AI を選択します。</div>
         <ProviderButtonGroup value={providerId} onChange={handleProviderChange} />
       </div>
+      )}
 
       <div className="settings-section">
         {providerId === "lmStudio" ? (
@@ -687,6 +709,7 @@ function ProviderButtonGroup({
     </div>
   );
 }
+
 function ModeButtonGroup({
   value,
   onChange
@@ -932,7 +955,7 @@ function SettingTitle({
   id,
   htmlFor
 }: {
-  icon: string;
+  icon?: string;
   children: ReactNode;
   help: string;
   id?: string;
@@ -941,7 +964,7 @@ function SettingTitle({
   const tooltipId = useId();
   const content = (
     <>
-      <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>
+      {icon && <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>}
       <span>{children}</span>
     </>
   );

@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseWebviewMessage } from "../src/shared/messages";
+import { normalizeRoutingSettings } from "../src/services/ProviderRouting";
+
+test("routing settings reject malformed modes, thresholds and provider ids", () => {
+  const payload = { providerId: "copilot", defaultMode: "manual", defaultAssistanceDepth: "low", idleDelaySec: 10, requestIntervalSec: 60, dailyTokenLimit: 100000, excludeGlobs: "", routing: normalizeRoutingSettings({ mode: "automaticSuggest", allowedProviderIds: ["copilot"] }) };
+  assert.ok(parseWebviewMessage({ type: "saveSettings", payload }));
+  for (const patch of [{ mode: "invalid" }, { allowedProviderIds: ["unknown"] }, { thresholdPercent: Number.NaN }, { dailyProviderTokenSoftLimits: { copilot: -1 } }]) {
+    assert.equal(parseWebviewMessage({ type: "saveSettings", payload: { ...payload, routing: { ...payload.routing, ...patch } } }), undefined);
+  }
+});
 
 test("送信予定の入力を保持し、型不正や上限超過を拒否する", () => {
   const message = { type: "refreshRequestPlan", userPrompt: "/flow", additionalContext: "draft" };

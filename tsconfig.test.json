@@ -18,6 +18,10 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/ProviderRoutingCoordinator.test.ts",
+    "test/MemoryCompactor.test.ts",
+    "test/ProviderRouting.test.ts",
+    "test/ConversationMemory.test.ts",
     "test/AutomaticObservation.test.ts",
     "src/shared/feedback.ts",
     "src/services/SerialTaskQueue.ts",

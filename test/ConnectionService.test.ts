@@ -106,6 +106,20 @@ function ollamaHarness() {
   };
 }
 
+test("routing only activates tested models matching current settings without another probe", async () => {
+  const h = ollamaHarness();
+  const settings = { ...h.settings, ...h.ollamaSettings, providerId: "copilot" as const };
+  assert.equal(h.service.activateTestedProvider("copilot", settings), false);
+  await h.service.connectAndActivate(settings);
+  await h.service.connectAndActivate({ ...settings, providerId: "ollama" });
+  assert.equal(h.service.getTestedModels(settings).length, 2);
+  assert.equal(h.service.activateTestedProvider("copilot", settings), true);
+  assert.equal(h.service.getProviderId(), "copilot");
+  assert.equal(h.service.activateTestedProvider("copilot", { ...settings, copilotModelId: "different" }), false);
+  h.service.markRestricted();
+  assert.equal(h.service.activateTestedProvider("copilot", settings), false);
+});
+
 test("Ollamaから切り替えると最後に使用したモデルだけをアンロードする", async () => {
   const h = ollamaHarness();
   assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, true);

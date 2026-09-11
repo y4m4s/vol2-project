@@ -79,6 +79,28 @@ interface ConnectionSnapshot {
 }
 
 export class ConnectionService {
+  private readonly testedModels = new Map<AiProviderId, { key: string; model: ConnectedProviderModel; copilot?: vscode.LanguageModelChat }>();
+
+  public getTestedModels(settings: NavigatorSettings): ConnectedProviderModel[] {
+    if (!vscode.workspace.isTrusted) return [];
+    return [...this.testedModels].filter(([id, entry]) => entry.key === this.routingModelKey(id, settings))
+      .map(([, entry]) => entry.model);
+  }
+
+  public activateTestedProvider(id: AiProviderId, settings: NavigatorSettings): boolean {
+    const entry = this.testedModels.get(id);
+    if (!vscode.workspace.isTrusted || !entry || entry.key !== this.routingModelKey(id, settings) || this.pendingConnection) return false;
+    this.providerId = id;
+    this.connectedModel = entry.model;
+    this.copilotModel = entry.copilot;
+    this.connectionState = "connected";
+    return true;
+  }
+
+  private routingModelKey(id: AiProviderId, settings: NavigatorSettings): string {
+    return JSON.stringify(id === "copilot" ? [settings.copilotModelId] : id === "orcaRouter" ? [settings.orcaRouterModelId] :
+      id === "ollama" ? [settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL, settings.ollamaModelKey] : [settings.lmStudioBaseUrl, settings.lmStudioModelKey]);
+  }
   private connectionState: ConnectionState = "disconnected";
   private providerId: AiProviderId = "copilot";
   private copilotModel: vscode.LanguageModelChat | undefined;
@@ -189,12 +211,14 @@ export class ConnectionService {
   }
 
   public async storeOrcaRouterApiKey(apiKey: string): Promise<void> {
+    this.testedModels.delete("orcaRouter");
     await this.orcaRouterCredentials.storeApiKey(apiKey);
     this.availableOrcaRouterModelOptions = createBuiltInOrcaRouterOptions();
     this.lastOrcaRouterIssue = undefined;
   }
 
   public async deleteOrcaRouterApiKey(): Promise<void> {
+    this.testedModels.delete("orcaRouter");
     await this.orcaRouterCredentials.deleteApiKey();
     this.availableOrcaRouterModelOptions = [];
     this.lastOrcaRouterIssue = "missingApiKey";
@@ -275,11 +299,13 @@ export class ConnectionService {
   }
 
   public markRestricted(): ConnectionState {
+    this.testedModels.delete(this.providerId);
     this.connectionState = "restricted";
     return this.connectionState;
   }
 
   public markUnavailable(): ConnectionState {
+    this.testedModels.delete(this.providerId);
     this.copilotModel = undefined;
     this.connectedModel = undefined;
     this.connectionState = "unavailable";
@@ -288,6 +314,7 @@ export class ConnectionService {
   }
 
   public resetToDisconnected(): ConnectionState {
+    this.testedModels.delete(this.providerId);
     this.copilotModel = undefined;
     this.connectedModel = undefined;
     this.lastLmStudioIssue = undefined;
@@ -322,6 +349,9 @@ export class ConnectionService {
         : this.connectCopilot(settings.copilotModelId));
 
     if (connectionState === "connected") {
+      if (this.connectedModel) this.testedModels.set(settings.providerId, {
+        key: this.routingModelKey(settings.providerId, settings), model: this.connectedModel, copilot: this.copilotModel
+      });
       if (settings.providerId !== "ollama") await this.unloadLastOllamaModel();
       return { connectionState, activated: true };
     }
@@ -571,6 +601,7 @@ export class ConnectionService {
 
   private createLmStudioModel(baseUrl: string, model: LmStudioModel): ConnectedProviderModel {
     return {
+      endpoint: baseUrl,
       providerId: "lmStudio",
       modelId: model.key,
       modelLabel: model.label,
