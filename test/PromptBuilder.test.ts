@@ -23,7 +23,9 @@ test("課題の自動判定で個数だけでなく改行と出力形式を照�
   const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-vertical-five")!;
   const prompt = buildGuidancePrompt(scenario.input);
   assert.match(prompt, /改行・空白・順序/);
-  assert.match(prompt, /複数のprintやループでも要件を満たせます/);
+  assert.match(prompt, /どの配置が必要かを決めつけない/);
+  assert.match(prompt, /課題要件と現在の出力の不一致はcontinueの根拠/);
+  assert.doesNotMatch(prompt, /現在は複数行に出力されています。|例えば「Helloを表示」/);
 });
 
 test("常時モードも高・低の生成指示を維持し、no_advice契約を保つ", () => {

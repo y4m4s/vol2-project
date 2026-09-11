@@ -6,6 +6,17 @@ import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
 import { TASK_COMPLETION_SCENARIOS } from "../src/eval/taskCompletionScenarios";
 import { taskHintChecks } from "../src/eval/taskHintChecks";
 
+test("横縦の4条件で旧例文の使い回しと一律沈黙を検出する", async () => {
+  const cases = TASK_COMPLETION_SCENARIOS.filter(s => s.id.includes("layout-"));
+  assert.equal(cases.length, 4);
+  const repeated = await runLive(cases, async () => JSON.stringify({ kind: "advice", focus: "continue",
+    text: "現在は複数行に出力されています。課題は同じ行への出力を求めています。各出力の末尾の扱いに着目してください。" }));
+  assert.equal(repeated.passed, 1);
+  assert.equal(repeated.results.find(r => r.passed)!.id, "task-completion-layout-h-v");
+  const silent = await runLive(cases, async () => '{"kind":"no_advice","focus":"none"}');
+  assert.equal(silent.failed, 2);
+});
+
 test("単独printへの改行の例文コピーを課題ヒントの合格にしない", async () => {
   const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-single")!;
   const report = await runLive([scenario], async () => JSON.stringify({ kind: "advice", focus: "continue",
@@ -67,7 +78,7 @@ test("完成済み課題への不要な確認助言を不合格にし、未完�
   }
   const silent = await runLive(TASK_COMPLETION_SCENARIOS, async () => '{"kind":"no_advice","focus":"none"}');
   assert.deepEqual(silent.results.filter(r => !r.passed).map(r => r.id), [
-    "task-completion-single", "task-completion-incomplete-initial-read", "task-completion-wrong-count",
+    "task-completion-single", "task-completion-layout-v-h", "task-completion-layout-h-v", "task-completion-incomplete-initial-read", "task-completion-wrong-count",
     "task-completion-vertical-five", "task-completion-vertical-five-initial", "task-completion-vertical-loop", "task-completion-horizontal-wrong-count", "task-completion-missing-output"
   ]);
 });

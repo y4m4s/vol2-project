@@ -7,6 +7,10 @@ const problem = 'Q001 横に並べる（繰り返し） 文字「■」を横に
 // Synthetic editor snapshots: never read a user's workspace in the live eval.
 export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   { id: "single", code: 'print("■")', expected: "continue" },
+  { id: "layout-h-h", code: 'print("■" * 5)', problem: "■を横並びに5つ表示するコードを書いてください。", openOnly: true, expected: "none" },
+  { id: "layout-v-h", code: 'print("■" * 5)', problem: "■を縦並びに5つ表示するコードを書いてください。", openOnly: true, expected: "continue" },
+  { id: "layout-h-v", code: Array(5).fill('print("■")').join('\n'), problem: "■を横並びに5つ表示するコードを書いてください。", openOnly: true, expected: "continue" },
+  { id: "layout-v-v", code: Array(5).fill('print("■")').join('\n'), problem: "■を縦並びに5つ表示するコードを書いてください。", openOnly: true, expected: "none" },
   { id: "complete", code: 'print("■" * 5)', before: 'print("■")', expected: "none" },
   { id: "complete-repeat", code: 'print("■" * 5)', before: 'print("■")', expected: "none", previousFocus: "continue" },
   { id: "complete-insert-delta", code: 'print("■" * 5)', delta: " * 5", expected: "none" },
@@ -62,10 +66,15 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   },
   promptChecks: [includes(sample.selected ?? sample.code), includes(sample.problem ?? problem)],
   responseChecks: [hasNoFencedCode(), maxBulletLines(3),
+    ...(sample.id === "layout-v-h" ? [{
+      name: "describes horizontal output and the vertical requirement",
+      run: (text: string) => ({ passed: /横|同じ行|同一行|1行|一行/.test(text) && /縦|各行|1つずつ|一つずつ/.test(text)
+        && !/現在.{0,12}(?:複数行|縦に|5行)/.test(text) })
+    }] : []),
     ...(["single", "incomplete-initial-read", "wrong-count", "horizontal-wrong-count"].includes(sample.id) ? [{
       name: "identifies the count mismatch rather than inventing multiple output lines",
       run: (text: string) => ({ passed: /個数|回数|数|1つ|一つ|4つ|四つ/.test(text)
         && !/現在.{0,12}(?:複数行|縦に|5行)/.test(text) })
     }] : []),
-    ...(sample.expected === "continue" ? taskHintChecks(sample.id.startsWith("vertical")) : [])]
+    ...(sample.expected === "continue" ? taskHintChecks(sample.id.startsWith("vertical") || sample.id === "layout-h-v") : [])]
 }));
