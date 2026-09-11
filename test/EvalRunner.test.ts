@@ -4,6 +4,23 @@ import { runLive } from "../src/eval/runner";
 import { hasMermaidBlock, maxBulletLines } from "../src/eval/assertions";
 import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
 import { TASK_COMPLETION_SCENARIOS } from "../src/eval/taskCompletionScenarios";
+import { taskHintChecks } from "../src/eval/taskHintChecks";
+
+test("課題ヒントの評価は再発した制約・完成コード・曖昧な確認を検出する", () => {
+  const checks = taskHintChecks(true);
+  for (const text of [
+    '改行の影響で縦に並びます。複数printではなく1回のprintで「■」×5を出力してください。',
+    "複数行出力のためprint文を1つに統合し、end=''で改行抑制する必要あり",
+    "改行して5行になっています。同じ行にするにはend=' 'に変更してください。",
+    "横に並んでいるか確認してください。",
+    "今のコードは縦に出力されます。横に出力するにはループを使ってください。",
+    '各printの改行で縦に出ます。横並びにはprint("■" * 5)を使ってください。'
+  ]) assert.ok(checks.some(check => !check.run(text).passed), text);
+  for (const text of [
+    "各printの末尾で改行されるため、現在は縦に表示されます。横に並べるには、改行の扱いに着目してください。",
+    "現在は複数行に出力され、同じ行に並べる要件を満たしていません。printを1つにまとめる必要はありません。末尾の改行を確認してください。"
+  ]) assert.ok(checks.every(check => check.run(text).passed), text);
+});
 
 test("縦並びの評価は要件達成の誤説明と未達の指摘を区別する", async () => {
   const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-vertical-five")!;
@@ -44,7 +61,7 @@ test("完成済み課題への不要な確認助言を不合格にし、未完�
   const silent = await runLive(TASK_COMPLETION_SCENARIOS, async () => '{"kind":"no_advice","focus":"none"}');
   assert.deepEqual(silent.results.filter(r => !r.passed).map(r => r.id), [
     "task-completion-single", "task-completion-incomplete-initial-read", "task-completion-wrong-count",
-    "task-completion-vertical-five", "task-completion-vertical-five-initial", "task-completion-vertical-loop", "task-completion-missing-output"
+    "task-completion-vertical-five", "task-completion-vertical-five-initial", "task-completion-vertical-loop", "task-completion-horizontal-wrong-count", "task-completion-missing-output"
   ]);
 });
 
@@ -53,7 +70,7 @@ test("未完成へのcontinueでも行コピーや完成式を提示するヒン
   for (const text of ["何行かコピーして繰り返す方法はどうでしょうか。", '"■" * 5 にしてみましょう。']) {
     const report = await runLive([single], async () => JSON.stringify({ kind: "advice", focus: "continue", text }));
     assert.equal(report.failed, 1);
-    assert.equal(report.results[0].checks.at(-1)!.passed, false);
+    assert.ok(report.results[0].checks.some(check => !check.passed));
   }
 });
 

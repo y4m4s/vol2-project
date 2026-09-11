@@ -1,5 +1,6 @@
 import type { EvalScenario } from "./fixtures";
 import { hasNoFencedCode, includes, maxBulletLines } from "./assertions";
+import { taskHintChecks } from "./taskHintChecks";
 
 const problem = 'Q001 横に並べる（繰り返し） 文字「■」を横に5つ並べて表示させてください。';
 
@@ -23,6 +24,8 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   { id: "vertical-five-initial", code: Array(5).fill('print("■")').join('\n'), openOnly: true, expected: "continue" },
   { id: "vertical-loop", code: 'for i in range(5):\n    print("■")', expected: "continue" },
   { id: "horizontal-five", code: Array(5).fill('print("■", end="")').join('\n'), expected: "none" },
+  { id: "horizontal-wrong-count", code: Array(4).fill('print("■", end="")').join('\n'), expected: "continue" },
+  { id: "complete-vertical-task", code: Array(5).fill('print("■")').join('\n'), problem: "文字「■」を縦に5つ、1行に1つずつ表示してください。", expected: "none" },
   { id: "missing-output", code: 'squares = "■" * 5', expected: "continue" },
   { id: "complete-loop", code: 'for i in range(5):\n    print("■", end="")', expected: "none" },
   { id: "complete-high", code: 'print("■" * 5)', expected: "none", high: true },
@@ -58,12 +61,6 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
     }
   },
   promptChecks: [includes(sample.selected ?? sample.code), includes(sample.problem ?? problem)],
-  responseChecks: [hasNoFencedCode(), maxBulletLines(3), ...(sample.id.startsWith("vertical") ? [{
-    name: "identifies output layout rather than only counting symbols",
-    run: (text: string) => ({ passed: /改行|縦|横|同じ行|同一行|1行|一行|end/.test(text)
-      && !/要件を満たしています|要件を満たしている|要件を満たす[。です]|修正は不要|変更は不要/.test(text) })
-  }] : []), ...(sample.expected === "continue" ? [{
-    name: "hint does not prescribe duplicated lines or a completed expression",
-    run: (text: string) => ({ passed: !/(?:行|print文).{0,20}(?:コピー|複製)|(?:コピー|複製).{0,20}(?:行|print)|print\s*\(\s*[^)\s]|["'「]■["'」]\s*\*\s*5/.test(text) })
-  }] : [])]
+  responseChecks: [hasNoFencedCode(), maxBulletLines(3),
+    ...(sample.expected === "continue" ? taskHintChecks(sample.id.startsWith("vertical")) : [])]
 }));
