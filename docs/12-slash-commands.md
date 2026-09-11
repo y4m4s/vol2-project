@@ -37,6 +37,19 @@ NaviCom の方針上、スラッシュコマンドは実行命令ではなく、
 
 大文字小文字は区別しない。入力欄で送信すると `NavigatorController` が `parseSlashInput` より先にこのコマンドを検出し、`connectCopilot(providerId)`（`ConnectionSettingsCoordinator.connect`）を呼び出して接続を切り替える。会話履歴への保存や LLM へのプロンプト送信は行わない。定義は `src/shared/providerCommands.ts` に集約する。
 
+### サジェスト上の扱い
+
+コマンド数を増やしすぎないため、`/` サジェストの通常一覧には4つの実コマンドを並べず、まとめ入口 `/provider` の1件だけを表示する。  
+`/provider`（または各コマンド名の一部）にマッチする入力があったときだけ、`/provider-CP` 等の4択に展開する。
+
+`/provider` そのものを選択（クリック / Enter）した場合はコマンドとして実行せず、入力欄を `/provider-` に補完してサジェストを開いたままにする。  
+フィルタ・展開ロジックは `src/shared/slashCommandOptions.ts`（`getMatchingSlashCommands`）に集約する。
+
+### アイコン
+
+各プロバイダのコマンドは、Material Symbols ではなく `ProviderLogo` コンポーネントで公式ブランドアイコン（`media/` 配下の GitHub Copilot / LM Studio / Ollama / OrcaRouter のロゴ）を表示する。  
+`PROVIDER_COMMAND_SUGGESTIONS`（`src/shared/providerCommands.ts`）の `providerId` を見て、`SlashCommandSuggest` が描画時に振り分ける。`icon` フィールドはフォールバック用に残すが、実際には使われない。
+
 ## UI 仕様
 
 ### 入力欄でのサジェスト

@@ -1,14 +1,15 @@
-import { SLASH_COMMAND_SUGGESTIONS, type SlashCommandSuggestion } from "../../../shared/skills";
-import { PROVIDER_COMMAND_SUGGESTIONS } from "../../../shared/providerCommands";
-import type { SkillSuggestion } from "../../../shared/skills";
+import {
+  getMatchingSlashCommands,
+  PROVIDER_GROUP_COMMAND_TEXT,
+  type SlashCommandOption
+} from "../../../shared/slashCommandOptions";
+import { ProviderLogo } from "./ProviderLogo";
 
-// UI サジェスト候補はスキルレジストリ（skills.ts）とプロバイダ切替コマンドから導出する。
-export type SlashCommandOption = SlashCommandSuggestion | SkillSuggestion;
+export { getMatchingSlashCommands, PROVIDER_GROUP_COMMAND_TEXT, type SlashCommandOption };
 
-export const SLASH_COMMAND_OPTIONS: SlashCommandOption[] = [
-  ...SLASH_COMMAND_SUGGESTIONS,
-  ...PROVIDER_COMMAND_SUGGESTIONS
-];
+function hasProviderId(option: SlashCommandOption): option is SlashCommandOption & { providerId: "copilot" | "lmStudio" | "orcaRouter" | "ollama" } {
+  return "providerId" in option;
+}
 
 interface SlashCommandButtonProps {
   open: boolean;
@@ -78,7 +79,11 @@ export function SlashCommandSuggest({
                 onMouseEnter={() => onActiveIndexChange(index)}
                 onClick={() => onRunCommand(option.commandText)}
               >
-                <span className="material-symbols-outlined slash-command-option-icon">{option.icon}</span>
+                {hasProviderId(option) ? (
+                  <ProviderLogo providerId={option.providerId} className="slash-command-option-icon slash-command-option-provider-logo" />
+                ) : (
+                  <span className="material-symbols-outlined slash-command-option-icon">{option.icon}</span>
+                )}
                 <span className="slash-command-option-body">
                   <span className="slash-command-option-title">
                     <code>{option.commandText}</code>
@@ -95,20 +100,4 @@ export function SlashCommandSuggest({
       </div>
     </div>
   );
-}
-
-export function getMatchingSlashCommands(query: string): SlashCommandOption[] {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) {
-    return SLASH_COMMAND_OPTIONS;
-  }
-
-  return SLASH_COMMAND_OPTIONS.filter((option) => {
-    const commandQuery = option.commandText.replace(/^\//, "").toLowerCase();
-    return (
-      commandQuery.includes(normalizedQuery) ||
-      option.title.toLowerCase().includes(normalizedQuery) ||
-      option.description.toLowerCase().includes(normalizedQuery)
-    );
-  });
 }

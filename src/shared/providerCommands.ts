@@ -25,9 +25,14 @@ export function parseProviderCommand(value?: string): AiProviderId | undefined {
 }
 
 // UI サジェスト用の表示メタデータ。SlashCommandSuggestion と結合して 1 つの一覧として表示する。
-export const PROVIDER_COMMAND_SUGGESTIONS: SkillSuggestion[] = [
-  { commandText: "/provider-cp", title: "GitHub Copilot", description: "接続先を GitHub Copilot に切り替え", icon: "smart_toy" },
-  { commandText: "/provider-lm", title: "LM Studio", description: "接続先を LM Studio に切り替え", icon: "dns" },
-  { commandText: "/provider-oll", title: "Ollama", description: "接続先を Ollama に切り替え", icon: "terminal" },
-  { commandText: "/provider-orca", title: "OrcaRouter", description: "接続先を OrcaRouter に切り替え", icon: "hub" }
+// icon は Material Symbols 名へのフォールバック。providerId があるときは ProviderLogo（公式ブランドアイコン）を優先表示する。
+export interface ProviderCommandSuggestion extends SkillSuggestion {
+  providerId: AiProviderId;
+}
+
+export const PROVIDER_COMMAND_SUGGESTIONS: ProviderCommandSuggestion[] = [
+  { commandText: "/provider-cp", title: "GitHub Copilot", description: "接続先を GitHub Copilot に切り替え", icon: "smart_toy", providerId: "copilot" },
+  { commandText: "/provider-lm", title: "LM Studio", description: "接続先を LM Studio に切り替え", icon: "dns", providerId: "lmStudio" },
+  { commandText: "/provider-oll", title: "Ollama", description: "接続先を Ollama に切り替え", icon: "computer", providerId: "ollama" },
+  { commandText: "/provider-orca", title: "OrcaRouter", description: "接続先を OrcaRouter に切り替え", icon: "hub", providerId: "orcaRouter" }
 ];

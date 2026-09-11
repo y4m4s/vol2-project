@@ -953,6 +953,13 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   font-size: 17px;
 }
 
+.slash-command-option-provider-logo {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
 .slash-command-option-body {
   display: flex;
   flex-direction: column;
