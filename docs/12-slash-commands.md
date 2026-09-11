@@ -24,6 +24,19 @@ NaviCom の方針上、スラッシュコマンドは実行命令ではなく、
 | `/risk` | 壊れやすい箇所や副作用を確認する | 境界条件、影響範囲、見落としやすい点 |
 | `/test` | 確認観点を整理する | 正常系、境界値、失敗系、回帰確認 |
 
+## プロバイダ切替コマンド
+
+上記の助言コマンドとは性質が異なり、LLM へは送らず、入力すると即座に接続先プロバイダを切り替える実行コマンド。
+
+| コマンド | 切替先 |
+|---|---|
+| `/provider-CP` | GitHub Copilot |
+| `/provider-LM` | LM Studio |
+| `/provider-Oll` | Ollama |
+| `/provider-Orca` | OrcaRouter |
+
+大文字小文字は区別しない。入力欄で送信すると `NavigatorController` が `parseSlashInput` より先にこのコマンドを検出し、`connectCopilot(providerId)`（`ConnectionSettingsCoordinator.connect`）を呼び出して接続を切り替える。会話履歴への保存や LLM へのプロンプト送信は行わない。定義は `src/shared/providerCommands.ts` に集約する。
+
 ## UI 仕様
 
 ### 入力欄でのサジェスト

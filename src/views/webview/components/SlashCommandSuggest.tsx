@@ -1,9 +1,14 @@
 import { SLASH_COMMAND_SUGGESTIONS, type SlashCommandSuggestion } from "../../../shared/skills";
+import { PROVIDER_COMMAND_SUGGESTIONS } from "../../../shared/providerCommands";
+import type { SkillSuggestion } from "../../../shared/skills";
 
-// UI サジェスト候補はスキルレジストリ（skills.ts）から導出する（①: 単一の出所）。
-export type SlashCommandOption = SlashCommandSuggestion;
+// UI サジェスト候補はスキルレジストリ（skills.ts）とプロバイダ切替コマンドから導出する。
+export type SlashCommandOption = SlashCommandSuggestion | SkillSuggestion;
 
-export const SLASH_COMMAND_OPTIONS: SlashCommandOption[] = SLASH_COMMAND_SUGGESTIONS;
+export const SLASH_COMMAND_OPTIONS: SlashCommandOption[] = [
+  ...SLASH_COMMAND_SUGGESTIONS,
+  ...PROVIDER_COMMAND_SUGGESTIONS
+];
 
 interface SlashCommandButtonProps {
   open: boolean;
