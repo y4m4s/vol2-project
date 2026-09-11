@@ -62,13 +62,13 @@ NaviCom の方針上、スラッシュコマンドは実行命令ではなく、
 - コマンド文字列
 - 表示名
 - 説明
-- Material Symbols アイコン
+- アイコン（助言コマンドは Material Symbols、プロバイダ切替コマンドは `ProviderLogo` による公式ブランドロゴ。詳細は「プロバイダ切替コマンド」章の[アイコン](#アイコン)を参照）
 
 操作:
 
 - クリック: 当該コマンドを実行
-- `ArrowDown`: 次の候補へ移動
-- `ArrowUp`: 前の候補へ移動
+- `ArrowDown` / `Tab`: 次の候補へ移動
+- `ArrowUp` / `Shift+Tab`: 前の候補へ移動
 - `Enter`: 選択中の候補を実行
 - `Escape`: サジェストを閉じる
 
