@@ -12,10 +12,24 @@ for (const provider of ["lmStudio", "ollama"]) for (const depth of ["low", "high
   test(`${provider} ${depth}: production request, repair and report`, async () => {
     const requests = [];
     const server = createServer(async (req, res) => {
+      if (req.url === "/api/v1/models") {
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ models: [{ key: "qwen/test", type: "llm",
+          capabilities: { reasoning: { allowed_options: ["off", "on"] } } }] }));
+        return;
+      }
       let body = "";
       for await (const chunk of req) body += chunk;
       requests.push(JSON.parse(body));
       res.setHeader("Content-Type", "application/json");
+      if (provider === "lmStudio") {
+        assert.equal(req.url, "/api/v1/chat");
+        res.end(JSON.stringify({ output: [
+          { type: "reasoning", content: "private reasoning" },
+          { type: "message", content: requests.length === 1 ? "invalid" : '{"kind":"no_advice","focus":"none"}' }
+        ], stats: { input_tokens: 30, total_output_tokens: 12, reasoning_output_tokens: 5 } }));
+        return;
+      }
       res.end(JSON.stringify({ choices: [{ finish_reason: "stop", message: {
         content: requests.length === 1 ? "invalid" : '{"kind":"no_advice","focus":"none"}',
         reasoning: "private reasoning"
@@ -31,8 +45,13 @@ for (const provider of ["lmStudio", "ollama"]) for (const depth of ["low", "high
       assert.equal(requests.length, 2);
       for (const request of requests) {
         assert.equal(request.model, "qwen/test");
-        assert.equal(request.max_tokens, provider === "ollama" || depth === "high" ? 8192 : 2048);
+        assert.equal(request.max_tokens ?? request.max_output_tokens, provider === "ollama" || depth === "high" ? 8192 : 2048);
         assert.equal(request.reasoning_effort, provider === "ollama" ? depth === "high" ? "high" : "none" : undefined);
+        if (provider === "lmStudio") {
+          assert.equal(request.reasoning, depth === "high" ? "on" : "off");
+          assert.equal(request.store, false);
+          assert.deepEqual(request.integrations, []);
+        }
       }
       const saved = await readFile(output, "utf8");
       assert.doesNotMatch(saved, /private reasoning/);
@@ -50,8 +69,8 @@ for (const provider of ["lmStudio", "ollama"]) for (const depth of ["low", "high
   });
 }
 
-test("LM Studio requires a model and rejects Ollama reasoning overrides", async () => {
+test("LM Studio requires a model and rejects unsupported reasoning overrides", async () => {
   await assert.rejects(exec(process.execPath, ["scripts/eval-lmstudio-completion.mjs"]), /requires --model/);
   await assert.rejects(exec(process.execPath, ["scripts/eval-lmstudio-completion.mjs", "--model", "test",
-    "--reasoning-effort", "high"]), /server reasoning settings/);
+    "--reasoning-effort", "medium"]), /must be auto, none or high/);
 });

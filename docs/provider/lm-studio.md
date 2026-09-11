@@ -13,9 +13,13 @@
 
 ## 推論
 
-`OpenAICompatibleClient` を継承し、`POST /v1/chat/completions` に選択したkey、system/userメッセージ、用途別 `max_tokens`、`stream: false` を送る。タイムアウトは120秒で、キャンセル・受信サイズ制限・リダイレクト拒否に対応する。
+Thinking指定付きの助言は `POST /api/v1/chat` を使用する。モデル一覧の `capabilities.reasoning.allowed_options` を確認し、低は `reasoning: "off"`、高は `"on"`（段階式モデルでは `"high"`）を送る。非対応なら生成前にエラーにし、設定を無視した再送はしない。system_prompt/input、max_output_tokens、stream:false、store:false、integrations:[] を送り、サーバー会話保存・外部ツール連携を使わない。形式修復でもThinking指定を維持する。指定のないナレッジ生成などは従来の `/v1/chat/completions` を使う。タイムアウト120秒、キャンセル・受信サイズ制限・リダイレクト拒否は共通処理を利用する。
 
-参照ファイルパスは `navicom_referenced_files` にも付加する。本文は通常のプロンプト内に含まれる。応答本文、`usage.prompt_tokens`、`usage.completion_tokens`、`model`、`finish_reason` を読む。トークン数が得られない場合は共通の概算を使う。利用量を記録し、日次トークンガードも適用する。旧設計書の「日次予算の対象外」という記述は現行実装とは異なる。
+参照ファイル本文はプロンプト内に含まれる。ネイティブAPIではoutput内のmessageだけを回答として扱い、reasoning本文は表示・保存しない。statsの入力・総出力・推論トークン数、生成速度、最初のトークンまでの秒数を取得し、診断ログに記録する。出力上限に到達した場合はlengthとして扱う。互換APIの経路では従来のusage、model、finish_reasonと参照パスの付加を維持する。トークン数が得られない場合は共通の概算を使い、日次トークンガードも適用する。
+
+仕様: [Chat with a model](https://lmstudio.ai/docs/developer/rest/chat)、[List your models](https://lmstudio.ai/docs/developer/rest/list)。対応するネイティブAPIとThinking設定を公開するモデルが必要。
+
+2026-09-11、Qwen3 8Bで低用の同一プロンプトをThinking off/onで各1回比較した。offは約11秒・推論0トークン、onは約23秒・推論196トークン。どちらも単独printを複数行と誤説明しており、速度改善と内容の正確性は別に扱う。この誤答を落とす個数評価も追加した。低で完成済みHelloは約2.3秒・推論0トークン・no_advice。高の本番相当設定でも推論222トークンを確認したが、回答内容には不正確な改行説明が残る。記録は `.test-out/lm-thinking-off.json`、`lm-thinking-on-same.json`、`lm-thinking-complete.json`、`lm-thinking-high.json`。単体テスト220件・通信テスト5件・lint・ビルド成功。識別子は `2026-09-11-lmstudio-thinking-v1`。測定は各1回で、ロードやキャッシュ、他の処理による時間変動を含みうる。
 
 接続切り替えに失敗した場合、Coordinatorは設定をCopilotへ戻し、既存Copilot接続を利用するか接続を試す。推論失敗時は他プロバイダーへ再送しない。
 
@@ -33,7 +37,7 @@ Workspace Trust未許可では操作できず、生成などの処理中は起�
 
 ### 課題達成判定の実機評価
 
-LM Studioのローカルサーバーを起動し、モデルをロードしてから実行する。APIキーは不要なローカル構成を対象とする。サーバー設定・モデル・Thinking設定は評価ツールから変更しない。本番と同じ `LmStudioClient` を使い、低は2,048、高は8,192トークンを要求する。Thinkingはサーバー設定に従い、Ollama用の `reasoning_effort` は送らない。
+LM Studioのローカルサーバーを起動し、モデルをロードしてから実行する。APIキーは不要なローカル構成を対象とする。サーバーの保存設定を変更せず、各リクエストでThinkingを指定する。本番と同じ `LmStudioClient` を使い、低はThinkingオフ・2,048、高はThinkingオン・8,192トークンを要求する。`--reasoning-effort high` または `none` を評価時だけ指定すると、同じ深さ・プロンプトでThinking有無を比較できる。
 
 ```powershell
 npm run eval:lmstudio-completion -- --list-models

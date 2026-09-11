@@ -62,5 +62,10 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   },
   promptChecks: [includes(sample.selected ?? sample.code), includes(sample.problem ?? problem)],
   responseChecks: [hasNoFencedCode(), maxBulletLines(3),
+    ...(["single", "incomplete-initial-read", "wrong-count", "horizontal-wrong-count"].includes(sample.id) ? [{
+      name: "identifies the count mismatch rather than inventing multiple output lines",
+      run: (text: string) => ({ passed: /個数|回数|数|1つ|一つ|4つ|四つ/.test(text)
+        && !/現在.{0,12}(?:複数行|縦に|5行)/.test(text) })
+    }] : []),
     ...(sample.expected === "continue" ? taskHintChecks(sample.id.startsWith("vertical")) : [])]
 }));

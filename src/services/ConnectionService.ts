@@ -33,6 +33,9 @@ export type OrcaRouterConnectionIssue = OrcaRouterFailureKind | "missingApiKey" 
 const COPILOT_PROBE_TIMEOUT_SECONDS = 60;
 
 export interface ProviderTextResponse {
+  reasoningTokens?: number;
+  tokensPerSecond?: number;
+  timeToFirstTokenSeconds?: number;
   text: string;
   inputTokens?: number;
   outputTokens?: number;

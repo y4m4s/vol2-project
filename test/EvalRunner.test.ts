@@ -6,6 +6,13 @@ import { SCENARIOS, type EvalScenario } from "../src/eval/fixtures";
 import { TASK_COMPLETION_SCENARIOS } from "../src/eval/taskCompletionScenarios";
 import { taskHintChecks } from "../src/eval/taskHintChecks";
 
+test("単独printへの改行の例文コピーを課題ヒントの合格にしない", async () => {
+  const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === "task-completion-single")!;
+  const report = await runLive([scenario], async () => JSON.stringify({ kind: "advice", focus: "continue",
+    text: "現在は複数行に出力されています。課題は同じ行への出力を求めています。各出力の末尾の扱いに着目してください。" }));
+  assert.equal(report.failed, 1);
+});
+
 test("課題ヒントの評価は再発した制約・完成コード・曖昧な確認を検出する", () => {
   const checks = taskHintChecks(true);
   for (const text of [

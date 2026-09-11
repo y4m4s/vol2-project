@@ -14,7 +14,7 @@ import { AiInputLimitError } from "./AiRequestPolicy";
 import { DEFAULT_MODEL_PROFILE } from "./ModelProfile";
 import type { ModelProfile, PromptDelimiter } from "./ModelProfile";
 
-export const GUIDANCE_POLICY_REVISION = "2026-09-10-task-hint-structure-v1";
+export const GUIDANCE_POLICY_REVISION = "2026-09-11-lmstudio-thinking-v1";
 
 /**
  * 助言リクエストのプロンプト組み立てを担う純粋ロジック。

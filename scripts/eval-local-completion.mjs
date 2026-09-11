@@ -35,8 +35,8 @@ if (values["list-models"]) {
 }
 values.model ??= values.provider === "ollama" ? "qwen3:8b" : undefined;
 if (!values.model) throw new Error("LM Studio requires --model (use --list-models)");
-if (values.provider === "lmStudio" && values["reasoning-effort"] !== "auto") {
-  throw new Error("LM Studio uses server reasoning settings, like the production client");
+if (values.provider === "lmStudio" && !["auto", "none", "high"].includes(values["reasoning-effort"])) {
+  throw new Error("LM Studio reasoning override must be auto, none or high");
 }
 const repeats = Number(values.repeat);
 if (!Number.isInteger(repeats) || repeats < 1 || repeats > 10) throw new Error("repeat must be 1..10");
@@ -63,7 +63,9 @@ const client = new class extends Client {
     const payload = await super.requestJson(...args);
     const message = payload?.choices?.[0]?.message;
     const reasoning = message?.reasoning ?? message?.reasoning_content;
-    this.lastReasoningChars = typeof reasoning === "string" ? reasoning.length : 0;
+    this.lastReasoningChars = typeof reasoning === "string" ? reasoning.length : Array.isArray(payload?.output)
+      ? payload.output.filter(item => item.type === "reasoning" && typeof item.content === "string")
+        .reduce((sum, item) => sum + item.content.length, 0) : 0;
     return payload;
   }
   getCompletionExtraBody(request) { return values["reasoning-effort"] === "auto"
@@ -77,7 +79,8 @@ const report = await runLive(scenarios, async (_messages, scenario) => {
   const started = performance.now();
   const attempts = [];
   const reasoningChars = [];
-  let request = { ...messages, purpose: "guidance", reasoningEffort: scenario.input.assistanceDepth === "high" ? "high" : "none",
+  let request = { ...messages, purpose: "guidance", reasoningEffort: values.provider === "lmStudio" && values["reasoning-effort"] !== "auto"
+    ? values["reasoning-effort"] : scenario.input.assistanceDepth === "high" ? "high" : "none",
     maxOutputTokens: guidanceContentDepth(values.provider, scenario.input.assistanceDepth) === "high" ? 8192 : 2048 };
   // Match AdviceService's single format repair, without adding a semantic retry.
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -98,5 +101,5 @@ const report = await runLive(scenarios, async (_messages, scenario) => {
 });
 console.log(formatReport(report));
 if (values.output) writeFileSync(values.output, JSON.stringify({ provider: values.provider, model: values.model,
-  depth: values.depth, reasoningEffort: values.provider === "lmStudio" ? "server-default" : values["reasoning-effort"], report, responses }, null, 2));
+  depth: values.depth, reasoningEffort: values["reasoning-effort"], report, responses }, null, 2));
 process.exitCode = report.failed ? 1 : 0;

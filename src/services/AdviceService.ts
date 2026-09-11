@@ -281,7 +281,9 @@ export class AdviceService {
       const usage = await this.recordUsage(model, `${request.systemPrompt}\n\n${request.userPrompt}`, response, cancellationToken);
       this.logDiagnostic({ event: "response", provider: model.providerId, model: model.modelId,
         purpose: request.purpose, elapsedMs: Date.now() - startedAt, maxOutputTokens: request.maxOutputTokens,
-        ...(model.providerId === "ollama" ? { reasoningEffort: request.reasoningEffort ?? "none" } : {}),
+        ...(["ollama", "lmStudio"].includes(model.providerId) ? { reasoningEffort: request.reasoningEffort ?? "none" } : {}),
+        reasoningTokens: response.reasoningTokens, tokensPerSecond: response.tokensPerSecond,
+        timeToFirstTokenSeconds: response.timeToFirstTokenSeconds,
         finishReason: response.finishReason, requestId: response.requestId,
         inputTokens: response.inputTokens, outputTokens: response.outputTokens });
       if (token.isCancellationRequested) {

@@ -24,6 +24,9 @@ export class OpenAICompatibleError extends Error {
 }
 
 export interface OpenAICompatibleCompletion {
+  reasoningTokens?: number;
+  tokensPerSecond?: number;
+  timeToFirstTokenSeconds?: number;
   text: string;
   inputTokens?: number;
   outputTokens?: number;
