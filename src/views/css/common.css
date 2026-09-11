@@ -1,6 +1,19 @@
 :root {
   --navicom-min-view-width: 360px;
   --navicom-content-max-width: 720px;
+  /* キーボードフォーカス枚線の共通色。NaviComのアクセント色（テキストリンク色）を淡くして使う。 */
+  --navicom-focus-outline: color-mix(in srgb, var(--vscode-textLink-foreground) 55%, transparent);
+}
+
+/* Tabフォーカス枚線を全体で統一する。個別要素の focus-visible は原則ここに揃え、上書きは避ける。 */
+:focus-visible {
+  outline: 1px solid var(--navicom-focus-outline);
+  outline-offset: 1px;
+}
+
+/* ハイコントラストでは視認性を優先し、淡色ではなくコントラスト境界色を使う。 */
+body.vscode-high-contrast :focus-visible {
+  outline-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
 }
 
 /* --- リセット・ベース --- */
@@ -269,7 +282,7 @@ button.danger {
 .connection-activity-provider:focus-visible {
   opacity: 1;
   color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
   background: var(--vscode-toolbar-hoverBackground);
   outline: none;
 }
@@ -596,7 +609,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-input-wrap:focus-within {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
 }
 
 .request-plan-disclosure {
@@ -627,7 +640,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .request-plan-trigger:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--vscode-input-background) 90%, var(--vscode-editorWidget-background));
   outline-offset: -1px;
 }
 
@@ -863,7 +875,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-auto-inline:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 2px;
 }
 
