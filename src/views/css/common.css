@@ -435,6 +435,100 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   white-space: nowrap;
 }
 
+.connection-activity-tooltip-role {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+  white-space: nowrap;
+}
+
+.routing-mode-activity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  z-index: 89;
+}
+
+.routing-mode-activity-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 7px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+}
+
+.routing-mode-activity-button.suggest {
+  color: var(--vscode-charts-yellow, #cca700);
+  border-color: color-mix(in srgb, var(--vscode-charts-yellow, #cca700) 55%, var(--vscode-panel-border));
+}
+
+.routing-mode-activity-button.automatic {
+  color: var(--vscode-charts-blue, #2d7df6);
+  border-color: color-mix(in srgb, var(--vscode-charts-blue, #2d7df6) 55%, var(--vscode-panel-border));
+}
+
+.routing-mode-activity-button:hover:not(:disabled),
+.routing-mode-activity-button:focus-visible {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: none;
+}
+
+.routing-mode-activity-button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.routing-mode-activity-tooltip {
+  position: absolute;
+  top: 4px;
+  right: 100%;
+  width: max-content;
+  max-width: 220px;
+  margin-right: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 6px 18px color-mix(in srgb, #000 28%, transparent);
+  font-size: 0.82em;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.routing-mode-activity-tooltip strong,
+.routing-mode-activity-tooltip span {
+  display: block;
+  white-space: nowrap;
+}
+
+.routing-mode-activity-tooltip span {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+}
+
+.routing-mode-activity:hover .routing-mode-activity-tooltip,
+.routing-mode-activity:focus-within .routing-mode-activity-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes connection-activity-spin {
   to {
     transform: rotate(360deg);

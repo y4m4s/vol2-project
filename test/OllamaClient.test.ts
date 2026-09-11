@@ -168,3 +168,23 @@ test("Ollamaの設定は既定値と保存・再構築後の復元に対応す�
   assert.equal(restored.ollamaBaseUrl, "http://server:11435");
   assert.equal(restored.ollamaModelKey, "qwen3:8b");
 });
+
+test("automatic routing restores the saved connection as the basic provider", () => {
+  const values = new Map<string, unknown>();
+  values.set("aiPairNavigator.phase2.settings", {
+    providerId: "orcaRouter",
+    routing: {
+      mode: "automaticSuggest",
+      allowedProviderIds: ["copilot", "orcaRouter"]
+    }
+  });
+  const storage = {
+    keys: () => [...values.keys()],
+    get: (key: string) => values.get(key),
+    update: async (key: string, value: unknown) => { values.set(key, value); }
+  } as vscode.Memento;
+
+  const restored = new SettingsService(storage).getSettings();
+  assert.equal(restored.providerId, "orcaRouter");
+  assert.equal(restored.routing?.preferredProviderId, "orcaRouter");
+});

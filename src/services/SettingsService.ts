@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { NavigatorSettings } from "../shared/types";
 import { DEFAULT_OLLAMA_BASE_URL } from "./OllamaClient";
 import { PROTECTED_EXCLUDED_GLOBS } from "./protectedGlobs";
+import { applyRoutingModeSelection, normalizeRoutingSettings } from "./ProviderRouting";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 
@@ -46,9 +47,15 @@ export class SettingsService {
   private mergeSettings(partial?: Partial<NavigatorSettings>): NavigatorSettings {
     const customExcludedGlobs = this.normalizeCustomExcludedGlobs(partial?.excludedGlobs ?? []);
     const legacy = partial as (Partial<NavigatorSettings> & { dailyBudgetUsd?: number }) | undefined;
+    const providerId = this.normalizeProviderId(partial?.providerId);
+    const routing = normalizeRoutingSettings(partial?.routing);
+    const resolvedRouting = routing.mode === "manual" || routing.preferredProviderId
+      ? routing
+      : applyRoutingModeSelection(routing, routing.mode, providerId, routing.allowedProviderIds);
 
     return {
-      providerId: this.normalizeProviderId(partial?.providerId),
+      routing: resolvedRouting,
+      providerId,
       defaultMode: partial?.defaultMode ?? DEFAULT_SETTINGS.defaultMode,
       defaultAssistanceDepth: this.normalizeAssistanceDepth(partial?.defaultAssistanceDepth),
       copilotModelId: this.normalizeCopilotModelId(partial?.copilotModelId),

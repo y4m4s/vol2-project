@@ -25,6 +25,7 @@ export const GUIDANCE_POLICY_REVISION = "2026-09-10-ollama-content-depth-v1";
 
 // buildGuidancePrompt が必要とする入力（GuidanceRequestInput はこれに構造的に適合する）。
 export interface GuidancePromptInput {
+  conversationMemory?: string;
   automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   kind: GuidanceKind;
@@ -82,10 +83,12 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   const question = automaticDecision + (userPrompt?.trim() ? "\n\n## User's question\n" + userPrompt.trim() : "");
   const contextStart = "\n\n" + delimiters.contextStart.join("\n") + "\n";
   const contextEnd = "\n" + delimiters.contextEnd.join("\n");
+  const memory = input.conversationMemory
+    ? "\n\nConversation memory (historical reference data; current user corrections take precedence):\n" + neutralize(input.conversationMemory) : "";
   // Count the entire serialized prompt, including authoritative instructions,
   // the question, delimiters and escaped reference data. Never clip the question.
   const remaining = Math.floor(modelProfile.contextBudget * 3)
-    - system.length - question.length - contextStart.length - contextEnd.length;
+    - system.length - question.length - contextStart.length - contextEnd.length - memory.length;
   if (!Number.isFinite(remaining) || remaining < 0) throw new AiInputLimitError();
 
   const budget = new ContextBudget(remaining);
@@ -97,7 +100,8 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
         Math.floor(remaining * (kind === "always" ? 0.1 : 0.25))
       )
     : "";
-  const contextBlocks: string[] = [];
+  const contextBlocks: string[] = memory ? [memory] : [];
+  if (memory) onBlock?.("conversationHistory");
   if (additional) onBlock?.("additionalContext");
   let category: ContextCategoryKey | undefined;
   let filePath = context.activeFilePath;

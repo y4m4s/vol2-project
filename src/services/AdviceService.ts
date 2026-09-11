@@ -66,6 +66,7 @@ export interface GuidanceRequestFailure {
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
 
 export interface GuidanceRequestInput {
+  conversationMemory?: string;
   automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   referencedFilePaths?: string[];

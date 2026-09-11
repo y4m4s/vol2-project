@@ -14,8 +14,10 @@ import {
 import { resolveHomeScreen } from "./NavigationCoordinator";
 import { normalizeAdditionalContext } from "../GuidanceInput";
 import { orcaRouterAccessMessage } from "../../services/OrcaRouterErrorPolicy";
+import { normalizeRoutingSettings } from "../../services/ProviderRouting";
 
 export interface SettingsInput {
+  routing?: NavigatorSettings["routing"];
   providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
@@ -155,9 +157,11 @@ export class ConnectionSettingsCoordinator {
   }
 
   public async save(input: SettingsInput): Promise<void> {
+    if (this.host.getState().requestState !== "idle") return;
     const previousSettings = this.settingsService.getSettings();
     const nextSettings: NavigatorSettings = {
       ...previousSettings,
+      routing: input.routing ?? previousSettings.routing,
       providerId: input.providerId,
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
@@ -175,6 +179,13 @@ export class ConnectionSettingsCoordinator {
         .filter((value) => value.length > 0)
     };
 
+    const routing = normalizeRoutingSettings(nextSettings.routing);
+    if (routing.mode !== "manual" && (!routing.allowedProviderIds.length ||
+      (routing.preferredProviderId && !routing.allowedProviderIds.includes(routing.preferredProviderId)) ||
+      (routing.mode === "automatic" && !this.connectionService.getTestedModels(nextSettings).some(m => routing.allowedProviderIds.includes(m.providerId))))) {
+      this.host.patchSession({ statusMessage: { kind: "warning", text: "許可する接続先と基本プロバイダーを確認してください。完全自動型には保存するモデル設定での接続テストが必要です。" } });
+      return;
+    }
     const isConnected = this.connectionService.getState() === "connected";
     const canApplyAlways = input.defaultMode !== "always" || isConnected;
     const modelSettingChanged =

@@ -8,8 +8,12 @@ import type {
   NavigatorViewModel
 } from "./types";
 import { BAD_FEEDBACK_REASONS, GOOD_FEEDBACK_REASONS } from "./feedback";
+import type { AutomaticRoutingSettings } from "./types";
 
 export type WebviewToExtension =
+  | { type: "setConversationRouting"; mode?: AutomaticRoutingSettings["mode"]; providerId?: AiProviderId }
+  | { type: "testRoutingProvider"; providerId: AiProviderId }
+  | { type: "setRoutingPin"; providerId?: AiProviderId }
   | { type: "ready" }
   | { type: "connect"; providerId?: AiProviderId }
   | { type: "createConversationStream" }
@@ -56,6 +60,7 @@ export type WebviewToExtension =
   | { type: "setComposerActive"; active: boolean };
 
 export interface SaveSettingsPayload {
+  routing?: AutomaticRoutingSettings;
   providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
@@ -103,6 +108,13 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
   if (SIMPLE_MESSAGE_TYPES.has(value.type)) return { type: value.type } as WebviewToExtension;
 
   switch (value.type) {
+    case "setConversationRouting":
+      return (value.mode === undefined || ["manual", "automaticSuggest", "automatic"].includes(String(value.mode))) &&
+        (value.providerId === undefined || ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId))) ? value as WebviewToExtension : undefined;
+    case "testRoutingProvider":
+      return ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId)) ? value as WebviewToExtension : undefined;
+    case "setRoutingPin":
+      return value.providerId === undefined || ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId)) ? value as WebviewToExtension : undefined;
     case "refreshOllamaModels":
       return isBoundedString(value.baseUrl, 1, 2000) ? value as WebviewToExtension : undefined;
     case "refreshRequestPlan":
@@ -161,7 +173,8 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
 
 function isSaveSettingsPayload(value: unknown): value is SaveSettingsPayload {
   if (!isRecord(value)) return false;
-  return (value.providerId === "ollama" || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter") &&
+  return (value.routing === undefined || isRoutingSettings(value.routing)) &&
+    (value.providerId === "ollama" || value.providerId === "copilot" || value.providerId === "lmStudio" || value.providerId === "orcaRouter") &&
     (value.defaultMode === "manual" || value.defaultMode === "always") &&
     (value.defaultAssistanceDepth === "low" || value.defaultAssistanceDepth === "high") &&
     isOptionalBoundedString(value.copilotModelId, 200) &&
@@ -173,6 +186,19 @@ function isSaveSettingsPayload(value: unknown): value is SaveSettingsPayload {
     isFiniteInRange(value.requestIntervalSec, 20, 180) &&
     isFiniteInRange(value.dailyTokenLimit, 0, 1_000_000) &&
     isBoundedString(value.excludeGlobs, 0, 10_000);
+}
+
+function isRoutingSettings(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const providers = new Set(["copilot", "orcaRouter", "lmStudio", "ollama"]);
+  return ["manual", "automaticSuggest", "automatic"].includes(String(value.mode)) &&
+    Array.isArray(value.allowedProviderIds) && value.allowedProviderIds.length <= 4 && value.allowedProviderIds.every(p => providers.has(p)) &&
+    (value.preferredProviderId === undefined || (typeof value.preferredProviderId === "string" && providers.has(value.preferredProviderId))) &&
+    isFiniteInRange(value.thresholdPercent, 50, 100) && isFiniteInRange(value.dailyCloudTokenSoftLimit, 0, 1_000_000_000) &&
+    isFiniteInRange(value.orcaDailyCostSoftLimit, 0, 10000) && isRecord(value.dailyProviderTokenSoftLimits) &&
+    Object.entries(value.dailyProviderTokenSoftLimits).every(([p, n]) => providers.has(p) && isFiniteInRange(n, 0, 1_000_000_000)) &&
+    ["automatic", "localPreferred", "cloudOnly"].includes(String(value.compressionStrategy)) &&
+    (value.localHelperProviderId === undefined || value.localHelperProviderId === "ollama" || value.localHelperProviderId === "lmStudio");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

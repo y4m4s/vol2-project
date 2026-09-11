@@ -288,6 +288,366 @@
   padding: 12px 8px;
 }
 
+.routing-settings {
+  min-width: 0;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.routing-mode-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.routing-auto-settings {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.routing-subsection + .routing-subsection {
+  margin-top: 16px;
+}
+
+.routing-mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 9px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-input-background);
+  text-align: left;
+  cursor: pointer;
+}
+
+.routing-mode-card .material-symbols-outlined {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 18px;
+}
+
+.routing-mode-card strong,
+.routing-mode-card small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.routing-mode-card strong {
+  color: var(--vscode-foreground);
+  font-size: 0.84em;
+}
+
+.routing-mode-card small {
+  margin-top: 3px;
+  font-size: 0.72em;
+  line-height: 1.35;
+}
+
+.routing-mode-card:hover,
+.routing-mode-card.selected {
+  color: var(--vscode-textLink-foreground);
+  border-color: var(--vscode-textLink-foreground);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 11%, var(--vscode-editorWidget-background));
+}
+
+.routing-provider-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.routing-provider-heading > div {
+  min-width: 0;
+}
+
+.routing-provider-heading strong,
+.routing-provider-heading span {
+  display: block;
+}
+
+.routing-provider-heading span {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+}
+
+.routing-provider-count {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--vscode-textLink-foreground) !important;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 13%, transparent);
+  font-size: 0.72em !important;
+}
+
+.routing-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 8px;
+}
+
+.routing-provider-card {
+  --provider-accent: var(--vscode-textLink-foreground);
+
+  min-width: 0;
+  height: 100%;
+  padding: 6px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  background: var(--vscode-input-background);
+  transition: border-color 120ms ease, background 120ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.routing-provider-card.lmStudio { --provider-accent: #8b5cf6; }
+.routing-provider-card.ollama { --provider-accent: #ffffff; }
+.routing-provider-card.orcaRouter { --provider-accent: #2d7df6; }
+
+.routing-provider-card.selected {
+  border-color: var(--provider-accent);
+  background: color-mix(in srgb, var(--provider-accent) 12%, var(--vscode-input-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 10px color-mix(in srgb, var(--provider-accent) 28%, transparent);
+}
+
+.routing-provider-card.unavailable {
+  background: color-mix(in srgb, var(--vscode-input-background) 86%, transparent);
+}
+
+.routing-provider-card.unavailable .routing-provider-select {
+  opacity: 0.58;
+}
+
+.routing-provider-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 92px;
+  flex: 1 1 auto;
+  padding: 7px 3px 4px;
+  border: 0;
+  color: var(--vscode-foreground);
+  background: transparent;
+  text-align: center;
+  cursor: pointer;
+}
+
+.routing-provider-select:disabled {
+  cursor: not-allowed;
+}
+
+.routing-provider-logo {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  object-fit: contain;
+}
+
+.routing-provider-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+}
+
+.routing-provider-selected {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--vscode-input-background);
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.routing-provider-select strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 2.5em;
+  font-size: 0.73em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.routing-provider-select small {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.67em;
+}
+
+.routing-provider-card.connected .routing-provider-select:hover {
+  color: var(--vscode-textLink-foreground);
+}
+
+.routing-provider-connect {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 6px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  font-size: 0.72em;
+  font-weight: 650;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.routing-provider-connect:hover {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-hoverBackground);
+}
+
+.routing-provider-empty {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-textBlockQuote-background);
+  font-size: 0.78em;
+}
+
+.routing-subsection-heading strong,
+.routing-subsection-heading span {
+  display: block;
+}
+
+.routing-subsection-heading span {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+}
+
+.routing-preferred-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.routing-preferred-options .choice-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.routing-preferred-option {
+  --provider-accent: var(--vscode-textLink-foreground);
+}
+
+.routing-preferred-option.lmStudio { --provider-accent: #8b5cf6; }
+.routing-preferred-option.ollama { --provider-accent: #ffffff; }
+.routing-preferred-option.orcaRouter { --provider-accent: #2d7df6; }
+
+.routing-preferred-options .routing-preferred-option.selected {
+  border-color: var(--provider-accent);
+  background: color-mix(in srgb, var(--provider-accent) 12%, var(--vscode-editorWidget-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 10px color-mix(in srgb, var(--provider-accent) 28%, transparent);
+}
+
+.routing-preferred-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.routing-preferred-logo {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  object-fit: contain;
+}
+
+.routing-preferred-current-icon {
+  color: var(--vscode-descriptionForeground);
+  font-size: 22px;
+}
+
+.routing-preferred-selected {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--vscode-editorWidget-background);
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.routing-preferred-copy,
+.routing-preferred-copy strong,
+.routing-preferred-copy small {
+  display: block;
+  min-width: 0;
+}
+
+.routing-preferred-copy {
+  overflow: hidden;
+}
+
+.routing-preferred-copy strong {
+  color: var(--vscode-foreground);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.routing-preferred-copy small {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+@media (max-width: 520px) {
+  .routing-mode-options {
+    grid-template-columns: 1fr;
+  }
+
+  .routing-mode-card {
+    min-height: 48px;
+  }
+
+  .routing-provider-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .routing-preferred-options {
+    grid-template-columns: 1fr;
+  }
+}
+
 .settings-scope-heading {
   margin-top: 24px;
   padding-top: 16px;
