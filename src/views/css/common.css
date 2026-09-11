@@ -11,9 +11,11 @@
   outline-offset: 1px;
 }
 
-/* ハイコントラストでは視認性を優先し、淡色ではなくコントラスト境界色を使う。 */
+/* ハイコントラストでは視認性を優先し、淡色ではなくコントラスト境界色を使う。
+   outline: none で上書きしている個別ルール（.connection-activity-provider 等）にも
+   確実にアウトラインを描画するため、色だけでなく outline 自体を再指定する。 */
 body.vscode-high-contrast :focus-visible {
-  outline-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
+  outline: 1px solid var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
 }
 
 /* --- リセット・ベース --- */
