@@ -626,6 +626,11 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   background: var(--vscode-toolbar-hoverBackground);
 }
 
+.request-plan-trigger:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--vscode-input-background) 90%, var(--vscode-editorWidget-background));
+  outline-offset: -1px;
+}
+
 .request-plan-trigger > .material-symbols-outlined {
   flex-shrink: 0;
   font-size: 15px;
