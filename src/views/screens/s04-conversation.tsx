@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { automaticGuidanceLabel } from "../../shared/automaticGuidance";
-import type { ReactNode } from "react";
+import type { ReactNode, UIEvent } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
 import { MermaidDiagram } from "../webview/components/MermaidDiagram";
@@ -21,13 +21,23 @@ type MarkdownBlock =
   | { type: "bullet" | "ordered"; items: string[] }
   | { type: "code"; text: string; lang?: string };
 
+const AUTO_SCROLL_THRESHOLD_PX = 80;
+
 export function S04Conversation() {
   const { viewModel, send } = useApp();
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isAtBottomRef.current) {
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [viewModel?.conversationHistory, viewModel?.isBusy]);
+
+  function handleChatScroll(event: UIEvent<HTMLDivElement>) {
+    const el = event.currentTarget;
+    isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight <= AUTO_SCROLL_THRESHOLD_PX;
+  }
 
   if (!viewModel) {
     return null;
@@ -58,7 +68,7 @@ export function S04Conversation() {
         ]}
       />
 
-      <div className="s04-chat">
+      <div className="s04-chat" onScroll={handleChatScroll}>
         {conversationHistory.length === 0 && (
           <div className="s04-empty">
             <img src={window.__ICON_URI__} alt="NaviCom" className="s04-empty-icon" />
