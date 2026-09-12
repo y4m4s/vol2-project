@@ -24,6 +24,32 @@ NaviCom の方針上、スラッシュコマンドは実行命令ではなく、
 | `/risk` | 壊れやすい箇所や副作用を確認する | 境界条件、影響範囲、見落としやすい点 |
 | `/test` | 確認観点を整理する | 正常系、境界値、失敗系、回帰確認 |
 
+## プロバイダ切替コマンド
+
+上記の助言コマンドとは性質が異なり、LLM へは送らず、入力すると即座に接続先プロバイダを切り替える実行コマンド。
+
+| コマンド | 切替先 |
+|---|---|
+| `/provider-CP` | GitHub Copilot |
+| `/provider-LM` | LM Studio |
+| `/provider-Oll` | Ollama |
+| `/provider-Orca` | OrcaRouter |
+
+大文字小文字は区別しない。入力欄で送信すると `NavigatorController` が `parseSlashInput` より先にこのコマンドを検出し、`connectCopilot(providerId)`（`ConnectionSettingsCoordinator.connect`）を呼び出して接続を切り替える。会話履歴への保存や LLM へのプロンプト送信は行わない。定義は `src/shared/providerCommands.ts` に集約する。
+
+### サジェスト上の扱い
+
+コマンド数を増やしすぎないため、`/` サジェストの通常一覧には4つの実コマンドを並べず、まとめ入口 `/provider` の1件だけを表示する。  
+`/provider`（または各コマンド名の一部）にマッチする入力があったときだけ、`/provider-CP` 等の4択に展開する。
+
+`/provider` そのものを選択（クリック / Enter）した場合はコマンドとして実行せず、入力欄を `/provider-` に補完してサジェストを開いたままにする。  
+フィルタ・展開ロジックは `src/shared/slashCommandOptions.ts`（`getMatchingSlashCommands`）に集約する。
+
+### アイコン
+
+各プロバイダのコマンドは、Material Symbols ではなく `ProviderLogo` コンポーネントで公式ブランドアイコン（`media/` 配下の GitHub Copilot / LM Studio / Ollama / OrcaRouter のロゴ）を表示する。  
+`PROVIDER_COMMAND_SUGGESTIONS`（`src/shared/providerCommands.ts`）の `providerId` を見て、`SlashCommandSuggest` が描画時に振り分ける。`icon` フィールドはフォールバック用に残すが、実際には使われない。
+
 ## UI 仕様
 
 ### 入力欄でのサジェスト
@@ -36,13 +62,13 @@ NaviCom の方針上、スラッシュコマンドは実行命令ではなく、
 - コマンド文字列
 - 表示名
 - 説明
-- Material Symbols アイコン
+- アイコン（助言コマンドは Material Symbols、プロバイダ切替コマンドは `ProviderLogo` による公式ブランドロゴ。詳細は「プロバイダ切替コマンド」章の[アイコン](#アイコン)を参照）
 
 操作:
 
 - クリック: 当該コマンドを実行
-- `ArrowDown`: 次の候補へ移動
-- `ArrowUp`: 前の候補へ移動
+- `ArrowDown` / `Tab`: 次の候補へ移動
+- `ArrowUp` / `Shift+Tab`: 前の候補へ移動
 - `Enter`: 選択中の候補を実行
 - `Escape`: サジェストを閉じる
 

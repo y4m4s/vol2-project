@@ -9,6 +9,7 @@ import {
 } from "./AdditionalContextComposer";
 import {
   getMatchingSlashCommands,
+  PROVIDER_GROUP_COMMAND_TEXT,
   SlashCommandButton,
   SlashCommandSuggest
 } from "./SlashCommandSuggest";
@@ -187,6 +188,14 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
       return;
     }
 
+    // "/provider" はまとめ入口であり単体では実行できない。選択すると絞り込み用に "/provider-" へ展開する。
+    if (commandText === PROVIDER_GROUP_COMMAND_TEXT) {
+      setInputText(`${PROVIDER_GROUP_COMMAND_TEXT}-`);
+      setActiveSlashCommandIndex(0);
+      textareaRef.current?.focus();
+      return;
+    }
+
     resetComposer();
     send({
       type: "ask",
@@ -207,7 +216,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     }
 
     if (slashCommandMenuOpen) {
-      if (event.key === "ArrowDown") {
+      if (event.key === "ArrowDown" || (event.key === "Tab" && !event.shiftKey)) {
         event.preventDefault();
         setActiveSlashCommandIndex((index) => {
           if (slashCommandOptions.length === 0) {
@@ -218,7 +227,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
         return;
       }
 
-      if (event.key === "ArrowUp") {
+      if (event.key === "ArrowUp" || (event.key === "Tab" && event.shiftKey)) {
         event.preventDefault();
         setActiveSlashCommandIndex((index) => {
           if (slashCommandOptions.length === 0) {

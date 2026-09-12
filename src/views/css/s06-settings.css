@@ -237,7 +237,6 @@
 
 .s06-root button:focus-visible,
 .s06-root textarea:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 2px;
 }
 
@@ -332,7 +331,7 @@
 }
 
 .settings-provider-option:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder);
+  outline: 2px solid var(--navicom-focus-outline);
   outline-offset: 3px;
 }
 
@@ -405,7 +404,7 @@
 
 .orcarouter-key-input:focus,
 .orcarouter-model-search:focus {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
 }
 
 .orcarouter-key-actions {
@@ -568,7 +567,7 @@
 }
 
 .exclude-textarea textarea:focus {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
 }
 
 .lmstudio-model-note {

@@ -1,6 +1,21 @@
 :root {
   --navicom-min-view-width: 360px;
   --navicom-content-max-width: 720px;
+  /* キーボードフォーカス枚線の共通色。NaviComのアクセント色（テキストリンク色）を淡くして使う。 */
+  --navicom-focus-outline: color-mix(in srgb, var(--vscode-textLink-foreground) 55%, transparent);
+}
+
+/* Tabフォーカス枚線を全体で統一する。個別要素の focus-visible は原則ここに揃え、上書きは避ける。 */
+:focus-visible {
+  outline: 1px solid var(--navicom-focus-outline);
+  outline-offset: 1px;
+}
+
+/* ハイコントラストでは視認性を優先し、淡色ではなくコントラスト境界色を使う。
+   outline: none で上書きしている個別ルール（.connection-activity-provider 等）にも
+   確実にアウトラインを描画するため、色だけでなく outline 自体を再指定する。 */
+body.vscode-high-contrast :focus-visible {
+  outline: 1px solid var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
 }
 
 /* --- リセット・ベース --- */
@@ -269,7 +284,7 @@ button.danger {
 .connection-activity-provider:focus-visible {
   opacity: 1;
   color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
   background: var(--vscode-toolbar-hoverBackground);
   outline: none;
 }
@@ -596,7 +611,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-input-wrap:focus-within {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
 }
 
 .request-plan-disclosure {
@@ -624,6 +639,10 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   opacity: 1;
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.request-plan-trigger:focus-visible {
+  outline-offset: -1px;
 }
 
 .request-plan-trigger > .material-symbols-outlined {
@@ -858,7 +877,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-auto-inline:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 2px;
 }
 
@@ -951,6 +969,13 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   margin-top: 1px;
   color: var(--vscode-textLink-foreground);
   font-size: 17px;
+}
+
+.slash-command-option-provider-logo {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
 }
 
 .slash-command-option-body {

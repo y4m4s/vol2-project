@@ -402,7 +402,6 @@
 .s09-comment-toggle:focus-visible,
 .s09-actions button:focus-visible,
 .s09-comment:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 2px;
 }
 

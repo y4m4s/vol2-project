@@ -43,6 +43,7 @@ import {
   resolveUserEntryText,
   withAdditionalContext
 } from "./GuidanceInput";
+import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import {
   AdviceMode,
@@ -387,6 +388,12 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
+    const providerCommand = parseProviderCommand(userPrompt);
+    if (providerCommand) {
+      await this.connectCopilot(providerCommand);
+      return;
+    }
+
     const parsed = parseSlashInput(userPrompt);
     const guidanceKind = kind ?? (parsed.userPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
@@ -414,6 +421,12 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void> {
+    const providerCommand = parseProviderCommand(userPrompt);
+    if (providerCommand) {
+      await this.connectCopilot(providerCommand);
+      return;
+    }
+
     const parsed = parseSlashInput(userPrompt);
     await this.executeGuidanceRequest(() =>
       this.buildCurrentContextGuidanceOptions(
