@@ -179,7 +179,7 @@ export function S06Settings() {
           title={<PageTitleWithIcon icon="settings">設定</PageTitleWithIcon>}
           navIcons={[
             { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
-            { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+            { icon: "auto_stories", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
             { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
           ]}
         />

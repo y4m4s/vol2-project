@@ -36,7 +36,7 @@ export function S02Main() {
         back={false}
         navIcons={[
           { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
-          { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+          { icon: "auto_stories", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
           { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
         ]}
       />

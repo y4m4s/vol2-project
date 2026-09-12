@@ -27,7 +27,7 @@ export function S08History() {
         <PageHeader
           title={<PageTitleWithIcon icon="history">相談履歴</PageTitleWithIcon>}
           navIcons={[
-            { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+            { icon: "auto_stories", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
             { icon: "settings", title: "設定", onClick: () => send({ type: "navigate", screen: "settings" }) },
             { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
           ]}
