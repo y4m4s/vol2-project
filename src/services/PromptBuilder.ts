@@ -14,7 +14,7 @@ import { AiInputLimitError } from "./AiRequestPolicy";
 import { DEFAULT_MODEL_PROFILE } from "./ModelProfile";
 import type { ModelProfile, PromptDelimiter } from "./ModelProfile";
 
-export const GUIDANCE_POLICY_REVISION = "2026-09-10-ollama-content-depth-v1";
+export const GUIDANCE_POLICY_REVISION = "2026-09-11-task-comparison-v1";
 
 /**
  * 助言リクエストのプロンプト組み立てを担う純粋ロジック。
@@ -77,7 +77,7 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
       Boolean(context.additionalContext?.trim()))
   ].join("\n");
   const automaticDecision = kind === "always" && context.additionalContext?.trim()
-    ? '\n\n## Automatic decision\n現在のコード全体から実際に出力される文字列を、改行・空白・順序を含めて読み取り、課題要件と照合してください。Pythonのprintは既定で末尾に改行を出力します。文字の個数が合っていても、横一列という要件に対して複数行に出力するコードは未完成です。改行を抑制して同じ行に出力するコードは、複数のprintやループでも要件を満たせます。課題達成済みで具体的なリスクや解説意図もなければ {"kind":"no_advice","focus":"none"} だけを返してください。値を作っただけで要求された出力がない場合は未完成です。例えば「Helloを表示」という課題で message = "Hello" だけなら未完成で、print("Hello") なら完成です。不足がある場合は、その不足に気づく短いヒントをcontinueで返してください。変更後の値やコードを教える必要はありません。正しいコードへの実行確認・追加作業の提案は不要です。'
+    ? '\n\n## Automatic decision\n追加コンテキストから要求される出力を読み取り、現在のコードが実際に出力する内容と照合してください。個数・配置・改行・空白・順序を区別し、どの配置が必要かを決めつけないでください。Pythonのprintは既定で各呼び出しの末尾に改行しますが、最後の改行だけで表示内容が複数行になるとは判断しないでください。値の作成と出力処理も区別してください。要件を満たし、別の具体的なリスクや明確な解説意図もなければ {"kind":"no_advice","focus":"none"} だけを返してください。不一致がある場合は、観測できる現在の挙動と要件との差を述べ、その差を解消するための着目点を短く伝えてください。特定の回答文や実装方法を当てはめず、この入力の事実だけを使ってください。変更後の式・引数値・完成コードは提示しないでください。'
     : "";
   const question = automaticDecision + (userPrompt?.trim() ? "\n\n## User's question\n" + userPrompt.trim() : "");
   const contextStart = "\n\n" + delimiters.contextStart.join("\n") + "\n";
@@ -348,8 +348,10 @@ function getAutomaticTaskInstruction(): string {
     "review: 直近の変更による具体的なリスクや新たな持続的診断があるとき、その場所と発生条件を1つ示す。無関係な全体監査や一時的な書きかけの構文への指摘はしない。",
     "explain: 編集箇所から離れた意味のある選択など、コードを読み解く意図が明確なとき、対象の式・関数・データの流れだけを説明する。コピー目的かもしれない選択はnone。",
     "continue: 現在のコードに具体的な未達要件・不足処理があるとき、カーソル周辺のその不足に着目する短いヒントを1つ示す。既存の式の調整だけで足りるなら新しい処理を要求しない。着目箇所を示し、変更後の値・式や完成コードは教えない。要件にない実装方法を指定しない。",
+    "課題の不足を伝えるcontinueは、現在の挙動、要件との差、着目点の順に1〜3文で書く。見出しや推論過程は不要。コードから分かる問題を単なる確認質問に置き換えない。",
+    "着目点は仕組みや判断箇所までに留め、完成する式・引数の具体値・置き換えコードは提示しない。出力を同じ行にすることとソースコードを1行にまとめることを混同しない。課題で指定されていないprintの個数、ループやリストの使用を必須としない。",
     "overview: 局所的な助言では足りず、提供コードから入口・処理・出力を説明でき、全体像の説明が明らかに役立つときだけ短く説明する。断片をプロジェクト全体と断定しない。overviewAlreadyShownがtrueなら繰り返さない。",
-    "none: 根拠が弱い、矛盾がある、同じ助言の繰り返し、見た目だけの変更なら発話しない。ファイルを開いたことや操作の停止だけで、支援が必要だと判断しない。",
+    "none: 判断材料が不足している、参照情報同士が矛盾して現在の挙動を特定できない、同じ助言の繰り返し、見た目だけの変更なら発話しない。ただし、課題要件と現在の出力の不一致はcontinueの根拠であり、沈黙する理由ではない。編集履歴がなくても現在のコードから未達要件が分かればcontinueを選ぶ。ファイルを開いたことや操作の停止だけで、支援が必要だと判断しない。",
     '課題達成済みで別の具体的なリスクも明確な解説意図もなければ、{"kind":"no_advice","focus":"none"}だけを返す。出力結果が未提供というだけで実行確認を促したり、正しい値や既存の出力処理を再確認させたり、次の課題を作ったりしない。値を作っただけで、要求された出力処理が未実装の場合は達成済みとしない。'
   ].join("\n");
 }
