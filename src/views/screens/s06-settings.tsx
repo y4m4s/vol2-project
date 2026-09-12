@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
+import { RiBrainAi3Fill } from "react-icons/ri";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { useApp } from "../webview/state/AppContext";
@@ -185,7 +186,7 @@ export function S06Settings() {
       </div>
 
       <div className="settings-section">
-        <span className="material-symbols-outlined">hub</span> AI 接続
+        <RiBrainAi3Fill className="settings-section-svg-icon" aria-hidden="true" /> AI 接続
       </div>
 
       <div className="setting-item">
@@ -455,7 +456,9 @@ export function S06Settings() {
         </>
       )}
 
-      <div className="settings-scope-heading">共通設定</div>
+      <div className="settings-scope-heading">
+        <span className="material-symbols-outlined" aria-hidden="true">hub</span> 共通設定
+      </div>
       <div className="setting-desc">以下は、どのプロバイダーでも共通で使用する設定です。</div>
       <div className="settings-section">
         <span className="material-symbols-outlined" aria-hidden="true">tune</span> モード設定

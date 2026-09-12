@@ -46,6 +46,14 @@
   object-fit: contain;
 }
 
+.settings-section-svg-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  opacity: 0.7;
+}
+
 .settings-section:first-of-type {
   margin-top: 4px;
 }
@@ -288,11 +296,19 @@
 }
 
 .settings-scope-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid var(--vscode-panel-border);
   font-weight: 700;
   font-size: 1.05em;
+}
+
+.settings-scope-heading .material-symbols-outlined {
+  font-size: 18px;
+  opacity: 0.7;
 }
 
 .settings-provider-option {
