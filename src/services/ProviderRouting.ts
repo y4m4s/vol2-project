@@ -9,7 +9,8 @@ export function normalizeRoutingSettings(value: unknown): AutomaticRoutingSettin
   const finite = (n: unknown, fallback = 0, max = 1_000_000_000): number =>
     typeof n === "number" && Number.isFinite(n) && n >= 0 ? Math.min(max, n) : fallback;
   return {
-    mode: v.mode === "automatic" || v.mode === "automaticSuggest" ? v.mode : "manual",
+    // 廃止した提案型（automaticSuggest）は、意図しない自動切り替えを避けるため手動へ戻す。
+    mode: v.mode === "automatic" ? "automatic" : "manual",
     allowedProviderIds: PROVIDER_IDS.filter(p => Array.isArray(v.allowedProviderIds) && v.allowedProviderIds.includes(p)),
     preferredProviderId: PROVIDER_IDS.includes(v.preferredProviderId!) ? v.preferredProviderId : undefined,
     thresholdPercent: Math.max(50, finite(v.thresholdPercent, 90, 100)),
@@ -34,11 +35,10 @@ export function applyRoutingModeSelection(
   const allowedProviderIds = currentProviderIsAvailable && !routing.allowedProviderIds.includes(currentProviderId)
     ? [...routing.allowedProviderIds, currentProviderId]
     : routing.allowedProviderIds;
-  const preferredProviderId = routing.preferredProviderId && allowedProviderIds.includes(routing.preferredProviderId)
-    ? routing.preferredProviderId
-    : currentProviderIsAvailable
+  const preferredProviderId = routing.preferredProviderId
+    ?? (currentProviderIsAvailable
       ? currentProviderId
-      : allowedProviderIds[0];
+      : allowedProviderIds[0]);
 
   return { ...routing, mode, allowedProviderIds, preferredProviderId };
 }
@@ -53,7 +53,7 @@ export interface RoutingCandidate {
   verifiedLocal?: boolean;
 }
 export interface ProviderRoute {
-  action: "stay" | "suggest" | "switch" | "stop";
+  action: "stay" | "switch" | "stop";
   providerId?: AiProviderId;
   currentEligible: boolean;
   reason: string;
@@ -84,14 +84,13 @@ export function decideProviderRoute(
     .find(c => c.providerId !== current && eligible(c) && underBudget(c));
   const reason = currentEligible ? "NaviComで設定・記録した利用上限に近づいています。" : "現在の接続先では利用可能性・入力上限・送信条件を満たせません。";
   if (!next) return { action: "stop", currentEligible, reason: `${reason} 利用可能な許可候補がありません。` };
-  return { action: settings.mode === "automaticSuggest" ? "suggest" : "switch", providerId: next.providerId, currentEligible, reason };
+  return { action: "switch", providerId: next.providerId, currentEligible, reason };
 }
 
 export async function executeProviderRoute(
-  route: ProviderRoute, confirm: () => Promise<boolean>, activate: (provider: AiProviderId) => Promise<boolean>
+  route: ProviderRoute, activate: (provider: AiProviderId) => Promise<boolean>
 ): Promise<boolean> {
   if (route.action === "stop") return false;
   if (route.action === "stay") return true;
-  if (route.action === "suggest" && !await confirm()) return route.currentEligible;
   return route.providerId !== undefined && await activate(route.providerId);
 }

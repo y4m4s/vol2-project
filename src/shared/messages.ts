@@ -109,7 +109,7 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
 
   switch (value.type) {
     case "setConversationRouting":
-      return (value.mode === undefined || ["manual", "automaticSuggest", "automatic"].includes(String(value.mode))) &&
+      return (value.mode === undefined || ["manual", "automatic"].includes(String(value.mode))) &&
         (value.providerId === undefined || ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId))) ? value as WebviewToExtension : undefined;
     case "testRoutingProvider":
       return ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId)) ? value as WebviewToExtension : undefined;
@@ -191,7 +191,7 @@ function isSaveSettingsPayload(value: unknown): value is SaveSettingsPayload {
 function isRoutingSettings(value: unknown): boolean {
   if (!isRecord(value)) return false;
   const providers = new Set(["copilot", "orcaRouter", "lmStudio", "ollama"]);
-  return ["manual", "automaticSuggest", "automatic"].includes(String(value.mode)) &&
+  return ["manual", "automatic"].includes(String(value.mode)) &&
     Array.isArray(value.allowedProviderIds) && value.allowedProviderIds.length <= 4 && value.allowedProviderIds.every(p => providers.has(p)) &&
     (value.preferredProviderId === undefined || (typeof value.preferredProviderId === "string" && providers.has(value.preferredProviderId))) &&
     isFiniteInRange(value.thresholdPercent, 50, 100) && isFiniteInRange(value.dailyCloudTokenSoftLimit, 0, 1_000_000_000) &&

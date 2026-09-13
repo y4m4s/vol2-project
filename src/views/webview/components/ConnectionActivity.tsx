@@ -1,6 +1,7 @@
-import type { AiProviderId, AutomaticRoutingSettings } from "../../../shared/types";
+import type { AiProviderId } from "../../../shared/types";
 import { PROVIDER_LABELS } from "../../../services/ProviderRouting";
 import { useApp } from "../state/AppContext";
+import { AutoModeIcon } from "./AutoModeIcon";
 import { ProviderLogo } from "./ProviderLogo";
 
 export function ConnectionActivity() {
@@ -14,7 +15,7 @@ export function ConnectionActivity() {
   if (!hasConnectionActivity || viewModel.screen === "onboarding") return null;
 
   const routingMode = viewModel.settings.routing?.mode ?? "manual";
-  const isAutomatic = routingMode !== "manual";
+  const isAutomatic = routingMode === "automatic";
   const basicProviderId: AiProviderId = isAutomatic
     ? viewModel.settings.routing?.preferredProviderId ?? viewModel.settings.providerId
     : viewModel.providerId;
@@ -28,7 +29,7 @@ export function ConnectionActivity() {
 
   return (
     <>
-      {isAutomatic && <RoutingModeActivity mode={routingMode} onClick={() => send({ type: "navigate", screen: "settings" })} />}
+      {isAutomatic && <RoutingModeActivity onClick={() => send({ type: "navigate", screen: "settings" })} />}
       <div className="connection-activity">
         <button
           type="button"
@@ -60,19 +61,14 @@ export function ConnectionActivity() {
   );
 }
 
-function RoutingModeActivity({ mode, onClick }: {
-  mode: Exclude<AutomaticRoutingSettings["mode"], "manual">;
-  onClick(): void;
-}) {
-  const automatic = mode === "automatic";
-  const label = automatic ? "完全自動型" : "提案型";
+function RoutingModeActivity({ onClick }: { onClick(): void }) {
   return <div className="routing-mode-activity">
-    <button type="button" className={`routing-mode-activity-button ${automatic ? "automatic" : "suggest"}`} aria-label={`${label}。切り替え設定を開く`} aria-describedby="routing-mode-activity-tooltip" onClick={onClick}>
-      <span className="material-symbols-outlined" aria-hidden="true">{automatic ? "sync" : "smart_toy"}</span>
+    <button type="button" className="routing-mode-activity-button automatic" aria-label="プロバイダーの自動切り替えがオン。設定を開く" aria-describedby="routing-mode-activity-tooltip" onClick={onClick}>
+      <AutoModeIcon className="routing-mode-activity-icon" />
     </button>
     <div id="routing-mode-activity-tooltip" className="routing-mode-activity-tooltip" role="tooltip">
-      <strong>{label}</strong>
-      <span>{automatic ? "許可した接続先へ自動で切り替えます" : "切り替える前に確認します"}</span>
+      <strong>自動切り替え</strong>
+      <span>許可した接続先へ自動で切り替えます</span>
     </div>
   </div>;
 }

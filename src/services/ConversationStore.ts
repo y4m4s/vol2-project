@@ -88,7 +88,8 @@ export class ConversationStore implements vscode.Disposable {
       if (!stmt.step()) return undefined;
       const value = this.parseJson<ConversationRoutingPreference>(stmt.getAsObject().routing_json);
       if (!value) return undefined;
-      return { mode: value.mode === "manual" || value.mode === "automatic" || value.mode === "automaticSuggest" ? value.mode : undefined,
+      const storedMode = (value as { mode?: unknown }).mode;
+      return { mode: storedMode === "manual" || storedMode === "automatic" ? storedMode : storedMode === "automaticSuggest" ? "manual" : undefined,
         providerId: this.parseProviderId(value.providerId) };
     } finally { stmt.free(); }
   }

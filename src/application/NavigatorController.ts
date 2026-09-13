@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
 import { ConversationMemoryCoordinator } from "./coordinators/ConversationMemoryCoordinator";
-import { normalizeRoutingSettings, PROVIDER_LABELS } from "../services/ProviderRouting";
+import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../services/ProviderRouting";
 import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordinator";
 import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
 import { SessionStore } from "./SessionStore";
@@ -116,6 +116,8 @@ export class NavigatorController implements vscode.Disposable {
   // requestState がまだ "idle" のまま進む準備区間を含めて、助言リクエストを 1 本に絞る。
   private readonly guidanceRequestGate = new SingleFlightGate();
   private schedulerConfigurationKey?: string;
+  private routingProviderConnection?: NavigatorViewModel["routingProviderConnection"];
+  private routingProviderConnectionRevision = 0;
   private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
@@ -354,6 +356,7 @@ export class NavigatorController implements vscode.Disposable {
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
       settingsRevision: this.connectionSettingsCoordinator.revision,
       testedProviderIds: this.connectionService.getTestedModels?.(settings).map(model => model.providerId) ?? [],
+      routingProviderConnection: this.routingProviderConnection,
       conversationRoutingPreference: this.providerRoutingCoordinator.preference(state.activeConversationStreamId),
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
@@ -380,16 +383,29 @@ export class NavigatorController implements vscode.Disposable {
     if (this.sessionStore.getState().requestState !== "idle") return;
     const settings = this.settingsService.getSettings();
     const previous = this.connectionService.getProviderId();
-    this.patchSession({ requestState: "connecting" });
+    const revision = ++this.routingProviderConnectionRevision;
+    this.routingProviderConnection = { providerId, state: "connecting", revision };
+    this.patchSession({
+      requestState: "connecting",
+      statusMessage: { kind: "info", text: `${PROVIDER_LABELS[providerId]}への接続を開始します。` }
+    });
     try {
       const result = await this.connectionService.connectAndActivate({ ...settings, providerId });
       this.connectionService.activateTestedProvider(previous, settings);
+      this.routingProviderConnection = { providerId, state: result.activated ? "connected" : "failed", revision };
       this.patchSession({ connectionState: this.connectionService.getState(), statusMessage: {
         kind: result.activated ? "info" : "warning",
         text: result.activated
-          ? `${PROVIDER_LABELS[providerId]}を自動切り替え候補として接続しました。`
-          : `${PROVIDER_LABELS[providerId]}に接続できませんでした。接続設定を確認してください。`
+          ? `${PROVIDER_LABELS[providerId]}に接続しました。自動切り替え候補に追加します。`
+          : `${PROVIDER_LABELS[providerId]}への接続に失敗しました。接続設定を確認してください。`
       } });
+    } catch (error) {
+      this.routingProviderConnection = { providerId, state: "failed", revision };
+      this.patchSession({ statusMessage: {
+        kind: "error",
+        text: `${PROVIDER_LABELS[providerId]}への接続に失敗しました。接続設定を確認してください。`
+      } });
+      throw error;
     } finally { this.patchSession({ requestState: "idle" }); }
   }
 
@@ -512,7 +528,74 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async saveSettings(input: SettingsInput): Promise<void> {
+    const previousRevision = this.connectionSettingsCoordinator.revision;
     await this.connectionSettingsCoordinator.save(input);
+    if (this.connectionSettingsCoordinator.revision !== previousRevision) {
+      await this.synchronizeRoutingProviders();
+    }
+  }
+
+  private async synchronizeRoutingProviders(): Promise<void> {
+    const settings = this.settingsService.getSettings();
+    const routing = normalizeRoutingSettings(settings.routing);
+    if (routing.mode !== "automatic") return;
+
+    const selected = routing.allowedProviderIds;
+    const previousProviderId = this.connectionService.getProviderId();
+    const connected: AiProviderId[] = [];
+    const failed: AiProviderId[] = [];
+    this.connectionService.deactivateTestedProviders(PROVIDER_IDS);
+    this.patchSession({ requestState: "connecting", connectionState: this.connectionService.getState() });
+
+    try {
+      for (const [index, providerId] of selected.entries()) {
+        const revision = ++this.routingProviderConnectionRevision;
+        this.routingProviderConnection = { providerId, state: "connecting", revision };
+        this.patchSession({ statusMessage: {
+          kind: "info",
+          text: `${PROVIDER_LABELS[providerId]}への接続を確認しています…（${index + 1}/${selected.length}）`
+        } });
+
+        let activated = false;
+        try {
+          const localReady = providerId !== "lmStudio" ||
+            await this.lmStudioCoordinator.ensureServerForRoutingConnection();
+          if (localReady) {
+            const result = await this.connectionService.connectAndActivate(
+              { ...settings, providerId },
+              true
+            );
+            activated = result.activated;
+          }
+        } catch {
+          activated = false;
+        }
+        if (activated) connected.push(providerId); else failed.push(providerId);
+        this.routingProviderConnection = { providerId, state: activated ? "connected" : "failed", revision };
+        this.patchSession({ connectionState: this.connectionService.getState() });
+      }
+
+      const preferred = routing.preferredProviderId && connected.includes(routing.preferredProviderId)
+        ? routing.preferredProviderId
+        : connected.includes(previousProviderId)
+          ? previousProviderId
+          : connected[0];
+      if (preferred) this.connectionService.activateTestedProvider(preferred, settings);
+
+      const connectedLabels = connected.map(providerId => PROVIDER_LABELS[providerId]).join("、");
+      const failedLabels = failed.map(providerId => PROVIDER_LABELS[providerId]).join("、");
+      this.patchSession({
+        connectionState: this.connectionService.getState(),
+        statusMessage: failed.length
+          ? {
+            kind: "warning",
+            text: `${failedLabels}に接続できませんでした。接続設定とアプリの起動状態を確認してください。${connectedLabels ? ` 接続確認済み: ${connectedLabels}` : ""}`
+          }
+          : { kind: "info", text: `設定を保存し、${connectedLabels}への接続を確認しました。` }
+      });
+    } finally {
+      this.patchSession({ requestState: "idle" });
+    }
   }
 
   public async resetSettings(): Promise<void> {

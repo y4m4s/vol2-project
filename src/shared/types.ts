@@ -9,7 +9,7 @@ export type ConnectionState =
 export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
 export interface AutomaticRoutingSettings {
-  mode: "manual" | "automaticSuggest" | "automatic";
+  mode: "manual" | "automatic";
   allowedProviderIds: AiProviderId[];
   preferredProviderId?: AiProviderId;
   thresholdPercent: number;
@@ -23,6 +23,12 @@ export interface AutomaticRoutingSettings {
 export interface ConversationRoutingPreference {
   mode?: AutomaticRoutingSettings["mode"];
   providerId?: AiProviderId;
+}
+
+export interface RoutingProviderConnectionStatus {
+  providerId: AiProviderId;
+  state: "connecting" | "connected" | "failed";
+  revision: number;
 }
 
 export type AdviceMode = "manual" | "always";
@@ -433,6 +439,7 @@ export interface NavigatorSessionState {
 export interface NavigatorViewModel {
   conversationRoutingPreference?: ConversationRoutingPreference;
   testedProviderIds?: AiProviderId[];
+  routingProviderConnection?: RoutingProviderConnectionStatus;
   screen: NavigatorScreen;
   connectionState: ConnectionState;
   requestState: RequestState;

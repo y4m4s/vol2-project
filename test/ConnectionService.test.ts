@@ -132,6 +132,31 @@ test("Ollamaから切り替えると最後に使用したモデルだけをア�
   assert.equal((await h.generate()).text, "回答");
 });
 
+test("候補から外した接続を解除してもOllamaモデルはアンロードしない", async () => {
+  const h = ollamaHarness();
+  const settings = { ...h.settings, ...h.ollamaSettings, providerId: "copilot" as const };
+  await h.service.connectAndActivate(settings);
+  await h.service.connectAndActivate({ ...settings, providerId: "ollama" });
+  assert.deepEqual(h.service.getTestedModels(settings).map(model => model.providerId).sort(), ["copilot", "ollama"]);
+
+  assert.equal(h.service.deactivateTestedProviders(["copilot"]), false);
+  assert.deepEqual(h.service.getTestedModels(settings).map(model => model.providerId), ["ollama"]);
+  assert.equal(h.service.getState(), "connected");
+
+  assert.equal(h.service.deactivateTestedProviders(["ollama"]), true);
+  assert.deepEqual(h.service.getTestedModels(settings), []);
+  assert.equal(h.service.getState(), "disconnected");
+  assert.deepEqual(h.unloaded, []);
+});
+
+test("保存時の接続確認ではOllamaモデルを維持する", async () => {
+  const h = ollamaHarness();
+  await h.service.connectAndActivate(h.ollamaSettings);
+  await h.generate();
+  await h.service.connectAndActivate(h.settings, true);
+  assert.deepEqual(h.unloaded, []);
+});
+
 test("Ollamaに接続しただけならモデルをアンロードしない", async () => {
   const h = ollamaHarness();
   await h.service.connectAndActivate(h.ollamaSettings);

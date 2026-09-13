@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import type { AiProviderId, ConversationEntry, NavigatorSettings, ConversationRoutingPreference } from "../../shared/types";
 import type { ConversationStore } from "../../services/ConversationStore";
 import type { ConnectionService } from "../../services/ConnectionService";
@@ -53,19 +52,7 @@ export class ProviderRoutingCoordinator {
     const remembered = stream ? this.selected.get(stream) ?? [...history].reverse().find(e => e.role === "assistant")?.providerId : undefined;
     const route = decideProviderRoute(routing, candidates, pinned ?? remembered ?? (history.length ? current : routing.preferredProviderId ?? current), estimated, localOnly, Boolean(pinned));
     if (route.action === "stop") return { ok: false, reason: route.reason };
-    let target = route.providerId;
-    if (route.action === "suggest" || (routing.mode === "automaticSuggest" && target !== current && !pinned)) {
-      const canKeep = candidates.some(c => c.providerId === current && c.available && c.maxInputTokens >= estimated && routing.allowedProviderIds.includes(current) && (!localOnly || c.verifiedLocal));
-      const choice = await vscode.window.showInformationMessage(
-        `${route.reason} ${PROVIDER_LABELS[target!]}へ切り替えますか？ 要件・直近履歴を引き継ぎます（入力概算 ${estimated.toLocaleString()}トークン）。`,
-        { modal: true }, "切り替える", ...(canKeep ? ["今回は維持", "この相談では維持"] : [])
-      );
-      if (choice !== "切り替える") {
-        if (!canKeep || (choice !== "今回は維持" && choice !== "この相談では維持")) return { ok: false, reason: "切り替えと送信を中止しました。" };
-        target = current;
-        if (choice === "この相談では維持" && stream) await this.pin(stream, current);
-      }
-    }
+    const target = route.providerId;
     if (cancelled()) return { ok: false, reason: "送信を中止しました。" };
     if (target && (target !== current || this.connection.getState() !== "connected")) {
       if (!this.connection.activateTestedProvider(target, settings)) return { ok: false, reason: "切り替え先の接続を再確認してください。" };

@@ -4,9 +4,9 @@ import { parseWebviewMessage } from "../src/shared/messages";
 import { normalizeRoutingSettings } from "../src/services/ProviderRouting";
 
 test("routing settings reject malformed modes, thresholds and provider ids", () => {
-  const payload = { providerId: "copilot", defaultMode: "manual", defaultAssistanceDepth: "low", idleDelaySec: 10, requestIntervalSec: 60, dailyTokenLimit: 100000, excludeGlobs: "", routing: normalizeRoutingSettings({ mode: "automaticSuggest", allowedProviderIds: ["copilot"] }) };
+  const payload = { providerId: "copilot", defaultMode: "manual", defaultAssistanceDepth: "low", idleDelaySec: 10, requestIntervalSec: 60, dailyTokenLimit: 100000, excludeGlobs: "", routing: normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot"] }) };
   assert.ok(parseWebviewMessage({ type: "saveSettings", payload }));
-  for (const patch of [{ mode: "invalid" }, { allowedProviderIds: ["unknown"] }, { thresholdPercent: Number.NaN }, { dailyProviderTokenSoftLimits: { copilot: -1 } }]) {
+  for (const patch of [{ mode: "invalid" }, { mode: "automaticSuggest" }, { allowedProviderIds: ["unknown"] }, { thresholdPercent: Number.NaN }, { dailyProviderTokenSoftLimits: { copilot: -1 } }]) {
     assert.equal(parseWebviewMessage({ type: "saveSettings", payload: { ...payload, routing: { ...payload.routing, ...patch } } }), undefined);
   }
 });

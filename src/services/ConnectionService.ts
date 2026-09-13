@@ -97,6 +97,20 @@ export class ConnectionService {
     return true;
   }
 
+  public deactivateTestedProviders(providerIds: readonly AiProviderId[]): boolean {
+    const targets = new Set(providerIds);
+    const activeProviderWasRemoved = targets.has(this.providerId);
+
+    for (const providerId of targets) this.testedModels.delete(providerId);
+
+    if (activeProviderWasRemoved) {
+      this.copilotModel = undefined;
+      this.connectedModel = undefined;
+      this.connectionState = "disconnected";
+    }
+    return activeProviderWasRemoved;
+  }
+
   private routingModelKey(id: AiProviderId, settings: NavigatorSettings): string {
     return JSON.stringify(id === "copilot" ? [settings.copilotModelId] : id === "orcaRouter" ? [settings.orcaRouterModelId] :
       id === "ollama" ? [settings.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL, settings.ollamaModelKey] : [settings.lmStudioBaseUrl, settings.lmStudioModelKey]);
@@ -287,12 +301,12 @@ export class ConnectionService {
     return this.availableOrcaRouterModelOptions;
   }
 
-  public async connectAndActivate(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
+  public async connectAndActivate(settings: NavigatorSettings, preserveOllamaModel = false): Promise<ConnectionActivationResult> {
     if (this.pendingConnection) {
       return this.pendingConnection;
     }
 
-    this.pendingConnection = this.connectInternal(settings).finally(() => {
+    this.pendingConnection = this.connectInternal(settings, preserveOllamaModel).finally(() => {
       this.pendingConnection = undefined;
     });
     return this.pendingConnection;
@@ -324,7 +338,7 @@ export class ConnectionService {
     return this.connectionState;
   }
 
-  private async connectInternal(settings: NavigatorSettings): Promise<ConnectionActivationResult> {
+  private async connectInternal(settings: NavigatorSettings, preserveOllamaModel: boolean): Promise<ConnectionActivationResult> {
     const previous = this.createSnapshot();
     this.providerId = settings.providerId;
     this.lastCopilotIssue = undefined;
@@ -352,7 +366,7 @@ export class ConnectionService {
       if (this.connectedModel) this.testedModels.set(settings.providerId, {
         key: this.routingModelKey(settings.providerId, settings), model: this.connectedModel, copilot: this.copilotModel
       });
-      if (settings.providerId !== "ollama") await this.unloadLastOllamaModel();
+      if (settings.providerId !== "ollama" && !preserveOllamaModel) await this.unloadLastOllamaModel();
       return { connectionState, activated: true };
     }
 

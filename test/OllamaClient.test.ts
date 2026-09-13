@@ -169,7 +169,7 @@ test("Ollamaの設定は既定値と保存・再構築後の復元に対応す�
   assert.equal(restored.ollamaModelKey, "qwen3:8b");
 });
 
-test("automatic routing restores the saved connection as the basic provider", () => {
+test("removed suggestion routing is restored safely as manual", () => {
   const values = new Map<string, unknown>();
   values.set("aiPairNavigator.phase2.settings", {
     providerId: "orcaRouter",
@@ -186,5 +186,5 @@ test("automatic routing restores the saved connection as the basic provider", ()
 
   const restored = new SettingsService(storage).getSettings();
   assert.equal(restored.providerId, "orcaRouter");
-  assert.equal(restored.routing?.preferredProviderId, "orcaRouter");
+  assert.equal(restored.routing?.mode, "manual");
 });

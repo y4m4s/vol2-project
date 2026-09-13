@@ -180,10 +180,8 @@ export class ConnectionSettingsCoordinator {
     };
 
     const routing = normalizeRoutingSettings(nextSettings.routing);
-    if (routing.mode !== "manual" && (!routing.allowedProviderIds.length ||
-      (routing.preferredProviderId && !routing.allowedProviderIds.includes(routing.preferredProviderId)) ||
-      (routing.mode === "automatic" && !this.connectionService.getTestedModels(nextSettings).some(m => routing.allowedProviderIds.includes(m.providerId))))) {
-      this.host.patchSession({ statusMessage: { kind: "warning", text: "許可する接続先と基本プロバイダーを確認してください。完全自動型には保存するモデル設定での接続テストが必要です。" } });
+    if (routing.mode !== "manual" && !routing.allowedProviderIds.length) {
+      this.host.patchSession({ statusMessage: { kind: "warning", text: "使用するプロバイダーを1件以上選択してください。" } });
       return;
     }
     const isConnected = this.connectionService.getState() === "connected";

@@ -484,11 +484,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   background: var(--vscode-editorWidget-background);
 }
 
-.routing-mode-activity-button.suggest {
-  color: var(--vscode-charts-yellow, #cca700);
-  border-color: color-mix(in srgb, var(--vscode-charts-yellow, #cca700) 55%, var(--vscode-panel-border));
-}
-
 .routing-mode-activity-button.automatic {
   color: var(--vscode-charts-blue, #2d7df6);
   border-color: color-mix(in srgb, var(--vscode-charts-blue, #2d7df6) 55%, var(--vscode-panel-border));
@@ -501,8 +496,10 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   outline: none;
 }
 
-.routing-mode-activity-button .material-symbols-outlined {
-  font-size: 19px;
+.routing-mode-activity-icon {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
 }
 
 .routing-mode-activity-tooltip {

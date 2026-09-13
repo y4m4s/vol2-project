@@ -2,7 +2,8 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { RoutingSettings } from "../webview/components/RoutingSettings";
-import { normalizeRoutingSettings } from "../../services/ProviderRouting";
+import { AutoModeIcon } from "../webview/components/AutoModeIcon";
+import { applyRoutingModeSelection, normalizeRoutingSettings } from "../../services/ProviderRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
@@ -196,16 +197,27 @@ export function S06Settings() {
         <span className="material-symbols-outlined">hub</span> AI 接続
       </div>
 
-      <div className="setting-item">
+      <div className="setting-item routing-setting-item">
         <SettingTitle
-          help="手動・提案型・完全自動型から、プロバイダーの切り替え方法を選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
+          iconNode={<AutoModeIcon className="setting-title-icon setting-title-svg-icon" />}
+          endControl={<RoutingToggle
+            checked={routing.mode === "automatic"}
+            disabled={viewModel?.isBusy ?? false}
+            onChange={() => setRouting(applyRoutingModeSelection(
+              routing,
+              routing.mode === "automatic" ? "manual" : "automatic",
+              providerId,
+              viewModel?.testedProviderIds ?? []
+            ))}
+          />}
+          help="オンにすると、接続確認済みの候補からNaviComが接続先を選びます。オフでは手動で接続先を選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
         >
-          プロバイダーの切り替え
+          プロバイダーの自動切り替え
         </SettingTitle>
-        <div className="setting-desc">作業中は同じ接続先を維持し、必要なときだけ切り替えます。</div>
+        <div className="setting-desc">初期設定はオフです。必要な場合だけオンにできます。</div>
         <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
-          currentProviderId={providerId} disabled={viewModel?.isBusy ?? false}
-          connectProvider={id => send({ type: "testRoutingProvider", providerId: id })} />
+          connection={viewModel?.routingProviderConnection}
+          currentProviderId={providerId} disabled={viewModel?.isBusy ?? false} />
       </div>
 
       {routing.mode === "manual" && (
@@ -232,7 +244,7 @@ export function S06Settings() {
       {providerId === "copilot" && (
         <div className="setting-item">
           <SettingTitle
-            icon="smart_toy"
+            iconNode={<ProviderLogo providerId="copilot" className="setting-title-provider-logo" />}
             help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
           >
             使用モデル
@@ -259,7 +271,7 @@ export function S06Settings() {
             <div className="setting-desc">Ollamaはご自身でインストール・起動し、モデルを事前にインストールしてください。NaviComは自動起動しません。</div>
           </div>
           <div className="setting-item">
-            <SettingTitle icon="memory" help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
+            <SettingTitle iconNode={<ProviderLogo providerId="ollama" className="setting-title-provider-logo" />} help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
             <div className="setting-desc" role="status">{viewModel?.ollamaStatus}</div>
             {ollamaModelKey && !ollamaModelOptions.some(option => option.key === ollamaModelKey) && (
               <div className="setting-desc">選択したモデルが一覧にありません。接続先を確認し、モデルを選び直してください。</div>
@@ -288,7 +300,7 @@ export function S06Settings() {
 
           <div className="setting-item">
             <SettingTitle
-              icon="memory"
+              iconNode={<ProviderLogo providerId="lmStudio" className="setting-title-provider-logo" />}
               help="LM Studioでロード済みのモデルから、NaviComが使用するモデルを1つ選びます。一覧にない場合はLM Studioでモデルをロードしてから更新してください。"
             >
               使用モデル
@@ -376,7 +388,7 @@ export function S06Settings() {
 
           <div className="setting-item">
             <SettingTitle
-              icon="smart_toy"
+              iconNode={<ProviderLogo providerId="orcaRouter" className="setting-title-provider-logo" />}
               help="OrcaRouter経由で回答生成に使うモデルまたはルーターを選びます。Free Routerは無料枠内のモデルだけを選択します。"
             >
               使用モデル
@@ -950,12 +962,16 @@ function OrcaRouterModelButtonGroup({
 
 function SettingTitle({
   icon,
+  iconNode,
+  endControl,
   children,
   help,
   id,
   htmlFor
 }: {
   icon?: string;
+  iconNode?: ReactNode;
+  endControl?: ReactNode;
   children: ReactNode;
   help: string;
   id?: string;
@@ -965,6 +981,7 @@ function SettingTitle({
   const content = (
     <>
       {icon && <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>}
+      {iconNode}
       <span>{children}</span>
     </>
   );
@@ -976,21 +993,44 @@ function SettingTitle({
       ) : (
         <div id={id} className="setting-label setting-title">{content}</div>
       )}
-      <div className="setting-help">
-        <button
-          type="button"
-          className="setting-help-button"
-          aria-label="この項目のヘルプ"
-          aria-describedby={tooltipId}
-        >
-          <HelpCircleIcon />
-        </button>
-        <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
-          {help}
+      <div className="setting-title-actions">
+        {endControl}
+        <div className="setting-help">
+          <button
+            type="button"
+            className="setting-help-button"
+            aria-label="この項目のヘルプ"
+            aria-describedby={tooltipId}
+          >
+            <HelpCircleIcon />
+          </button>
+          <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
+            {help}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function RoutingToggle({ checked, disabled, onChange }: {
+  checked: boolean;
+  disabled: boolean;
+  onChange(): void;
+}) {
+  return <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={`プロバイダーの自動切り替えを${checked ? "オフ" : "オン"}にする`}
+    className={`routing-automatic-toggle ${checked ? "enabled" : ""}`}
+    disabled={disabled}
+    onClick={onChange}
+  >
+    <span className="routing-switch-track" aria-hidden="true">
+      <span className="routing-switch-thumb" />
+    </span>
+  </button>;
 }
 
 function HelpCircleIcon() {

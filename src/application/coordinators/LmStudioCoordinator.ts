@@ -147,6 +147,23 @@ export class LmStudioCoordinator {
     await this.pendingOperation;
   }
 
+  public async ensureServerForRoutingConnection(): Promise<boolean> {
+    if (this.pendingOperation) await this.pendingOperation;
+    try {
+      const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
+      const current = await this.serverService.getStatus(baseUrl);
+      this.updateServer(current);
+      if (current.state === "running") return true;
+      if (!current.canStart) return false;
+
+      const started = await this.serverService.start(baseUrl);
+      this.updateServer(started);
+      return started.state === "running";
+    } catch {
+      return false;
+    }
+  }
+
   public async useRunningPort(): Promise<void> {
     const port = this.server.state === "portMismatch" ? this.server.port : undefined;
     if (!port || this.host.getState().requestState !== "idle") return;
