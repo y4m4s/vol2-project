@@ -11,6 +11,8 @@ export async function compactMemory(
   const selected: ConversationEntry[] = [];
   let chars = 0;
   for (const entry of newEntries) {
+    // 単独で上限を超える発言があっても、後続の短い発言の圧縮を妨げない。
+    if (entry.text.length > 16000) continue;
     if (chars + entry.text.length > 16000) break;
     selected.push(entry); chars += entry.text.length;
   }

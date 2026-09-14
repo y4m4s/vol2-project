@@ -561,6 +561,9 @@ export class ConversationStore implements vscode.Disposable {
       return;
     }
 
+    // 削除対象の発言を元にした要約を、SQLiteやバックアップへ残さない。
+    this.getDb().run("DELETE FROM conversation_memories WHERE stream_id = ?", [streamId]);
+
     for (let index = 0; index < removedIds.length; index += 200) {
       const chunk = removedIds.slice(index, index + 200);
       this.getDb().run(

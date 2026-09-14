@@ -5,7 +5,7 @@ import type { ConversationStore } from "../../services/ConversationStore";
 import type { UsageMeter } from "../../services/UsageMeter";
 import { assembleConversationMemory, filterConversationSources, validateMemorySummary } from "../../services/ConversationMemory";
 import { compactMemory } from "../../services/MemoryCompactor";
-import { normalizeRoutingSettings } from "../../services/ProviderRouting";
+import { normalizeRoutingSettings } from "../../shared/providerRouting";
 import { deriveModelProfile } from "../../services/ModelProfile";
 import { assertRequestInputLimit } from "../../services/AiRequestPolicy";
 

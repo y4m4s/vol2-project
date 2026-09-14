@@ -1,9 +1,10 @@
-import type { AiProviderId, AutomaticRoutingSettings } from "../shared/types";
+import type { AiProviderId, AutomaticRoutingSettings } from "./types";
 
 export const PROVIDER_IDS: AiProviderId[] = ["copilot", "orcaRouter", "lmStudio", "ollama"];
 export const PROVIDER_LABELS: Record<AiProviderId, string> = {
   copilot: "GitHub Copilot", orcaRouter: "OrcaRouter", lmStudio: "LM Studio", ollama: "Ollama"
 };
+
 export function normalizeRoutingSettings(value: unknown): AutomaticRoutingSettings {
   const v = value && typeof value === "object" ? value as Partial<AutomaticRoutingSettings> : {};
   const finite = (n: unknown, fallback = 0, max = 1_000_000_000): number =>
@@ -52,12 +53,14 @@ export interface RoutingCandidate {
   costUsd?: number;
   verifiedLocal?: boolean;
 }
+
 export interface ProviderRoute {
   action: "stay" | "switch" | "stop";
   providerId?: AiProviderId;
   currentEligible: boolean;
   reason: string;
 }
+
 export function decideProviderRoute(
   settings: AutomaticRoutingSettings, candidates: RoutingCandidate[], current: AiProviderId,
   estimatedInputTokens: number, localOnly = false, pinned = false
@@ -68,6 +71,7 @@ export function decideProviderRoute(
   const eligible = (c: RoutingCandidate): boolean => c.available && c.maxInputTokens >= estimatedInputTokens &&
     (!localOnly || c.verifiedLocal === true) && (settings.mode === "manual" || settings.allowedProviderIds.includes(c.providerId));
   const underBudget = (c: RoutingCandidate): boolean => !near(c.usedTokens, c.tokenLimit) &&
+    !near(c.usedTokens, settings.dailyProviderTokenSoftLimits[c.providerId] ?? 0) &&
     !(cloud(c.providerId) && near(cloudUsage, settings.dailyCloudTokenSoftLimit)) &&
     !(c.providerId === "orcaRouter" && settings.orcaDailyCostSoftLimit > 0 &&
       (c.costUsd === undefined || near(c.costUsd, settings.orcaDailyCostSoftLimit)));

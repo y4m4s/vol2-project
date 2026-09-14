@@ -4,7 +4,9 @@ import { isPathExcluded } from "./globMatch";
 
 export function filterConversationSources(entries: ConversationEntry[], excludedGlobs: readonly string[]): ConversationEntry[] {
   return entries.map(entry => {
-    const paths = [entry.basedOn?.activeFilePath, ...(entry.requestPlan?.targetFiles.map(f => f.path) ?? [])].filter((p): p is string => Boolean(p));
+    const paths = [entry.basedOn?.activeFilePath,
+      ...(entry.requestPlan?.targetFiles.filter(f => f.included).map(f => f.path) ?? [])]
+      .filter((p): p is string => Boolean(p));
     return paths.some(path => isPathExcluded(path, excludedGlobs)) ? { ...entry, transmissionClass: "excluded" } : entry;
   });
 }

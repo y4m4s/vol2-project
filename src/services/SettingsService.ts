@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { NavigatorSettings } from "../shared/types";
 import { DEFAULT_OLLAMA_BASE_URL } from "./OllamaClient";
 import { PROTECTED_EXCLUDED_GLOBS } from "./protectedGlobs";
-import { applyRoutingModeSelection, normalizeRoutingSettings } from "./ProviderRouting";
+import { applyRoutingModeSelection, normalizeRoutingSettings } from "../shared/providerRouting";
 
 const STORAGE_KEY = "aiPairNavigator.phase2.settings";
 

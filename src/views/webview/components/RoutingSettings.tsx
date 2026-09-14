@@ -1,5 +1,5 @@
 import type { AiProviderId, AutomaticRoutingSettings, RoutingProviderConnectionStatus } from "../../../shared/types";
-import { PROVIDER_IDS, PROVIDER_LABELS } from "../../../services/ProviderRouting";
+import { PROVIDER_IDS, PROVIDER_LABELS } from "../../../shared/providerRouting";
 import { ProviderLogo } from "./ProviderLogo";
 
 export function RoutingSettings({

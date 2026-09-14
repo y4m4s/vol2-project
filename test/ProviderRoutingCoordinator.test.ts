@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeRoutingSettings } from "../src/services/ProviderRouting";
+import { normalizeRoutingSettings } from "../src/shared/providerRouting";
 import type { AiProviderId, NavigatorSettings } from "../src/shared/types";
 
 const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
@@ -43,4 +43,15 @@ test("one-time override returns to the conversation provider on the following re
   assert.equal(h.current(), "orcaRouter");
   await h.coordinator.prepare(h.settings, [], "stream");
   assert.equal(h.current(), "copilot");
+});
+
+test("forget removes cached routing state for one or all conversations", async () => {
+  const h = harness(0);
+  await h.coordinator.setPreference("first", { mode: "manual", providerId: "copilot" });
+  await h.coordinator.setPreference("second", { mode: "automatic", providerId: "orcaRouter" });
+  h.coordinator.forget("first");
+  assert.equal(h.coordinator.preference("first"), undefined);
+  assert.equal(h.coordinator.preference("second")?.providerId, "orcaRouter");
+  h.coordinator.forget();
+  assert.equal(h.coordinator.preference("second"), undefined);
 });

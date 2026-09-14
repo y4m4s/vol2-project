@@ -3,7 +3,7 @@ import type { ConversationStore } from "../../services/ConversationStore";
 import type { ConnectionService } from "../../services/ConnectionService";
 import type { UsageMeter } from "../../services/UsageMeter";
 import { deriveModelProfile } from "../../services/ModelProfile";
-import { decideProviderRoute, normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../../services/ProviderRouting";
+import { decideProviderRoute, normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../../shared/providerRouting";
 
 export class ProviderRoutingCoordinator {
   private readonly pins = new Map<string, AiProviderId>();
@@ -23,6 +23,11 @@ export class ProviderRoutingCoordinator {
   public async pin(stream: string, provider?: AiProviderId): Promise<void> {
     if (provider) this.pins.set(stream, provider); else this.pins.delete(stream);
     await this.setPreference(stream, { ...this.preference(stream), providerId: provider });
+  }
+  public forget(stream?: string): void {
+    for (const map of [this.pins, this.selected, this.preferences, this.once]) {
+      if (stream) map.delete(stream); else map.clear();
+    }
   }
   public async prepare(settings: NavigatorSettings, history: ConversationEntry[], stream: string | undefined, question = "", cancelled: () => boolean = () => false): Promise<{ ok: boolean; reason?: string }> {
     const routing = normalizeRoutingSettings(settings.routing);

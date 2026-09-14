@@ -14,7 +14,7 @@ import {
 import { resolveHomeScreen } from "./NavigationCoordinator";
 import { normalizeAdditionalContext } from "../GuidanceInput";
 import { orcaRouterAccessMessage } from "../../services/OrcaRouterErrorPolicy";
-import { normalizeRoutingSettings } from "../../services/ProviderRouting";
+import { normalizeRoutingSettings } from "../../shared/providerRouting";
 
 export interface SettingsInput {
   routing?: NavigatorSettings["routing"];

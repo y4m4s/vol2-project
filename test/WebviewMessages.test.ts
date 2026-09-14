@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseWebviewMessage } from "../src/shared/messages";
-import { normalizeRoutingSettings } from "../src/services/ProviderRouting";
+import { normalizeRoutingSettings } from "../src/shared/providerRouting";
 
 test("routing settings reject malformed modes, thresholds and provider ids", () => {
   const payload = { providerId: "copilot", defaultMode: "manual", defaultAssistanceDepth: "low", idleDelaySec: 10, requestIntervalSec: 60, dailyTokenLimit: 100000, excludeGlobs: "", routing: normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot"] }) };

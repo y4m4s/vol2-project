@@ -5,7 +5,7 @@ import {
   decideProviderRoute,
   normalizeRoutingSettings,
   executeProviderRoute
-} from "../src/services/ProviderRouting";
+} from "../src/shared/providerRouting";
 
 const settings = normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot", "orcaRouter"] });
 const candidates = [
@@ -69,6 +69,19 @@ test("soft limit switches to an allowed provider in automatic mode", () => {
   const automatic = decideProviderRoute(settings, nearing, "copilot", 100);
   assert.equal(automatic.action, "switch");
   assert.equal(automatic.providerId, "orcaRouter");
+});
+test("provider-specific soft limit cannot be bypassed by the shared limit", () => {
+  const providerLimited = normalizeRoutingSettings({
+    mode: "automatic",
+    allowedProviderIds: ["copilot", "orcaRouter"],
+    dailyProviderTokenSoftLimits: { copilot: 10, orcaRouter: 1000 }
+  });
+  const result = decideProviderRoute(providerLimited, [
+    { ...candidates[0], usedTokens: 10, tokenLimit: 1000 },
+    { ...candidates[1], tokenLimit: 1000 }
+  ], "copilot", 100);
+  assert.equal(result.action, "switch");
+  assert.equal(result.providerId, "orcaRouter");
 });
 test("never selects forbidden, unavailable or too-small candidates", () => {
   for (const other of [{ ...candidates[1], available: false }, { ...candidates[1], maxInputTokens: 50 }]) {

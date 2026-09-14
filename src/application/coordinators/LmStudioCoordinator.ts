@@ -148,6 +148,7 @@ export class LmStudioCoordinator {
   }
 
   public async ensureServerForRoutingConnection(): Promise<boolean> {
+    if (!vscode.workspace.isTrusted) return false;
     if (this.pendingOperation) await this.pendingOperation;
     try {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;

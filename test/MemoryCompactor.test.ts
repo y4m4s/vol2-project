@@ -22,3 +22,17 @@ test("LLM failure is recoverable and excluded entries never enter compression in
     assert.ok(!text.includes("excluded-secret")); return "[]";
   });
 });
+
+test("an oversized entry does not block later entries from being compacted", async () => {
+  const input = [{ ...entries[0], text: "x".repeat(16001) }, ...entries.slice(1)];
+  let request = "";
+  const result = await compactMemory(input, undefined, async text => {
+    request = text;
+    return '[{"text":"後続の決定","sourceEntryIds":["1"]}]';
+  });
+  assert.ok(result);
+  assert.ok(!request.includes("x".repeat(100)));
+  assert.ok(request.includes('"id":"1"'));
+  assert.ok(!result.sourceIds.includes("0"));
+  assert.ok(result.sourceIds.includes("1"));
+});

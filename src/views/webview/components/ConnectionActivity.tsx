@@ -1,5 +1,5 @@
 import type { AiProviderId } from "../../../shared/types";
-import { PROVIDER_LABELS } from "../../../services/ProviderRouting";
+import { PROVIDER_LABELS } from "../../../shared/providerRouting";
 import { useApp } from "../state/AppContext";
 import { AutoModeIcon } from "./AutoModeIcon";
 import { ProviderLogo } from "./ProviderLogo";
@@ -17,7 +17,7 @@ export function ConnectionActivity() {
   const routingMode = viewModel.settings.routing?.mode ?? "manual";
   const isAutomatic = routingMode === "automatic";
   const basicProviderId: AiProviderId = isAutomatic
-    ? viewModel.settings.routing?.preferredProviderId ?? viewModel.settings.providerId
+    ? viewModel.settings.routing?.preferredProviderId ?? viewModel.providerId
     : viewModel.providerId;
   const isCurrentProvider = basicProviderId === viewModel.providerId;
   const isConnected = isCurrentProvider && viewModel.connectionState === "connected";

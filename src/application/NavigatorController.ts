@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
 import { ConversationMemoryCoordinator } from "./coordinators/ConversationMemoryCoordinator";
-import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../services/ProviderRouting";
+import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../shared/providerRouting";
 import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordinator";
 import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
 import { SessionStore } from "./SessionStore";
@@ -390,7 +390,7 @@ export class NavigatorController implements vscode.Disposable {
       statusMessage: { kind: "info", text: `${PROVIDER_LABELS[providerId]}への接続を開始します。` }
     });
     try {
-      const result = await this.connectionService.connectAndActivate({ ...settings, providerId });
+      const result = await this.connectionService.connectAndActivate({ ...settings, providerId }, true);
       this.connectionService.activateTestedProvider(previous, settings);
       this.routingProviderConnection = { providerId, state: result.activated ? "connected" : "failed", revision };
       this.patchSession({ connectionState: this.connectionService.getState(), statusMessage: {
@@ -442,10 +442,12 @@ export class NavigatorController implements vscode.Disposable {
 
   public async deleteConversationStream(streamId: string): Promise<void> {
     await this.conversationCoordinator.deleteStream(streamId);
+    this.providerRoutingCoordinator.forget(streamId);
   }
 
   public async deleteAllConversationStreams(): Promise<void> {
     await this.conversationCoordinator.deleteAllStreams();
+    this.providerRoutingCoordinator.forget();
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {

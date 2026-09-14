@@ -11,6 +11,7 @@ import type { AssistanceDepth, GuidanceContext, NavigatorSessionState, Navigator
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
+let workspaceTrusted = true;
 class Emitter<T> {
   private listeners: ((value: T) => void)[] = [];
   public event = (listener: (value: T) => void) => {
@@ -22,6 +23,7 @@ class Emitter<T> {
 }
 loader._load = (id, parent, isMain) => id === "vscode" ? {
   EventEmitter: Emitter,
+  workspace: { get isTrusted() { return workspaceTrusted; } },
   CancellationTokenSource: class {
     public token = { isCancellationRequested: false };
     public cancel(): void { this.token.isCancellationRequested = true; }
@@ -34,6 +36,7 @@ const { ConversationCoordinator } = require("../src/application/coordinators/Con
 const { ConversationStore } = require("../src/services/ConversationStore") as typeof import("../src/services/ConversationStore");
 const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
 const { ConversationMemoryCoordinator } = require("../src/application/coordinators/ConversationMemoryCoordinator") as typeof import("../src/application/coordinators/ConversationMemoryCoordinator");
+const { LmStudioCoordinator } = require("../src/application/coordinators/LmStudioCoordinator") as typeof import("../src/application/coordinators/LmStudioCoordinator");
 loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
@@ -103,6 +106,13 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
   });
   driver.patchSession({});
   return { driver, state, scheduler, store, context,
+    memoryRowCount: (streamId: string) => {
+      const stmt = db.prepare("SELECT COUNT(*) AS count FROM conversation_memories WHERE stream_id = ?");
+      try {
+        stmt.bind([streamId]);
+        return stmt.step() ? Number(stmt.getAsObject().count ?? 0) : 0;
+      } finally { stmt.free(); }
+    },
     moveCursor: () => { snapshot = "v1:cursor2"; },
     changeEditor: () => { snapshot = "v2:cursor2"; context.activeFileExcerpt = "const x = 2;"; },
     restrict: () => { connection = "restricted"; },
@@ -166,10 +176,45 @@ test("SQLite memory rejects stale revisions, round-trips policy and removes memo
   assert.equal(await h.store.saveMemory(id, record.revision, items[0].sourceEntryIds, items), false);
   assert.equal(await h.store.saveMemory(id, saved.revision, items[0].sourceEntryIds, items), true);
   assert.deepEqual(h.store.getMemory(id)?.items, items);
+  assert.equal(h.memoryRowCount(id), 1);
   assert.equal(h.store.get(id)?.entries[0].transmissionClass, "localOnly");
   assert.equal(h.store.get(id)?.entries[0].routeReason, "設定上限で切り替え");
   await h.store.deleteStream(id);
   assert.equal(h.store.getMemory(id), undefined);
+  assert.equal(h.memoryRowCount(id), 0);
+});
+
+test("removing a source entry physically deletes its stored conversation memory", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "決定事項", focus: "continue" }));
+  t.after(h.dispose);
+  await h.driver.handleAutomaticGuidance();
+  const id = h.state.activeConversationStreamId!;
+  const record = h.store.get(id)!;
+  const sourceId = record.entries[0].id;
+  assert.equal(await h.store.saveMemory(id, record.revision, [sourceId], [{ text: "決定事項", sourceEntryIds: [sourceId] }]), true);
+  assert.equal(h.memoryRowCount(id), 1);
+  await h.store.saveStream({ ...record, entries: record.entries.slice(1) });
+  assert.equal(h.memoryRowCount(id), 0);
+});
+
+test("untrusted workspaces cannot start LM Studio during routing synchronization", async () => {
+  workspaceTrusted = false;
+  let statusChecks = 0;
+  let starts = 0;
+  const coordinator = new LmStudioCoordinator(
+    {} as never,
+    { getStatus: async () => { statusChecks++; return { state: "stopped", canStart: true, canStop: false }; },
+      start: async () => { starts++; return { state: "running", canStart: false, canStop: true }; } } as never,
+    { getSettings: () => ({ lmStudioBaseUrl: "http://127.0.0.1:1234" }) } as never,
+    {} as never
+  );
+  try {
+    assert.equal(await coordinator.ensureServerForRoutingConnection(), false);
+    assert.equal(statusChecks, 0);
+    assert.equal(starts, 0);
+  } finally {
+    workspaceTrusted = true;
+  }
 });
 
 test("生成中の編集を古い回答の破棄後に再実行する（実スケジューラと排他制御）", async (t) => {

@@ -3,7 +3,7 @@ import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader"
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { RoutingSettings } from "../webview/components/RoutingSettings";
 import { AutoModeIcon } from "../webview/components/AutoModeIcon";
-import { applyRoutingModeSelection, normalizeRoutingSettings } from "../../services/ProviderRouting";
+import { applyRoutingModeSelection, normalizeRoutingSettings } from "../../shared/providerRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";

@@ -39,3 +39,18 @@ test("newly excluded files invalidate historical messages and derived summaries"
   assert.equal(validateMemorySummary([{ text: "secret-value", sourceEntryIds: ["0"] }], filtered), undefined);
   assert.ok(!assembleConversationMemory(filtered, "copilot", 6000).text.includes("secret-value"));
 });
+
+test("files omitted from the request plan do not exclude the conversation entry", () => {
+  const source = {
+    ...entries[0],
+    requestPlan: { targetFiles: [{ path: "config/secret.env", included: false }] } as never
+  };
+  const [filtered] = filterConversationSources([source], ["**/*.env"]);
+  assert.notEqual(filtered.transmissionClass, "excluded");
+
+  const [included] = filterConversationSources([{
+    ...source,
+    requestPlan: { targetFiles: [{ path: "config/secret.env", included: true }] } as never
+  }], ["**/*.env"]);
+  assert.equal(included.transmissionClass, "excluded");
+});

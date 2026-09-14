@@ -87,7 +87,7 @@ export function S04Conversation() {
       </div>
 
       <div className="s04-stateless-note">
-        各質問は、その時点の作業文脈と入力内容だけをAIへ送信します。
+        各質問では、その時点の作業文脈、入力内容、入力予算内の会話メモリをAIへ送信します。
       </div>
 
       <ChatInputComposer resetKey={activeConversationStreamId} />
