@@ -1,10 +1,9 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
-import { RiBrainAi3Fill } from "react-icons/ri";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { RoutingSettings } from "../webview/components/RoutingSettings";
 import { AutoModeIcon } from "../webview/components/AutoModeIcon";
-import { applyRoutingModeSelection, normalizeRoutingSettings } from "../../shared/providerRouting";
+import { applyRoutingModeSelection, normalizeRoutingSettings, PROVIDER_LABELS, routingConnectionProviderIds } from "../../shared/providerRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
@@ -71,7 +70,17 @@ export function S06Settings() {
   const [dailyTokenLimit, setDailyTokenLimit] = useState(savedDailyTokenLimit);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
+  const providerSettingsIds = routing.mode === "automatic"
+    ? routingConnectionProviderIds(routing)
+    : [providerId];
+  const showCopilotSettings = providerSettingsIds.includes("copilot");
+  const showOllamaSettings = providerSettingsIds.includes("ollama");
+  const showLmStudioSettings = providerSettingsIds.includes("lmStudio");
+  const showOrcaRouterSettings = providerSettingsIds.includes("orcaRouter");
   const lmStudioModelOptions = viewModel?.lmStudioModelOptions ?? [];
+  const testedProviderModels = viewModel?.testedProviderModels ?? [];
+  const ollamaConnectedModel = testedProviderModels.find(model => model.providerId === "ollama");
+  const lmStudioConnectedModel = testedProviderModels.find(model => model.providerId === "lmStudio");
   const orcaRouterModelOptions = viewModel?.orcaRouterModelOptions ?? [];
   const orcaRouterApiKeyConfigured = viewModel?.orcaRouterApiKeyConfigured ?? false;
   const lmStudioServer = viewModel?.lmStudioServer ?? {
@@ -98,19 +107,19 @@ export function S06Settings() {
 
   useEffect(() => {
     if (
-      providerId === "lmStudio" &&
+      showLmStudioSettings &&
       lmStudioModelOptions.length > 0 &&
       !lmStudioModelOptions.some((option) => option.key === lmStudioModelKey)
     ) {
       setLmStudioModelKey(lmStudioModelOptions[0].key);
     }
-  }, [providerId, lmStudioModelKey, lmStudioModelOptions]);
+  }, [showLmStudioSettings, lmStudioModelKey, lmStudioModelOptions]);
 
   useEffect(() => {
-    if (providerId !== "ollama") return;
+    if (!showOllamaSettings) return;
     const timer = setTimeout(() => send({ type: "refreshOllamaModels", baseUrl: ollamaBaseUrl }), 400);
     return () => clearTimeout(timer);
-  }, [providerId, ollamaBaseUrl, ollamaRefreshKey, send]);
+  }, [showOllamaSettings, ollamaBaseUrl, ollamaRefreshKey, send]);
 
   let ollamaOrigin: string | undefined;
   try { ollamaOrigin = new URL(ollamaBaseUrl).origin; } catch { /* The host reports invalid URLs. */ }
@@ -188,14 +197,14 @@ export function S06Settings() {
           title={<PageTitleWithIcon icon="settings">設定</PageTitleWithIcon>}
           navIcons={[
             { icon: "history", title: "会話履歴", onClick: () => send({ type: "navigate", screen: "history" }) },
-            { icon: "auto_stories", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
+            { icon: "book", title: "ナレッジ", onClick: () => send({ type: "navigate", screen: "knowledge" }) },
             { icon: "add_comment", title: "新しい相談", onClick: () => send({ type: "navigate", screen: "main" }) },
           ]}
         />
       </div>
 
       <div className="settings-section">
-        <RiBrainAi3Fill className="settings-section-svg-icon" aria-hidden="true" /> AI 接続
+        <span className="material-symbols-outlined">hub</span> AI 接続
       </div>
 
       <div className="setting-item routing-setting-item">
@@ -234,16 +243,10 @@ export function S06Settings() {
       </div>
       )}
 
-      <div className="settings-section">
-        {providerId === "lmStudio" ? (
-          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" />
-        ) : (
-          <span className="material-symbols-outlined" aria-hidden="true">tune</span>
-        )}
-        {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : providerId === "ollama" ? "Ollama" : "OrcaRouter"} の設定
-      </div>
-      {providerId === "copilot" && (
-        <div className="setting-item">
+      {showCopilotSettings && (
+        <>
+          <ProviderSettingsHeading providerId="copilot" />
+          <div className="setting-item">
           <SettingTitle
             iconNode={<ProviderLogo providerId="copilot" className="setting-title-provider-logo" />}
             help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
@@ -260,11 +263,13 @@ export function S06Settings() {
             onChange={setCopilotModelId}
             options={viewModel?.copilotModelOptions ?? []}
           />
-        </div>
+          </div>
+        </>
       )}
 
-      {providerId === "ollama" && (
+      {showOllamaSettings && (
         <>
+          <ProviderSettingsHeading providerId="ollama" />
           <div className="setting-item">
             <label className="setting-title" htmlFor="ollama-endpoint">接続先URL</label>
             <input id="ollama-endpoint" className="ollama-endpoint-input" type="url" value={ollamaBaseUrl} maxLength={2000}
@@ -273,7 +278,11 @@ export function S06Settings() {
           </div>
           <div className="setting-item">
             <SettingTitle iconNode={<ProviderLogo providerId="ollama" className="setting-title-provider-logo" />} help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
-            <div className="setting-desc" role="status">{viewModel?.ollamaStatus}</div>
+            <div className="setting-desc" role="status">
+              {ollamaConnectedModel
+                ? `接続確認済みモデル: ${ollamaConnectedModel.modelLabel}`
+                : viewModel?.ollamaStatus}
+            </div>
             {ollamaModelKey && !ollamaModelOptions.some(option => option.key === ollamaModelKey) && (
               <div className="setting-desc">選択したモデルが一覧にありません。接続先を確認し、モデルを選び直してください。</div>
             )}
@@ -287,8 +296,9 @@ export function S06Settings() {
         </>
       )}
 
-      {providerId === "lmStudio" && (
+      {showLmStudioSettings && (
         <>
+          <ProviderSettingsHeading providerId="lmStudio" />
           <LmStudioServerControl
             server={lmStudioServer}
             stopBlockedByPendingChanges={stopBlockedByPendingChanges}
@@ -307,8 +317,8 @@ export function S06Settings() {
               使用モデル
             </SettingTitle>
             <div className="setting-desc lmstudio-model-note">
-              {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
-                ? `接続中: ${viewModel.modelLabel ?? "ロード済みモデル"}`
+              {lmStudioConnectedModel
+                ? `接続確認済みモデル: ${lmStudioConnectedModel.modelLabel}`
                 : "LM Studio で現在ロード中のモデルをすべて表示し、使用する1つを選択します。"}
             </div>
             <LmStudioModelButtonGroup
@@ -337,8 +347,9 @@ export function S06Settings() {
         </>
       )}
 
-      {providerId === "orcaRouter" && (
+      {showOrcaRouterSettings && (
         <>
+          <ProviderSettingsHeading providerId="orcaRouter" />
           <div className="setting-item">
             <SettingTitle
               icon="key"
@@ -440,7 +451,7 @@ export function S06Settings() {
             )}
           </div>
 
-          {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
+          {viewModel?.providerId === "orcaRouter" && (
             <div className="setting-item">
               <SettingTitle
                 icon="payments"
@@ -490,9 +501,7 @@ export function S06Settings() {
         </>
       )}
 
-      <div className="settings-scope-heading">
-        <span className="material-symbols-outlined" aria-hidden="true">hub</span> 共通設定
-      </div>
+      <div className="settings-scope-heading">共通設定</div>
       <div className="setting-desc">以下は、どのプロバイダーでも共通で使用する設定です。</div>
       <div className="settings-section">
         <span className="material-symbols-outlined" aria-hidden="true">tune</span> モード設定
@@ -658,6 +667,19 @@ export function S06Settings() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ProviderSettingsHeading({ providerId }: { providerId: AiProviderId }) {
+  return (
+    <div className="settings-section">
+      {providerId === "lmStudio" ? (
+        <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" />
+      ) : (
+        <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+      )}
+      {PROVIDER_LABELS[providerId]} の設定
     </div>
   );
 }

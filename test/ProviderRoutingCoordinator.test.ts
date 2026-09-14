@@ -34,6 +34,16 @@ test("configured default is selected for a new conversation", async () => {
   await h.coordinator.prepare(h.settings, [], "new");
   assert.equal(h.current(), "orcaRouter");
 });
+test("candidate外の基本プロバイダーは新しい相談の初回だけ使用する", async () => {
+  const h = harness(0);
+  h.settings.routing!.allowedProviderIds = ["copilot"];
+  h.settings.routing!.preferredProviderId = "orcaRouter";
+  await h.coordinator.prepare(h.settings, [], "new");
+  assert.equal(h.current(), "orcaRouter");
+  await h.coordinator.prepare(h.settings, [{ role: "assistant", providerId: "orcaRouter" }] as never, "new");
+  assert.equal(h.current(), "copilot");
+  assert.deepEqual(h.activations, ["orcaRouter", "copilot"]);
+});
 
 test("one-time override returns to the conversation provider on the following request", async () => {
   const h = harness(0);

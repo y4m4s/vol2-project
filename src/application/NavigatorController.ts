@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
 import { ConversationMemoryCoordinator } from "./coordinators/ConversationMemoryCoordinator";
-import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../shared/providerRouting";
+import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS, routingConnectionProviderIds } from "../shared/providerRouting";
 import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordinator";
 import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
 import { SessionStore } from "./SessionStore";
@@ -328,6 +328,7 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const currentRequestPlan = this.requestPlanCoordinator.getCurrentPlan(state);
+    const testedProviderModels = this.connectionService.getTestedModels?.(settings) ?? [];
 
     return {
       screen: state.screen,
@@ -337,7 +338,8 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: state.assistanceDepth,
       canConnect: state.requestState === "idle",
       canAskForGuidance: state.requestState === "idle" && (state.connectionState === "connected" ||
-        (settings.routing?.mode !== "manual" && Boolean(settings.routing) && Boolean(this.connectionService.getTestedModels?.(settings).some(m => settings.routing?.allowedProviderIds.includes(m.providerId))))),
+        (settings.routing?.mode !== "manual" && Boolean(settings.routing) &&
+          testedProviderModels.some(model => routingConnectionProviderIds(settings.routing!).includes(model.providerId)))),
       canSwitchMode: state.connectionState === "connected" && state.requestState === "idle",
       canSwitchAssistanceDepth: state.requestState === "idle",
       isBusy: state.requestState !== "idle",
@@ -355,7 +357,12 @@ export class NavigatorController implements vscode.Disposable {
       orcaRouterApiKeyConfigured: this.connectionService.isOrcaRouterApiKeyConfigured(),
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
       settingsRevision: this.connectionSettingsCoordinator.revision,
-      testedProviderIds: this.connectionService.getTestedModels?.(settings).map(model => model.providerId) ?? [],
+      testedProviderIds: testedProviderModels.map(model => model.providerId),
+      testedProviderModels: testedProviderModels.map(model => ({
+        providerId: model.providerId,
+        modelId: model.modelId,
+        modelLabel: model.modelLabel
+      })),
       routingProviderConnection: this.routingProviderConnection,
       conversationRoutingPreference: this.providerRoutingCoordinator.preference(state.activeConversationStreamId),
       statusMessage: state.statusMessage,
@@ -549,7 +556,7 @@ export class NavigatorController implements vscode.Disposable {
     const routing = normalizeRoutingSettings(settings.routing);
     if (routing.mode !== "automatic") return;
 
-    const selected = routing.allowedProviderIds;
+    const selected = routingConnectionProviderIds(routing);
     const previousProviderId = this.connectionService.getProviderId();
     const connected: AiProviderId[] = [];
     const failed: AiProviderId[] = [];

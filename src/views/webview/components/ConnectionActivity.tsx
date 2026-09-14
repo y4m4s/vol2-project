@@ -22,10 +22,14 @@ export function ConnectionActivity() {
   const isCurrentProvider = basicProviderId === viewModel.providerId;
   const isConnected = isCurrentProvider && viewModel.connectionState === "connected";
   const isAvailable = isConnected || (!isCurrentProvider && (viewModel.testedProviderIds ?? []).includes(basicProviderId));
-  const stateLabel = isConnected ? "接続中" : isAvailable ? "接続可能" : "未接続";
-  const modelLabel = isCurrentProvider
-    ? viewModel.modelLabel?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, "")
-    : undefined;
+  const isChecking = viewModel.requestState === "connecting" &&
+    viewModel.routingProviderConnection?.providerId === basicProviderId &&
+    viewModel.routingProviderConnection.state === "connecting";
+  const stateLabel = isConnected ? "接続中" : isAvailable ? "接続可能" : isChecking ? "接続確認中" : "未接続";
+  const testedModelLabel = viewModel.testedProviderModels?.find(model => model.providerId === basicProviderId)?.modelLabel;
+  const modelLabel = (isCurrentProvider ? viewModel.modelLabel : testedModelLabel)
+    ?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, "");
+  const stateClass = isAvailable ? "connected" : "switching";
 
   return (
     <>
@@ -33,14 +37,14 @@ export function ConnectionActivity() {
       <div className="connection-activity">
         <button
           type="button"
-          className={`connection-activity-provider ${basicProviderId.toLowerCase()} ${isAvailable ? "connected" : "switching"}`}
+          className={`connection-activity-provider ${basicProviderId.toLowerCase()} ${stateClass}`}
           aria-label={`${PROVIDER_LABELS[basicProviderId]} ${stateLabel}${isAutomatic ? "、基本プロバイダー" : ""}。接続設定を開く`}
           aria-describedby="connection-activity-tooltip"
           onClick={() => send({ type: "navigate", screen: "settings" })}
         >
           <ProviderLogo providerId={basicProviderId} className="connection-activity-provider-logo" />
-          <span className={`connection-activity-state ${isAvailable ? "connected" : "switching"}`} aria-hidden="true">
-            {!isAvailable && <span className="material-symbols-outlined">progress_activity</span>}
+          <span className={`connection-activity-state ${stateClass}`} aria-hidden="true">
+            {isChecking && <span className="material-symbols-outlined">progress_activity</span>}
           </span>
         </button>
 
@@ -50,7 +54,7 @@ export function ConnectionActivity() {
             <span>{PROVIDER_LABELS[basicProviderId]}</span>
           </div>
           <div className="connection-activity-tooltip-status">
-            <span className={`connection-activity-tooltip-dot ${isAvailable ? "connected" : "switching"}`} />
+            <span className={`connection-activity-tooltip-dot ${stateClass}`} />
             <span>{stateLabel}</span>
           </div>
           {isAutomatic && <div className="connection-activity-tooltip-role">基本プロバイダー</div>}

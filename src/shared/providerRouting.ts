@@ -44,6 +44,13 @@ export function applyRoutingModeSelection(
   return { ...routing, mode, allowedProviderIds, preferredProviderId };
 }
 
+export function routingConnectionProviderIds(value: AutomaticRoutingSettings): AiProviderId[] {
+  const routing = normalizeRoutingSettings(value);
+  return PROVIDER_IDS.filter(providerId =>
+    routing.allowedProviderIds.includes(providerId) || providerId === routing.preferredProviderId
+  );
+}
+
 export interface RoutingCandidate {
   providerId: AiProviderId;
   available: boolean;

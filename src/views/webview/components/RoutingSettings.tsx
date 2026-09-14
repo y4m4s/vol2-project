@@ -98,7 +98,7 @@ export function RoutingSettings({
               <ProviderLogo providerId={providerId} className="routing-preferred-logo" />
               {value.preferredProviderId === providerId && <span className="routing-preferred-selected" aria-hidden="true" />}
             </span>
-            <span className="routing-preferred-copy"><strong>{PROVIDER_LABELS[providerId]}</strong><small>{selectedProviders.includes(providerId) ? "新しい相談で使用" : "候補外でも設定を保持"}</small></span>
+            <span className="routing-preferred-copy"><strong>{PROVIDER_LABELS[providerId]}</strong><small>{selectedProviders.includes(providerId) ? "新しい相談で使用" : "新しい相談の初回に使用"}</small></span>
           </button>)}
         </div>
       </section>

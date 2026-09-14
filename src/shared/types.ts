@@ -31,6 +31,12 @@ export interface RoutingProviderConnectionStatus {
   revision: number;
 }
 
+export interface TestedProviderModel {
+  providerId: AiProviderId;
+  modelId: string;
+  modelLabel: string;
+}
+
 export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
@@ -439,6 +445,7 @@ export interface NavigatorSessionState {
 export interface NavigatorViewModel {
   conversationRoutingPreference?: ConversationRoutingPreference;
   testedProviderIds?: AiProviderId[];
+  testedProviderModels?: TestedProviderModel[];
   routingProviderConnection?: RoutingProviderConnectionStatus;
   screen: NavigatorScreen;
   connectionState: ConnectionState;

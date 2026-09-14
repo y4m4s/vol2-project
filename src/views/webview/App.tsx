@@ -111,7 +111,7 @@ function StatusMessageToast() {
     <FloatingToast
       open={!shouldSuppress}
       kind={statusMessage?.kind}
-      icon={isCheckingRoutingConnection ? "progress_activity" : undefined}
+      providerIconId={isCheckingRoutingConnection ? viewModel.routingProviderConnection?.providerId : undefined}
       message={statusMessage?.text ?? ""}
       persist={isCheckingRoutingConnection}
       durationMs={statusMessage?.kind === "error" ? 10_000 : undefined}

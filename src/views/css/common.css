@@ -1383,14 +1383,10 @@ ul.bullet-list li {
   margin-top: 0;
 }
 
-.floating-toast-icon.spinning {
-  animation: connection-activity-spin 0.9s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .floating-toast-icon.spinning {
-    animation: none;
-  }
+.floating-toast-provider-logo {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
 }
 
 .floating-toast.success .floating-toast-icon {

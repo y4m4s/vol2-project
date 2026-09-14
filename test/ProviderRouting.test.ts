@@ -4,7 +4,8 @@ import {
   applyRoutingModeSelection,
   decideProviderRoute,
   normalizeRoutingSettings,
-  executeProviderRoute
+  executeProviderRoute,
+  routingConnectionProviderIds
 } from "../src/shared/providerRouting";
 
 const settings = normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot", "orcaRouter"] });
@@ -60,6 +61,14 @@ test("basic provider is preserved when it is no longer an allowed candidate", ()
   );
   assert.equal(selected.preferredProviderId, "copilot");
   assert.deepEqual(selected.allowedProviderIds, ["orcaRouter"]);
+});
+test("connection checks include a basic provider outside the automatic candidates", () => {
+  const selected = normalizeRoutingSettings({
+    mode: "automatic",
+    allowedProviderIds: ["copilot"],
+    preferredProviderId: "orcaRouter"
+  });
+  assert.deepEqual(routingConnectionProviderIds(selected), ["copilot", "orcaRouter"]);
 });
 test("keeps current provider while eligible regardless of other cheaper candidates", () => {
   assert.equal(decideProviderRoute(settings, candidates, "copilot", 100).action, "stay");
