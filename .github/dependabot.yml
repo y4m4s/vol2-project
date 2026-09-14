@@ -3,6 +3,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "develop"
 
     schedule:
       interval: "weekly"
@@ -42,3 +43,15 @@ updates:
       prefix: "build"
       prefix-development: "build"
       include: "scope"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+
+    open-pull-requests-limit: 5
