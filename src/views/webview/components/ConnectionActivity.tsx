@@ -35,11 +35,11 @@ export function ConnectionActivity() {
   const isChecking = viewModel.requestState === "connecting" &&
     viewModel.routingProviderConnection?.providerId === basicProviderId &&
     viewModel.routingProviderConnection.state === "connecting";
-  const stateLabel = isConnected ? "接続中" : isAvailable ? "接続可能" : isChecking ? "接続確認中" : "未接続";
+  const stateLabel = isConnected ? "接続中" : isChecking ? "接続確認中" : isAvailable ? "接続可能" : "未接続";
   const testedModelLabel = viewModel.testedProviderModels?.find(model => model.providerId === basicProviderId)?.modelLabel;
   const modelLabel = (isCurrentProvider ? viewModel.modelLabel : testedModelLabel)
     ?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, "");
-  const stateClass = isAvailable ? "connected" : "switching";
+  const stateClass = isConnected || isAvailable && !isChecking ? "connected" : "switching";
 
   return (
     <>
