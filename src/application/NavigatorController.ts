@@ -383,12 +383,27 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async connectCopilot(providerId?: AiProviderId): Promise<void> {
-    const restoreAutomaticRouting = this.sessionStore.getState().screen === "onboarding";
+    const initialState = this.sessionStore.getState();
+    const initialSettings = this.settingsService.getSettings();
+    const restoreAutomaticRouting = initialState.screen === "onboarding" || (
+      initialState.screen === "settings" &&
+      initialState.screenHistory.at(-1) === "onboarding" &&
+      providerId !== undefined &&
+      initialSettings.providerId === providerId
+    );
     await this.connectionSettingsCoordinator.connect(providerId);
-    const settings = this.settingsService.getSettings();
-    const routing = normalizeRoutingSettings(settings.routing);
-    if (restoreAutomaticRouting && this.connectionService.getState() === "connected" &&
-        routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {
+    const selectedProviderConnected = providerId !== undefined &&
+      this.connectionService.getState() === "connected" &&
+      this.connectionService.getProviderId() === providerId;
+    if (!restoreAutomaticRouting || !selectedProviderConnected) return;
+
+    let settings = this.settingsService.getSettings();
+    let routing = normalizeRoutingSettings(settings.routing);
+    if (routing.mode === "automatic" && routing.preferredProviderId !== providerId) {
+      routing = { ...routing, preferredProviderId: providerId };
+      settings = await this.connectionSettingsCoordinator.saveSettingsWithRevision({ ...settings, routing });
+    }
+    if (routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {
       await this.synchronizeRoutingProviders();
     }
   }

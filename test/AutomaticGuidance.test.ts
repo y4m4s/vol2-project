@@ -47,30 +47,58 @@ interface Driver {
   setAdditionalContext(additionalContext: string): Promise<void>;
 }
 
-test("再起動後の初回接続成功時に保存済みの自動ルーティング候補を再確認する", async () => {
+test("オンボーディングで選んだ接続先を基本プロバイダーにして自動候補を再確認する", async () => {
   const connected: AiProviderId[] = [];
+  let settings = {
+    providerId: "copilot" as AiProviderId,
+    routing: { mode: "automatic" as const, allowedProviderIds: ["orcaRouter", "ollama"] as AiProviderId[], preferredProviderId: "copilot" as AiProviderId }
+  };
   let synchronized = 0;
   const driver = Object.create(NavigatorController.prototype) as Driver;
   Object.assign(driver, {
     connectionSettingsCoordinator: { connect: async (providerId?: AiProviderId) => {
       if (providerId) connected.push(providerId);
-    } },
-    settingsService: { getSettings: () => ({
-      routing: { mode: "automatic", allowedProviderIds: ["orcaRouter", "ollama"] }
-    }) },
-    sessionStore: { getState: () => ({ screen: "onboarding" }) },
-    connectionService: { getState: () => "connected" },
+    }, saveSettingsWithRevision: async (next: typeof settings) => { settings = next; return settings; } },
+    settingsService: { getSettings: () => settings },
+    sessionStore: { getState: () => ({ screen: "onboarding", screenHistory: [] }) },
+    connectionService: { getState: () => "connected", getProviderId: () => connected.at(-1) },
     synchronizeRoutingProviders: async () => { synchronized++; }
   });
 
   await driver.connectCopilot("ollama");
 
   assert.deepEqual(connected, ["ollama"]);
+  assert.equal(settings.routing.preferredProviderId, "ollama");
   assert.equal(synchronized, 1);
 
-  Object.assign(driver, { sessionStore: { getState: () => ({ screen: "main" }) } });
+  Object.assign(driver, { sessionStore: { getState: () => ({ screen: "main", screenHistory: [] }) } });
   await driver.connectCopilot("orcaRouter");
   assert.deepEqual(connected, ["ollama", "orcaRouter"]);
+  assert.equal(settings.routing.preferredProviderId, "ollama");
+  assert.equal(synchronized, 1);
+});
+
+test("オンボーディングからOrcaRouter設定を経由しても明示選択を基本プロバイダーにする", async () => {
+  let settings = {
+    providerId: "orcaRouter" as AiProviderId,
+    routing: { mode: "automatic" as const, allowedProviderIds: ["copilot"] as AiProviderId[], preferredProviderId: "copilot" as AiProviderId }
+  };
+  let synchronized = 0;
+  const driver = Object.create(NavigatorController.prototype) as Driver;
+  Object.assign(driver, {
+    connectionSettingsCoordinator: {
+      connect: async () => {},
+      saveSettingsWithRevision: async (next: typeof settings) => { settings = next; return settings; }
+    },
+    settingsService: { getSettings: () => settings },
+    sessionStore: { getState: () => ({ screen: "settings", screenHistory: ["onboarding"] }) },
+    connectionService: { getState: () => "connected", getProviderId: () => "orcaRouter" },
+    synchronizeRoutingProviders: async () => { synchronized++; }
+  });
+
+  await driver.connectCopilot("orcaRouter");
+
+  assert.equal(settings.routing.preferredProviderId, "orcaRouter");
   assert.equal(synchronized, 1);
 });
 
