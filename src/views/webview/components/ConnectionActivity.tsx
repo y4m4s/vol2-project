@@ -53,8 +53,8 @@ export function ConnectionActivity() {
           onClick={() => send({ type: "navigate", screen: "settings" })}
         >
           <ProviderLogo providerId={basicProviderId} className="connection-activity-provider-logo" />
-          {isChecking && <span className="connection-activity-state switching" aria-hidden="true">
-            <span className="material-symbols-outlined">progress_activity</span>
+          {(isAvailable || isChecking) && <span className={`connection-activity-state ${stateClass}`} aria-hidden="true">
+            {isChecking && !isConnected && <span className="material-symbols-outlined">progress_activity</span>}
           </span>}
         </button>
 
