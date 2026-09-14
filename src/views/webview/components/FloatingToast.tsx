@@ -3,7 +3,7 @@ import type { NavigatorStatusMessage } from "../../../shared/types";
 
 type FloatingToastKind = NavigatorStatusMessage["kind"] | "success";
 type FloatingToastPhase = "hidden" | "show" | "leaving";
-type FloatingToastIcon = "auto_awesome" | "check_circle" | "crisis_alert" | "warning";
+type FloatingToastIcon = "auto_awesome" | "check_circle" | "crisis_alert" | "progress_activity" | "warning";
 
 const DEFAULT_ICONS: Record<FloatingToastKind, { icon: FloatingToastIcon }> = {
   error: { icon: "crisis_alert" },
@@ -90,14 +90,16 @@ export function FloatingToast({
 
   const resolvedIcon = icon ?? getDefaultIcon(kind);
   const progressClass = progress ? ` progress-${progress}` : "";
+  const layoutClass = title ? "" : " single-line";
+  const spinningIconClass = resolvedIcon === "progress_activity" ? " spinning" : "";
 
   return (
     <div
-      className={`floating-toast ${kind}${progressClass}${phase === "leaving" ? " leaving" : ""}`}
+      className={`floating-toast ${kind}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}`}
       role={kind === "error" ? "alert" : "status"}
       aria-live={kind === "error" ? "assertive" : "polite"}
     >
-      <span className="material-symbols-outlined floating-toast-icon">{resolvedIcon}</span>
+      <span className={`material-symbols-outlined floating-toast-icon${spinningIconClass}`}>{resolvedIcon}</span>
       <div className="floating-toast-body">
         {title && <div className="floating-toast-title">{title}</div>}
         <div className={title ? "floating-toast-desc" : "floating-toast-message"}>{message}</div>

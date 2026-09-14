@@ -1348,6 +1348,10 @@ ul.bullet-list li {
   animation: floating-toast-in 0.18s ease-out;
 }
 
+.floating-toast.single-line {
+  align-items: center;
+}
+
 .confirming-delete {
   color: #fff !important;
   background: #dc2626 !important;
@@ -1373,6 +1377,20 @@ ul.bullet-list li {
   margin-top: 1px;
   font-size: 19px;
   color: var(--vscode-textLink-foreground);
+}
+
+.floating-toast.single-line .floating-toast-icon {
+  margin-top: 0;
+}
+
+.floating-toast-icon.spinning {
+  animation: connection-activity-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-toast-icon.spinning {
+    animation: none;
+  }
 }
 
 .floating-toast.success .floating-toast-icon {

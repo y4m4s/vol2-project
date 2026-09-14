@@ -376,7 +376,14 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async connectCopilot(providerId?: AiProviderId): Promise<void> {
+    const restoreAutomaticRouting = this.sessionStore.getState().screen === "onboarding";
     await this.connectionSettingsCoordinator.connect(providerId);
+    const settings = this.settingsService.getSettings();
+    const routing = normalizeRoutingSettings(settings.routing);
+    if (restoreAutomaticRouting && this.connectionService.getState() === "connected" &&
+        routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {
+      await this.synchronizeRoutingProviders();
+    }
   }
 
   public async testRoutingProvider(providerId: AiProviderId): Promise<void> {

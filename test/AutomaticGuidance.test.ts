@@ -7,7 +7,7 @@ import type { AutoAdviceTriggerEvent } from "../src/services/AdviceScheduler";
 import type { GuidanceRequestResult } from "../src/services/AdviceService";
 import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/RequestPlanner";
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
-import type { AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
+import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
@@ -41,10 +41,38 @@ loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
 interface Driver {
+  connectCopilot(providerId?: AiProviderId): Promise<void>;
   handleAutomaticGuidance(event?: AutoAdviceTriggerEvent): Promise<void>;
   runGuidanceRequest(options: Options, state: NavigatorSessionState): Promise<{ ok: boolean }>;
   setAdditionalContext(additionalContext: string): Promise<void>;
 }
+
+test("再起動後の初回接続成功時に保存済みの自動ルーティング候補を再確認する", async () => {
+  const connected: AiProviderId[] = [];
+  let synchronized = 0;
+  const driver = Object.create(NavigatorController.prototype) as Driver;
+  Object.assign(driver, {
+    connectionSettingsCoordinator: { connect: async (providerId?: AiProviderId) => {
+      if (providerId) connected.push(providerId);
+    } },
+    settingsService: { getSettings: () => ({
+      routing: { mode: "automatic", allowedProviderIds: ["orcaRouter", "ollama"] }
+    }) },
+    sessionStore: { getState: () => ({ screen: "onboarding" }) },
+    connectionService: { getState: () => "connected" },
+    synchronizeRoutingProviders: async () => { synchronized++; }
+  });
+
+  await driver.connectCopilot("ollama");
+
+  assert.deepEqual(connected, ["ollama"]);
+  assert.equal(synchronized, 1);
+
+  Object.assign(driver, { sessionStore: { getState: () => ({ screen: "main" }) } });
+  await driver.connectCopilot("orcaRouter");
+  assert.deepEqual(connected, ["ollama", "orcaRouter"]);
+  assert.equal(synchronized, 1);
+});
 
 // Keep the real scheduler, request gate, controller execution and stream lifecycle.
 // Only the editor/provider and filesystem persistence are replaced.
