@@ -426,20 +426,6 @@
   font-size: 22px;
 }
 
-.routing-preferred-selected {
-  position: absolute;
-  right: -4px;
-  bottom: -4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 13px;
-  height: 13px;
-  border: 2px solid var(--vscode-editorWidget-background);
-  border-radius: 50%;
-  background: #22c55e;
-}
-
 .routing-preferred-copy,
 .routing-preferred-copy strong,
 .routing-preferred-copy small {

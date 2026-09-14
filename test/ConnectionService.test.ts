@@ -237,6 +237,6 @@ test("Ollama一覧の更新失敗で古いモデル候補を消し、詳細を�
   fail = true;
   assert.deepEqual(await service.refreshAvailableOllamaModels("http://localhost:11434"), []);
   assert.equal(service.getOllamaModelsBaseUrl(), undefined);
-  assert.match(service.getOllamaStatus(), /接続できません/);
+  assert.match(service.getOllamaStatus(), /モデル一覧を取得できません/);
   assert.doesNotMatch(service.getOllamaStatus(), /internal/);
 });

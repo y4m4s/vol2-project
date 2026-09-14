@@ -51,6 +51,16 @@ export function routingConnectionProviderIds(value: AutomaticRoutingSettings): A
   );
 }
 
+export function selectableBasicProviderIds(
+  value: AutomaticRoutingSettings,
+  localProvidersWithModels: readonly AiProviderId[]
+): AiProviderId[] {
+  const routing = normalizeRoutingSettings(value);
+  return routingConnectionProviderIds(routing).filter(providerId =>
+    (providerId !== "lmStudio" && providerId !== "ollama") || localProvidersWithModels.includes(providerId)
+  );
+}
+
 export interface RoutingCandidate {
   providerId: AiProviderId;
   available: boolean;

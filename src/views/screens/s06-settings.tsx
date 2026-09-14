@@ -125,6 +125,10 @@ export function S06Settings() {
   try { ollamaOrigin = new URL(ollamaBaseUrl).origin; } catch { /* The host reports invalid URLs. */ }
   const ollamaModelOptions = ollamaOrigin && viewModel?.ollamaModelsBaseUrl === ollamaOrigin
     ? viewModel?.ollamaModelOptions ?? [] : [];
+  const localProvidersWithModels: AiProviderId[] = [
+    ...(lmStudioModelOptions.length > 0 ? ["lmStudio" as const] : []),
+    ...(ollamaModelOptions.length > 0 ? ["ollama" as const] : [])
+  ];
   const hasPendingChanges =
     JSON.stringify(routing) !== savedRouting ||
     ollamaBaseUrl !== savedOllamaBaseUrl || ollamaModelKey !== savedOllamaModelKey ||
@@ -227,7 +231,8 @@ export function S06Settings() {
         <div className="setting-desc">初期設定はオフです。必要な場合だけオンにできます。</div>
         <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
           connection={viewModel?.routingProviderConnection}
-          currentProviderId={providerId} disabled={viewModel?.isBusy ?? false} />
+          currentProviderId={providerId} localProvidersWithModels={localProvidersWithModels}
+          disabled={viewModel?.isBusy ?? false} />
       </div>
 
       {routing.mode === "manual" && (
@@ -330,7 +335,7 @@ export function S06Settings() {
             {lmStudioModelOptions.length === 0 && (
               <div className="setting-desc lmstudio-model-empty">
                 {lmStudioServerRunning
-                  ? "ロード中のLLMがありません。LM Studioでモデルをロードしてから一覧を更新してください。"
+                  ? "使用できるモデルを取得できませんでした。LM Studioでモデルをロードしてから一覧を更新してください。"
                   : "LM Studio サーバーを起動すると、ロード中のモデルを取得できます。"}
               </div>
             )}

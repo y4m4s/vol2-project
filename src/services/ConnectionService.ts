@@ -179,7 +179,7 @@ export class ConnectionService {
       console.warn("NaviCom Ollama model discovery failed", error);
       this.availableOllamaModelOptions = [];
       this.ollamaModelsBaseUrl = undefined;
-      this.ollamaStatus = "Ollamaに接続できませんでした。接続先URLと、Ollamaがインストール・起動済みであることを確認してください。";
+      this.ollamaStatus = "Ollamaからモデル一覧を取得できませんでした。接続先URLと、Ollamaがインストール・起動済みであることを確認してください。";
       return [];
     }
   }

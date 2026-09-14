@@ -5,7 +5,8 @@ import {
   decideProviderRoute,
   normalizeRoutingSettings,
   executeProviderRoute,
-  routingConnectionProviderIds
+  routingConnectionProviderIds,
+  selectableBasicProviderIds
 } from "../src/shared/providerRouting";
 
 const settings = normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot", "orcaRouter"] });
@@ -69,6 +70,15 @@ test("connection checks include a basic provider outside the automatic candidate
     preferredProviderId: "orcaRouter"
   });
   assert.deepEqual(routingConnectionProviderIds(selected), ["copilot", "orcaRouter"]);
+});
+test("local providers without retrieved models are hidden from basic provider choices", () => {
+  const selected = normalizeRoutingSettings({
+    mode: "automatic",
+    allowedProviderIds: ["copilot", "lmStudio", "ollama"],
+    preferredProviderId: "ollama"
+  });
+  assert.deepEqual(selectableBasicProviderIds(selected, []), ["copilot"]);
+  assert.deepEqual(selectableBasicProviderIds(selected, ["lmStudio"]), ["copilot", "lmStudio"]);
 });
 test("keeps current provider while eligible regardless of other cheaper candidates", () => {
   assert.equal(decideProviderRoute(settings, candidates, "copilot", 100).action, "stay");

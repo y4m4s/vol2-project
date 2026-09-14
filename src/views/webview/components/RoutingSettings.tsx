@@ -1,5 +1,5 @@
 import type { AiProviderId, AutomaticRoutingSettings, RoutingProviderConnectionStatus } from "../../../shared/types";
-import { PROVIDER_IDS, PROVIDER_LABELS } from "../../../shared/providerRouting";
+import { PROVIDER_IDS, PROVIDER_LABELS, selectableBasicProviderIds } from "../../../shared/providerRouting";
 import { ProviderLogo } from "./ProviderLogo";
 
 export function RoutingSettings({
@@ -8,6 +8,7 @@ export function RoutingSettings({
   tested,
   connection,
   currentProviderId,
+  localProvidersWithModels,
   disabled
 }: {
   value: AutomaticRoutingSettings;
@@ -15,12 +16,14 @@ export function RoutingSettings({
   tested: AiProviderId[];
   connection?: RoutingProviderConnectionStatus;
   currentProviderId: AiProviderId;
+  localProvidersWithModels: AiProviderId[];
   disabled: boolean;
 }) {
   const automatic = value.mode === "automatic";
   const selectedProviders = value.allowedProviderIds;
-  const basicProviderIds = PROVIDER_IDS.filter(id =>
-    selectedProviders.includes(id) || id === value.preferredProviderId
+  const basicProviderIds = selectableBasicProviderIds(value, localProvidersWithModels);
+  const hasSelectablePreferredProvider = Boolean(
+    value.preferredProviderId && basicProviderIds.includes(value.preferredProviderId)
   );
 
   const toggleProvider = (providerId: AiProviderId) => {
@@ -86,17 +89,15 @@ export function RoutingSettings({
           <span>新しい相談を始めるときに最初に使用します。</span>
         </div>
         <div className="choice-options routing-preferred-options" role="radiogroup" aria-label="基本プロバイダー">
-          <button type="button" role="radio" aria-checked={!value.preferredProviderId} className={`choice-option routing-preferred-option ${currentProviderId} ${!value.preferredProviderId ? "selected" : ""}`} onClick={() => onChange({ ...value, preferredProviderId: undefined })}>
+          <button type="button" role="radio" aria-checked={!hasSelectablePreferredProvider} className={`choice-option routing-preferred-option ${currentProviderId} ${!hasSelectablePreferredProvider ? "selected" : ""}`} onClick={() => onChange({ ...value, preferredProviderId: undefined })}>
             <span className="routing-preferred-icon-wrap">
               <span className="material-symbols-outlined routing-preferred-current-icon" aria-hidden="true">sync</span>
-              {!value.preferredProviderId && <span className="routing-preferred-selected" aria-hidden="true" />}
             </span>
             <span className="routing-preferred-copy"><strong>現在の接続先</strong><small>変更せずに開始</small></span>
           </button>
           {basicProviderIds.map(providerId => <button key={providerId} type="button" role="radio" aria-checked={value.preferredProviderId === providerId} className={`choice-option routing-preferred-option ${providerId} ${value.preferredProviderId === providerId ? "selected" : ""}`} onClick={() => onChange({ ...value, preferredProviderId: providerId })}>
             <span className="routing-preferred-icon-wrap">
               <ProviderLogo providerId={providerId} className="routing-preferred-logo" />
-              {value.preferredProviderId === providerId && <span className="routing-preferred-selected" aria-hidden="true" />}
             </span>
             <span className="routing-preferred-copy"><strong>{PROVIDER_LABELS[providerId]}</strong><small>{selectedProviders.includes(providerId) ? "新しい相談で使用" : "新しい相談の初回に使用"}</small></span>
           </button>)}

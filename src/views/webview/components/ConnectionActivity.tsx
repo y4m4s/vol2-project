@@ -16,8 +16,18 @@ export function ConnectionActivity() {
 
   const routingMode = viewModel.settings.routing?.mode ?? "manual";
   const isAutomatic = routingMode === "automatic";
+  const preferredProviderId = viewModel.settings.routing?.preferredProviderId;
+  const preferredLocalProviderHasModels = preferredProviderId === "lmStudio"
+    ? viewModel.lmStudioModelOptions.length > 0
+    : preferredProviderId === "ollama"
+      ? (viewModel.ollamaModelOptions?.length ?? 0) > 0
+      : true;
+  const selectablePreferredProviderId = preferredProviderId &&
+    preferredLocalProviderHasModels
+    ? preferredProviderId
+    : undefined;
   const basicProviderId: AiProviderId = isAutomatic
-    ? viewModel.settings.routing?.preferredProviderId ?? viewModel.providerId
+    ? selectablePreferredProviderId ?? viewModel.providerId
     : viewModel.providerId;
   const isCurrentProvider = basicProviderId === viewModel.providerId;
   const isConnected = isCurrentProvider && viewModel.connectionState === "connected";
@@ -43,9 +53,9 @@ export function ConnectionActivity() {
           onClick={() => send({ type: "navigate", screen: "settings" })}
         >
           <ProviderLogo providerId={basicProviderId} className="connection-activity-provider-logo" />
-          <span className={`connection-activity-state ${stateClass}`} aria-hidden="true">
-            {isChecking && <span className="material-symbols-outlined">progress_activity</span>}
-          </span>
+          {isChecking && <span className="connection-activity-state switching" aria-hidden="true">
+            <span className="material-symbols-outlined">progress_activity</span>
+          </span>}
         </button>
 
         <div id="connection-activity-tooltip" className="connection-activity-tooltip" role="tooltip">
