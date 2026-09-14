@@ -28,7 +28,7 @@
 - タスク分類によるモデル内の能力段階選択、実測評価による採点、専用のWebview提案カード、提案再表示間隔の設定、ローカルモデルのアイドル解放は後続拡張
 - 自動選択の送信前トークン量は概算。入力上限を超えるリクエストは既存の最終送信ガードでも拒否する
 
-検証: `npm test`（273テスト）、`npm run lint`、`npm run compile` が成功。実プロバイダーへの課金リクエストとF5 Extension Development Host上の操作確認は未実施。
+検証: `npm test`、`npm run lint`、`npm run compile` が成功。実プロバイダーへの課金リクエストとF5 Extension Development Host上の操作確認は未実施。
 
 ## 目的
 
