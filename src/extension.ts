@@ -36,6 +36,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   const contextCollector = new ContextCollector();
   const diagnostics = vscode.window.createOutputChannel("NaviCom Diagnostics", { log: true });
+  const writeDiagnostic = (entry: Record<string, unknown>) => diagnostics.info(JSON.stringify(entry));
   context.subscriptions.push(diagnostics);
   diagnostics.info(JSON.stringify({ event: "activation", policyRevision: GUIDANCE_POLICY_REVISION,
     extensionPath: context.extensionUri.fsPath }));
@@ -43,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
-    new AdviceService(connectionService, usageMeter, (entry) => diagnostics.info(JSON.stringify(entry))),
+    new AdviceService(connectionService, usageMeter, writeDiagnostic),
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
@@ -51,7 +52,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
     new FeedbackStore(context.globalStorageUri),
-    usageMeter
+    usageMeter,
+    writeDiagnostic
   );
 
   try {
@@ -83,6 +85,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand("aiPairNavigator.askForGuidance", async () => {
       await controller.askForGuidance();
+    }),
+    vscode.commands.registerCommand("aiPairNavigator.compactContextLocal", async () => {
+      await runMemoryCompactionCommand(controller, "local");
+    }),
+    vscode.commands.registerCommand("aiPairNavigator.compactContextWithoutLocal", async () => {
+      await runMemoryCompactionCommand(controller, "withoutLocal");
     }),
     vscode.commands.registerCommand(ASK_SELECTION_COMMAND, async (uri?: vscode.Uri, range?: vscode.Range) => {
       const selected = await resolveSelectedRange(uri, range);
@@ -153,6 +161,31 @@ async function focusNaviComView(): Promise<void> {
     undefined,
     () => undefined
   );
+}
+
+async function runMemoryCompactionCommand(
+  controller: NavigatorController,
+  target: "local" | "withoutLocal"
+): Promise<void> {
+  const label = target === "local" ? "ローカルLLM" : "ローカルLLMなし";
+  const result = await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `NaviCom: ${label}でコンテキスト圧縮中…`,
+      cancellable: true
+    },
+    (_progress, token) => controller.compactActiveConversation(target, token)
+  );
+  const details = result.status === "saved" && result.providerId && result.modelId
+    ? ` (${result.providerId} / ${result.modelId}、${result.sourceEntryCount ?? 0}件から${result.summaryItemCount ?? 0}項目)`
+    : "";
+  if (result.status === "saved") {
+    await vscode.window.showInformationMessage(`${result.reason}${details}`);
+  } else if (result.status === "failed" || result.status === "blocked") {
+    await vscode.window.showErrorMessage(result.reason);
+  } else {
+    await vscode.window.showWarningMessage(result.reason);
+  }
 }
 
 function revealNaviComViewForDevelopment(context: vscode.ExtensionContext): void {

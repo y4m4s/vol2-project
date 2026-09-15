@@ -145,11 +145,12 @@ test("次の一手の評価をno_adviceで通過できず、focusの集計に残
   assert.equal(report.results[0].focus, "none");
 });
 
-test("本番同様に制御指示と参照データを分け、未依頼コードを拒否する", async () => {
-  const report = await runLive([scenario], async (messages) => {
+test("本番同様に制御指示と参照データを分け、自動助言の未依頼コードを拒否する", async () => {
+  const automatic = { ...scenario, input: { ...scenario.input, kind: "always" as const } };
+  const report = await runLive([automatic], async (messages) => {
     assert.match(messages.systemPrompt, /Return only one JSON object/);
     assert.match(messages.userPrompt, /^<context>/);
-    return JSON.stringify({ kind: "advice", text: "```ts\nconst answer = 42;\n```" });
+    return JSON.stringify({ kind: "advice", focus: "continue", text: "```ts\nconst answer = 42;\n```" });
   });
   assert.equal(report.failed, 1);
   assert.equal(report.results[0].checks[0].detail, "implementationCodeNotRequested");
