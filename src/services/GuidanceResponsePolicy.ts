@@ -73,6 +73,8 @@ const MERMAID_OPENING_FENCE = /^[ \t]*```[ \t]*mermaid[ \t]*$/gim;
 const MERMAID_BLOCK = /^[ \t]*```[ \t]*mermaid[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*```[ \t]*$/gim;
 const FLOWCHART_START = /^flowchart\s+TD\b/;
 const COMMANDING_LANGUAGE = /(?:^|\n)\s*(?:[-*]\s*)?(?:必ず|今すぐ)?\s*(?:修正|変更|削除|追加|置換)(?:してください|しなければなりません|すべきです)/m;
+const SHORT_MANUAL_CODE_MAX_LINES = 20;
+const SHORT_MANUAL_CODE_MAX_CHARS = 1_000;
 
 /**
  * Enforces the provider-independent response envelope and user-visible output
@@ -109,7 +111,11 @@ export function validateGuidanceResponse(
   }
   if (
     options.allowImplementationCode === false
-    && hasDisallowedCodeFence(text, slashCommand === "flow")
+    && hasDisallowedCodeFence(
+      text,
+      slashCommand === "flow",
+      slashCommand !== "flow" && (options.kind === "manual" || options.kind === "context")
+    )
   ) {
     return { ok: false, reason: "implementationCodeNotRequested" };
   }
@@ -265,8 +271,10 @@ export function userExplicitlyRequestedImplementationCode(userPrompt?: string): 
   ].some((pattern) => pattern.test(prompt));
 }
 
-function hasDisallowedCodeFence(text: string, allowMermaid: boolean): boolean {
-  let insideFence = false;
+function hasDisallowedCodeFence(text: string, allowMermaid: boolean, allowShortManualCode: boolean): boolean {
+  let openingLanguage: string | undefined;
+  let codeLines: string[] = [];
+  let codeBlockCount = 0;
   for (const line of text.split(/\r?\n/)) {
     // The output contract only permits the explicit ```mermaid form for /flow.
     // Treat Markdown's alternative tilde fences as implementation code so a
@@ -275,19 +283,35 @@ function hasDisallowedCodeFence(text: string, allowMermaid: boolean): boolean {
       return true;
     }
     const match = /^[ \t]*```([^\r\n]*)$/.exec(line);
-    if (!match) continue;
-    if (insideFence) {
-      insideFence = false;
+    if (!match) {
+      if (openingLanguage !== undefined) codeLines.push(line);
       continue;
     }
-    insideFence = true;
-    if (!allowMermaid || (match[1] ?? "").trim().toLowerCase() !== "mermaid") {
+    if (openingLanguage === undefined) {
+      openingLanguage = (match[1] ?? "").trim().toLowerCase();
+      codeLines = [];
+      continue;
+    }
+
+    // Closing fences cannot carry an info string. Reject malformed Markdown
+    // instead of accidentally treating a second opening fence as a close.
+    if ((match[1] ?? "").trim()) return true;
+    codeBlockCount++;
+    if (allowMermaid && openingLanguage === "mermaid") {
+      openingLanguage = undefined;
+      codeLines = [];
+      continue;
+    }
+    if (!allowShortManualCode || codeBlockCount > 1 || codeLines.length > SHORT_MANUAL_CODE_MAX_LINES
+      || codeLines.join("\n").length > SHORT_MANUAL_CODE_MAX_CHARS) {
       return true;
     }
+    openingLanguage = undefined;
+    codeLines = [];
   }
   // /flow の Mermaid フェンスの閉じ忘れは、後段の flow 専用検証で
   // unclosedMermaidBlock として分類する。
-  return false;
+  return openingLanguage !== undefined && !allowMermaid;
 }
 
 function validateFlowResponse(text: string): GuidanceResponseValidation {

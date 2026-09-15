@@ -174,6 +174,16 @@ test("形式失敗は初回と修復を本文なしの詳細診断へ記録す�
   assert.doesNotMatch(JSON.stringify(failures), /秘密/);
 });
 
+test("手動相談の短い学習コード例は形式修復なしで表示する", async () => {
+  const response = JSON.stringify({ kind: "advice", text: "次の例です。\n\n```ruby\nmessage = 'こんにちは'\nputs message\n```" });
+  const h = harness({ response });
+  const result = await h.service.requestGuidance(input);
+  assert.ok(result.ok);
+  assert.equal(result.text, JSON.parse(response).text);
+  assert.equal(h.calls(), 1);
+  assert.equal(h.diagnostics.some(item => item.event === "validation_failed"), false);
+});
+
 test("Ollamaの低と高は同じ高相当の指示・出力枠を使いThinkingだけ切り替える", async () => {
   const h = harness({ providerId: "ollama" });
   await h.service.requestGuidance({ ...input, assistanceDepth: "low" });
