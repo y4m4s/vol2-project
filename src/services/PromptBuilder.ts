@@ -257,7 +257,7 @@ function buildGuidanceBlock(
     // 手動相談は短い学習例だけ許可し、自動助言では完成コードの先回りを防ぐ。
     kind === "always"
       ? "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow."
-      : "- Unless the user explicitly asks for implementation code, do not provide a complete solution. One illustrative code block of at most 20 lines and 1,000 characters is allowed. Mermaid diagrams are allowed for /flow.",
+      : "- One short code example is allowed; no complete solution unless requested. Mermaid is allowed for /flow.",
     // 具体的な場所・関数・変数・ロジックの流れを示して、注意を向ける。
     "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
     // 正確な言い回しやフレーズの型を固定せず、自然に次の行動へ導く。
