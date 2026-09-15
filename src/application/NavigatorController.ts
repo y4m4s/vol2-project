@@ -650,7 +650,7 @@ export class NavigatorController implements vscode.Disposable {
         let activated = false;
         try {
           const localReady = providerId !== "lmStudio" ||
-            await this.lmStudioCoordinator.ensureServerForRoutingConnection();
+            await this.lmStudioCoordinator.checkServerForRoutingConnection();
           if (localReady) {
             const result = await this.connectionService.connectAndActivate(
               { ...settings, providerId },

@@ -376,7 +376,7 @@ export class ConnectionSettingsCoordinator {
           case "auth":
             return { kind: "error", text: "LM Studio の認証設定を確認してください。" };
           case "unreachable":
-            return { kind: "error", text: "LM Studio サーバーに接続できません。起動状態を確認してください。" };
+            return { kind: "error", text: "LM Studio Local Server APIに接続できません。APIの応答状態を確認してください。" };
           case "timeout":
             return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
           case "noLoadedModel":

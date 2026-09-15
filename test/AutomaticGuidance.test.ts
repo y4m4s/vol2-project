@@ -37,6 +37,7 @@ const { ConversationStore } = require("../src/services/ConversationStore") as ty
 const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
 const { ConversationMemoryCoordinator } = require("../src/application/coordinators/ConversationMemoryCoordinator") as typeof import("../src/application/coordinators/ConversationMemoryCoordinator");
 const { LmStudioCoordinator } = require("../src/application/coordinators/LmStudioCoordinator") as typeof import("../src/application/coordinators/LmStudioCoordinator");
+const { LmStudioServerService } = require("../src/services/LmStudioServerService") as typeof import("../src/services/LmStudioServerService");
 loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
@@ -257,7 +258,7 @@ test("removing a source entry physically deletes its stored conversation memory"
   assert.equal(h.memoryRowCount(id), 0);
 });
 
-test("untrusted workspaces cannot start LM Studio during routing synchronization", async () => {
+test("untrusted workspaces cannot check LM Studio during routing synchronization", async () => {
   workspaceTrusted = false;
   let statusChecks = 0;
   let starts = 0;
@@ -269,12 +270,70 @@ test("untrusted workspaces cannot start LM Studio during routing synchronization
     {} as never
   );
   try {
-    assert.equal(await coordinator.ensureServerForRoutingConnection(), false);
+    assert.equal(await coordinator.checkServerForRoutingConnection(), false);
     assert.equal(statusChecks, 0);
     assert.equal(starts, 0);
   } finally {
     workspaceTrusted = true;
   }
+});
+
+test("routing synchronization does not start a stopped LM Studio server", async () => {
+  let starts = 0;
+  const coordinator = new LmStudioCoordinator(
+    { notifyStateChanged: () => {} } as never,
+    {
+      getStatus: async () => ({ state: "stopped", canStart: true, canStop: false }),
+      start: async () => { starts++; return { state: "running", canStart: false, canStop: true }; }
+    } as never,
+    { getSettings: () => ({ lmStudioBaseUrl: "http://127.0.0.1:1234" }) } as never,
+    {} as never
+  );
+
+  assert.equal(await coordinator.checkServerForRoutingConnection(), false);
+  assert.equal(starts, 0);
+});
+
+test("LM Studio API応答とCLI停止報告の不一致を起動中と区別する", async () => {
+  const service = Object.create(LmStudioServerService.prototype) as {
+    output: { appendLine(value: string): void };
+    readCliStatus(): Promise<{ available: true; status: { running: false; port: number } }>;
+    probeHttp(origin: string): Promise<"lmStudio">;
+    getStatus(baseUrl: string): Promise<{ state: string; port?: number; canStart: boolean; canStop: boolean; message?: string }>;
+  };
+  service.output = { appendLine: () => {} };
+  service.readCliStatus = async () => ({ available: true, status: { running: false, port: 1234 } });
+  service.probeHttp = async () => "lmStudio";
+
+  const status = await service.getStatus("http://127.0.0.1:1234");
+
+  assert.equal(status.state, "statusMismatch");
+  assert.equal(status.canStart, false);
+  assert.equal(status.canStop, true);
+  assert.match(status.message ?? "", /CLI は停止中/);
+});
+
+test("LM Studio停止中の状態更新はCLIを起動しない", async () => {
+  let cliStatusChecks = 0;
+  const service = Object.create(LmStudioServerService.prototype) as {
+    output: { appendLine(value: string): void };
+    readCliStatus(): Promise<{ available: true; status: { running: boolean } }>;
+    probeHttp(origin: string): Promise<"unreachable">;
+    getStatus(baseUrl: string): Promise<{ state: string; canStart: boolean; canStop: boolean }>;
+  };
+  service.output = { appendLine: () => {} };
+  service.readCliStatus = async () => {
+    cliStatusChecks++;
+    return { available: true, status: { running: false } };
+  };
+  service.probeHttp = async () => "unreachable";
+
+  const status = await service.getStatus("http://127.0.0.1:1234");
+
+  assert.equal(status.state, "stopped");
+  assert.equal(status.canStart, true);
+  assert.equal(status.canStop, false);
+  assert.equal(cliStatusChecks, 0);
 });
 
 test("生成中の編集を古い回答の破棄後に再実行する（実スケジューラと排他制御）", async (t) => {

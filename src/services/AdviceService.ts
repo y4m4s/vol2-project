@@ -748,7 +748,7 @@ export class AdviceService {
         case "auth":
           return "LM Studio の認証設定を確認してください。";
         case "unreachable":
-          return "LM Studio サーバーに接続できません。起動状態を確認してください。";
+          return "LM Studio Local Server APIに接続できません。APIの応答状態を確認してください。";
         case "timeout":
           return "LM Studio の応答がタイムアウトしました。";
         default:

@@ -87,7 +87,7 @@ export class LmStudioCoordinator {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
       const status = await this.serverService.getStatus(baseUrl);
       this.updateServer(status);
-      if (status.state === "running") {
+      if (isLmStudioApiReady(status)) {
         await this.connectionService.refreshAvailableLmStudioModels(baseUrl);
       } else {
         this.connectionService.clearLmStudioModelOptions();
@@ -147,19 +147,14 @@ export class LmStudioCoordinator {
     await this.pendingOperation;
   }
 
-  public async ensureServerForRoutingConnection(): Promise<boolean> {
+  public async checkServerForRoutingConnection(): Promise<boolean> {
     if (!vscode.workspace.isTrusted) return false;
     if (this.pendingOperation) await this.pendingOperation;
     try {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
       const current = await this.serverService.getStatus(baseUrl);
       this.updateServer(current);
-      if (current.state === "running") return true;
-      if (!current.canStart) return false;
-
-      const started = await this.serverService.start(baseUrl);
-      this.updateServer(started);
-      return started.state === "running";
+      return isLmStudioApiReady(current);
     } catch {
       return false;
     }
@@ -329,4 +324,8 @@ export class LmStudioCoordinator {
 
 function toErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function isLmStudioApiReady(status: LmStudioServerViewData): boolean {
+  return status.state === "running" || status.state === "statusMismatch";
 }
