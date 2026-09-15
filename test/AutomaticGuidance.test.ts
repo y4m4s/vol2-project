@@ -69,6 +69,7 @@ test("オンボーディングで選んだ接続先を基本プロバイダー�
 
   assert.deepEqual(connected, ["ollama"]);
   assert.equal(settings.routing.preferredProviderId, "ollama");
+  assert.deepEqual(settings.routing.allowedProviderIds, ["orcaRouter", "ollama"]);
   assert.equal(synchronized, 1);
 
   Object.assign(driver, { sessionStore: { getState: () => ({ screen: "main", screenHistory: [] }) } });
@@ -99,6 +100,7 @@ test("オンボーディングからOrcaRouter設定を経由しても明示選�
   await driver.connectCopilot("orcaRouter");
 
   assert.equal(settings.routing.preferredProviderId, "orcaRouter");
+  assert.deepEqual(settings.routing.allowedProviderIds, ["copilot", "orcaRouter"]);
   assert.equal(synchronized, 1);
 });
 

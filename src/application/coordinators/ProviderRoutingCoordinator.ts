@@ -3,7 +3,7 @@ import type { ConversationStore } from "../../services/ConversationStore";
 import type { ConnectionService } from "../../services/ConnectionService";
 import type { UsageMeter } from "../../services/UsageMeter";
 import { deriveModelProfile } from "../../services/ModelProfile";
-import { decideProviderRoute, normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS, routingConnectionProviderIds } from "../../shared/providerRouting";
+import { decideProviderRoute, normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../../shared/providerRouting";
 
 export class ProviderRoutingCoordinator {
   private readonly pins = new Map<string, AiProviderId>();
@@ -55,10 +55,7 @@ export class ProviderRoutingCoordinator {
     const estimated = Math.max(Math.ceil(question.length / 3) + 2000, Math.ceil(requiredHistoryChars / (3 * 0.35)) + 2000);
     const pinned = oneShot ?? (stream ? this.pins.get(stream) : undefined) ?? preference?.providerId;
     const remembered = stream ? this.selected.get(stream) ?? [...history].reverse().find(e => e.role === "assistant")?.providerId : undefined;
-    const effectiveRouting = history.length === 0 && routing.preferredProviderId
-      ? { ...routing, allowedProviderIds: routingConnectionProviderIds(routing) }
-      : routing;
-    const route = decideProviderRoute(effectiveRouting, candidates, pinned ?? remembered ?? (history.length ? current : routing.preferredProviderId ?? current), estimated, localOnly, Boolean(pinned));
+    const route = decideProviderRoute(routing, candidates, pinned ?? remembered ?? (history.length ? current : routing.preferredProviderId ?? current), estimated, localOnly, Boolean(pinned));
     if (route.action === "stop") return { ok: false, reason: route.reason };
     const target = route.providerId;
     if (cancelled()) return { ok: false, reason: "送信を中止しました。" };

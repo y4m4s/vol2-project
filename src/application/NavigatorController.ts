@@ -400,7 +400,13 @@ export class NavigatorController implements vscode.Disposable {
     let settings = this.settingsService.getSettings();
     let routing = normalizeRoutingSettings(settings.routing);
     if (routing.mode === "automatic" && routing.preferredProviderId !== providerId) {
-      routing = { ...routing, preferredProviderId: providerId };
+      routing = {
+        ...routing,
+        allowedProviderIds: routing.allowedProviderIds.includes(providerId)
+          ? routing.allowedProviderIds
+          : [...routing.allowedProviderIds, providerId],
+        preferredProviderId: providerId
+      };
       settings = await this.connectionSettingsCoordinator.saveSettingsWithRevision({ ...settings, routing });
     }
     if (routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {

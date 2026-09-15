@@ -6,7 +6,8 @@ import {
   normalizeRoutingSettings,
   executeProviderRoute,
   routingConnectionProviderIds,
-  selectableBasicProviderIds
+  selectableBasicProviderIds,
+  toggleRoutingProviderSelection
 } from "../src/shared/providerRouting";
 
 const settings = normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot", "orcaRouter"] });
@@ -49,7 +50,16 @@ test("turning automatic routing off and on preserves an explicitly selected basi
   assert.equal(selected.preferredProviderId, "copilot");
   assert.deepEqual(selected.allowedProviderIds, ["copilot", "orcaRouter"]);
 });
-test("basic provider is preserved when it is no longer an allowed candidate", () => {
+test("removing the basic provider selects the first remaining allowed provider", () => {
+  const selected = toggleRoutingProviderSelection(normalizeRoutingSettings({
+    mode: "automatic",
+    allowedProviderIds: ["copilot", "orcaRouter"],
+    preferredProviderId: "copilot"
+  }), "copilot");
+  assert.deepEqual(selected.allowedProviderIds, ["orcaRouter"]);
+  assert.equal(selected.preferredProviderId, "orcaRouter");
+});
+test("basic provider falls back to an allowed candidate when the saved value is no longer allowed", () => {
   const selected = applyRoutingModeSelection(
     normalizeRoutingSettings({
       mode: "manual",
@@ -60,16 +70,17 @@ test("basic provider is preserved when it is no longer an allowed candidate", ()
     "orcaRouter",
     ["copilot", "orcaRouter"]
   );
-  assert.equal(selected.preferredProviderId, "copilot");
+  assert.equal(selected.preferredProviderId, "orcaRouter");
   assert.deepEqual(selected.allowedProviderIds, ["orcaRouter"]);
 });
-test("connection checks include a basic provider outside the automatic candidates", () => {
+test("connection checks exclude a saved basic provider outside the automatic candidates", () => {
   const selected = normalizeRoutingSettings({
     mode: "automatic",
     allowedProviderIds: ["copilot"],
     preferredProviderId: "orcaRouter"
   });
-  assert.deepEqual(routingConnectionProviderIds(selected), ["copilot", "orcaRouter"]);
+  assert.equal(selected.preferredProviderId, undefined);
+  assert.deepEqual(routingConnectionProviderIds(selected), ["copilot"]);
 });
 test("local providers without retrieved models are hidden from basic provider choices", () => {
   const selected = normalizeRoutingSettings({

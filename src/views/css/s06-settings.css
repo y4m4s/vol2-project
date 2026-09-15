@@ -421,11 +421,6 @@
   object-fit: contain;
 }
 
-.routing-preferred-current-icon {
-  color: var(--vscode-descriptionForeground);
-  font-size: 22px;
-}
-
 .routing-preferred-copy,
 .routing-preferred-copy strong,
 .routing-preferred-copy small {

@@ -9,11 +9,14 @@ export function normalizeRoutingSettings(value: unknown): AutomaticRoutingSettin
   const v = value && typeof value === "object" ? value as Partial<AutomaticRoutingSettings> : {};
   const finite = (n: unknown, fallback = 0, max = 1_000_000_000): number =>
     typeof n === "number" && Number.isFinite(n) && n >= 0 ? Math.min(max, n) : fallback;
+  const allowedProviderIds = PROVIDER_IDS.filter(p =>
+    Array.isArray(v.allowedProviderIds) && v.allowedProviderIds.includes(p)
+  );
   return {
     // 廃止した提案型（automaticSuggest）は、意図しない自動切り替えを避けるため手動へ戻す。
     mode: v.mode === "automatic" ? "automatic" : "manual",
-    allowedProviderIds: PROVIDER_IDS.filter(p => Array.isArray(v.allowedProviderIds) && v.allowedProviderIds.includes(p)),
-    preferredProviderId: PROVIDER_IDS.includes(v.preferredProviderId!) ? v.preferredProviderId : undefined,
+    allowedProviderIds,
+    preferredProviderId: allowedProviderIds.includes(v.preferredProviderId!) ? v.preferredProviderId : undefined,
     thresholdPercent: Math.max(50, finite(v.thresholdPercent, 90, 100)),
     dailyProviderTokenSoftLimits: Object.fromEntries(PROVIDER_IDS.map(p => [p, finite(v.dailyProviderTokenSoftLimits?.[p], p === "copilot" || p === "orcaRouter" ? 100000 : 0)])),
     dailyCloudTokenSoftLimit: finite(v.dailyCloudTokenSoftLimit),
@@ -44,11 +47,22 @@ export function applyRoutingModeSelection(
   return { ...routing, mode, allowedProviderIds, preferredProviderId };
 }
 
-export function routingConnectionProviderIds(value: AutomaticRoutingSettings): AiProviderId[] {
+export function toggleRoutingProviderSelection(
+  value: AutomaticRoutingSettings,
+  providerId: AiProviderId
+): AutomaticRoutingSettings {
   const routing = normalizeRoutingSettings(value);
-  return PROVIDER_IDS.filter(providerId =>
-    routing.allowedProviderIds.includes(providerId) || providerId === routing.preferredProviderId
-  );
+  const allowedProviderIds = routing.allowedProviderIds.includes(providerId)
+    ? routing.allowedProviderIds.filter(id => id !== providerId)
+    : [...routing.allowedProviderIds, providerId];
+  const preferredProviderId = routing.preferredProviderId && allowedProviderIds.includes(routing.preferredProviderId)
+    ? routing.preferredProviderId
+    : allowedProviderIds[0];
+  return { ...routing, allowedProviderIds, preferredProviderId };
+}
+
+export function routingConnectionProviderIds(value: AutomaticRoutingSettings): AiProviderId[] {
+  return normalizeRoutingSettings(value).allowedProviderIds;
 }
 
 export function selectableBasicProviderIds(

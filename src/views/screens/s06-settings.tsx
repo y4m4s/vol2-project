@@ -231,7 +231,7 @@ export function S06Settings() {
         <div className="setting-desc">初期設定はオフです。必要な場合だけオンにできます。</div>
         <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
           connection={viewModel?.routingProviderConnection}
-          currentProviderId={providerId} localProvidersWithModels={localProvidersWithModels}
+          localProvidersWithModels={localProvidersWithModels}
           disabled={viewModel?.isBusy ?? false} />
       </div>
 
