@@ -22,6 +22,7 @@ import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlan
 import { SettingsService } from "../services/SettingsService";
 import { SingleFlightGate } from "../services/SingleFlightGate";
 import { UsageMeter } from "../services/UsageMeter";
+import { ProviderEvaluationStore } from "../services/ProviderEvaluationStore";
 import { deriveModelProfile } from "../services/ModelProfile";
 import { LmStudioServerService } from "../services/LmStudioServerService";
 import { LmStudioCoordinator } from "./coordinators/LmStudioCoordinator";
@@ -137,13 +138,16 @@ export class NavigatorController implements vscode.Disposable {
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
     private readonly feedbackStore: FeedbackStore,
+    private readonly providerEvaluationStore: ProviderEvaluationStore,
     private readonly usageMeter: UsageMeter,
-    diagnostic: (entry: Record<string, unknown>) => void = () => {}
+    private readonly diagnostic: (entry: Record<string, unknown>) => void = () => {}
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
-    this.providerRoutingCoordinator = new ProviderRoutingCoordinator(this.connectionService, this.usageMeter, conversationStore);
+    this.providerRoutingCoordinator = new ProviderRoutingCoordinator(
+      this.connectionService, this.usageMeter, conversationStore, this.providerEvaluationStore, this.diagnostic
+    );
     this.conversationMemoryCoordinator = new ConversationMemoryCoordinator(
-      this.connectionService, conversationStore, this.usageMeter, diagnostic
+      this.connectionService, conversationStore, this.usageMeter, this.diagnostic
     );
     this.requestPlanCoordinator = new RequestPlanCoordinator(
       this.contextCollector,
@@ -222,7 +226,12 @@ export class NavigatorController implements vscode.Disposable {
         pushFeedbackForm: () => this.navigationCoordinator.pushScreen("feedback_form"),
         navigateBack: () => this.navigationCoordinator.navigateBack(),
         createGuidanceCard: (entry) => this.createGuidanceCard(entry),
-        persistConversation: () => this.conversationCoordinator.persist()
+        persistConversation: () => this.conversationCoordinator.persist(),
+        onFeedbackSaved: async (entry, rating) => {
+          try { await this.providerRoutingCoordinator.recordFeedback(entry, rating); }
+          catch (error) { this.diagnostic({ event: "provider_evaluation_persistence_failed", operation: "feedback",
+            errorName: error instanceof Error ? error.name : "unknown" }); }
+        }
       }
     );
     this.knowledgeCoordinator = new KnowledgeCoordinator(
@@ -244,6 +253,7 @@ export class NavigatorController implements vscode.Disposable {
       this.conversationStore,
       this.knowledgeStore,
       this.feedbackStore,
+      this.providerEvaluationStore,
       this.didChangeStateEmitter,
       this.sessionStore.onDidChangeState(() => {
         this.didChangeStateEmitter.fire();
@@ -261,6 +271,7 @@ export class NavigatorController implements vscode.Disposable {
     await this.conversationStore.initialize();
     await this.knowledgeStore.initialize();
     await this.feedbackStore.initialize();
+    await this.providerEvaluationStore.initialize();
     await this.conversationCoordinator.restore();
 
     const settings = this.settingsService.getSettings();
@@ -372,6 +383,7 @@ export class NavigatorController implements vscode.Disposable {
       })),
       routingProviderConnection: this.routingProviderConnection,
       conversationRoutingPreference: this.providerRoutingCoordinator.preference(state.activeConversationStreamId),
+      routingLearning: this.providerRoutingCoordinator.learningView(settings),
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       conversationStreams: state.conversationStreams,
@@ -1154,7 +1166,23 @@ export class NavigatorController implements vscode.Disposable {
     const requestId = this.nextGuidanceRequestId++;
     const tokenSource = new vscode.CancellationTokenSource();
     this.activeGuidanceRequest = { id: requestId, tokenSource };
-    const route = await this.providerRoutingCoordinator.prepare(settings, history, state.activeConversationStreamId, options.userPrompt, () => tokenSource.token.isCancellationRequested);
+    const route = await this.providerRoutingCoordinator.prepare(
+      settings,
+      history,
+      state.activeConversationStreamId,
+      options.userPrompt,
+      () => tokenSource.token.isCancellationRequested,
+      {
+        assistanceDepth,
+        slashCommand: options.slashCommand,
+        targetFileCount: new Set([
+          ...(prepared.context.activeFilePath ? [prepared.context.activeFilePath] : []),
+          ...prepared.requestPlan.targetFiles.filter(file => file.included).map(file => file.path)
+        ]).size,
+        diagnostics: prepared.context.diagnosticsSummary,
+        changeCount: prepared.context.recentEditsSummary.length
+      }
+    );
     if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
       this.patchSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
       return { ok: false };
@@ -1218,6 +1246,7 @@ export class NavigatorController implements vscode.Disposable {
 
     const responseModel = this.connectionService.getConnectedModel();
     const responseModelLabel = this.connectionSettingsCoordinator.getCurrentModelLabel();
+    const providerRequestStartedAt = Date.now();
     const result = await this.adviceService.requestGuidance(
       {
         conversationMemory,
@@ -1337,6 +1366,7 @@ export class NavigatorController implements vscode.Disposable {
       }
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
       assistantEntry.routeReason = route.reason;
+      assistantEntry.routingTaskPurpose = route.taskProfile.purpose;
       assistantEntry.transmissionClass = history.some(e => e.transmissionClass === "localOnly") || responseModel?.providerId === "ollama" || responseModel?.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
       const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
@@ -1360,6 +1390,23 @@ export class NavigatorController implements vscode.Disposable {
           : isNoAdvice ? { kind: "info", text: noAdviceText } : route.reason ? { kind: "info", text: route.reason } : undefined
       });
       await this.persistActiveConversationState();
+      if (responseModel) {
+        try {
+          const learningUpdated = await this.providerRoutingCoordinator.recordSuccess({
+            stream: latestState.activeConversationStreamId,
+            providerId: responseModel.providerId,
+            modelId: responseModel.modelId,
+            resolvedModelId,
+            taskProfile: route.taskProfile,
+            latencyMs: Date.now() - providerRequestStartedAt,
+            responseMetadata: result.responseMetadata
+          });
+          if (learningUpdated) this.didChangeStateEmitter.fire();
+        } catch (error) {
+          this.writeDiagnostic({ event: "provider_evaluation_persistence_failed", operation: "success",
+            errorName: error instanceof Error ? error.name : "unknown" });
+        }
+      }
       // Stream creation resets these caches, so record the displayed focus only
       // after the stream has been created and its answer persisted.
       this.rememberAutomaticFocus(options, result.focus);
@@ -1390,6 +1437,20 @@ export class NavigatorController implements vscode.Disposable {
       }
     });
     await this.persistActiveConversationState();
+    if (responseModel) {
+      try {
+        await this.providerRoutingCoordinator.recordFailure({
+          providerId: responseModel.providerId,
+          modelId: responseModel.modelId,
+          taskProfile: route.taskProfile,
+          timedOut: /timeout|time out|タイムアウト/i.test(result.message),
+          formatFailed: /形式契約/.test(result.message)
+        });
+      } catch (error) {
+        this.writeDiagnostic({ event: "provider_evaluation_persistence_failed", operation: "failure",
+          errorName: error instanceof Error ? error.name : "unknown" });
+      }
+    }
     return { ok: false };
   }
 
@@ -1440,6 +1501,10 @@ export class NavigatorController implements vscode.Disposable {
   private patchSession(partial: Partial<NavigatorSessionState>): void {
     this.sessionStore.patch(partial);
     this.configureScheduler();
+  }
+
+  private writeDiagnostic(entry: Record<string, unknown>): void {
+    if (typeof this.diagnostic === "function") this.diagnostic(entry);
   }
 
   private configureScheduler(): void {

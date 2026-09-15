@@ -8,6 +8,7 @@ import { ConversationStore } from "./services/ConversationStore";
 import { ConnectionService } from "./services/ConnectionService";
 import { KnowledgeStore } from "./services/KnowledgeStore";
 import { FeedbackStore } from "./services/FeedbackStore";
+import { ProviderEvaluationStore } from "./services/ProviderEvaluationStore";
 import { LmStudioClient } from "./services/LmStudioClient";
 import { OrcaRouterClient } from "./services/OrcaRouterClient";
 import { OrcaRouterCredentialStore } from "./services/OrcaRouterCredentialStore";
@@ -52,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
     new FeedbackStore(context.globalStorageUri),
+    new ProviderEvaluationStore(context.globalStorageUri),
     usageMeter,
     writeDiagnostic
   );

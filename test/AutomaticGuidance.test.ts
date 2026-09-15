@@ -229,6 +229,7 @@ test("SQLite memory rejects stale revisions, round-trips policy and removes memo
   const record = h.store.get(id)!;
   record.entries[0].transmissionClass = "localOnly";
   record.entries[0].routeReason = "設定上限で切り替え";
+  record.entries[0].routingTaskPurpose = "review";
   const saved = await h.store.saveStream(record);
   const items = [{ text: "決定事項", sourceEntryIds: [record.entries[0].id] }];
   assert.equal(await h.store.saveMemory(id, record.revision, items[0].sourceEntryIds, items), false);
@@ -237,6 +238,7 @@ test("SQLite memory rejects stale revisions, round-trips policy and removes memo
   assert.equal(h.memoryRowCount(id), 1);
   assert.equal(h.store.get(id)?.entries[0].transmissionClass, "localOnly");
   assert.equal(h.store.get(id)?.entries[0].routeReason, "設定上限で切り替え");
+  assert.equal(h.store.get(id)?.entries[0].routingTaskPurpose, "review");
   await h.store.deleteStream(id);
   assert.equal(h.store.getMemory(id), undefined);
   assert.equal(h.memoryRowCount(id), 0);
