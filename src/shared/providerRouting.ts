@@ -92,20 +92,33 @@ export interface ProviderRoute {
   reason: string;
 }
 
+export function eligibleRoutingCandidates(
+  settings: AutomaticRoutingSettings,
+  candidates: RoutingCandidate[],
+  estimatedInputTokens: number,
+  localOnly = false
+): RoutingCandidate[] {
+  const cloud = (p: AiProviderId): boolean => p === "copilot" || p === "orcaRouter";
+  const cloudUsage = candidates.filter(c => cloud(c.providerId)).reduce((sum, c) => sum + c.usedTokens, 0);
+  const near = (used: number, limit: number): boolean => limit > 0 && used >= limit * settings.thresholdPercent / 100;
+  return candidates.filter(c => c.available && c.maxInputTokens >= estimatedInputTokens &&
+    (!localOnly || c.verifiedLocal === true) &&
+    (settings.mode === "manual" || settings.allowedProviderIds.includes(c.providerId)) &&
+    !near(c.usedTokens, c.tokenLimit) &&
+    !near(c.usedTokens, settings.dailyProviderTokenSoftLimits[c.providerId] ?? 0) &&
+    !(cloud(c.providerId) && near(cloudUsage, settings.dailyCloudTokenSoftLimit)) &&
+    !(c.providerId === "orcaRouter" && settings.orcaDailyCostSoftLimit > 0 &&
+      (c.costUsd === undefined || near(c.costUsd, settings.orcaDailyCostSoftLimit))));
+}
+
 export function decideProviderRoute(
   settings: AutomaticRoutingSettings, candidates: RoutingCandidate[], current: AiProviderId,
   estimatedInputTokens: number, localOnly = false, pinned = false
 ): ProviderRoute {
-  const cloud = (p: AiProviderId): boolean => p === "copilot" || p === "orcaRouter";
-  const cloudUsage = candidates.filter(c => cloud(c.providerId)).reduce((sum, c) => sum + c.usedTokens, 0);
-  const near = (used: number, limit: number): boolean => limit > 0 && used >= limit * settings.thresholdPercent / 100;
   const eligible = (c: RoutingCandidate): boolean => c.available && c.maxInputTokens >= estimatedInputTokens &&
     (!localOnly || c.verifiedLocal === true) && (settings.mode === "manual" || settings.allowedProviderIds.includes(c.providerId));
-  const underBudget = (c: RoutingCandidate): boolean => !near(c.usedTokens, c.tokenLimit) &&
-    !near(c.usedTokens, settings.dailyProviderTokenSoftLimits[c.providerId] ?? 0) &&
-    !(cloud(c.providerId) && near(cloudUsage, settings.dailyCloudTokenSoftLimit)) &&
-    !(c.providerId === "orcaRouter" && settings.orcaDailyCostSoftLimit > 0 &&
-      (c.costUsd === undefined || near(c.costUsd, settings.orcaDailyCostSoftLimit)));
+  const underBudgetIds = new Set(eligibleRoutingCandidates(settings, candidates, estimatedInputTokens, localOnly).map(c => c.providerId));
+  const underBudget = (c: RoutingCandidate): boolean => underBudgetIds.has(c.providerId);
   const active = candidates.find(c => c.providerId === current);
   const currentEligible = Boolean(active && eligible(active));
   if (settings.mode === "manual" || pinned) return {

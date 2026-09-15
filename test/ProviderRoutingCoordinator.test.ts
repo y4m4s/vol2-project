@@ -63,3 +63,26 @@ test("forget removes cached routing state for one or all conversations", async (
   h.coordinator.forget();
   assert.equal(h.coordinator.preference("second"), undefined);
 });
+
+test("10回学習後はNaviComの評価差で接続先を切り替える", async () => {
+  const h = harness(0);
+  const weak = { successCount: 2, requestFailureCount: 8, formatFailureCount: 8, timeoutCount: 2,
+    positiveFeedbackCount: 0, negativeFeedbackCount: 5, totalLatencyMs: 60_000 };
+  const strong = { successCount: 10, requestFailureCount: 0, formatFailureCount: 0, timeoutCount: 0,
+    positiveFeedbackCount: 5, negativeFeedbackCount: 0, totalLatencyMs: 10_000 };
+  const evaluation = {
+    getSuccessfulResponseCount: () => 10,
+    getStats: ({ providerId }: { providerId: AiProviderId }) => providerId === "copilot" ? weak : strong,
+    recordDecision: async () => {}
+  };
+  const coordinator = new ProviderRoutingCoordinator(
+    (h.coordinator as unknown as { connection: object }).connection as never,
+    (h.coordinator as unknown as { usage: object }).usage as never,
+    undefined,
+    evaluation as never
+  );
+  const result = await coordinator.prepare(h.settings, [], "stream", "複数ファイルを実装して", () => false,
+    { assistanceDepth: "high", targetFileCount: 3 });
+  assert.equal(result.ok, true);
+  assert.equal(h.current(), "orcaRouter");
+});
