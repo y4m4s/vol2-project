@@ -234,6 +234,12 @@ test("手動相談は短いコード例を許可し、自動助言は同じ例�
     ok: false,
     reason: "implementationCodeNotRequested"
   });
+  assert.deepEqual(validateGuidanceResponse("hint", shortExample, {
+    kind: "manual", allowImplementationCode: false
+  }), {
+    ok: false,
+    reason: "implementationCodeNotRequested"
+  });
 });
 
 test("暗黙許可の手動コード例は1ブロック・20行・1000文字以内に制限する", () => {

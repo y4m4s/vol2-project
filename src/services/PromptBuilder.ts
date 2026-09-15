@@ -255,7 +255,7 @@ function buildGuidanceBlock(
     // 命令的・断定的な言い回しは避ける。
     "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
     // 手動相談は短い学習例だけ許可し、自動助言では完成コードの先回りを防ぐ。
-    kind === "always"
+    kind === "always" || slashCommand !== undefined
       ? "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow."
       : "- One short code example is allowed; no complete solution unless requested. Mermaid is allowed for /flow.",
     // 具体的な場所・関数・変数・ロジックの流れを示して、注意を向ける。

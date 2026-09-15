@@ -114,7 +114,7 @@ export function validateGuidanceResponse(
     && hasDisallowedCodeFence(
       text,
       slashCommand === "flow",
-      slashCommand !== "flow" && (options.kind === "manual" || options.kind === "context")
+      slashCommand === undefined && (options.kind === "manual" || options.kind === "context")
     )
   ) {
     return { ok: false, reason: "implementationCodeNotRequested" };
