@@ -5,7 +5,11 @@
   "version": "0.0.1",
   "publisher": "local-dev",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/y4m4s/vol2-project.git"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
