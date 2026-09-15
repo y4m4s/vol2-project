@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "official-nonthinking-ollama",
+  "config": {
+    "id": "official-nonthinking-ollama",
+    "provider": "ollama",
+    "model": "qwen3:8b",
+    "baseUrl": "http://127.0.0.1:11434",
+    "transport": "ollama-native",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0
+    },
+    "contextLength": null,
+    "maxOutputTokens": null
+  },
+  "split": "tuning",
+  "repeats": 1,
+  "caseIds": [
+    "bug-boundary",
+    "explain-reduce",
+    "hint-only",
+    "compare-approaches",
+    "auto-layout"
+  ],
+  "caseSetHash": "ce7382b6dfb1a34e849c5474aa5d5f56ea527114a8e0ab1b9a441ccdb1878205",
+  "provenance": {
+    "git": "90924d3129e88d553f0c57a8e8246755abf84ce2",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-11-task-comparison-v1",
+    "files": {
+      "PromptBuilder": "b150613dad17a6f40d381dc21880d5283b0f32134c1a583b87f213e2653cf962",
+      "RequestPlanner": "e1a9b76b8b497817787f1fa92c7c527ee07a0d1d57835587b0462c8b607fd37e",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "891bd95790b23959a39fa68f07a6703bc8d92dfe1baa4de54987aafec2d4a880",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "c7c117db4ca7b3113e43102cc670658d936dddd50e02b86dc8e00eb37613ec17"
+  },
+  "startedAt": "2026-09-15T05:31:14.267Z",
+  "orderSeed": "3cf76575d7870a23e147f0970251112e",
+  "dry": false,
+  "finishedAt": "2026-09-15T05:31:55.920Z",
+  "status": "completed"
+}

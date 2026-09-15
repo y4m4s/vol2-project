@@ -1,0 +1,13 @@
+{
+  "id": "r1-head-tail",
+  "provider": "lmStudio",
+  "model": "qwen/qwen3-8b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "head-tail-v1",
+  "thinking": "production",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null
+}

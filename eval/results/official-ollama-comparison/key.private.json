@@ -1,0 +1,44 @@
+{
+  "baseline": "eval/results/official-reference-ollama",
+  "candidate": "eval/results/official-nonthinking-ollama",
+  "split": "tuning",
+  "seed": "5b84a5c114c9bb38adfe5e40f28b45f1",
+  "packetHash": "0216b374bdb71e170a2f3e02c27d0ffb9b854ea0d8b1e701e7b2f23b085fd8a9",
+  "pairs": [
+    {
+      "pairId": "57528079bc8aa725",
+      "caseId": "compare-approaches",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c1d1394c0c3116f9b42372d261ed6ad9119f3bf87e0f02c94470bd0a319baa40"
+    },
+    {
+      "pairId": "f13f6afcd64042e9",
+      "caseId": "explain-reduce",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "724bfef3dc813fb25ee65fc8f415215c7c57f141c498914dea0e2493a3aaeac3"
+    },
+    {
+      "pairId": "3a4b21018bb03743",
+      "caseId": "bug-boundary",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "c1b1d99c2fbea9b2e131d471af02a20af4ac18e7e238b87484ffb039112f4643"
+    },
+    {
+      "pairId": "b73575c81dbb851b",
+      "caseId": "auto-layout",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "43961100ef8525f4aa2ba5ff8fd0705c7a0e381c383bde1c567d2eb385819e0a"
+    },
+    {
+      "pairId": "a4c38c012fe1b37b",
+      "caseId": "hint-only",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "3cd95514fa16035359c9b40c248e44914cb8a3ea1f38396fe7c4bb81da446218"
+    }
+  ]
+}

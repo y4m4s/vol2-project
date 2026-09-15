@@ -1,0 +1,44 @@
+{
+  "baseline": "eval/results/official-reference-thinking",
+  "candidate": "eval/results/official-thinking-lmstudio",
+  "split": "tuning",
+  "seed": "ee92add5ec3500a9168403bdeaac74fd",
+  "packetHash": "05955b904ab9dda2a06b42e5f91789dadc198e62d86ab8ff17ec748753c31924",
+  "pairs": [
+    {
+      "pairId": "d1c6c667262f0966",
+      "caseId": "bug-boundary",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c826a1f19891cf9707d0e8a7fca980f7a898b7734bf3e8335bd9b310bebec48f"
+    },
+    {
+      "pairId": "ed84cc74cb44a257",
+      "caseId": "explain-reduce",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "4c93694ec0e0e01a0ceda72a8bca1bd951f4c46acc38e9419c252433b69aadbf"
+    },
+    {
+      "pairId": "0ad0ad636eefa369",
+      "caseId": "auto-layout",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "a079cd398f6c609d505ed68878121a01861d2d231f279ef94651e14af7d78795"
+    },
+    {
+      "pairId": "30bea35493c18433",
+      "caseId": "hint-only",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "e49a8328bf8b4427b7f2957fc9971e0fa54b2764dace62a54e37bfbca0ee0429"
+    },
+    {
+      "pairId": "1779c9cfb819d30a",
+      "caseId": "compare-approaches",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "0dc2b13a68489df8bc259ef414d660877791b7df3509a45017d8cb87c574e66f"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+experimentId	provider	model	quantization	promptVersion	contextStrategy	thinking	temperature	top_p	top_k	min_p	contextLengthRequested	contextLengthObserved	evaluationScore	pairwiseWinRate	hardPassRate	latencyMedianMs	latencyP95Ms	tokensPerSecondMedian
+baseline-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.726495726495726	unknown	0.9230769230769231	6786.237900000007	25879.274699999998	13.53727858857872
+baseline-ollama	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	2.965811965811966	0.5769230769230769	0.8461538461538461	6520.503500000006	24241.9632	unknown
+official-nonthinking-lmstudio	lmStudio	qwen/qwen3-8b	unknown	production	production	none	0.7	0.8	20	0	unknown	unknown	unknown	unknown	0	1.6466000000000065	3.3993999999999858	unknown
+official-nonthinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	none	0.7	0.8	20	0	unknown	8192	2.8222222222222224	0.6	0.8	6228.941200000001	7146.9806	12.362912514397316
+official-nonthinking-ollama	ollama	qwen3:8b	Q4_K_M	production	production	none	0.7	0.8	20	0	unknown	4096	2.5555555555555554	0.4	0.8	6843.0660000000025	17078.0877	15.13199029857838
+baseline-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.3555555555555556	unknown	0.8	5476.294699999999	8602.616999999998	14.495790290719663
+ollama-native	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	2.6444444444444444	unknown	0.8	5065.038199999995	18409.5055	14.443108841586499
+r3-thinking	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	unknown	unknown	unknown	unknown	unknown	8192	2.9111111111111114	unknown	1	30595.685200000007	36099.29179999999	12.19119698048433
+official-thinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	0.6	0.95	20	0	unknown	8192	2.7777777777777777	0.2	0.6	27740.0801	30383.844699999994	12.265042881300065
+official-thinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	0.6	0.95	20	0	unknown	8192	2.2222222222222223	unknown	1	20959.4835	20959.4835	12.084883049031586
+ollama-native	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	3.051282051282051	0.5384615384615384	0.8461538461538461	10490.680099999998	23515.868599999994	13.89419992109118
+r1-head-tail	lmStudio	qwen/qwen3-8b	Q4_K_M	production	head-tail-v1	production	unknown	unknown	unknown	unknown	unknown	8192	2.8034188034188037	0.5384615384615384	0.9230769230769231	6633.718699999999	20093.826599999993	13.027979757859963
+r2-evidence	lmStudio	qwen/qwen3-8b	Q4_K_M	evidence-v1	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.7179487179487176	0.46153846153846156	0.9230769230769231	6481.2720000000045	33719.49680000001	12.994468178458382
+r3-thinking	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	unknown	unknown	unknown	unknown	unknown	8192	2.8547008547008548	0.34615384615384615	1	27561.937600000005	39169.638399999996	12.708482522285632
