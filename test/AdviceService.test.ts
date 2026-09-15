@@ -160,6 +160,20 @@ test("高設定の形式修復でもThinking指定を維持する", async () => 
   assert.deepEqual(h.requests.map(r => r.reasoningEffort), ["high", "high"]);
 });
 
+test("形式失敗は初回と修復を本文なしの詳細診断へ記録する", async () => {
+  const h = harness({ responses: ["秘密の通常文", JSON.stringify({ kind: "advice", text: "秘密", extra: true })] });
+  const result = await h.service.requestGuidance(input);
+  assert.ok(!result.ok);
+  assert.match(result.message, /NaviCom Diagnostics/);
+  const failures = h.diagnostics.filter(item => item.event === "validation_failed");
+  assert.equal(failures.length, 2);
+  assert.deepEqual(failures.map(item => item.attempt), ["initial", "repair"]);
+  assert.deepEqual(failures.map(item => item.envelopeIssue), ["invalidJson", "unexpectedKeys"]);
+  assert.equal(failures[1].unexpectedKeyCount, 1);
+  assert.ok(failures.every(item => item.provider === "copilot" && item.model === "mock"));
+  assert.doesNotMatch(JSON.stringify(failures), /秘密/);
+});
+
 test("Ollamaの低と高は同じ高相当の指示・出力枠を使いThinkingだけ切り替える", async () => {
   const h = harness({ providerId: "ollama" });
   await h.service.requestGuidance({ ...input, assistanceDepth: "low" });

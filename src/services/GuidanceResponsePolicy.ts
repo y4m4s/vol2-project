@@ -30,6 +30,31 @@ export interface GuidanceResponseValidationOptions {
   automaticCurrentCode?: readonly string[];
 }
 
+export type GuidanceEnvelopeIssue =
+  | "valid"
+  | "empty"
+  | "invalidJson"
+  | "surroundingText"
+  | "topLevelNotObject"
+  | "missingKind"
+  | "kindWrongType"
+  | "unsupportedKind"
+  | "missingText"
+  | "textWrongType"
+  | "missingFocus"
+  | "invalidFocus"
+  | "unexpectedKeys";
+
+export interface GuidanceEnvelopeDiagnostic {
+  responseChars: number;
+  trimmedChars: number;
+  envelopeIssue: GuidanceEnvelopeIssue;
+  markdownFence: boolean;
+  actualKeyCount?: number;
+  missingKeyCount?: number;
+  unexpectedKeyCount?: number;
+}
+
 export function guidanceResponseValidationOptions(input: {
   kind: GuidanceKind; userPrompt?: string; context: GuidanceContext; automaticObservation?: AutomaticGuidanceObservation;
 }): GuidanceResponseValidationOptions {
@@ -108,6 +133,72 @@ export function validateGuidanceResponse(
     ...(envelope.focus ? { focus: envelope.focus } : {}),
     normalized: envelope.normalized || flowValidation.normalized
   };
+}
+
+/**
+ * Describes an envelope failure without retaining model output or user data.
+ * This intentionally reports only structure, counts and bounded enums.
+ */
+export function diagnoseGuidanceEnvelope(rawText: string, automatic: boolean): GuidanceEnvelopeDiagnostic {
+  const trimmed = rawText.trim();
+  const fenceMatch = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
+  const candidate = fenceMatch?.[1].trim() ?? trimmed;
+  const base = {
+    responseChars: rawText.length,
+    trimmedChars: trimmed.length,
+    markdownFence: Boolean(fenceMatch)
+  };
+  if (!candidate) return { ...base, envelopeIssue: "empty" };
+
+  let value: unknown;
+  try {
+    value = JSON.parse(candidate) as unknown;
+  } catch {
+    const firstBrace = candidate.indexOf("{");
+    const lastBrace = candidate.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace && (firstBrace > 0 || lastBrace < candidate.length - 1)) {
+      try {
+        JSON.parse(candidate.slice(firstBrace, lastBrace + 1));
+        return { ...base, envelopeIssue: "surroundingText" };
+      } catch { /* The embedded candidate is also invalid JSON. */ }
+    }
+    return { ...base, envelopeIssue: "invalidJson" };
+  }
+  if (!isRecord(value)) return { ...base, envelopeIssue: "topLevelNotObject" };
+
+  const keys = Object.keys(value);
+  const withKeyCounts = (issue: GuidanceEnvelopeIssue, expected: readonly string[]): GuidanceEnvelopeDiagnostic => {
+    const actual = new Set(keys);
+    const expectedSet = new Set(expected);
+    return {
+      ...base,
+      envelopeIssue: issue,
+      actualKeyCount: keys.length,
+      missingKeyCount: expected.filter(key => !actual.has(key)).length,
+      unexpectedKeyCount: keys.filter(key => !expectedSet.has(key)).length
+    };
+  };
+  if (!("kind" in value)) return withKeyCounts("missingKind", automatic ? ["kind", "focus", "text"] : ["kind", "text"]);
+  if (typeof value.kind !== "string") return withKeyCounts("kindWrongType", automatic ? ["kind", "focus", "text"] : ["kind", "text"]);
+  if (value.kind === "no_advice") {
+    const expected = automatic ? ["kind", "focus"] : ["kind"];
+    if (keys.length !== expected.length || expected.some(key => !keys.includes(key))) return withKeyCounts("unexpectedKeys", expected);
+    if (automatic && parseAutomaticFocus(value.focus) !== "none") {
+      return withKeyCounts("invalidFocus", expected);
+    }
+    return withKeyCounts("valid", expected);
+  }
+  if (value.kind !== "advice") return withKeyCounts("unsupportedKind", automatic ? ["kind", "focus", "text"] : ["kind", "text"]);
+  const expected = automatic ? ["kind", "focus", "text"] : ["kind", "text"];
+  if (!("text" in value)) return withKeyCounts("missingText", expected);
+  if (typeof value.text !== "string") return withKeyCounts("textWrongType", expected);
+  if (automatic && !("focus" in value)) return withKeyCounts("missingFocus", expected);
+  if (automatic) {
+    const focus = parseAutomaticFocus(value.focus);
+    if (!focus || focus === "none") return withKeyCounts("invalidFocus", expected);
+  }
+  if (keys.length !== expected.length || expected.some(key => !keys.includes(key))) return withKeyCounts("unexpectedKeys", expected);
+  return withKeyCounts("valid", expected);
 }
 
 export function buildGuidanceFormatRepairPrompt(
