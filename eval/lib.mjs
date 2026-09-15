@@ -20,7 +20,7 @@ export function newDirectory(path) { mkdirSync(path, { recursive: false }); }
 export function provenance() {
   return { git: execFileSync('git', ['rev-parse','HEAD'], {encoding:'utf8'}).trim(),
     node: process.version, platform: process.platform, promptRevision: GUIDANCE_POLICY_REVISION,
-    files: Object.fromEntries(['PromptBuilder','RequestPlanner','GuidanceDepthPolicy','ModelProfile','GuidanceResponsePolicy','OllamaClient','LmStudioClient','OpenAICompatibleClient'].map(name => [name, hash(readFileSync(`out/services/${name}.js`, 'utf8'))])),
+    files: Object.fromEntries(['PromptBuilder','RequestPlanner','ContextExcerpt','LanguageReference','GuidanceDepthPolicy','ModelProfile','GuidanceResponsePolicy','OllamaClient','LmStudioClient','OpenAICompatibleClient'].map(name => [name, hash(readFileSync(`out/services/${name}.js`, 'utf8'))])),
     harnessHash: hash(readFileSync('eval/lib.mjs', 'utf8')) };
 }
 export function validateConfig(c) {
@@ -31,6 +31,7 @@ export function validateConfig(c) {
   if (!['production','head-tail-v1'].includes(c.contextStrategy)) throw Error('Unknown context strategy');
   if (!['production','evidence-v1'].includes(c.promptVersion)) throw Error('Unknown prompt version');
   if (!['production','none','high'].includes(c.thinking)) throw Error('Invalid thinking');
+  if (c.languageReference !== undefined && !['production','off'].includes(c.languageReference)) throw Error('Invalid language reference control');
   if (c.contextLength != null && (!Number.isInteger(c.contextLength) || c.contextLength < 2048 || c.contextLength > 32768)) throw Error('Context must be 2048..32768');
   if (c.maxOutputTokens != null && (!Number.isInteger(c.maxOutputTokens) || c.maxOutputTokens < 64 || c.maxOutputTokens > 32768)) throw Error('Invalid output budget');
   const allowed = c.provider === 'lmStudio' || c.transport === 'ollama-native'
@@ -42,9 +43,10 @@ export function validateConfig(c) {
   if (c.provider === 'ollama' && c.transport === 'production' && c.contextLength != null) throw Error('num_ctx unsupported in OpenAI API; use native adapter');
   return c;
 }
-export function loadCases(split) {
+export function loadCases(split, caseFile) {
   if (!['tuning','holdout'].includes(split)) throw Error('Invalid split');
-  return readJson(`eval/cases/${split}.json`).map(item => {
+  if (caseFile && split !== 'tuning') throw Error('Custom cases cannot replace frozen holdout');
+  return readJson(caseFile ?? `eval/cases/${split}.json`).map(item => {
     if (item.existing) {
       const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === item.existing);
       if (!scenario) throw Error('Unknown existing scenario');
@@ -76,6 +78,7 @@ export function prepare(item, config) {
     input.slashCommand, input.slashCommandScope, input.automaticObservation);
   input = {...input, context:planned.context, automaticObservation:planned.automaticObservation};
   const profile = deriveModelProfile({id:config.model,name:config.model,vendor:config.provider});
+  if (config.languageReference === 'off') profile.languageReference = false;
   const messages = buildGuidancePromptMessages({...input, assistanceDepth:effectiveDepth, modelProfile:profile});
   if (config.promptVersion === 'evidence-v1') messages.systemPrompt += '\n- Base factual claims on the supplied code and requirements. Trace relevant expressions using the language semantics before describing their behavior. If a required definition or requirement is absent or truncated, state what is missing rather than guessing.';
   const request = {...messages, purpose:'guidance', reasoningEffort:config.thinking === 'production' ? item.input.assistanceDepth === 'high' ? 'high' : 'none' : config.thinking,

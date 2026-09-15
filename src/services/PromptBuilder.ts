@@ -13,8 +13,10 @@ import { getSkill } from "../shared/skills";
 import { AiInputLimitError } from "./AiRequestPolicy";
 import { DEFAULT_MODEL_PROFILE } from "./ModelProfile";
 import type { ModelProfile, PromptDelimiter } from "./ModelProfile";
+import { contextExcerpt } from "./ContextExcerpt";
+import { languageReference } from "./LanguageReference";
 
-export const GUIDANCE_POLICY_REVISION = "2026-09-11-task-comparison-v1";
+export const GUIDANCE_POLICY_REVISION = "2026-09-15-context-numeric-v6";
 
 /**
  * 助言リクエストのプロンプト組み立てを担う純粋ロジック。
@@ -74,7 +76,9 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
       : "Your default goal is to help the user think and move forward on their own.",
     "",
     ...buildGuidanceBlock(kind, assistanceDepth, modelProfile, delimiters, slashCommand, slashCommandScope,
-      Boolean(context.additionalContext?.trim()))
+      Boolean(context.additionalContext?.trim())),
+    ...(modelProfile.languageReference ? [languageReference(context.activeFileLanguage,
+      context.selectedText ?? context.activeFileExcerpt ?? "", userPrompt)] : [])
   ].join("\n");
   const automaticDecision = kind === "always" && context.additionalContext?.trim()
     ? '\n\n## Automatic decision\n追加コンテキストから要求される出力を読み取り、現在のコードが実際に出力する内容と照合してください。個数・配置・改行・空白・順序を区別し、どの配置が必要かを決めつけないでください。Pythonのprintは既定で各呼び出しの末尾に改行しますが、最後の改行だけで表示内容が複数行になるとは判断しないでください。値の作成と出力処理も区別してください。要件を満たし、別の具体的なリスクや明確な解説意図もなければ {"kind":"no_advice","focus":"none"} だけを返してください。不一致がある場合は、観測できる現在の挙動と要件との差を述べ、その差を解消するための着目点を短く伝えてください。特定の回答文や実装方法を当てはめず、この入力の事実だけを使ってください。変更後の式・引数値・完成コードは提示しないでください。'
@@ -94,7 +98,8 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
         "\n\n" + delimiters.additionalContextStart.join("\n") + "\n",
         neutralize(context.additionalContext),
         "\n" + delimiters.additionalContextEnd.join("\n"),
-        Math.floor(remaining * (kind === "always" ? 0.1 : 0.25))
+        Math.floor(remaining * (kind === "always" ? 0.1 : 0.25)),
+        userPrompt ?? ""
       )
     : "";
   const contextBlocks: string[] = [];
@@ -102,7 +107,8 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   let category: ContextCategoryKey | undefined;
   let filePath = context.activeFilePath;
   const add = (prefix: string, data: string, suffix = ""): void => {
-    const block = budget.takeBlock(prefix, neutralize(data), suffix);
+    const block = budget.takeBlock(prefix, neutralize(data), suffix, undefined,
+      category === "activeFile" || category === "selection" || category === "referencedFiles" ? userPrompt ?? "" : undefined);
     if (block) {
       contextBlocks.push(block);
       if (category) onBlock?.(category, filePath);
@@ -413,11 +419,13 @@ class ContextBudget {
     return this.takeBlock(prefix, centered, "");
   }
 
-  public takeBlock(prefix: string, data: string, suffix: string, maxChars = this.remainingChars): string {
+  public takeBlock(prefix: string, data: string, suffix: string, maxChars = this.remainingChars, question?: string): string {
     const available = Math.min(this.remainingChars, maxChars) - prefix.length - suffix.length;
     const marker = "... [truncated to fit model context budget]";
     if (!data || available <= 0 || (data.length > available && available < marker.length)) return "";
-    const text = data.length <= available ? data : data.slice(0, available - marker.length) + marker;
+    const text = question !== undefined ? contextExcerpt(data, available, question)
+      : data.length <= available ? data : data.slice(0, available - marker.length) + marker;
+    if (!text) return "";
     const block = prefix + text + suffix;
     this.remainingChars -= block.length;
     return block;

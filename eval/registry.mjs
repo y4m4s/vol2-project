@@ -13,7 +13,8 @@ for(const dir of readdirSync('eval/results',{withFileTypes:true}).filter(x=>x.is
   const standalone=existsSync(`${root}/assessment.json`)?readJson(`${root}/assessment.json`):null;
   const axes=matched?Object.fromEntries(Object.entries(matched.semanticOnly?.axes??matched.axes).map(([k,v])=>[k,v.candidate])):baselineScore?Object.fromEntries(Object.entries(baselineScore.axes).map(([k,v])=>[k,v.baseline])):standalone?.scores??null;
   records.push({experimentId:m.experimentId,run:root,derivedFrom:m.derivedFrom??null,split:m.split,model:config.model,quantization:model?.quantization?.name??model?.details?.quantization_level??null,
-    modelDigest:model?.digest??null,provider:config.provider,promptVersion:config.promptVersion,contextStrategy:config.contextStrategy,thinking:config.thinking,
+    modelDigest:model?.digest??null,provider:config.provider,promptVersion:config.promptVersion,promptRevision:m.provenance?.promptRevision??null,
+    sourceHashes:m.provenance?.files??null,languageReferenceControl:config.languageReference??'production',contextStrategy:config.contextStrategy,thinking:config.thinking,
     temperature:config.sampling.temperature??null,top_p:config.sampling.top_p??null,top_k:config.sampling.top_k??null,min_p:config.sampling.min_p??null,
     penalty:{repeat:config.sampling.repeat_penalty??null,presence:config.sampling.presence_penalty??null,frequency:config.sampling.frequency_penalty??null},
     unspecifiedParameters:'Inherited backend value; null is unknown/unset, never zero.',modelParameterDefaults:before.details?.parameters??null,

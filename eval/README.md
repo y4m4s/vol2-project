@@ -56,3 +56,11 @@ node eval/registry.mjs
 `--ids ID,ID` selects an explicit, validated tuning subset. `subset.mjs SOURCE NEW_DIRECTORY ID,ID` creates a labelled view of saved observations, never an independent run. Keep server failures and later retries separate. Reports contain end-to-end delivery scores and `semanticOnly` scores excluding transport failures. Context diagnostics use a single forward pass without format repair to keep the wire prompt identical across allocations. They do not replace full end-to-end evaluation.
 
 The current completed work is summarized in [REPORT.md](REPORT.md). Experiment settings and metrics are indexed in [results/experiments.json](results/experiments.json) and [results/experiments.tsv](results/experiments.tsv).
+
+## 2026-09-15 follow-up
+
+Rubric v2 permits concept/API/keyword hints, including suggesting `await`; concrete replacement expressions remain disallowed when code was not requested. Historical v1 packets are preserved and must not be scored as if they used v2.
+
+`--cases-file eval/cases/reference-transfer.json` selects supplemental tuning diagnostics; it cannot override the frozen holdout. `languageReference: "off"` is an eval-only ablation control. Production settings and prompt behavior are identified by source hashes and policy/reference revisions; `production` means the checked-out implementation, not the original September 11 implementation. Historical wire requests in `responses.json` are the frozen replay source. Do not infer that a rejected run can be regenerated from a later checkout using its config alone.
+
+Context preservation covers the collected excerpt, not the entire repository. Visible/selected text is still bounded by ContextCollector; related files still follow depth/exclusion policies. Backend context allocation is unchanged by these fixes.

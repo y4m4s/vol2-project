@@ -18,6 +18,8 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/ContextExcerpt.test.ts",
+    "test/LanguageReference.test.ts",
     "test/AutomaticObservation.test.ts",
     "src/shared/feedback.ts",
     "src/services/SerialTaskQueue.ts",

@@ -1,0 +1,75 @@
+{
+  "judge": {
+    "id": "REQUIRED: model or reviewer",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "Record prior context and calibration limitations"
+  },
+  "packetHash": "1d205888274e4fb41afd0826b6ffc7a251373882703d03d7c834542bec48279c",
+  "judgments": [
+    {
+      "pairId": "27f5c895b3499de7",
+      "pairHash": "3ce422cc79f63afb19d5f5c90f17e6cbcd3bcd3903801d41a29d5a382f287fd7",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "97f17d3dfec418d3",
+      "pairHash": "dba27fe7a660d61050ac8705cd8c4ada15afeb405f8e9722571e54932511865b",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "f13d983a3a2c7cc0",
+      "pairHash": "39111c516c406bee263fb4c1c373b009667fedc841dad0ef41706d327b624a0b",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "0b6cb6fc2688223c",
+      "pairHash": "f286df41eb60857917ee8128831a98900f4337076106b9f92575af36a9e93bb4",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "46dec537ffc9c1b3",
+      "pairHash": "765c595f09ed521bb08d509bc72ed6965171f7f804465e8aa545ca84316e11f1",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "f2f1592506381669",
+      "pairHash": "b5f3330a6e39bf244118c83b47d258d6dcd86b454b695b92e0036b542806e3fa",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "4f1cae361f6c3c0e",
+      "pairHash": "f88e1d8c718227120720c80f0fc9805df455180d11342fc56779018b5e792260",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "450a3ece4a79a6d6",
+      "pairHash": "e7d218a4a2ede0ea94221fbe3a0aa2e79786a6d80a61209decfd573ae9d1998e",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    }
+  ]
+}

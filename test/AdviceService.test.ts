@@ -7,6 +7,8 @@ import { UsageMeter } from "../src/services/UsageMeter";
 import { SingleFlightGate } from "../src/services/SingleFlightGate";
 import { OrcaRouterError } from "../src/services/OrcaRouterClient";
 import type { AiTextRequest } from "../src/services/AiRequestPolicy";
+import { buildGuidancePromptMessages } from "../src/services/PromptBuilder";
+import { deriveModelProfile } from "../src/services/ModelProfile";
 
 class TestTokenSource {
   private cancelled = false;
@@ -329,8 +331,13 @@ test("長すぎる質問は送信前に拒否し接続を維持する", async ()
 });
 
 test("修正再生成も最終入力上限を超えたら追加送信しない", async () => {
-  const h = harness({ maxInputTokens: 1000, response: "not JSON" });
-  const result = await h.service.requestGuidance({ ...input, userPrompt: "質問".repeat(50) });
+  const maxInputTokens = 1000;
+  const modelProfile = deriveModelProfile({maxInputTokens});
+  const base = buildGuidancePromptMessages({...input, modelProfile, userPrompt: "Q"});
+  // Fill to just below the actual input budget, independent of policy wording.
+  const room = modelProfile.contextBudget * 3 - base.systemPrompt.length - base.userPrompt.length - 24;
+  const h = harness({ maxInputTokens, response: "not JSON" });
+  const result = await h.service.requestGuidance({ ...input, userPrompt: "Q".repeat(room) });
   assert.equal(h.calls(), 1);
   assert.ok(!result.ok && result.connectionState === "connected");
   assert.equal(h.resets(), 0);

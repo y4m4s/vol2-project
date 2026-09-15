@@ -2,13 +2,13 @@ import { parseArgs } from 'node:util';
 import { mkdirSync } from 'node:fs';
 import { readJson,save,validateConfig,loadCases,provenance,hash,probe,createClient,generate,prepare,shuffle,randomSeed,newDirectory } from './lib.mjs';
 
-const {values:v} = parseArgs({options:{config:{type:'string'},split:{type:'string',default:'tuning'},repeat:{type:'string',default:'1'},out:{type:'string'},filter:{type:'string'},ids:{type:'string'},dry:{type:'boolean',default:false},'confirm-holdout':{type:'boolean',default:false}}});
+const {values:v} = parseArgs({options:{config:{type:'string'},'cases-file':{type:'string'},split:{type:'string',default:'tuning'},repeat:{type:'string',default:'1'},out:{type:'string'},filter:{type:'string'},ids:{type:'string'},dry:{type:'boolean',default:false},'confirm-holdout':{type:'boolean',default:false}}});
 if (!v.config || !v.out) throw Error('Usage: node eval/run.mjs --config PATH --out NEW_DIRECTORY [--split tuning|holdout --repeat 3 --dry]');
 if(v.split === 'holdout' && !v['confirm-holdout']) throw Error('Frozen holdout requires --confirm-holdout after candidate selection');
 const config = validateConfig(readJson(v.config)), repeats = Number(v.repeat);
 if (!Number.isInteger(repeats) || repeats < 1 || repeats > 10) throw Error('repeat must be 1..10');
 const requestedIds=v.ids?.split(',');
-const cases = loadCases(v.split).filter(x => (!v.filter || x.id.includes(v.filter)) && (!requestedIds || requestedIds.includes(x.id)));
+const cases = loadCases(v.split,v['cases-file']).filter(x => (!v.filter || x.id.includes(v.filter)) && (!requestedIds || requestedIds.includes(x.id)));
 if(requestedIds && (new Set(requestedIds).size!==requestedIds.length || cases.length!==requestedIds.length))throw Error('Unknown or duplicate --ids');
 if(!cases.length) throw Error('No cases');
 mkdirSync('eval/results',{recursive:true});

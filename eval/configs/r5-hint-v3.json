@@ -1,0 +1,13 @@
+{
+  "id": "r5-hint-v3",
+  "provider": "lmStudio",
+  "model": "qwen/qwen3-8b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "production",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null
+}

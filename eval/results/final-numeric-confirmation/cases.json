@@ -1,0 +1,46 @@
+[
+  {
+    "id": "transfer-numeric",
+    "category": "code_reasoning",
+    "code": "const values = [Number(\" \\t\"), Number(\"19px\"), parseInt(\"19px\", 10)];",
+    "question": "valuesの3つの値を順に、型変換の違いも含めて簡潔に説明して。",
+    "expected": "0, NaN, 19 in order. Number parses the entire trimmed string; parseInt parses a prefix. No claim that NaN is not of type number.",
+    "maxChars": 350,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "valuesの3つの値を順に、型変換の違いも含めて簡潔に説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const values = [Number(\" \\t\"), Number(\"19px\"), parseInt(\"19px\", 10)];",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "transfer-shadowed",
+    "category": "grounding",
+    "code": "const Number = value => \"custom:\" + value; const result = Number(\"\");",
+    "question": "resultの値と型を説明して。",
+    "expected": "result is the string custom:. Number is locally shadowed; do not apply standard numeric conversion to it.",
+    "maxChars": 240,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "resultの値と型を説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const Number = value => \"custom:\" + value; const result = Number(\"\");",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  }
+]

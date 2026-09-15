@@ -1,0 +1,1162 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価を担当。匿名packetだけでA/B評価したが、Baseline回答を以前に閲覧しており完全なidentity blindingではない。外部独立Judge未実施。"
+  },
+  "split": "tuning",
+  "baselineRun": "eval/results/reference-transfer-off",
+  "candidateRun": "eval/results/reference-transfer-production",
+  "baseline": {
+    "n": 8,
+    "hardPassRate": 0.875,
+    "latencyMedianMs": 8183.533399999999,
+    "latencyP95Ms": 21719.578299999997,
+    "inputTokensMean": 722.5,
+    "tokensPerSecondMedian": 13.835417664889615,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {
+      "invalid_format": 1
+    }
+  },
+  "candidate": {
+    "n": 8,
+    "hardPassRate": 0.875,
+    "latencyMedianMs": 8437.315649999999,
+    "latencyP95Ms": 11797.5723,
+    "inputTokensMean": 881.6666666666666,
+    "tokensPerSecondMedian": 13.733111244275339,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {
+      "invalid_format": 1
+    }
+  },
+  "pairwiseWinRate": 0.4375,
+  "decisiveWinRate": 0.42857142857142855,
+  "ties": 1,
+  "ci95": {
+    "low": 0.125,
+    "high": 0.8125,
+    "unit": "case",
+    "cases": 4,
+    "iterations": 5000
+  },
+  "axes": {
+    "correctness": {
+      "baseline": 2,
+      "candidate": 2.25,
+      "delta": 0.25
+    },
+    "groundedness": {
+      "baseline": 2.125,
+      "candidate": 2.625,
+      "delta": 0.5
+    },
+    "context_utilization": {
+      "baseline": 2.75,
+      "candidate": 2.75,
+      "delta": 0
+    },
+    "hallucination": {
+      "baseline": 2.625,
+      "candidate": 2.875,
+      "delta": 0.25
+    },
+    "instruction_following": {
+      "baseline": 3,
+      "candidate": 2.875,
+      "delta": -0.125
+    },
+    "pedagogical_usefulness": {
+      "baseline": 1.75,
+      "candidate": 2.25,
+      "delta": 0.5
+    },
+    "actionability": {
+      "baseline": 2.25,
+      "candidate": 2.25,
+      "delta": 0
+    },
+    "conciseness": {
+      "baseline": 3.375,
+      "candidate": 3.125,
+      "delta": -0.25
+    },
+    "japanese_quality": {
+      "baseline": 3.625,
+      "candidate": 3.5,
+      "delta": -0.125
+    }
+  },
+  "rows": [
+    {
+      "pairId": "f2f1592506381669",
+      "caseId": "transfer-map-update",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "b5f3330a6e39bf244118c83b47d258d6dcd86b454b695b92e0036b542806e3fa",
+      "win": 1,
+      "verdict": "B_clear",
+      "reason": "Bはx:9,y:2を正しく説明。Aは形式不正。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 3,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "キーと値が正しい",
+          "groundedness": "更新コード参照",
+          "context_utilization": "挿入順を適用",
+          "hallucination": "創作なし",
+          "instruction_following": "要求へ回答",
+          "pedagogical_usefulness": "更新と位置を説明",
+          "actionability": "値が明確",
+          "conciseness": "HTMLが余分",
+          "japanese_quality": "HTMLタグ不要"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 0,
+          "groundedness": 0,
+          "context_utilization": 0,
+          "hallucination": 4,
+          "instruction_following": 0,
+          "pedagogical_usefulness": 0,
+          "actionability": 0,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "配信回答なし",
+          "groundedness": "配信回答なし",
+          "context_utilization": "情報が届かない",
+          "hallucination": "創作は届かない",
+          "instruction_following": "形式不正",
+          "pedagogical_usefulness": "支援なし",
+          "actionability": "確認案なし",
+          "conciseness": "配信文なし",
+          "japanese_quality": "配信文なし"
+        },
+        "failures": [
+          "invalid_format"
+        ]
+      }
+    },
+    {
+      "pairId": "f13d983a3a2c7cc0",
+      "caseId": "transfer-map-update",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "39111c516c406bee263fb4c1c373b009667fedc841dad0ef41706d327b624a0b",
+      "win": 0,
+      "verdict": "A_slight",
+      "reason": "Aは更新後の9を明示。Bは初期値に重心があり最終値を曖昧にする。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 3,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 2,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "最終のx:9を明示しない",
+          "groundedness": "初期値と最終値が曖昧",
+          "context_utilization": "更新は認識",
+          "hallucination": "誤読を招く提示",
+          "instruction_following": "値の回答が不足",
+          "pedagogical_usefulness": "初期値の説明に偏る",
+          "actionability": "自分で反復確認が必要",
+          "conciseness": "冗長",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "x更新は正しいがy:2は未説明",
+          "groundedness": "更新コードに基づく",
+          "context_utilization": "順序を使用",
+          "hallucination": "創作なし",
+          "instruction_following": "キーと値の列挙が不完全",
+          "pedagogical_usefulness": "更新は理解可能",
+          "actionability": "一部値が明確",
+          "conciseness": "やや長い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "27f5c895b3499de7",
+      "caseId": "transfer-shadowed",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "3ce422cc79f63afb19d5f5c90f17e6cbcd3bcd3903801d41a29d5a382f287fd7",
+      "win": 0,
+      "verdict": "B_clear",
+      "reason": "Aは末尾の空白を創作し値を誤る。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 2,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "末尾空白が余分",
+          "groundedness": "連結する文字列と不一致",
+          "context_utilization": "独自Numberを認識",
+          "hallucination": "余分な空白を創作",
+          "instruction_following": "型と値を回答",
+          "pedagogical_usefulness": "説明と結果が不一致",
+          "actionability": "値が不正確",
+          "conciseness": "長い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "値と型が正しい",
+          "groundedness": "コードに基づく",
+          "context_utilization": "変換や更新を使用",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由を説明",
+          "actionability": "値が明確",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "4f1cae361f6c3c0e",
+      "caseId": "transfer-numeric",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "f88e1d8c718227120720c80f0fc9805df455180d11342fc56779018b5e792260",
+      "win": 1,
+      "verdict": "B_clear",
+      "reason": "Bは0,NaN,19を正しく区別。Aは二つ誤る。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "値と型が正しい",
+          "groundedness": "コードに基づく",
+          "context_utilization": "変換や更新を使用",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由を説明",
+          "actionability": "値が明確",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 1,
+          "context_utilization": 3,
+          "hallucination": 1,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 1,
+          "actionability": 2,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "数値変換結果が誤り",
+          "groundedness": "標準仕様と矛盾",
+          "context_utilization": "三つの式を使用",
+          "hallucination": "誤った結果を提示",
+          "instruction_following": "順に回答",
+          "pedagogical_usefulness": "誤知識を教える",
+          "actionability": "一部結果のみ有用",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "97f17d3dfec418d3",
+      "caseId": "transfer-set-reinsert",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "dba27fe7a660d61050ac8705cd8c4ada15afeb405f8e9722571e54932511865b",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "双方最終結果を[1]と誤答。Bも正しい再追加説明を結果へ反映しない。",
+      "candidate": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 1,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 3,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "最終結果から3が欠落",
+          "groundedness": "再追加コードと不整合",
+          "context_utilization": "挿入順を説明しても実行を追えない",
+          "hallucination": "誤った結果",
+          "instruction_following": "結果と理由の形式",
+          "pedagogical_usefulness": "説明と結果が矛盾",
+          "actionability": "誤判断へ導く",
+          "conciseness": "やや長い",
+          "japanese_quality": "矛盾が読みにくい"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 1,
+          "context_utilization": 1,
+          "hallucination": 1,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "3の再追加を落とす",
+          "groundedness": "順序仕様も誤る",
+          "context_utilization": "操作を追えない",
+          "hallucination": "誤った結果",
+          "instruction_following": "形式は質問に対応",
+          "pedagogical_usefulness": "誤説明",
+          "actionability": "利用不可",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "450a3ece4a79a6d6",
+      "caseId": "transfer-set-reinsert",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "e7d218a4a2ede0ea94221fbe3a0aa2e79786a6d80a61209decfd573ae9d1998e",
+      "win": 0,
+      "verdict": "B_slight",
+      "reason": "Bの途中の並びは誤るが最終結果1,3は正しい。",
+      "candidate": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 1,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 3,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "最終結果から3が欠落",
+          "groundedness": "再追加コードと不整合",
+          "context_utilization": "挿入順を説明しても実行を追えない",
+          "hallucination": "誤った結果",
+          "instruction_following": "結果と理由の形式",
+          "pedagogical_usefulness": "説明と結果が矛盾",
+          "actionability": "誤判断へ導く",
+          "conciseness": "やや長い",
+          "japanese_quality": "矛盾が読みにくい"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 2,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "最終結果は正しいが初期Setの順序が誤り",
+          "groundedness": "途中手順がコードと不一致",
+          "context_utilization": "削除再追加は追う",
+          "hallucination": "重複した3は削除という誤説明",
+          "instruction_following": "最終順を回答",
+          "pedagogical_usefulness": "過程が不正確",
+          "actionability": "最終値は有用",
+          "conciseness": "冗長",
+          "japanese_quality": "insertion order混在"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "0b6cb6fc2688223c",
+      "caseId": "transfer-numeric",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "f286df41eb60857917ee8128831a98900f4337076106b9f92575af36a9e93bb4",
+      "win": 1,
+      "verdict": "B_clear",
+      "reason": "Bは三つの値を正答。Aは空白をNaNと誤る。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "値と型が正しい",
+          "groundedness": "コードに基づく",
+          "context_utilization": "変換や更新を使用",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由を説明",
+          "actionability": "値が明確",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 1,
+          "context_utilization": 3,
+          "hallucination": 1,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 1,
+          "actionability": 2,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "数値変換結果が誤り",
+          "groundedness": "標準仕様と矛盾",
+          "context_utilization": "三つの式を使用",
+          "hallucination": "誤った結果を提示",
+          "instruction_following": "順に回答",
+          "pedagogical_usefulness": "誤知識を教える",
+          "actionability": "一部結果のみ有用",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "46dec537ffc9c1b3",
+      "caseId": "transfer-shadowed",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "765c595f09ed521bb08d509bc72ed6965171f7f804465e8aa545ca84316e11f1",
+      "win": 0,
+      "verdict": "A_clear",
+      "reason": "Aは不格好だが正しい値。Bは形式不正で届かない。",
+      "candidate": {
+        "scores": {
+          "correctness": 0,
+          "groundedness": 0,
+          "context_utilization": 0,
+          "hallucination": 4,
+          "instruction_following": 0,
+          "pedagogical_usefulness": 0,
+          "actionability": 0,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "配信回答なし",
+          "groundedness": "配信回答なし",
+          "context_utilization": "情報が届かない",
+          "hallucination": "創作は届かない",
+          "instruction_following": "形式不正",
+          "pedagogical_usefulness": "支援なし",
+          "actionability": "確認案なし",
+          "conciseness": "配信文なし",
+          "japanese_quality": "配信文なし"
+        },
+        "failures": [
+          "invalid_format"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 2,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "値と型が正しい",
+          "groundedness": "独自定義に基づく",
+          "context_utilization": "shadowingを使用",
+          "hallucination": "創作なし",
+          "instruction_following": "不要な確認を追加",
+          "pedagogical_usefulness": "断片的説明",
+          "actionability": "値は確認可能",
+          "conciseness": "冗長",
+          "japanese_quality": "引用符が壊れる"
+        },
+        "failures": []
+      }
+    }
+  ],
+  "scoringScope": "end_to_end_delivery",
+  "semanticOnly": {
+    "pairwiseWinRate": 0.4375,
+    "decisiveWinRate": 0.42857142857142855,
+    "ties": 1,
+    "ci95": {
+      "low": 0.125,
+      "high": 0.8125,
+      "unit": "case",
+      "cases": 4,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2,
+        "candidate": 2.25,
+        "delta": 0.25
+      },
+      "groundedness": {
+        "baseline": 2.125,
+        "candidate": 2.625,
+        "delta": 0.5
+      },
+      "context_utilization": {
+        "baseline": 2.75,
+        "candidate": 2.75,
+        "delta": 0
+      },
+      "hallucination": {
+        "baseline": 2.625,
+        "candidate": 2.875,
+        "delta": 0.25
+      },
+      "instruction_following": {
+        "baseline": 3,
+        "candidate": 2.875,
+        "delta": -0.125
+      },
+      "pedagogical_usefulness": {
+        "baseline": 1.75,
+        "candidate": 2.25,
+        "delta": 0.5
+      },
+      "actionability": {
+        "baseline": 2.25,
+        "candidate": 2.25,
+        "delta": 0
+      },
+      "conciseness": {
+        "baseline": 3.375,
+        "candidate": 3.125,
+        "delta": -0.25
+      },
+      "japanese_quality": {
+        "baseline": 3.625,
+        "candidate": 3.5,
+        "delta": -0.125
+      }
+    },
+    "rows": [
+      {
+        "pairId": "f2f1592506381669",
+        "caseId": "transfer-map-update",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "b5f3330a6e39bf244118c83b47d258d6dcd86b454b695b92e0036b542806e3fa",
+        "win": 1,
+        "verdict": "B_clear",
+        "reason": "Bはx:9,y:2を正しく説明。Aは形式不正。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 3,
+            "japanese_quality": 2
+          },
+          "reasons": {
+            "correctness": "キーと値が正しい",
+            "groundedness": "更新コード参照",
+            "context_utilization": "挿入順を適用",
+            "hallucination": "創作なし",
+            "instruction_following": "要求へ回答",
+            "pedagogical_usefulness": "更新と位置を説明",
+            "actionability": "値が明確",
+            "conciseness": "HTMLが余分",
+            "japanese_quality": "HTMLタグ不要"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 0,
+            "groundedness": 0,
+            "context_utilization": 0,
+            "hallucination": 4,
+            "instruction_following": 0,
+            "pedagogical_usefulness": 0,
+            "actionability": 0,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "配信回答なし",
+            "groundedness": "配信回答なし",
+            "context_utilization": "情報が届かない",
+            "hallucination": "創作は届かない",
+            "instruction_following": "形式不正",
+            "pedagogical_usefulness": "支援なし",
+            "actionability": "確認案なし",
+            "conciseness": "配信文なし",
+            "japanese_quality": "配信文なし"
+          },
+          "failures": [
+            "invalid_format"
+          ]
+        }
+      },
+      {
+        "pairId": "f13d983a3a2c7cc0",
+        "caseId": "transfer-map-update",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "39111c516c406bee263fb4c1c373b009667fedc841dad0ef41706d327b624a0b",
+        "win": 0,
+        "verdict": "A_slight",
+        "reason": "Aは更新後の9を明示。Bは初期値に重心があり最終値を曖昧にする。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 3,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 2,
+            "conciseness": 2,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "最終のx:9を明示しない",
+            "groundedness": "初期値と最終値が曖昧",
+            "context_utilization": "更新は認識",
+            "hallucination": "誤読を招く提示",
+            "instruction_following": "値の回答が不足",
+            "pedagogical_usefulness": "初期値の説明に偏る",
+            "actionability": "自分で反復確認が必要",
+            "conciseness": "冗長",
+            "japanese_quality": "自然"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 3,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "x更新は正しいがy:2は未説明",
+            "groundedness": "更新コードに基づく",
+            "context_utilization": "順序を使用",
+            "hallucination": "創作なし",
+            "instruction_following": "キーと値の列挙が不完全",
+            "pedagogical_usefulness": "更新は理解可能",
+            "actionability": "一部値が明確",
+            "conciseness": "やや長い",
+            "japanese_quality": "自然"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "27f5c895b3499de7",
+        "caseId": "transfer-shadowed",
+        "repeat": 1,
+        "candidateSide": "A",
+        "pairHash": "3ce422cc79f63afb19d5f5c90f17e6cbcd3bcd3903801d41a29d5a382f287fd7",
+        "win": 0,
+        "verdict": "B_clear",
+        "reason": "Aは末尾の空白を創作し値を誤る。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 2,
+            "actionability": 2,
+            "conciseness": 2,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "末尾空白が余分",
+            "groundedness": "連結する文字列と不一致",
+            "context_utilization": "独自Numberを認識",
+            "hallucination": "余分な空白を創作",
+            "instruction_following": "型と値を回答",
+            "pedagogical_usefulness": "説明と結果が不一致",
+            "actionability": "値が不正確",
+            "conciseness": "長い",
+            "japanese_quality": "自然"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "値と型が正しい",
+            "groundedness": "コードに基づく",
+            "context_utilization": "変換や更新を使用",
+            "hallucination": "創作なし",
+            "instruction_following": "質問の範囲内",
+            "pedagogical_usefulness": "理由を説明",
+            "actionability": "値が明確",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "4f1cae361f6c3c0e",
+        "caseId": "transfer-numeric",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "f88e1d8c718227120720c80f0fc9805df455180d11342fc56779018b5e792260",
+        "win": 1,
+        "verdict": "B_clear",
+        "reason": "Bは0,NaN,19を正しく区別。Aは二つ誤る。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "値と型が正しい",
+            "groundedness": "コードに基づく",
+            "context_utilization": "変換や更新を使用",
+            "hallucination": "創作なし",
+            "instruction_following": "質問の範囲内",
+            "pedagogical_usefulness": "理由を説明",
+            "actionability": "値が明確",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 1,
+            "context_utilization": 3,
+            "hallucination": 1,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 1,
+            "actionability": 2,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "数値変換結果が誤り",
+            "groundedness": "標準仕様と矛盾",
+            "context_utilization": "三つの式を使用",
+            "hallucination": "誤った結果を提示",
+            "instruction_following": "順に回答",
+            "pedagogical_usefulness": "誤知識を教える",
+            "actionability": "一部結果のみ有用",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "97f17d3dfec418d3",
+        "caseId": "transfer-set-reinsert",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "dba27fe7a660d61050ac8705cd8c4ada15afeb405f8e9722571e54932511865b",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "双方最終結果を[1]と誤答。Bも正しい再追加説明を結果へ反映しない。",
+        "candidate": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 1,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 1,
+            "actionability": 1,
+            "conciseness": 3,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "最終結果から3が欠落",
+            "groundedness": "再追加コードと不整合",
+            "context_utilization": "挿入順を説明しても実行を追えない",
+            "hallucination": "誤った結果",
+            "instruction_following": "結果と理由の形式",
+            "pedagogical_usefulness": "説明と結果が矛盾",
+            "actionability": "誤判断へ導く",
+            "conciseness": "やや長い",
+            "japanese_quality": "矛盾が読みにくい"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 1,
+            "context_utilization": 1,
+            "hallucination": 1,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 1,
+            "actionability": 1,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "3の再追加を落とす",
+            "groundedness": "順序仕様も誤る",
+            "context_utilization": "操作を追えない",
+            "hallucination": "誤った結果",
+            "instruction_following": "形式は質問に対応",
+            "pedagogical_usefulness": "誤説明",
+            "actionability": "利用不可",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "450a3ece4a79a6d6",
+        "caseId": "transfer-set-reinsert",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "e7d218a4a2ede0ea94221fbe3a0aa2e79786a6d80a61209decfd573ae9d1998e",
+        "win": 0,
+        "verdict": "B_slight",
+        "reason": "Bの途中の並びは誤るが最終結果1,3は正しい。",
+        "candidate": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 1,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 1,
+            "actionability": 1,
+            "conciseness": 3,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "最終結果から3が欠落",
+            "groundedness": "再追加コードと不整合",
+            "context_utilization": "挿入順を説明しても実行を追えない",
+            "hallucination": "誤った結果",
+            "instruction_following": "結果と理由の形式",
+            "pedagogical_usefulness": "説明と結果が矛盾",
+            "actionability": "誤判断へ導く",
+            "conciseness": "やや長い",
+            "japanese_quality": "矛盾が読みにくい"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 2,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "最終結果は正しいが初期Setの順序が誤り",
+            "groundedness": "途中手順がコードと不一致",
+            "context_utilization": "削除再追加は追う",
+            "hallucination": "重複した3は削除という誤説明",
+            "instruction_following": "最終順を回答",
+            "pedagogical_usefulness": "過程が不正確",
+            "actionability": "最終値は有用",
+            "conciseness": "冗長",
+            "japanese_quality": "insertion order混在"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "0b6cb6fc2688223c",
+        "caseId": "transfer-numeric",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "f286df41eb60857917ee8128831a98900f4337076106b9f92575af36a9e93bb4",
+        "win": 1,
+        "verdict": "B_clear",
+        "reason": "Bは三つの値を正答。Aは空白をNaNと誤る。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "値と型が正しい",
+            "groundedness": "コードに基づく",
+            "context_utilization": "変換や更新を使用",
+            "hallucination": "創作なし",
+            "instruction_following": "質問の範囲内",
+            "pedagogical_usefulness": "理由を説明",
+            "actionability": "値が明確",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 1,
+            "context_utilization": 3,
+            "hallucination": 1,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 1,
+            "actionability": 2,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "数値変換結果が誤り",
+            "groundedness": "標準仕様と矛盾",
+            "context_utilization": "三つの式を使用",
+            "hallucination": "誤った結果を提示",
+            "instruction_following": "順に回答",
+            "pedagogical_usefulness": "誤知識を教える",
+            "actionability": "一部結果のみ有用",
+            "conciseness": "短い",
+            "japanese_quality": "自然"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "46dec537ffc9c1b3",
+        "caseId": "transfer-shadowed",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "765c595f09ed521bb08d509bc72ed6965171f7f804465e8aa545ca84316e11f1",
+        "win": 0,
+        "verdict": "A_clear",
+        "reason": "Aは不格好だが正しい値。Bは形式不正で届かない。",
+        "candidate": {
+          "scores": {
+            "correctness": 0,
+            "groundedness": 0,
+            "context_utilization": 0,
+            "hallucination": 4,
+            "instruction_following": 0,
+            "pedagogical_usefulness": 0,
+            "actionability": 0,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "配信回答なし",
+            "groundedness": "配信回答なし",
+            "context_utilization": "情報が届かない",
+            "hallucination": "創作は届かない",
+            "instruction_following": "形式不正",
+            "pedagogical_usefulness": "支援なし",
+            "actionability": "確認案なし",
+            "conciseness": "配信文なし",
+            "japanese_quality": "配信文なし"
+          },
+          "failures": [
+            "invalid_format"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 2,
+            "japanese_quality": 2
+          },
+          "reasons": {
+            "correctness": "値と型が正しい",
+            "groundedness": "独自定義に基づく",
+            "context_utilization": "shadowingを使用",
+            "hallucination": "創作なし",
+            "instruction_following": "不要な確認を追加",
+            "pedagogical_usefulness": "断片的説明",
+            "actionability": "値は確認可能",
+            "conciseness": "冗長",
+            "japanese_quality": "引用符が壊れる"
+          },
+          "failures": []
+        }
+      }
+    ]
+  },
+  "infrastructureExcludedPairs": 0,
+  "gates": {
+    "noNewHardFailures": false,
+    "criticalAxes": true,
+    "qualityCI": false,
+    "latency": true
+  },
+  "decision": "Review gates and qualitative regressions; no automatic champion promotion. Holdout required for adoption."
+}

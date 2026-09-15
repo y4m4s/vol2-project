@@ -1,0 +1,100 @@
+{
+  "baseline": "eval/results/r7-set-reference",
+  "candidate": "eval/results/r8-focused-reference",
+  "split": "tuning",
+  "seed": "e8dc823a4fbdeafd3af13649d1b42bdc",
+  "packetHash": "d372e42475c97c71f1bb4393baa51d195af16d1aaf0f402146842fc9afbc40ad",
+  "pairs": [
+    {
+      "pairId": "451ae99b5b50d8bc",
+      "caseId": "explain-reduce",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "b54cf90d97d75d8e5527fde3e999d4002003f932dc7c4ac97c2199ed977ba83e"
+    },
+    {
+      "pairId": "9be29c2fbe181213",
+      "caseId": "history-absent",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "dc311fa02b36fb4bc0c291c78b902874941b7f50b2a90fdaa86fb64c89600624"
+    },
+    {
+      "pairId": "08605566e3002fb8",
+      "caseId": "auto-layout",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "05d26801bf62061d9b01bb3749c2f15a18101bc4c2cada3c814dd1c1bc6e8e57"
+    },
+    {
+      "pairId": "2466d18e93c35799",
+      "caseId": "compare-approaches",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "e949ecfa13202b0ad84a6cd3ed85968a5291899b2d5fd6dd4315dbefdaa7cf1f"
+    },
+    {
+      "pairId": "9552a6efe0394e67",
+      "caseId": "long-active-tail",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "517ed6b2922eb457135868c5e83fda4312f80614b5c55db12f704bdb0bf6654b"
+    },
+    {
+      "pairId": "f5a14275f45022e4",
+      "caseId": "hint-only",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "51aa83dd7f78040115fe824dfaf5356d4f7e7b110ec9dc846bfc210c4463bc30"
+    },
+    {
+      "pairId": "3f8054483eb2b9f9",
+      "caseId": "bug-boundary",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "3b245bbb44fb39f8637c81900b30de113be7bcbcf1f942188b9a54807875a172"
+    },
+    {
+      "pairId": "6108490a2a6af671",
+      "caseId": "additional-requirement",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "6c10a05ba7886bcf452125c18c4ca1f9efb1e902f36e44fc917e60f48c4d41ac"
+    },
+    {
+      "pairId": "1cd5bd6ea052c71c",
+      "caseId": "long-additional-tail",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "91bccb9c075d02e7194efd2bc9910302a12a5ea235535eb863a80b59aa5add52"
+    },
+    {
+      "pairId": "3bd6afdabe8fdd01",
+      "caseId": "learn-next",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "973fd2c8d11a9d313c4b745b9759e310b146d9215055dd29247a98df832b1c4b"
+    },
+    {
+      "pairId": "2a4b64880f3b82c2",
+      "caseId": "related-file",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "1b5b997b6ea95d35b252c0ff5177fd5c2a2899614c7e48e7667e52d070d5ba59"
+    },
+    {
+      "pairId": "9e8cb17f57d4bcbc",
+      "caseId": "auto-complete",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "bf65279702d7858bf3c440fe1f553168ad539ad146632ce54d16075b2594c7fb"
+    },
+    {
+      "pairId": "1418814dd9505110",
+      "caseId": "uncertain-external",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "29aaf2b7fbd8ec7912b5adf938046625a45c323ca3a842cac5f39190f1f790a6"
+    }
+  ]
+}

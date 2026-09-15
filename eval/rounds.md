@@ -54,3 +54,53 @@
 - 公式Thinkingの有効回答でもSet順序の誤りが残り、auto-layoutは内容を認識してもfocus=explainで不合格。採用しない。通信失敗を除いたsemanticOnlyをsummary.jsonに別保存。
 - Ollama公式Non-Thinkingは5/5通信成功、hard4/5。既存native設定比win rate0.400、CI[0.200,0.500]。改善なし。
 - context sweep18観測では実割当4K/8K/16Kを確認。観測Pareto frontierは4Kと8K、16Kは8Kに劣位。ただし3診断ケース各2回のみ、cacheとcold loadがあり一般的最適値を主張しない。
+
+## Round 4 — user clarification and context repair
+
+Rubric v2 permits naming await as a hint, but prohibits concrete replacement code. Historical v1 scores remain unchanged. Fresh r4-baseline-v2 freezes this dataset before production edits. Hypothesis: remove redundant 2,000-character planner cap; only when the actual prompt budget is exhausted, preserve named middle evidence and both edges with omission markers. No sampling, Thinking, backend context or output changes. Deterministic evidence retention tests plus 13 tuning cases; no holdout-driven tuning.
+
+## Round 5 — hint boundary only
+
+User-authorized product policy: permit concepts/API names/keywords and direct factual answers, prohibit completed replacement code unless explicitly requested. Remove the conflicting blanket ban on declarative suggestions. Compare against r4-context-v2 on all 13 tuning cases; no language-reference injection yet.
+
+## Round 6 — bounded language reference
+
+Hypothesis: relevant standard-library facts supplied as a small versioned reference reduce errors that generic instructions did not fix. Only local providers receive the notes; selection uses language ID and API names, never case IDs or expected outputs. Covers numeric conversion, ordered collections, array iteration/bounds/reduce, async/fetch including negative applicability caveats. Compare r5-hint-v3 vs r6-language-v4, same 13 tuning cases. Language notes are unit-checked with independent examples. The topics were motivated by tuning failures, so do not claim general reasoning improvement without independent confirmation.
+
+## Round 7 — clarify reference terminology only
+
+R6 corrected Number empty-string but Set answered contradictorily (order not retained / insertion order), and async facts were misapplied to Promise.json. Keep R6 unadopted. R7 changes only the ordered-collection reference wording: define insertion order in positive terms and distinguish updating from delete/reinsert. Other note topics and generation controls unchanged. This is a final bounded reference wording experiment, not evidence of general model repair.
+
+## Round 8 — remove reference topics with observed misuse
+
+R7 correctly explains Set insertion order and Number empty-string, but broad async/array notes still cause incorrect application and do not prevent completed fixes. Preserve rejected outputs. R8 removes only array and async reference cards; numeric conversion and ordered collections remain, other prompts/settings unchanged. Validate retained benefits and no new hint misapplication.
+
+## Round 9 — enforce the clarified hint boundary
+
+Only replace the main hint policy with explicit Japanese wording: naming a keyword/API is permitted; a changed expression/call/argument must not be disguised as a checking method. The user requested this boundary. Final reference scope is numeric conversion plus ordered collections; no further parameter search. Compare against R8, then freeze before transfer/holdout. Four separately written reference-transfer cases cover whitespace/partial numeric parsing, Set delete/reinsert, Map update order and local Number shadowing. They are supplemental tuning diagnostics, not a replacement for the six frozen holdout cases. Run two repeats with reference off/on, keeping all other controls identical.
+
+## Final selection — stop broad reference exploration
+
+Transfer reference-on vs off: numeric conversion correct twice only with notes; Set reinsert still wrong twice, while shadowed Number acquired an extra space. Broad reference variants are rejected, not promoted. Select only numeric reference plus a conservative visible-binding suppression, retain deterministic context repair and the user-authorized hint policy. No sampling/backend changes. Freeze this source for final tuning and the six held-out cases; no tuning to holdout answers. Set/Map reasoning, async hints and uncertainty remain unresolved capability/prompt-following issues.
+
+### Final minimization before holdout
+
+The broadened hint-generation policies in R5/R9 produced concrete fixes and irrelevant hints; do not promote that prompt rewrite. Restore the original generation policy and keep rubric v2 (keyword suggestions are acceptable) as the correction to the evaluator. Final production candidate is context preservation plus numeric reference only. Re-run tuning before the untouched holdout. This is removal of failed components, not continued sampling/prompt search. Set errors remain explicitly unresolved.
+
+## 2026-09-16 decision summary
+
+Champion scope: deterministic context repair plus numeric reference only. No statistically established overall quality champion. Generic hint-generation rewrites were reverted; rubric v2 remains.
+
+| Candidate | Win rate | Median ms | Decision | Next hypothesis |
+|---|---:|---:|---|---|
+| r4-context-v2 | 57.7% | 6844 | 情報欠落修正を採用。全般的な品質優越は未確認。 | 数値変換の仕様を参照しても誤るか。 |
+| r5-hint-v3 | 42.3% | 7658 | 生成指示変更は棄却。評価基準v2のみ保持。 | 指示追加でなく標準仕様の参照を検証。 |
+| r6-language-v4 | 53.8% | 7576 | 広い仕様メモは棄却。Numberは改善、Set/Promiseの誤適用あり。 | 挿入順の用語定義だけで矛盾を減らせるか。 |
+| r7-set-reference | 50.0% | 8633 | Set説明の改善例はあるが全体では棄却。 | 副作用のある配列・非同期メモを外す。 |
+| r8-focused-reference | 46.2% | 7888 | 棄却。新しい形式不正とSetの矛盾が残る。 | ユーザーのヒント境界を明確化して確認し探索終了。 |
+| r9-keyword-hints | 53.8% | 6299 | 日本語指示の変更は棄却。出力変動と誤ヒントが残る。 | 別入力で参照の効果と誤適用を確認。 |
+| reference-transfer-production | 43.8% | 8437 | 広い参照を棄却。数値変換の2反復のみ正答改善。 | 数値変換だけを残し、独自定義では参照しない。 |
+| final-numeric-context | 42.3% | 7129 | 数値補強は保持候補。生成指示変更を含む全体は棄却。 | 失敗した生成指示変更を元に戻して確認。 |
+| champion-context-numeric | 53.8% | 7291 | 取得済み情報の欠落修正と数値変換の補強だけを保持。総合優越未認定。 | holdoutの失敗を報告し、以後は新holdout/独立Judgeと別能力検証が必要。 |
+
+Each comparison report linked by results/followup-decisions.json records all nine axis deltas, including regressions, per-case reasons and the baseline. Holdout: 6/6 hard checks pass, 3/6 meet the main semantic requirement. No tuning after reviewing holdout. See FOLLOWUP.md for the final scope and remaining failures.

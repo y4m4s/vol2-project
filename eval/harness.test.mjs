@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { loadCases,prepare,readJson,validateConfig,createClient,hardChecks,headTail,hash,AXES,generate } from './lib.mjs';
 import { validateJudgments,bootstrapCases,metrics } from './statistics.mjs';
 const lm=readJson('eval/configs/baseline-lmstudio.json'),oll=readJson('eval/configs/baseline-ollama.json');
-test('baseline exercises actual planner: same low selection has provider-specific information loss',()=>{
+test('production planner retains collected evidence for both local providers',()=>{
   const item=loadCases('tuning').find(c=>c.id==='long-active-tail');
   const a=prepare(item,lm),b=prepare(item,oll);
-  assert.equal(a.evidencePresent,false);assert.equal(b.evidencePresent,true);
+  assert.equal(a.evidencePresent,true);assert.equal(b.evidencePresent,true);
   assert.equal(a.request.maxOutputTokens,2048);assert.equal(b.request.maxOutputTokens,8192);
   assert.equal(a.request.reasoningEffort,'none');assert.equal(b.request.reasoningEffort,'none');
   const c=prepare(item,{...lm,contextStrategy:'head-tail-v1'});
@@ -22,6 +22,8 @@ test('unsupported native sampling/context controls fail rather than silently dis
   assert.throws(()=>validateConfig({...oll,contextLength:8192}));
   assert.throws(()=>validateConfig({...lm,sampling:{top_p:2}}));
   assert.throws(()=>validateConfig({...lm,baseUrl:'http://example.com'}));
+  assert.throws(()=>validateConfig({...lm,languageReference:'unknown'}));
+  assert.throws(()=>loadCases('holdout','eval/cases/reference-transfer.json'));
   assert.doesNotThrow(()=>validateConfig({...oll,transport:'ollama-native',contextLength:8192,sampling:{top_k:20,min_p:0}}));
 });
 test('baseline wire roles and limits come from production client; native conversion is isolated',async()=>{
