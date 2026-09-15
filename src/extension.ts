@@ -36,6 +36,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   const contextCollector = new ContextCollector();
   const diagnostics = vscode.window.createOutputChannel("NaviCom Diagnostics", { log: true });
+  const writeDiagnostic = (entry: Record<string, unknown>) => diagnostics.info(JSON.stringify(entry));
   context.subscriptions.push(diagnostics);
   diagnostics.info(JSON.stringify({ event: "activation", policyRevision: GUIDANCE_POLICY_REVISION,
     extensionPath: context.extensionUri.fsPath }));
@@ -43,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
-    new AdviceService(connectionService, usageMeter, (entry) => diagnostics.info(JSON.stringify(entry))),
+    new AdviceService(connectionService, usageMeter, writeDiagnostic),
     new AdviceScheduler(),
     new RequestPlanner(),
     new SettingsService(context.workspaceState),
@@ -51,7 +52,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
     new FeedbackStore(context.globalStorageUri),
-    usageMeter
+    usageMeter,
+    writeDiagnostic
   );
 
   try {

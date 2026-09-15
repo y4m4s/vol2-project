@@ -133,11 +133,14 @@ export class NavigatorController implements vscode.Disposable {
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
     private readonly feedbackStore: FeedbackStore,
-    private readonly usageMeter: UsageMeter
+    private readonly usageMeter: UsageMeter,
+    diagnostic: (entry: Record<string, unknown>) => void = () => {}
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
     this.providerRoutingCoordinator = new ProviderRoutingCoordinator(this.connectionService, this.usageMeter, conversationStore);
-    this.conversationMemoryCoordinator = new ConversationMemoryCoordinator(this.connectionService, conversationStore, this.usageMeter);
+    this.conversationMemoryCoordinator = new ConversationMemoryCoordinator(
+      this.connectionService, conversationStore, this.usageMeter, diagnostic
+    );
     this.requestPlanCoordinator = new RequestPlanCoordinator(
       this.contextCollector,
       this.requestPlanner,

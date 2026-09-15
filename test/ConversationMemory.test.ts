@@ -29,6 +29,7 @@ test("local-only and excluded entries do not leak to clouds or summaries", () =>
 test("summary validation rejects invented ids and preserves source text", () => {
   assert.equal(validateMemorySummary([{ text: "new", sourceEntryIds: ["missing"] }], entries), undefined);
   assert.deepEqual(validateMemorySummary([{ text: "提案", sourceEntryIds: ["1"] }], entries), [{ text: "提案", sourceEntryIds: ["1"] }]);
+  assert.deepEqual(validateMemorySummary([{ text: "提案", sourceEntryIds: [" 1 "] }], entries), [{ text: "提案", sourceEntryIds: ["1"] }]);
   assert.equal(entries[0].text, "条件0: 削除しない");
 });
 

@@ -13,6 +13,16 @@ export function filterConversationSources(entries: ConversationEntry[], excluded
 
 export interface MemorySummaryItem { text: string; sourceEntryIds: string[] }
 export interface AssembledConversationMemory { text: string; sourceEntryIds: string[]; compressed: boolean }
+export type MemorySummaryValidationReason =
+  | "notArray"
+  | "tooManyItems"
+  | "invalidItem"
+  | "invalidText"
+  | "invalidSourceEntryIds"
+  | "unknownSourceEntryId";
+export type MemorySummaryValidation =
+  | { ok: true; items: MemorySummaryItem[]; normalizedSourceIdCount: number }
+  | { ok: false; reason: MemorySummaryValidationReason };
 
 // User statements remain verbatim: a heuristic cannot reliably distinguish a
 // requirement from an incidental remark. The current question always wins.
@@ -45,13 +55,31 @@ export function assembleConversationMemory(
 }
 
 export function validateMemorySummary(value: unknown, sources: ConversationEntry[]): MemorySummaryItem[] | undefined {
-  if (!Array.isArray(value) || value.length > 32) return undefined;
+  const validation = validateMemorySummaryDetailed(value, sources);
+  return validation.ok ? validation.items : undefined;
+}
+
+export function validateMemorySummaryDetailed(value: unknown, sources: ConversationEntry[]): MemorySummaryValidation {
+  if (!Array.isArray(value)) return { ok: false, reason: "notArray" };
+  if (value.length > 32) return { ok: false, reason: "tooManyItems" };
   const ids = new Set(sources.filter(e => e.transmissionClass !== "excluded").map(e => e.id));
   const result: MemorySummaryItem[] = [];
+  let normalizedSourceIdCount = 0;
   for (const item of value) {
-    if (!item || typeof item !== "object" || typeof item.text !== "string" || !item.text.trim() || item.text.length > 2000 ||
-      !Array.isArray(item.sourceEntryIds) || !item.sourceEntryIds.length || !item.sourceEntryIds.every((id: unknown) => typeof id === "string" && ids.has(id))) return undefined;
-    result.push({ text: item.text, sourceEntryIds: [...new Set<string>(item.sourceEntryIds)] });
+    if (!item || typeof item !== "object") return { ok: false, reason: "invalidItem" };
+    const candidate = item as { text?: unknown; sourceEntryIds?: unknown };
+    if (typeof candidate.text !== "string" || !candidate.text.trim() || candidate.text.length > 2000) {
+      return { ok: false, reason: "invalidText" };
+    }
+    const rawSourceEntryIds = candidate.sourceEntryIds;
+    if (!Array.isArray(rawSourceEntryIds) || !rawSourceEntryIds.length ||
+      !rawSourceEntryIds.every((id: unknown) => typeof id === "string" && id.trim().length > 0)) {
+      return { ok: false, reason: "invalidSourceEntryIds" };
+    }
+    const sourceEntryIds = rawSourceEntryIds.map(id => (id as string).trim());
+    normalizedSourceIdCount += sourceEntryIds.filter((id, index) => id !== rawSourceEntryIds[index]).length;
+    if (!sourceEntryIds.every(id => ids.has(id))) return { ok: false, reason: "unknownSourceEntryId" };
+    result.push({ text: candidate.text, sourceEntryIds: [...new Set(sourceEntryIds)] });
   }
-  return result;
+  return { ok: true, items: result, normalizedSourceIdCount };
 }
