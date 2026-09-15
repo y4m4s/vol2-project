@@ -2,6 +2,24 @@ import type { ConversationEntry } from "../shared/types";
 import { validateMemorySummaryDetailed, type MemorySummaryItem, type MemorySummaryValidationReason } from "./ConversationMemory";
 
 export interface StoredMemory { sourceIds: string[]; items: MemorySummaryItem[] }
+export interface MemoryCompactionOptions {
+  minimumNewEntries?: number;
+  recompactExisting?: boolean;
+}
+export class MemoryCompactionTimeoutError extends Error {
+  public readonly name = "MemoryCompactionTimeoutError";
+
+  public constructor(public readonly timeoutMs: number) {
+    super("Memory compaction timed out");
+  }
+}
+export class MemoryCompactionOutputLimitError extends Error {
+  public readonly name = "MemoryCompactionOutputLimitError";
+
+  public constructor() {
+    super("Memory compaction reached the output limit");
+  }
+}
 type MemoryCompactionResponseFailureReason =
   | "emptyResponse"
   | "extraTextAroundJsonFence"
@@ -11,20 +29,28 @@ export type MemoryCompactionDiagnostic =
   | { event: "memory_compaction_skipped"; reason: "notEnoughNewEntries" | "noEligibleEntries";
     newEntryCount: number; requiredEntryCount: number }
   | { event: "memory_compaction_started"; sourceEntryCount: number; previousSourceCount: number }
-  | { event: "memory_compaction_response_rejected"; reason: "requestFailed" | MemoryCompactionResponseFailureReason | MemorySummaryValidationReason;
-    responseChars?: number; responseFormat?: "plainJson" | "markdownJsonFence"; errorName?: string }
+  | { event: "memory_compaction_response_rejected"; reason: "requestFailed" | "timeout" | "outputLimit" | MemoryCompactionResponseFailureReason | MemorySummaryValidationReason;
+    responseChars?: number; responseFormat?: "plainJson" | "markdownJsonFence"; errorName?: string;
+    timeoutMs?: number; elapsedMs?: number }
   | { event: "memory_compaction_response_accepted"; responseChars: number; responseFormat: "plainJson" | "markdownJsonFence";
     summaryItemCount: number; normalizedSourceIdCount: number };
 
 export async function compactMemory(
   entries: ConversationEntry[], previous: StoredMemory | undefined, request: (input: string) => Promise<string>,
-  diagnostic: (event: MemoryCompactionDiagnostic) => void = () => {}
+  diagnostic: (event: MemoryCompactionDiagnostic) => void = () => {},
+  options: MemoryCompactionOptions = {}
 ): Promise<StoredMemory | undefined> {
+  const requestedMinimum = options.minimumNewEntries;
+  const minimumNewEntries = typeof requestedMinimum === "number" && Number.isFinite(requestedMinimum)
+    ? Math.max(1, Math.floor(requestedMinimum))
+    : 8;
   const older = entries.slice(0, -8).filter(e => e.transmissionClass !== "excluded");
-  const newEntries = older.filter(e => !previous?.sourceIds.includes(e.id));
-  if (newEntries.length < 8) {
+  const newEntries = options.recompactExisting
+    ? older
+    : older.filter(e => !previous?.sourceIds.includes(e.id));
+  if (newEntries.length < minimumNewEntries) {
     emitDiagnostic(diagnostic, { event: "memory_compaction_skipped", reason: "notEnoughNewEntries",
-      newEntryCount: newEntries.length, requiredEntryCount: 8 });
+      newEntryCount: newEntries.length, requiredEntryCount: minimumNewEntries });
     return undefined;
   }
   const selected: ConversationEntry[] = [];
@@ -37,18 +63,23 @@ export async function compactMemory(
   }
   if (!selected.length) {
     emitDiagnostic(diagnostic, { event: "memory_compaction_skipped", reason: "noEligibleEntries",
-      newEntryCount: newEntries.length, requiredEntryCount: 8 });
+      newEntryCount: newEntries.length, requiredEntryCount: minimumNewEntries });
     return undefined;
   }
   emitDiagnostic(diagnostic, { event: "memory_compaction_started", sourceEntryCount: selected.length,
     previousSourceCount: previous?.sourceIds.length ?? 0 });
   let response: string;
+  const requestStartedAt = Date.now();
   try {
     response = await request(JSON.stringify({ previous: previous?.items ?? [],
       entries: selected.map(e => ({ id: e.id, role: e.role, text: e.text })) }));
   } catch (error) {
-    emitDiagnostic(diagnostic, { event: "memory_compaction_response_rejected", reason: "requestFailed",
-      errorName: error instanceof Error ? error.name : "unknown" });
+    const timeout = error instanceof MemoryCompactionTimeoutError;
+    const outputLimit = error instanceof MemoryCompactionOutputLimitError;
+    emitDiagnostic(diagnostic, { event: "memory_compaction_response_rejected",
+      reason: timeout ? "timeout" : outputLimit ? "outputLimit" : "requestFailed",
+      errorName: error instanceof Error ? error.name : "unknown", elapsedMs: Date.now() - requestStartedAt,
+      ...(timeout ? { timeoutMs: error.timeoutMs } : {}) });
     return undefined;
   }
 

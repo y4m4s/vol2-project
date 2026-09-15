@@ -27,6 +27,8 @@
     "onCommand:aiPairNavigator.connectCopilot",
     "onCommand:aiPairNavigator.askForGuidance",
     "onCommand:aiPairNavigator.askSelection",
+    "onCommand:aiPairNavigator.compactContextLocal",
+    "onCommand:aiPairNavigator.compactContextWithoutLocal",
     "onCommand:aiPairNavigator.runEvalLive"
   ],
   "main": "./out/extension.js",
@@ -73,12 +75,28 @@
       {
         "command": "aiPairNavigator.runEvalLive",
         "title": "NaviCom: Run Prompt Evals (Live)"
+      },
+      {
+        "command": "aiPairNavigator.compactContextLocal",
+        "title": "NaviCom: コンテキスト圧縮を実行（ローカルLLM）"
+      },
+      {
+        "command": "aiPairNavigator.compactContextWithoutLocal",
+        "title": "NaviCom: コンテキスト圧縮を実行（ローカルLLMなし）"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "aiPairNavigator.runEvalLive",
+          "when": "naviCom.devMode"
+        },
+        {
+          "command": "aiPairNavigator.compactContextLocal",
+          "when": "naviCom.devMode"
+        },
+        {
+          "command": "aiPairNavigator.compactContextWithoutLocal",
           "when": "naviCom.devMode"
         }
       ]

@@ -1,7 +1,11 @@
 import * as vscode from "vscode";
 import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
-import { ConversationMemoryCoordinator } from "./coordinators/ConversationMemoryCoordinator";
+import {
+  ConversationMemoryCoordinator,
+  type CommandMemoryCompactionResult,
+  type MemoryCompactionTarget
+} from "./coordinators/ConversationMemoryCoordinator";
 import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS, routingConnectionProviderIds } from "../shared/providerRouting";
 import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordinator";
 import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
@@ -460,6 +464,41 @@ export class NavigatorController implements vscode.Disposable {
     if (providerId) this.providerRoutingCoordinator.selectOnce(state.activeConversationStreamId, providerId);
     else await this.providerRoutingCoordinator.setPreference(state.activeConversationStreamId, { mode });
     this.patchSession({ statusMessage: { kind: "info", text: providerId ? "次の送信だけ指定した接続先を使用します。" : "この相談の切り替え方式を更新しました。" } });
+  }
+
+  public async compactActiveConversation(
+    target: MemoryCompactionTarget,
+    cancellation?: vscode.CancellationToken
+  ): Promise<CommandMemoryCompactionResult> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return { status: "unavailable", reason: "別の処理が完了してから、もう一度実行してください。" };
+    }
+    if (!state.activeConversationStreamId || state.conversationHistory.length === 0) {
+      return { status: "unavailable", reason: "圧縮する会話をNaviComで開いてください。" };
+    }
+
+    const targetLabel = target === "local" ? "ローカルLLM" : "ローカルLLMなし";
+    this.patchSession({
+      requestState: "compacting_memory",
+      statusMessage: { kind: "info", text: `${targetLabel}でコンテキスト圧縮を開始します。` }
+    });
+    try {
+      const result = await this.conversationMemoryCoordinator.compactNow(
+        this.settingsService.getSettings(),
+        state.conversationHistory,
+        state.activeConversationStreamId,
+        target,
+        cancellation
+      );
+      const kind = result.status === "saved" ? "info" : result.status === "failed" || result.status === "blocked" ? "error" : "warning";
+      this.patchSession({ statusMessage: { kind, text: result.reason } });
+      return result;
+    } finally {
+      if (this.sessionStore.getState().requestState === "compacting_memory") {
+        this.patchSession({ requestState: "idle" });
+      }
+    }
   }
 
   public async refreshCurrentRequestPlan(userPrompt?: string, additionalContext?: string): Promise<void> {

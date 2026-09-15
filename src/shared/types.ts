@@ -106,6 +106,7 @@ export type RequestState =
   | "connecting"
   | "preparing_guidance"
   | "requesting_guidance"
+  | "compacting_memory"
   | "saving_knowledge"
   | "saving_feedback";
 
