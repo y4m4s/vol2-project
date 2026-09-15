@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   applyRoutingModeSelection,
   decideProviderRoute,
+  evaluateRoutingCandidateEligibility,
   normalizeRoutingSettings,
   executeProviderRoute,
   routingConnectionProviderIds,
@@ -118,6 +119,17 @@ test("never selects forbidden, unavailable or too-small candidates", () => {
     assert.equal(decideProviderRoute(settings, [{ ...candidates[0], available: false }, other], "copilot", 100).action, "stop");
   }
   assert.equal(decideProviderRoute({ ...settings, allowedProviderIds: ["copilot"] }, [{ ...candidates[0], available: false }, candidates[1]], "copilot", 100).action, "stop");
+});
+test("候補を除外した理由をDiagnostics向けに列挙する", () => {
+  const eligibility = evaluateRoutingCandidateEligibility(
+    { ...settings, allowedProviderIds: ["copilot"] },
+    candidates,
+    { ...candidates[1], available: false, maxInputTokens: 50 },
+    100,
+    true
+  );
+  assert.equal(eligibility.eligible, false);
+  assert.deepEqual(eligibility.exclusionReasons, ["unavailable", "contextLimit", "localOnly", "notAllowed"]);
 });
 test("cloud-wide budget cannot be bypassed by switching clouds", () => {
   assert.equal(decideProviderRoute({ ...settings, dailyCloudTokenSoftLimit: 10 }, candidates, "copilot", 100).action, "stop");

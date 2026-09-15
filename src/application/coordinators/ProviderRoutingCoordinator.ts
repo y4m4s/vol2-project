@@ -12,7 +12,14 @@ import type { ConnectionService } from "../../services/ConnectionService";
 import type { UsageMeter } from "../../services/UsageMeter";
 import type { ProviderEvaluationStore } from "../../services/ProviderEvaluationStore";
 import { deriveModelProfile } from "../../services/ModelProfile";
-import { decideProviderRoute, eligibleRoutingCandidates, normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS } from "../../shared/providerRouting";
+import {
+  decideProviderRoute,
+  eligibleRoutingCandidates,
+  evaluateRoutingCandidateEligibility,
+  normalizeRoutingSettings,
+  PROVIDER_IDS,
+  PROVIDER_LABELS
+} from "../../shared/providerRouting";
 import {
   classifyRoutingTask,
   decideAdaptiveRoute,
@@ -89,7 +96,22 @@ export class ProviderRoutingCoordinator {
     if (preference?.mode) routing.mode = preference.mode;
     const oneShot = stream ? this.once.get(stream) : undefined;
     if (routing.mode === "manual" && !oneShot && !preference?.providerId) {
-      return { ok: this.connection.getState() === "connected", taskProfile };
+      const connected = this.connection.getState() === "connected";
+      const currentProviderId = this.connection.getProviderId?.();
+      this.diagnostic({
+        event: "provider_route_evaluated",
+        routingMode: routing.mode,
+        taskPurpose: taskProfile.purpose,
+        complexity: taskProfile.complexity,
+        scope: taskProfile.scope,
+        classificationReasons: taskProfile.reasons,
+        action: connected ? "stay" : "stop",
+        currentProviderId,
+        selectedProviderId: currentProviderId,
+        reasonCode: "manual",
+        reason: connected ? "手動モードの現在の接続先を維持します。" : "手動モードの接続先が未接続です。"
+      });
+      return { ok: connected, taskProfile };
     }
     const current = this.connection.getProviderId();
     const models = this.connection.getTestedModels(settings);
@@ -115,6 +137,12 @@ export class ProviderRoutingCoordinator {
     let route = decideProviderRoute(routing, candidates, expected, estimated, localOnly, Boolean(pinned));
     let reasonCode = route.action === "stop" ? "ineligible" : route.action === "switch" ? "fallback" : "fixed";
     let scoreDelta: number | undefined;
+    let adaptiveDebug: ReturnType<typeof decideAdaptiveRoute>["debug"] | undefined;
+    const successfulResponseCount = this.evaluation?.getSuccessfulResponseCount() ?? 0;
+    const turnsSinceSwitch = stream
+      ? this.turnsSinceSwitch.get(stream) ?? consecutiveProviderTurns(history, route.providerId ?? current)
+      : Number.MAX_SAFE_INTEGER;
+    const allowExploration = !localOnly && estimated < 16_000;
     if (routing.mode === "automatic" && !pinned && route.action === "stay" && route.providerId) {
       const eligible = eligibleRoutingCandidates(routing, candidates, estimated, localOnly);
       const scored: ScoredRoutingCandidate[] = eligible.flatMap(candidate => {
@@ -123,35 +151,74 @@ export class ProviderRoutingCoordinator {
           stats: this.evaluation?.getStats({ providerId: model.providerId, modelId: model.modelId, taskPurpose: taskProfile.purpose }) }] : [];
       });
       const adaptive = decideAdaptiveRoute({ candidates: scored, currentProviderId: route.providerId,
-        profile: taskProfile, successfulResponseCount: this.evaluation?.getSuccessfulResponseCount() ?? 0,
-        turnsSinceSwitch: stream
-          ? this.turnsSinceSwitch.get(stream) ?? consecutiveProviderTurns(history, route.providerId)
-          : Number.MAX_SAFE_INTEGER,
-        allowExploration: !localOnly && estimated < 16_000 });
+        profile: taskProfile, successfulResponseCount,
+        turnsSinceSwitch,
+        allowExploration });
       route = { action: adaptive.action, providerId: adaptive.providerId, currentEligible: true, reason: adaptive.reason };
       reasonCode = adaptive.reasonCode;
       scoreDelta = adaptive.scoreDelta;
+      adaptiveDebug = adaptive.debug;
     }
+    const candidateDiagnostics = candidates.map(candidate => {
+      const model = models.find(item => item.providerId === candidate.providerId);
+      const eligibility = evaluateRoutingCandidateEligibility(routing, candidates, candidate, estimated, localOnly);
+      return {
+        providerId: candidate.providerId,
+        modelId: model?.modelId,
+        available: candidate.available,
+        allowed: routing.allowedProviderIds.includes(candidate.providerId),
+        eligible: eligibility.eligible,
+        exclusionReasons: eligibility.exclusionReasons,
+        maxInputTokens: candidate.maxInputTokens,
+        usedTokens: candidate.usedTokens,
+        tokenLimit: candidate.tokenLimit,
+        verifiedLocal: candidate.verifiedLocal
+      };
+    });
     this.diagnostic({
       event: "provider_route_evaluated",
+      routingMode: routing.mode,
       taskPurpose: taskProfile.purpose,
       complexity: taskProfile.complexity,
       scope: taskProfile.scope,
-      successfulResponseCount: this.evaluation?.getSuccessfulResponseCount() ?? 0,
+      classificationReasons: taskProfile.reasons,
+      currentProviderId: current,
+      expectedProviderId: expected,
+      pinned: Boolean(pinned),
+      oneShot: Boolean(oneShot),
+      localOnly,
+      estimatedInputTokens: estimated,
+      successfulResponseCount,
       eligibleProviderCount: eligibleRoutingCandidates(routing, candidates, estimated, localOnly).length,
+      turnsSinceSwitch,
+      allowExploration,
+      candidates: candidateDiagnostics,
+      adaptive: adaptiveDebug,
       action: route.action,
       selectedProviderId: route.providerId,
       reasonCode,
-      scoreDelta
+      reason: route.reason,
+      scoreDelta: scoreDelta === undefined ? undefined : Math.round(scoreDelta * 100) / 100
     });
     if (route.providerId) void this.evaluation?.recordDecision({ conversationId: stream, profile: taskProfile,
       previousProviderId: current, selectedProviderId: route.providerId, action: route.action,
       reasonCode, scoreDelta }).catch(error => this.logEvaluationError("decision", error));
     if (route.action === "stop") return { ok: false, reason: route.reason, taskProfile };
     const target = route.providerId;
-    if (cancelled()) return { ok: false, reason: "送信を中止しました。", taskProfile };
+    if (cancelled()) {
+      this.diagnostic({ event: "provider_route_cancelled", currentProviderId: current, selectedProviderId: target });
+      return { ok: false, reason: "送信を中止しました。", taskProfile };
+    }
     if (target && (target !== current || this.connection.getState() !== "connected")) {
-      if (!this.connection.activateTestedProvider(target, settings)) return { ok: false, reason: "切り替え先の接続を再確認してください。", taskProfile };
+      this.diagnostic({ event: "provider_switch_started", previousProviderId: current, selectedProviderId: target,
+        reasonCode, reconnect: target === current });
+      if (!this.connection.activateTestedProvider(target, settings)) {
+        this.diagnostic({ event: "provider_switch_failed", previousProviderId: current, selectedProviderId: target,
+          reasonCode, failureReason: "activateTestedProviderReturnedFalse" });
+        return { ok: false, reason: "切り替え先の接続を再確認してください。", taskProfile };
+      }
+      this.diagnostic({ event: "provider_switch_completed", previousProviderId: current, selectedProviderId: target,
+        reasonCode, reconnect: target === current });
       if (stream) this.selected.set(stream, oneShot ? remembered ?? current : target);
       if (stream && !oneShot) this.turnsSinceSwitch.set(stream, 0);
       if (stream) this.once.delete(stream);

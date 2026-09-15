@@ -85,6 +85,21 @@ export interface RoutingCandidate {
   verifiedLocal?: boolean;
 }
 
+export type RoutingCandidateExclusionReason =
+  | "unavailable"
+  | "contextLimit"
+  | "localOnly"
+  | "notAllowed"
+  | "providerTokenLimit"
+  | "providerSoftLimit"
+  | "cloudSoftLimit"
+  | "orcaCostLimit";
+
+export interface RoutingCandidateEligibility {
+  eligible: boolean;
+  exclusionReasons: RoutingCandidateExclusionReason[];
+}
+
 export interface ProviderRoute {
   action: "stay" | "switch" | "stop";
   providerId?: AiProviderId;
@@ -98,17 +113,34 @@ export function eligibleRoutingCandidates(
   estimatedInputTokens: number,
   localOnly = false
 ): RoutingCandidate[] {
+  return candidates.filter(candidate =>
+    evaluateRoutingCandidateEligibility(settings, candidates, candidate, estimatedInputTokens, localOnly).eligible
+  );
+}
+
+export function evaluateRoutingCandidateEligibility(
+  settings: AutomaticRoutingSettings,
+  candidates: RoutingCandidate[],
+  candidate: RoutingCandidate,
+  estimatedInputTokens: number,
+  localOnly = false
+): RoutingCandidateEligibility {
   const cloud = (p: AiProviderId): boolean => p === "copilot" || p === "orcaRouter";
   const cloudUsage = candidates.filter(c => cloud(c.providerId)).reduce((sum, c) => sum + c.usedTokens, 0);
   const near = (used: number, limit: number): boolean => limit > 0 && used >= limit * settings.thresholdPercent / 100;
-  return candidates.filter(c => c.available && c.maxInputTokens >= estimatedInputTokens &&
-    (!localOnly || c.verifiedLocal === true) &&
-    (settings.mode === "manual" || settings.allowedProviderIds.includes(c.providerId)) &&
-    !near(c.usedTokens, c.tokenLimit) &&
-    !near(c.usedTokens, settings.dailyProviderTokenSoftLimits[c.providerId] ?? 0) &&
-    !(cloud(c.providerId) && near(cloudUsage, settings.dailyCloudTokenSoftLimit)) &&
-    !(c.providerId === "orcaRouter" && settings.orcaDailyCostSoftLimit > 0 &&
-      (c.costUsd === undefined || near(c.costUsd, settings.orcaDailyCostSoftLimit))));
+  const exclusionReasons: RoutingCandidateExclusionReason[] = [];
+  if (!candidate.available) exclusionReasons.push("unavailable");
+  if (candidate.maxInputTokens < estimatedInputTokens) exclusionReasons.push("contextLimit");
+  if (localOnly && candidate.verifiedLocal !== true) exclusionReasons.push("localOnly");
+  if (settings.mode !== "manual" && !settings.allowedProviderIds.includes(candidate.providerId)) exclusionReasons.push("notAllowed");
+  if (near(candidate.usedTokens, candidate.tokenLimit)) exclusionReasons.push("providerTokenLimit");
+  if (near(candidate.usedTokens, settings.dailyProviderTokenSoftLimits[candidate.providerId] ?? 0)) exclusionReasons.push("providerSoftLimit");
+  if (cloud(candidate.providerId) && near(cloudUsage, settings.dailyCloudTokenSoftLimit)) exclusionReasons.push("cloudSoftLimit");
+  if (candidate.providerId === "orcaRouter" && settings.orcaDailyCostSoftLimit > 0 &&
+    (candidate.costUsd === undefined || near(candidate.costUsd, settings.orcaDailyCostSoftLimit))) {
+    exclusionReasons.push("orcaCostLimit");
+  }
+  return { eligible: exclusionReasons.length === 0, exclusionReasons };
 }
 
 export function decideProviderRoute(

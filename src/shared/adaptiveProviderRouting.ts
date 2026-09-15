@@ -14,6 +14,7 @@ import type { RoutingCandidate } from "./providerRouting";
 export const ROUTING_LEARNING_THRESHOLD = 10;
 export const ROUTING_SWITCH_SCORE_DELTA = 8;
 export const ROUTING_MIN_TURNS_AFTER_SWITCH = 2;
+export const ROUTING_CONTINUITY_BONUS = 4;
 
 export interface RoutingSignals {
   question: string;
@@ -46,6 +47,36 @@ export interface AdaptiveRoutingDecision {
   reason: string;
   score?: number;
   scoreDelta?: number;
+  debug: AdaptiveRoutingDebug;
+}
+
+export interface AdaptiveRoutingDebug {
+  learningStatus: RoutingLearningStatus;
+  learningThreshold: number;
+  switchScoreThreshold: number;
+  minimumTurnsAfterSwitch: number;
+  turnsSinceSwitch: number;
+  explorationDue: boolean;
+  explorationAllowed: boolean;
+  candidateScores: Array<{
+    providerId: RoutingCandidate["providerId"];
+    modelId: string;
+    initialScore: number;
+    finalScore: number;
+    observedAttemptCount: number;
+    successCount: number;
+    requestFailureCount: number;
+    formatFailureCount: number;
+    timeoutCount: number;
+    positiveFeedbackCount: number;
+    negativeFeedbackCount: number;
+    averageLatencyMs?: number;
+  }>;
+  continuityBonus: number;
+  currentBaseScore: number;
+  currentAdjustedScore: number;
+  bestProviderId: RoutingCandidate["providerId"];
+  bestScore: number;
 }
 
 export function classifyRoutingTask(signals: RoutingSignals): RoutingTaskProfile {
@@ -130,34 +161,74 @@ export function decideAdaptiveRoute(input: {
   const current = input.candidates.find(item => item.providerId === input.currentProviderId) ?? input.candidates[0];
   if (!current) throw new Error("No eligible routing candidates.");
   const status = resolveRoutingLearningStatus(input.successfulResponseCount, input.candidates.length, true);
+  const scored = input.candidates.map(candidate => ({ candidate, score: scoreRoutingCandidate(candidate, input.profile) }))
+    .sort((a, b) => b.score - a.score || a.candidate.providerId.localeCompare(b.candidate.providerId));
+  const currentBaseScore = scoreRoutingCandidate(current, input.profile);
+  const currentScore = currentBaseScore + ROUTING_CONTINUITY_BONUS;
+  const best = scored[0];
+  const explorationAllowed = input.allowExploration !== false && input.profile.complexity !== "high" &&
+    input.profile.purpose !== "riskAssessment";
+  const explorationDue = status === "active" && input.successfulResponseCount % 5 === 4;
+  const debug: AdaptiveRoutingDebug = {
+    learningStatus: status,
+    learningThreshold: ROUTING_LEARNING_THRESHOLD,
+    switchScoreThreshold: ROUTING_SWITCH_SCORE_DELTA,
+    minimumTurnsAfterSwitch: ROUTING_MIN_TURNS_AFTER_SWITCH,
+    turnsSinceSwitch: input.turnsSinceSwitch,
+    explorationDue,
+    explorationAllowed,
+    candidateScores: scored.map(item => {
+      const stats = item.candidate.stats;
+      return {
+        providerId: item.candidate.providerId,
+        modelId: item.candidate.modelId,
+        initialScore: roundedScore(initialTaskFitScore(
+          findInitialModelCapability(item.candidate.providerId, item.candidate.modelId), input.profile.purpose
+        )),
+        finalScore: roundedScore(item.score),
+        observedAttemptCount: observedAttemptCount(stats),
+        successCount: stats?.successCount ?? 0,
+        requestFailureCount: stats?.requestFailureCount ?? 0,
+        formatFailureCount: stats?.formatFailureCount ?? 0,
+        timeoutCount: stats?.timeoutCount ?? 0,
+        positiveFeedbackCount: stats?.positiveFeedbackCount ?? 0,
+        negativeFeedbackCount: stats?.negativeFeedbackCount ?? 0,
+        averageLatencyMs: stats?.successCount ? Math.round(stats.totalLatencyMs / stats.successCount) : undefined
+      };
+    }),
+    continuityBonus: ROUTING_CONTINUITY_BONUS,
+    currentBaseScore: roundedScore(currentBaseScore),
+    currentAdjustedScore: roundedScore(currentScore),
+    bestProviderId: best.candidate.providerId,
+    bestScore: roundedScore(best.score)
+  };
   if (status === "learning") return { providerId: current.providerId, action: "stay", reasonCode: "learning",
-    reason: `学習中 ${input.successfulResponseCount} / ${ROUTING_LEARNING_THRESHOLD} のため、基本プロバイダーを維持します。` };
+    reason: `学習中 ${input.successfulResponseCount} / ${ROUTING_LEARNING_THRESHOLD} のため、基本プロバイダーを維持します。`, debug };
   if (status === "readySingleProvider") return { providerId: current.providerId, action: "stay", reasonCode: "singleProvider",
-    reason: "接続確認済みの候補が1件のため、現在のプロバイダーを維持します。" };
+    reason: "接続確認済みの候補が1件のため、現在のプロバイダーを維持します。", debug };
   if (input.turnsSinceSwitch < ROUTING_MIN_TURNS_AFTER_SWITCH) return { providerId: current.providerId, action: "stay", reasonCode: "cooldown",
-    reason: "切り替え直後のため、現在のプロバイダーを維持します。" };
+    reason: "切り替え直後のため、現在のプロバイダーを維持します。", debug };
 
-  const exploration = input.allowExploration !== false && input.profile.complexity !== "high" &&
-    input.profile.purpose !== "riskAssessment" && input.successfulResponseCount % 5 === 4
+  const exploration = explorationAllowed && explorationDue
     ? input.candidates.filter(candidate => candidate.providerId !== current.providerId && observedAttemptCount(candidate.stats) < 3)
       .sort((a, b) => observedAttemptCount(a.stats) - observedAttemptCount(b.stats) || a.providerId.localeCompare(b.providerId))[0]
     : undefined;
   if (exploration) {
     return { providerId: exploration.providerId, action: "switch", reasonCode: "exploration",
-      reason: "低リスクの相談で、実績が少ない接続先を評価するため切り替えます。" };
+      reason: "低リスクの相談で、実績が少ない接続先を評価するため切り替えます。", debug };
   }
 
-  const scored = input.candidates.map(candidate => ({ candidate, score: scoreRoutingCandidate(candidate, input.profile) }))
-    .sort((a, b) => b.score - a.score || a.candidate.providerId.localeCompare(b.candidate.providerId));
-  const currentScore = scoreRoutingCandidate(current, input.profile) + 4;
-  const best = scored[0];
   const delta = best.candidate.providerId === current.providerId ? 0 : best.score - currentScore;
   if (best.candidate.providerId === current.providerId || delta < ROUTING_SWITCH_SCORE_DELTA) {
     return { providerId: current.providerId, action: "stay", reasonCode: "scoreBelowThreshold",
-      reason: "候補の適性差が切り替え基準未満のため、現在のプロバイダーを維持します。", score: currentScore, scoreDelta: Math.max(0, delta) };
+      reason: "候補の適性差が切り替え基準未満のため、現在のプロバイダーを維持します。", score: currentScore, scoreDelta: Math.max(0, delta), debug };
   }
   return { providerId: best.candidate.providerId, action: "switch", reasonCode: "taskFit",
-    reason: `${routingPurposeLabel(input.profile.purpose)}への適性が現在の候補より高いため切り替えます。`, score: best.score, scoreDelta: delta };
+    reason: `${routingPurposeLabel(input.profile.purpose)}への適性が現在の候補より高いため切り替えます。`, score: best.score, scoreDelta: delta, debug };
+}
+
+function roundedScore(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function observedAttemptCount(stats?: RoutingObservedStats): number {
