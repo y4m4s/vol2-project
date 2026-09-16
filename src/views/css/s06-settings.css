@@ -325,43 +325,6 @@
   border-top: 1px solid var(--vscode-panel-border);
 }
 
-.routing-learning-status {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.35));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-focusBorder) 12%);
-}
-
-.routing-learning-status > .material-symbols-outlined {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: var(--vscode-focusBorder);
-  font-size: 20px;
-}
-
-.routing-learning-status > div {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-
-.routing-learning-status span:last-child {
-  color: var(--vscode-descriptionForeground);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.routing-learning-status.active {
-  border-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 55%, transparent);
-}
-
-.routing-learning-status.active > .material-symbols-outlined {
-  color: var(--vscode-testing-iconPassed, #73c991);
-}
-
 .routing-subsection + .routing-subsection {
   margin-top: 16px;
 }
