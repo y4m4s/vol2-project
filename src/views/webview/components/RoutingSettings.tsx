@@ -1,4 +1,4 @@
-import type { AiProviderId, AutomaticRoutingSettings, RoutingProviderConnectionStatus } from "../../../shared/types";
+import type { AiProviderId, AutomaticRoutingSettings, RoutingLearningViewData, RoutingProviderConnectionStatus } from "../../../shared/types";
 import { PROVIDER_IDS, PROVIDER_LABELS, selectableBasicProviderIds, toggleRoutingProviderSelection } from "../../../shared/providerRouting";
 import { ProviderLogo } from "./ProviderLogo";
 
@@ -8,6 +8,7 @@ export function RoutingSettings({
   tested,
   connection,
   localProvidersWithModels,
+  learning,
   disabled
 }: {
   value: AutomaticRoutingSettings;
@@ -15,6 +16,7 @@ export function RoutingSettings({
   tested: AiProviderId[];
   connection?: RoutingProviderConnectionStatus;
   localProvidersWithModels: AiProviderId[];
+  learning?: RoutingLearningViewData;
   disabled: boolean;
 }) {
   const automatic = value.mode === "automatic";
@@ -27,6 +29,13 @@ export function RoutingSettings({
 
   return <fieldset className="routing-settings" disabled={disabled}>
     {automatic && <div className="routing-auto-settings">
+      {learning && learning.status !== "manual" && <div className={`routing-learning-status ${learning.status}`} aria-live="polite">
+        <RoutingLearningIcon status={learning.status} />
+        <div>
+          <strong>{learning.status === "active" ? "自動選択が有効" : learning.status === "readySingleProvider" ? "学習完了" : `学習中 ${learning.successfulResponseCount} / ${learning.threshold}`}</strong>
+          <span>{learning.reason}</span>
+        </div>
+      </div>}
       <section className="routing-subsection" aria-labelledby="routing-candidates-title">
         <div className="routing-provider-heading">
           <div>
@@ -87,4 +96,10 @@ export function RoutingSettings({
       </section>
     </div>}
   </fieldset>;
+}
+
+function RoutingLearningIcon({ status }: { status: RoutingLearningViewData["status"] }) {
+  if (status === "active") return <span className="material-symbols-outlined" aria-hidden="true">sync</span>;
+  if (status === "readySingleProvider") return <span className="material-symbols-outlined" aria-hidden="true">add_comment</span>;
+  return <span className="material-symbols-outlined" aria-hidden="true">memory</span>;
 }
