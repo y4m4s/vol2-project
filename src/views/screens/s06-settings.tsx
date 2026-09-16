@@ -232,7 +232,6 @@ export function S06Settings() {
         <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
           connection={viewModel?.routingProviderConnection}
           localProvidersWithModels={localProvidersWithModels}
-          learning={viewModel?.routingLearning}
           disabled={viewModel?.isBusy ?? false} />
       </div>
 
