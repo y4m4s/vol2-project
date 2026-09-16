@@ -1,0 +1,41 @@
+{
+  "baseline": "eval/results/af-oll-thinking-pilot-baseline",
+  "candidate": "eval/results/af-oll-thinking-pilot-candidate",
+  "split": "tuning",
+  "seed": "814cd3dd7a753bae7de41e18312cfa60",
+  "packetHash": "68363d7c79dcd553131fefa62f27907347cb4534982caec43d0f2de3cb6b7516",
+  "pairs": [
+    {
+      "pairId": "6afb159d57fdd995",
+      "caseId": "alg-sum-correct-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "f7008972c8ef63f421fb85acaf9c9f9436a2a1b9d1f46e84ec6e3b55cce2502b"
+    },
+    {
+      "pairId": "09a8af5546cb5003",
+      "caseId": "alg-sum-bug-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "2c6cc1580ef1e491a69570304793390aea2829a6c0c86a83e3db030302c14db2"
+    },
+    {
+      "pairId": "4e85d89070826787",
+      "caseId": "alg-lower-bound-py",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "98522bbfe16a101b2d91fa306040d488e5994d200bb0e4351091d716dd7db270"
+    },
+    {
+      "pairId": "696538de97b54cf2",
+      "caseId": "alg-pair-bug-js",
+      "problemId": "pair-existence",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "aeaa30ab05732653eda298e7f072bc1c90a652e99b667a53814ccc6bc733bd64"
+    }
+  ]
+}

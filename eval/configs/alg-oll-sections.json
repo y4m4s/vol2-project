@@ -1,0 +1,15 @@
+{
+  "id": "alg-oll-sections",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "baseUrl": "http://127.0.0.1:11434",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "production",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null,
+  "collectorContext": "bounded-file",
+  "problemLayout": "sections"
+}

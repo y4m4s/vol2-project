@@ -422,7 +422,7 @@
 .s04-md-file-reference:focus-visible {
   opacity: 1;
   text-decoration: underline;
-  outline: 1px solid var(--vscode-focusBorder);
+  outline: 1px solid var(--navicom-focus-outline);
   outline-offset: 1px;
 }
 
@@ -430,7 +430,7 @@
 .referenced-files-card-item:focus-visible {
   opacity: 1;
   background: var(--vscode-toolbar-hoverBackground);
-  outline: 1px solid var(--vscode-focusBorder);
+  outline: 1px solid var(--navicom-focus-outline);
   outline-offset: -1px;
 }
 

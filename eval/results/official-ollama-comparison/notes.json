@@ -1,0 +1,7 @@
+[
+{"pairId":"57528079bc8aa725","verdict":"tie","reason":"AはSetの順序を誤説明し、Bは不要な追加文脈を要求して比較に答えない。","B":{"scores":[1,2,0,3,0,0,0,3,3],"reasons":["比較を回答しない","追加文脈がないこと自体は事実","質問の情報を使わない","文脈が必須と誤示唆","依頼を拒む形になる","学びなし","不要な再質問へ誘導","短い","タグ露出"],"failures":["ignored_context"]}},
+{"pairId":"b73575c81dbb851b","verdict":"tie","reason":"同じ縦横の見逃し。"},
+{"pairId":"3a4b21018bb03743","verdict":"tie","reason":"両方が範囲外とNaNを正しく説明する一方、修正式を漏らす。","A":{"scores":[4,4,4,4,1,2,3,2,3],"reasons":["範囲外加算は正しい","条件に根拠","iとlengthを使用","創作なし","修正式を漏らす","発見を奪う","確認は実行可能","長い","タグ露出"],"failures":["hint_leakage","excessive_verbosity"]}},
+{"pairId":"f13f6afcd64042e9","verdict":"A_slight","reason":"意味は同等だがBの「変数に…計算しています」が不自然。","B":{"scores":[4,4,4,4,4,3,4,4,2],"reasons":["合計と初期値が正しい","pricesに根拠","0を説明","創作なし","2文以内","空配列の補足なし","処理を追える","短い","助詞と述語が不自然"],"failures":["japanese"]}},
+{"pairId":"a4c38c012fe1b37b","verdict":"tie","reason":"ともにawaitという答えを提示。","A":{"scores":[4,4,4,4,0,2,3,4,4],"reasons":["Promise待機は正しい","fetchに根拠","非同期に着目","創作なし","答えを漏らす","発見を奪う","方向は正しい","短い","自然"],"failures":["hint_leakage"]}}
+]

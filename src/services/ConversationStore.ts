@@ -15,10 +15,12 @@ import {
   TokenUsage,
   FeedbackRating
 } from "../shared/types";
+import type { ConversationRoutingPreference, RoutingTaskPurpose } from "../shared/types";
 import { isSlashCommand } from "../shared/skills";
 import { parseAutomaticFocus } from "../shared/automaticGuidance";
 import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
 import { SerialTaskQueue } from "./SerialTaskQueue";
+import { validateMemorySummary, type MemorySummaryItem } from "./ConversationMemory";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -79,6 +81,47 @@ export class ConversationRevisionConflictError extends Error {
 }
 
 export class ConversationStore implements vscode.Disposable {
+  public getRoutingPreference(streamId: string): ConversationRoutingPreference | undefined {
+    const stmt = this.getDb().prepare("SELECT routing_json FROM conversation_streams WHERE id = ?");
+    try {
+      stmt.bind([streamId]);
+      if (!stmt.step()) return undefined;
+      const value = this.parseJson<ConversationRoutingPreference>(stmt.getAsObject().routing_json);
+      if (!value) return undefined;
+      const storedMode = (value as { mode?: unknown }).mode;
+      return { mode: storedMode === "manual" || storedMode === "automatic" ? storedMode : storedMode === "automaticSuggest" ? "manual" : undefined,
+        providerId: this.parseProviderId(value.providerId) };
+    } finally { stmt.free(); }
+  }
+
+  public async saveRoutingPreference(streamId: string, value: ConversationRoutingPreference): Promise<void> {
+    return this.mutationQueue.run(async () => {
+      this.getDb().run("UPDATE conversation_streams SET routing_json = ? WHERE id = ?", [JSON.stringify(value), streamId]);
+      await this.persist();
+    });
+  }
+  public getMemory(streamId: string): { sourceIds: string[]; items: MemorySummaryItem[] } | undefined {
+    const stmt = this.getDb().prepare("SELECT memory_json FROM conversation_memories WHERE stream_id = ?");
+    try {
+      stmt.bind([streamId]);
+      if (!stmt.step()) return undefined;
+      const value = this.parseJson<{ sourceIds: string[]; items: MemorySummaryItem[] }>(stmt.getAsObject().memory_json);
+      const entries = this.get(streamId)?.entries ?? [];
+      if (!value || !Array.isArray(value.sourceIds) || !value.sourceIds.every(id => entries.some(e => e.id === id))) return undefined;
+      const items = validateMemorySummary(value.items, entries);
+      return items ? { sourceIds: value.sourceIds, items } : undefined;
+    } finally { stmt.free(); }
+  }
+
+  public async saveMemory(streamId: string, revision: number, sourceIds: string[], items: MemorySummaryItem[]): Promise<boolean> {
+    return this.mutationQueue.run(async () => {
+      const record = this.get(streamId);
+      if (!record || record.revision !== revision || !sourceIds.every(id => record.entries.some(e => e.id === id)) || !validateMemorySummary(items, record.entries)) return false;
+      this.getDb().run("INSERT INTO conversation_memories (stream_id, memory_json) VALUES (?, ?) ON CONFLICT(stream_id) DO UPDATE SET memory_json = excluded.memory_json", [streamId, JSON.stringify({ sourceIds, items })]);
+      await this.persist();
+      return true;
+    });
+  }
   private db?: SqlJsDatabase;
   private dbUri?: vscode.Uri;
   private readonly mutationQueue = new SerialTaskQueue();
@@ -228,8 +271,8 @@ export class ConversationStore implements vscode.Disposable {
         normalizedEntries.forEach((entry, index) => {
           this.getDb().run(
             `INSERT INTO conversation_entries
-          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback, automatic_focus)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (id, stream_id, entry_order, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback, automatic_focus, transmission_class, route_reason, routing_task_purpose)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            stream_id = excluded.stream_id,
            entry_order = excluded.entry_order,
@@ -249,7 +292,10 @@ export class ConversationStore implements vscode.Disposable {
            model_label = excluded.model_label,
            response_metadata_json = excluded.response_metadata_json,
            feedback = excluded.feedback,
-           automatic_focus = excluded.automatic_focus`,
+           automatic_focus = excluded.automatic_focus,
+           transmission_class = excluded.transmission_class,
+           route_reason = excluded.route_reason,
+           routing_task_purpose = excluded.routing_task_purpose`,
             this.toEntryParams(nextRecord.id, index, entry)
           );
         });
@@ -413,6 +459,7 @@ export class ConversationStore implements vscode.Disposable {
 
     this.ensureColumn("conversation_streams", "additional_context", "TEXT");
     this.ensureColumn("conversation_streams", "revision", "INTEGER NOT NULL DEFAULT 0");
+    this.ensureColumn("conversation_streams", "routing_json", "TEXT");
     this.ensureColumn("conversation_entries", "assistance_depth", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
@@ -423,6 +470,12 @@ export class ConversationStore implements vscode.Disposable {
     this.ensureColumn("conversation_entries", "response_metadata_json", "TEXT");
     this.ensureColumn("conversation_entries", "feedback", "TEXT");
     this.ensureColumn("conversation_entries", "automatic_focus", "TEXT");
+    this.ensureColumn("conversation_entries", "transmission_class", "TEXT");
+    this.ensureColumn("conversation_entries", "route_reason", "TEXT");
+    this.ensureColumn("conversation_entries", "routing_task_purpose", "TEXT");
+    this.getDb().run(`CREATE TABLE IF NOT EXISTS conversation_memories (stream_id TEXT PRIMARY KEY, memory_json TEXT NOT NULL);
+      CREATE TRIGGER IF NOT EXISTS delete_conversation_memory AFTER DELETE ON conversation_streams
+      BEGIN DELETE FROM conversation_memories WHERE stream_id = OLD.id; END;`);
 
     if (version < CONVERSATION_SCHEMA_VERSION) {
       // 収集したソース断片や追加文脈は応答生成中だけメモリに保持し、履歴DBには残さない。
@@ -483,7 +536,7 @@ export class ConversationStore implements vscode.Disposable {
 
   private selectEntries(streamId: string): ConversationEntry[] {
     const stmt = this.getDb().prepare(
-      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback, automatic_focus
+      `SELECT id, role, text, created_at, kind, based_on_json, mode, assistance_depth, slash_command, slash_command_scope, request_plan_json, token_usage_json, provider_id, model_id, model_label, response_metadata_json, feedback, automatic_focus, transmission_class, route_reason, routing_task_purpose
          FROM conversation_entries
         WHERE stream_id = ?
         ORDER BY entry_order ASC`
@@ -509,6 +562,9 @@ export class ConversationStore implements vscode.Disposable {
     if (removedIds.length === 0) {
       return;
     }
+
+    // 削除対象の発言を元にした要約を、SQLiteやバックアップへ残さない。
+    this.getDb().run("DELETE FROM conversation_memories WHERE stream_id = ?", [streamId]);
 
     for (let index = 0; index < removedIds.length; index += 200) {
       const chunk = removedIds.slice(index, index + 200);
@@ -579,6 +635,9 @@ export class ConversationStore implements vscode.Disposable {
 
   private entryFromRow(row: Record<string, unknown>): ConversationEntry {
     return {
+      transmissionClass: row.transmission_class === "localOnly" || row.transmission_class === "cloudAllowed" || row.transmission_class === "excluded" ? row.transmission_class : undefined,
+      routeReason: this.normalizeOptionalText(row.route_reason, 1000),
+      routingTaskPurpose: this.parseRoutingTaskPurpose(row.routing_task_purpose),
       focus: row.kind === "always" ? parseAutomaticFocus(row.automatic_focus) : undefined,
       id: String(row.id),
       role: this.parseRole(row.role),
@@ -621,8 +680,16 @@ export class ConversationStore implements vscode.Disposable {
       entry.modelLabel ?? null,
       entry.responseMetadata ? JSON.stringify(entry.responseMetadata) : null,
       entry.feedback ?? null,
-      entry.kind === "always" ? parseAutomaticFocus(entry.focus) ?? null : null
+      entry.kind === "always" ? parseAutomaticFocus(entry.focus) ?? null : null,
+      entry.transmissionClass ?? null,
+      entry.routeReason ?? null,
+      entry.routingTaskPurpose ?? null
     ];
+  }
+
+  private parseRoutingTaskPurpose(value: unknown): RoutingTaskPurpose | undefined {
+    return value === "learning" || value === "explanation" || value === "implementation" ||
+      value === "review" || value === "riskAssessment" || value === "summarization" ? value : undefined;
   }
 
   private ensureColumn(tableName: string, columnName: string, definition: string): void {

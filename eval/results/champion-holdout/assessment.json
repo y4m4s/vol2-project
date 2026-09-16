@@ -1,0 +1,226 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価を担当。独立Judgeなし。holdout閲覧後の最適化は行わない。"
+  },
+  "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+  "scores": {
+    "correctness": 3.3333333333333335,
+    "groundedness": 3.5,
+    "context_utilization": 3.3333333333333335,
+    "hallucination": 3.5,
+    "instruction_following": 2.5,
+    "pedagogical_usefulness": 2.5,
+    "actionability": 3.3333333333333335,
+    "conciseness": 3.1666666666666665,
+    "japanese_quality": 2.8333333333333335
+  },
+  "cases": [
+    {
+      "caseId": "holdout-task",
+      "repeat": 0,
+      "caseHash": "a583510b4804c70906c21192a5e89dc1fb30d075e844fa92a6ad70285ccdbeb4",
+      "answerHash": "b8bc171ddf284f1ac1c0da347297f8733359fac0eb239b46b0295e58d43d0126",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "同じ値を1回という要件に正答",
+        "groundedness": "課題文を根拠にする",
+        "context_utilization": "追加文脈を優先",
+        "hallucination": "創作なし",
+        "instruction_following": "実装を出さない",
+        "pedagogical_usefulness": "要件を理解できる",
+        "actionability": "出力が明確",
+        "conciseness": "タグ説明が余分",
+        "japanese_quality": "内部タグ不要"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "holdout-learn",
+      "repeat": 0,
+      "caseHash": "622f34a9d244562830e45fcf4f26583da00980cae0519aac22903537612aea2b",
+      "answerHash": "c539a6269c2db45a1f710873c456a55211a8c910ba32224c837572b7c109915a",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 2,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 1,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 2
+      },
+      "reasons": {
+        "correctness": "既存mapの処理自体は正しい",
+        "groundedness": "コードに基づく",
+        "context_utilization": "次の学びの要求を無視",
+        "hallucination": "創作なし",
+        "instruction_following": "新しい事項を提示しない",
+        "pedagogical_usefulness": "既習処理の再実行のみ",
+        "actionability": "確認手順は明確",
+        "conciseness": "短いが3手順",
+        "japanese_quality": "数组という中国語混在"
+      },
+      "failures": [
+        "weak_pedagogy",
+        "japanese"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "holdout-promise",
+      "repeat": 0,
+      "caseHash": "0261a8e624c8ccd2dd47fb959b8205d8d1b5b314e7bf6d15997931337a9f88b2",
+      "answerHash": "f958c694e748762f8dfbedcee2032fd09a84b5e64ec907d2153d1db7262fe62e",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 1,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 1,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "例外がなければ永続化と仮定する誤り",
+        "groundedness": "未提示のsave契約を仮定",
+        "context_utilization": "awaitだけでは保証できない点を見逃す",
+        "hallucination": "永続化を勝手に仮定",
+        "instruction_following": "必ずかに適切に答えない",
+        "pedagogical_usefulness": "誤った保証を教える",
+        "actionability": "実装確認の提案のみ有用",
+        "conciseness": "ほぼ短い",
+        "japanese_quality": "内部タグ不要"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "hallucination"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "holdout-explain",
+      "repeat": 0,
+      "caseHash": "240827b1749dfcd274411bffbd93592c2710aa8d43dbfc5411168db042f79959",
+      "answerHash": "9df76acc766db50e18a51424b9f879b074686d6f89ba67c0758e30a5f0b2d523",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "名前の文字列化は正しいがカンマ後の空白は未説明",
+        "groundedness": "mapとjoinに基づく",
+        "context_utilization": "名前抽出を使用",
+        "hallucination": "創作なし",
+        "instruction_following": "短い説明",
+        "pedagogical_usefulness": "処理の流れが分かる",
+        "actionability": "結果の種類が明確",
+        "conciseness": "短い",
+        "japanese_quality": "自然"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "holdout-long",
+      "repeat": 0,
+      "caseHash": "0e52ffea932431eeaeaa0b6b1f2dc6f8c6358aaeaf72ae922ecdf4a562b79ebb",
+      "answerHash": "4693fdcfc7adbecf2ad627d3afc63efd8d976caf71d3fe3d6a75952d8be47cbc",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "falseとbooleanは正しい",
+        "groundedness": "isReady定義を根拠にする",
+        "context_utilization": "末尾関数が届く",
+        "hallucination": "創作なし",
+        "instruction_following": "型と値へ回答",
+        "pedagogical_usefulness": "比較結果を説明",
+        "actionability": "結果が明確",
+        "conciseness": "やや長い",
+        "japanese_quality": "内部タグ不要"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "holdout-null",
+      "repeat": 0,
+      "caseHash": "3db92857d4f46c6ecf0af60bc5d2ff084e66c3c15dcc1e7376525eb5ef4625fd",
+      "answerHash": "e42214afe95c7212aa7ceac18aae053e818c981339d85d0aca8ec698ece5fdb5",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 2
+      },
+      "reasons": {
+        "correctness": "address欠落と例外が正しい",
+        "groundedness": "プロパティアクセスに基づく",
+        "context_utilization": "対象箇所を参照",
+        "hallucination": "入力データの創作なし",
+        "instruction_following": "三項演算子の完成置換を提示",
+        "pedagogical_usefulness": "考える余地を奪う",
+        "actionability": "修正方法は有効",
+        "conciseness": "ほぼ短い",
+        "japanese_quality": "HTML不要"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    }
+  ],
+  "semanticTaskPass": 3,
+  "n": 6,
+  "hardPassRate": 1,
+  "latencyMedianMs": 6241.39005,
+  "latencyP95Ms": 8929.281799999997,
+  "inputTokensMean": 741,
+  "tokensPerSecondMedian": 13.541614552229458,
+  "loadMedianMs": null,
+  "loadMaxMs": null,
+  "pipelineFailures": {}
+}

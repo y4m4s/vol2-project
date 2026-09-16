@@ -1,0 +1,115 @@
+{
+  "judge": {
+    "id": "REQUIRED: model or reviewer",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "Record prior context and calibration limitations"
+  },
+  "packetHash": "61b9a59f46a80817315642c3effac0727adc82f200d39dff2272b949168f0ea4",
+  "judgments": [
+    {
+      "pairId": "5fe31779e0e59748",
+      "pairHash": "114caf7a8b9d350a84d1db54662def1186426fe204782269d1d955f7a256d468",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "1e560fe15cf81c31",
+      "pairHash": "66847a0abd26711988eb6ee3e04030bd9ded02f1e8df2cb2fa997b2916a492d0",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "876468746d7e64e7",
+      "pairHash": "c954f21023e9a6d501524693f4aaa3f1890027aa656c8122c69d29163bb8ef8e",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "b79a25dc35c368c7",
+      "pairHash": "6b2b04e6ff195aad39eca5a5d193e94b44307ef8487e85ed081ca357b64c12bb",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "52b9aa94b0fd0115",
+      "pairHash": "3cac7d5372074c0a9bccab3319c6c489e3103e1a63f9a9b7ade2e339108b2eb1",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "ca069dd249a8faf8",
+      "pairHash": "ffc1479d84ce40c24094eebde2fa4703cd4bd914bb4d4fe97a024e8033d3063f",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "ab2b3c7a4697720d",
+      "pairHash": "d67b9998938a6109ca2fac302c1291d700bde57a5bad626081f968a2e2254dfb",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "398ad75998576b89",
+      "pairHash": "adc839fed4156007c75ee0ca4f921f687b09d0fc1b407c9e6b26d240a6692b42",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "f2d8db7ea417a7c8",
+      "pairHash": "faffa1262efe62359b17e7a38ee2beef08280a025cd8f79bdee4804b83a4ca7d",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "2d3b738b8591eed1",
+      "pairHash": "ca101f70842dcbb4b085051c8236971f9e2a76c53fca69f400eb31b9d5f4818d",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "66c09821dd7d2bed",
+      "pairHash": "d15c51161a88b3815d041866b3c715c8e90b2979675a99e914bc2de5ca38b5f3",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "8ff268d939089b4c",
+      "pairHash": "fe4ecd1f4b70e4d7dd20bc9d2a2e871eab375c7771d48983e0eaee34e21ce69a",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "a5611f92856f558d",
+      "pairHash": "f0ec324e387a29f908758a1c7f563460637a7c06461b0f54688e0afe09d12148",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    }
+  ]
+}

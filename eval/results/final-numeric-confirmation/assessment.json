@@ -1,0 +1,156 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価を担当。独立Judgeなし。holdout閲覧後の最適化は行わない。"
+  },
+  "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+  "scores": {
+    "correctness": 4,
+    "groundedness": 4,
+    "context_utilization": 4,
+    "hallucination": 4,
+    "instruction_following": 4,
+    "pedagogical_usefulness": 4,
+    "actionability": 4,
+    "conciseness": 3.5,
+    "japanese_quality": 4
+  },
+  "cases": [
+    {
+      "caseId": "transfer-shadowed",
+      "repeat": 1,
+      "caseHash": "dbb8640eb8513eb9d4a259ef0130a19d8b73b95db54dbb269511720919bf92a6",
+      "answerHash": "fb729ceb2f9a4c3f416159b2056e78051f4bf276e1baa554845eed4e8ec6169c",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "custom:とstringは正しい",
+        "groundedness": "独自定義を参照",
+        "context_utilization": "同名関数を標準変換と区別",
+        "hallucination": "空白などの創作なし",
+        "instruction_following": "値と型へ回答",
+        "pedagogical_usefulness": "連結を説明",
+        "actionability": "値が明確",
+        "conciseness": "やや反復",
+        "japanese_quality": "自然"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "transfer-numeric",
+      "repeat": 1,
+      "caseHash": "2cdf5aba0491d4eebb85501ec8dc4bf78e7205daf2e2f4ef84f1e681a7136cd1",
+      "answerHash": "d558811b3005474e09e8ee8339c52b9e5e06f1d4fe33feb4de62de8c4e3eeb4b",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "0,NaN,19の全て正しい",
+        "groundedness": "標準変換と一致",
+        "context_utilization": "三つの式を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "順に短く回答",
+        "pedagogical_usefulness": "部分解析との違いを説明",
+        "actionability": "値が明確",
+        "conciseness": "短い",
+        "japanese_quality": "自然"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "transfer-shadowed",
+      "repeat": 0,
+      "caseHash": "dbb8640eb8513eb9d4a259ef0130a19d8b73b95db54dbb269511720919bf92a6",
+      "answerHash": "df4a7b6c31c5a2038e8424c4f7b55abf5d1b99e51b3bd0312bf93eca136b6866",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "custom:とstringは正しい",
+        "groundedness": "独自定義を参照",
+        "context_utilization": "同名関数を標準変換と区別",
+        "hallucination": "空白などの創作なし",
+        "instruction_following": "値と型へ回答",
+        "pedagogical_usefulness": "連結を説明",
+        "actionability": "値が明確",
+        "conciseness": "やや反復",
+        "japanese_quality": "自然"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "transfer-numeric",
+      "repeat": 0,
+      "caseHash": "2cdf5aba0491d4eebb85501ec8dc4bf78e7205daf2e2f4ef84f1e681a7136cd1",
+      "answerHash": "99afdc6f6627cdb695426fd4a3760d6cba4fd598a2ff6fc34682a422fe768407",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "0,NaN,19の全て正しい",
+        "groundedness": "標準変換と一致",
+        "context_utilization": "三つの式を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "順に短く回答",
+        "pedagogical_usefulness": "部分解析との違いを説明",
+        "actionability": "値が明確",
+        "conciseness": "短い",
+        "japanese_quality": "自然"
+      },
+      "failures": [],
+      "meetsTask": true
+    }
+  ],
+  "semanticTaskPass": 4,
+  "n": 4,
+  "hardPassRate": 1,
+  "latencyMedianMs": 6749.3162,
+  "latencyP95Ms": 7233.208200000001,
+  "inputTokensMean": 774.5,
+  "tokensPerSecondMedian": 13.812089557211289,
+  "loadMedianMs": null,
+  "loadMaxMs": null,
+  "pipelineFailures": {}
+}

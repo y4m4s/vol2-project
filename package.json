@@ -5,7 +5,11 @@
   "version": "0.0.1",
   "publisher": "local-dev",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/y4m4s/vol2-project.git"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -27,6 +31,8 @@
     "onCommand:aiPairNavigator.connectCopilot",
     "onCommand:aiPairNavigator.askForGuidance",
     "onCommand:aiPairNavigator.askSelection",
+    "onCommand:aiPairNavigator.compactContextLocal",
+    "onCommand:aiPairNavigator.compactContextWithoutLocal",
     "onCommand:aiPairNavigator.runEvalLive"
   ],
   "main": "./out/extension.js",
@@ -73,12 +79,28 @@
       {
         "command": "aiPairNavigator.runEvalLive",
         "title": "NaviCom: Run Prompt Evals (Live)"
+      },
+      {
+        "command": "aiPairNavigator.compactContextLocal",
+        "title": "NaviCom: コンテキスト圧縮を実行（ローカルLLM）"
+      },
+      {
+        "command": "aiPairNavigator.compactContextWithoutLocal",
+        "title": "NaviCom: コンテキスト圧縮を実行（ローカルLLMなし）"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "aiPairNavigator.runEvalLive",
+          "when": "naviCom.devMode"
+        },
+        {
+          "command": "aiPairNavigator.compactContextLocal",
+          "when": "naviCom.devMode"
+        },
+        {
+          "command": "aiPairNavigator.compactContextWithoutLocal",
           "when": "naviCom.devMode"
         }
       ]
@@ -113,25 +135,29 @@
     "build:webview": "node scripts/clean-webview-output.mjs && esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --define:process.env.NODE_ENV=\\\"production\\\" --minify",
     "check:webview-size": "node scripts/check-webview-size.mjs",
     "check:icon-subset": "node scripts/check-icon-subset.mjs",
-    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/FeedbackTendencyPolicy.test.js .test-out/test/FeedbackCoordinator.test.js .test-out/test/SerialTaskQueue.test.js .test-out/test/LmStudioClient.test.js .test-out/test/OllamaClient.test.js .test-out/test/OrcaRouterClient.test.js .test-out/test/OrcaRouterErrorPolicy.test.js .test-out/test/OrcaRouterModelPolicy.test.js .test-out/test/OrcaRouterCredentialStore.test.js .test-out/test/LmStudioServerProtocol.test.js .test-out/test/WebviewMessages.test.js .test-out/test/GuidanceInput.test.js .test-out/test/NavigationCoordinator.test.js .test-out/test/RequestPlanner.test.js .test-out/test/RequestPlanTransmission.test.js .test-out/test/RequestPlanCoordinator.test.js .test-out/test/WorkspacePathPolicy.test.js .test-out/test/GlobMatch.test.js .test-out/test/PromptBuilder.test.js .test-out/test/GuidanceResponsePolicy.test.js .test-out/test/UsageMeter.test.js .test-out/test/SingleFlightGate.test.js .test-out/test/KnowledgeSearch.test.js .test-out/test/AdviceService.test.js .test-out/test/AutomaticGuidance.test.js .test-out/test/ConnectionService.test.js .test-out/test/EvalRunner.test.js .test-out/test/AutomaticObservation.test.js",
+    "test": "tsc -p tsconfig.test.json && node scripts/run-tests.mjs",
     "eval": "npm run compile:ext && node out/eval/run-static.js",
     "eval:ollama-completion": "npm run compile:ext && node scripts/eval-ollama-completion.mjs",
+    "eval:lmstudio-completion": "npm run compile:ext && node scripts/eval-lmstudio-completion.mjs",
+    "test:local-eval": "npm run compile:ext && node --test test/LocalCompletionEval.test.mjs",
     "watch": "tsc -watch -p ./",
     "watch:webview": "esbuild src/views/webview/index.tsx --bundle --outdir=out/webview --entry-names=main --chunk-names=chunks/[name]-[hash] --format=esm --splitting --platform=browser --target=es2020 --tsconfig=tsconfig.webview.json --watch",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run compile",
+    "eval:quality": "npm run compile:ext && node eval/run.mjs",
+    "test:quality-eval": "npm run compile:ext && node --test eval/harness.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@types/react-dom": "^19.3.0",
     "@types/vscode": "1.99.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.9.1",
     "mermaid": "^11.17.2",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.3.0",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.69.0"
+    "typescript-eslint": "^8.70.0"
   },
   "dependencies": {
     "sql.js": "^1.14.2"

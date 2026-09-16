@@ -1,0 +1,15 @@
+[
+{"pairId":"8634d6493e07eb8c","verdict":"tie","reason":"Aはawaitを漏らし、Bは根本原因への導線が弱い。","A":{"scores":[3,3,3,4,0,2,2,4,4],"reasons":["Promiseは正しいがjsonの待機との区別が曖昧","fetchに根拠","非同期処理に注目","架空情報なし","awaitという答えを漏らす","発見を奪う","待つ対象が曖昧","短い","自然"],"failures":["hint_leakage"]}},
+{"pairId":"9007642abbd92d17","verdict":"tie","reason":"両方とも正しい沈黙。"},
+{"pairId":"1585f49da7174e12","verdict":"tie","reason":"ともに原因候補を示すがSQL利用を未確認のまま前提にする。","A":{"scores":[2,2,2,2,3,2,2,3,2],"reasons":["原因候補はあり得る","SQLの存在が未確認","実装不足の明示なし","queryとカラムを前提","断定は避ける","計測の切り分け不足","DB寄りの確認のみ","比較的短い","HTML露出"],"failures":["hallucination","weak_pedagogy"]}},
+{"pairId":"d35569e4f00c74f5","verdict":"A_clear","reason":"Aは案の提示を求める。Bは不明な案にenabledが関係すると仮定して一般論へ逸れる。","B":{"scores":[2,2,2,2,2,2,2,1,3],"reasons":["比較結果なし","enabledの関連が不明","履歴欠落に直接対応しない","案にenabledがあると仮定","必要情報の依頼不足","一般的な比較軸のみ","元の案の取得を優先できない","質問に対し長い","contextタグ露出"],"failures":["hallucination","excessive_verbosity"]}},
+{"pairId":"dba15cb3656a33f3","verdict":"A_slight","reason":"Bは定義が見えてもNumber空文字をNaNと誤答。Aの情報不足を認める応答のほうが誤学習を避ける。","B":{"scores":[1,1,3,1,3,1,1,3,3],"reasons":["Number空文字は0でありNaNは誤り","言語仕様と矛盾","末尾関数を参照できた","空文字NaNを断定","型と値には答える","変換規則を誤学習","誤った境界確認になる","短い","タグ露出"],"failures":["incorrect_code_reasoning","hallucination"]}},
+{"pairId":"beb92f5e0119772d","verdict":"tie","reason":"両方とも縦横不一致を見逃す。"},
+{"pairId":"21299d3f7f3a201b","verdict":"A_slight","reason":"Aは日本語が改善し定義の引用も明確。ただし説明は繰り返す。","A":{"scores":[4,4,4,4,4,4,4,2,4],"reasons":["true false正答","定義を引用","両ファイルを利用","創作なし","質問を満たす","比較演算を説明","境界を追える","結論と論理が重複","自然な日本語"],"failures":["excessive_verbosity"]}},
+{"pairId":"96d9a23dd7b2e830","verdict":"tie","reason":"両方とも合計と初期値を2文で説明。","A":{"scores":[4,4,4,4,4,3,4,4,4],"reasons":["合計と初期値が正しい","式に根拠","0を説明","創作なし","2文以内","空配列への一般化は省略","式を追える","短い","自然"],"failures":[]}},
+{"pairId":"1a4e47e6b8fa0188","verdict":"A_clear","reason":"Aは旧値から最新を捏造しない。ただし両方とも必要情報は切り詰められている。","A":{"scores":[2,4,0,4,2,2,3,3,3],"reasons":["値の回答はできない","不足を正しく認める","最新定義が送信されない","推測を避ける","求める数値は返せない","旧値と最新を区別","仕様確認に進める","比較的短い","タグ露出"],"failures":["missing_context"]}},
+{"pairId":"112c19a0215c5a61","verdict":"tie","reason":"どちらもSetが順序を保持しないと誤答。","B":{"scores":[1,1,2,1,3,1,1,4,4],"reasons":["Setの順序が誤り","挿入順の仕様に反する","2案には言及","順序喪失を断定","比較形式遵守","誤学習の恐れ","誤選択に導く","短い","自然"],"failures":["incorrect_code_reasoning","hallucination"]}},
+{"pairId":"d9851e0b0402ab95","verdict":"tie","reason":"双方とも要求された値と出力形式が正しい。","A":{"scores":[4,4,4,4,4,4,4,4,4],"reasons":["1 3 5と改行が正しい","課題に根拠","追加文脈を使用","創作なし","直接回答","例が明瞭","出力を確認できる","短い","自然"],"failures":[]}},
+{"pairId":"4acfe1844d65dcd2","verdict":"tie","reason":"双方が既習filterを繰り返し次の学びを示さない。Bは既存条件を追加するよう述べる。","B":{"scores":[2,2,1,3,1,1,2,3,4],"reasons":["既存条件を追加すると提案","既存コードの確認不足","理解済みfilterを反復","既存条件の未実装を示唆","次の学習なし","新しい学び不足","テストデータ作成は可能","やや長い","自然"],"failures":["ignored_context","weak_pedagogy"]}},
+{"pairId":"c4f300d108b80d1d","verdict":"A_clear","reason":"Aは最後の要素の1つ先へのアクセスを正しく説明。送信promptは変わらずsamplingの揺らぎとして扱う。","A":{"scores":[4,4,4,4,4,4,4,3,2],"reasons":["範囲外アクセスが正しい","条件に根拠","iとxsを利用","創作なし","置換式を漏らさない","添字の発見に導く","具体的な確認対象","HTMLが嵩張る","HTML露出"],"failures":["japanese"]}}
+]

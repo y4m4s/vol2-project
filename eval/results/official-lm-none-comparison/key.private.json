@@ -1,0 +1,44 @@
+{
+  "baseline": "eval/results/official-reference-none",
+  "candidate": "eval/results/official-nonthinking-lmstudio-retry",
+  "split": "tuning",
+  "seed": "61902707303c5af074572aa840c14754",
+  "packetHash": "468ee97d0fb4f062bf620260679a4bfce5b4db78dfa71a0f6c6afee9e7d2d25e",
+  "pairs": [
+    {
+      "pairId": "35dc6c2f4957d9be",
+      "caseId": "bug-boundary",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "013c602fde0a1ffbb823e2b82675b20d6f7e118d99353027f8822528ad803cbb"
+    },
+    {
+      "pairId": "fcae8442d80ef3ef",
+      "caseId": "auto-layout",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "6db9d4e0e07c821ed6d21b36ef8d1630f41dcf129911af5f2acb640628035b8d"
+    },
+    {
+      "pairId": "06695104263123aa",
+      "caseId": "hint-only",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "d67a5457038789a6a98d0d638b10df3aefdaebcdcedab15d8be7257fd102e538"
+    },
+    {
+      "pairId": "7878810614379a87",
+      "caseId": "compare-approaches",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "2fe7d988cbbc2e40e2f4d961958bf2b231209493843a90020181508fef23e2d3"
+    },
+    {
+      "pairId": "bffc5112ce63ed96",
+      "caseId": "explain-reduce",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "b6fe0f5c2a5604207c58da0dfe8dd877f025be9fe1052ce86cb6a1dbdaa78528"
+    }
+  ]
+}

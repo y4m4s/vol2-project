@@ -1,0 +1,15 @@
+{
+  "id": "af-oll-on",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "baseUrl": "http://127.0.0.1:11434",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "high",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null,
+  "collectorContext": "bounded-file",
+  "problemLayout": "plain"
+}

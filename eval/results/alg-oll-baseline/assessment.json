@@ -1,0 +1,1561 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価。各回答をコード・制約・有限領域の実行根拠に照合。単独評価でproviderは既知。外部独立Judgeなし。holdout回答による追加最適化なし。"
+  },
+  "caseSetHash": "a48193fea17606060c83c8974bf2969b25b6e5962772b1863f8f063168be12b4",
+  "responsesHash": "ddf315e307b8057cb00f6731732f2403384992f1e0a0ebfcefed1e54701afcee",
+  "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+  "scores": {
+    "correctness": 3.3541666666666665,
+    "groundedness": 3.4166666666666665,
+    "context_utilization": 3.75,
+    "hallucination": 3.4791666666666665,
+    "instruction_following": 3.5,
+    "pedagogical_usefulness": 3.0833333333333335,
+    "actionability": 3.4583333333333335,
+    "conciseness": 3.7083333333333335,
+    "japanese_quality": 3.8541666666666665
+  },
+  "meetsTask": 33,
+  "observations": [
+    {
+      "caseId": "alg-frequency-bug-js",
+      "repeat": 1,
+      "caseHash": "bb8a69c9986e85bba672ffbd975090d8e6c3dcaf734ef3a0d7088dc383b6112d",
+      "answerHash": "d9d8f0771ebc70421ab5daec082711ec537b106d7ad96040514fcc0923ac70b7",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 2
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "groundedness": "提示コード・制約との整合 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "context_utilization": "必要文脈の利用 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "hallucination": "根拠のない事実の有無 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "actionability": "適切な次の着目点 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "conciseness": "簡潔さと関連性 4/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。",
+        "japanese_quality": "日本語の明瞭さ 2/4。既存のカウントに1を加えるという概念のヒントは許容。這行という中国語が混在する。"
+      },
+      "failures": [
+        "japanese"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-py",
+      "repeat": 2,
+      "caseHash": "be4f8e89bfc1dae42ee5a6ba945102f0786775e5aae403272806a7b91ecdb9ad",
+      "answerHash": "3f544b1f8dc7524d66d019f20ce1a94a2933e8bd9af852527ffc2f5b6ffcdb4e",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "groundedness": "提示コード・制約との整合 4/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "context_utilization": "必要文脈の利用 4/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "hallucination": "根拠のない事実の有無 4/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "actionability": "適切な次の着目点 3/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "conciseness": "簡潔さと関連性 3/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。",
+        "japanese_quality": "日本語の明瞭さ 4/4。8から9へ和がさらに大きくなり見逃すことをコードで説明。修正方向の明示はないが有用な反例。やや冗長。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-count-js",
+      "repeat": 0,
+      "caseHash": "2b47b31a08685484508b39fdd7dfad638301f98831e703ce1726b3d2275a90a0",
+      "answerHash": "ab27329ba711ab7e51b5199c35b4f85e7d91f0d2e0e887afec315c9b22f6d042",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "groundedness": "提示コード・制約との整合 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "context_utilization": "必要文脈の利用 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "hallucination": "根拠のない事実の有無 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "actionability": "適切な次の着目点 3/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "conciseness": "簡潔さと関連性 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。",
+        "japanese_quality": "日本語の明瞭さ 4/4。二乗計算量と最大入力の問題を述べ、ハッシュで1回走査する次の方針を示す。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 1,
+      "caseHash": "ee0f1664aba6c146efbb152a1d97a633715586ecbf68885cd48bb720017d3124",
+      "answerHash": "6cd6c38306d01106a85dce2f96b679c2a2faf57f83682b8f5c89e714c4531f90",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 4,
+        "context_utilization": 3,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "groundedness": "提示コード・制約との整合 4/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "context_utilization": "必要文脈の利用 3/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "hallucination": "根拠のない事実の有無 4/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "actionability": "適切な次の着目点 3/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "conciseness": "簡潔さと関連性 4/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果1と小さいときleftを進める条件は正しいが、重複を含む等値時のright更新が説明されない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 2,
+      "caseHash": "e44bfa69562814d2af2f7a30423cb0cc1ebe430d5fe93bf9b181b492947f3369",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-count-js",
+      "repeat": 1,
+      "caseHash": "2b47b31a08685484508b39fdd7dfad638301f98831e703ce1726b3d2275a90a0",
+      "answerHash": "3bf9bee3d6c8db8621654d636b0bf97593b48773f71ff20a96466a75aa5868a7",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "groundedness": "提示コード・制約との整合 3/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "context_utilization": "必要文脈の利用 4/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "hallucination": "根拠のない事実の有無 3/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "actionability": "適切な次の着目点 2/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "conciseness": "簡潔さと関連性 4/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。O(N²)は正しいが4e10回の粗い見積りに加え、高速化の目標だけで具体的な次の方法を示さない。"
+      },
+      "failures": [
+        "imprecise_operation_count",
+        "weak_pedagogy"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-pair-count-js",
+      "repeat": 2,
+      "caseHash": "2b47b31a08685484508b39fdd7dfad638301f98831e703ce1726b3d2275a90a0",
+      "answerHash": "d3d614af43aeee75419550958807a875bd02c283a64a484e95034ca2b282c3ea",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "groundedness": "提示コード・制約との整合 3/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "context_utilization": "必要文脈の利用 4/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "hallucination": "根拠のない事実の有無 3/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "actionability": "適切な次の着目点 3/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "conciseness": "簡潔さと関連性 4/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。",
+        "japanese_quality": "日本語の明瞭さ 4/4。約2e10の計算回数は正しい。改善候補も示すが、時間制限に間に合わないと根拠なしに断定する。"
+      },
+      "failures": [
+        "unsupported_runtime_claim"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-bug-py",
+      "repeat": 0,
+      "caseHash": "f10bb51e5f0c23fdabb93e5d8025d6b5fd0af996a3f16846c2901bf9735dc9a7",
+      "answerHash": "072599dadb2736f7f11216fbf700c3eeaf51766e465c4c0e9df4886ca90fcd38",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "groundedness": "提示コード・制約との整合 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "context_utilization": "必要文脈の利用 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "hallucination": "根拠のない事実の有無 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "actionability": "適切な次の着目点 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "conciseness": "簡潔さと関連性 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。",
+        "japanese_quality": "日本語の明瞭さ 4/4。末尾欠落は正しく診断するが、range(len(a))への具体的置換を提示。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-unknown-transform-py",
+      "repeat": 2,
+      "caseHash": "56b2d91dc1e20b2547579980b47388d4d5401f4aaffd8ec85922bbc821ea0903",
+      "answerHash": "d92b3aa3e0f67131a3320e9b034d8e511404bbad4fe0fb1b543f8451b8bc8026",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "groundedness": "提示コード・制約との整合 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "context_utilization": "必要文脈の利用 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "hallucination": "根拠のない事実の有無 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "actionability": "適切な次の着目点 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "conciseness": "簡潔さと関連性 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。transformの実装確認が必要と明示し、線形を仮定で済ませない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-count-py",
+      "repeat": 2,
+      "caseHash": "c6df5fc78ff06dc8d134b7e4eab1e185f20efd7caccab9fc59ebc962bc8c60e4",
+      "answerHash": "d7df1d46ad689ccce51a842e9a68f1a981ac5c3199be3122ea3a22ec6fec8ab3",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "groundedness": "提示コード・制約との整合 3/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "context_utilization": "必要文脈の利用 4/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "hallucination": "根拠のない事実の有無 3/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "actionability": "適切な次の着目点 3/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "conciseness": "簡潔さと関連性 4/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。",
+        "japanese_quality": "日本語の明瞭さ 4/4。二乗計算量とハッシュの方向は妥当だが、環境・時間制限なしに許容時間超過を断定。"
+      },
+      "failures": [
+        "unsupported_runtime_claim"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-count-py",
+      "repeat": 1,
+      "caseHash": "c6df5fc78ff06dc8d134b7e4eab1e185f20efd7caccab9fc59ebc962bc8c60e4",
+      "answerHash": "9d232c1ef641da8985f9c168c67e80e410c2726bc0952c944e7160d3f1535a96",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "groundedness": "提示コード・制約との整合 3/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "context_utilization": "必要文脈の利用 4/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "hallucination": "根拠のない事実の有無 3/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "actionability": "適切な次の着目点 3/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "conciseness": "簡潔さと関連性 4/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。",
+        "japanese_quality": "日本語の明瞭さ 4/4。O(N²)、ハッシュやソート＋2指針は妥当。4e10回というN²の値と実際の組数約2e10を区別しない粗い具体見積り。"
+      },
+      "failures": [
+        "imprecise_operation_count"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 0,
+      "caseHash": "ee0f1664aba6c146efbb152a1d97a633715586ecbf68885cd48bb720017d3124",
+      "answerHash": "5bc0c9d12310d5412b09962f1d13a59bd344aebb5c5a4edc447627939c88a8b9",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "groundedness": "提示コード・制約との整合 3/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "context_utilization": "必要文脈の利用 4/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "hallucination": "根拠のない事実の有無 4/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "actionability": "適切な次の着目点 3/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "conciseness": "簡潔さと関連性 4/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果1とtarget未満なら左半分を除く説明は正しい。等値時に左側を保持する説明は曖昧。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-unknown-transform-js",
+      "repeat": 0,
+      "caseHash": "2752345a89e36700944ffc99df33b06e7cb9967b4d45391b7db89ae6197ad1b8",
+      "answerHash": "e6457ef9579751379c9edcd4c5ae053324bf813fbf3588fbd55987d6af0f28e7",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "groundedness": "提示コード・制約との整合 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "context_utilization": "必要文脈の利用 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "hallucination": "根拠のない事実の有無 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "actionability": "適切な次の着目点 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "conciseness": "簡潔さと関連性 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。",
+        "japanese_quality": "日本語の明瞭さ 4/4。呼び先の計算量不明を明示し、条件付きの線形性と区別する。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-unknown-transform-py",
+      "repeat": 1,
+      "caseHash": "56b2d91dc1e20b2547579980b47388d4d5401f4aaffd8ec85922bbc821ea0903",
+      "answerHash": "6e12c2e647e76647418dac058283ca336f6001482cc50d0b174dd3a4b574257a",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "groundedness": "提示コード・制約との整合 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "context_utilization": "必要文脈の利用 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "hallucination": "根拠のない事実の有無 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "actionability": "適切な次の着目点 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "conciseness": "簡潔さと関連性 3/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。",
+        "japanese_quality": "日本語の明瞭さ 4/4。実装が未提示なので計算量を断定しない。文脈タグと重複する仮定は不要。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-incomplete-js",
+      "repeat": 1,
+      "caseHash": "17189f896db54f6b0a90a11ca350a9ea27c009f1cdf3766aeb5a689766df20c0",
+      "answerHash": "f51088f6f9be02b00ad59475e451cd48280e8f22b2484ecc74d1bf0096a91f20",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "groundedness": "提示コード・制約との整合 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "context_utilization": "必要文脈の利用 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "hallucination": "根拠のない事実の有無 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "actionability": "適切な次の着目点 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "conciseness": "簡潔さと関連性 4/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。",
+        "japanese_quality": "日本語の明瞭さ 3/4。不足する累積処理を正しく案内。配列を走らせるという表現は少し不自然。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-frequency-bug-py",
+      "repeat": 2,
+      "caseHash": "fdbcf7a08e3019842c9fdda0043082b475ee8a5901c1136b343552289b8c29e3",
+      "answerHash": "9caf840279ecaa7f42dd6471fd31b3ddb41b156036ba3145375480cb6c51c09b",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "groundedness": "提示コード・制約との整合 2/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "context_utilization": "必要文脈の利用 3/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "hallucination": "根拠のない事実の有無 2/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "actionability": "適切な次の着目点 2/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "conciseness": "簡潔さと関連性 4/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。",
+        "japanese_quality": "日本語の明瞭さ 4/4。counts[ch]+=1を具体的に指示。空の辞書では初出文字でKeyErrorになり、修正としても不正確。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-incomplete-js",
+      "repeat": 2,
+      "caseHash": "17189f896db54f6b0a90a11ca350a9ea27c009f1cdf3766aeb5a689766df20c0",
+      "answerHash": "dfd64fb5d83d23265293733c96cadbee7921dcd281eb0e3d4e7f94fcda72773c",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "groundedness": "提示コード・制約との整合 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "context_utilization": "必要文脈の利用 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "hallucination": "根拠のない事実の有無 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "actionability": "適切な次の着目点 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "conciseness": "簡潔さと関連性 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。",
+        "japanese_quality": "日本語の明瞭さ 4/4。加算不足を簡潔に指摘。置換式や完成コードなし。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 1,
+      "caseHash": "7d77a844fdff1030fa4e71b4440b8b67294b6e952d21de31111c9e90957acc2f",
+      "answerHash": "95d3bc8c72a4d892fe53459214b3df0172994e43d8974638de2e458c722f3088",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "groundedness": "提示コード・制約との整合 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "context_utilization": "必要文脈の利用 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "hallucination": "根拠のない事実の有無 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "actionability": "適切な次の着目点 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "conciseness": "簡潔さと関連性 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。",
+        "japanese_quality": "日本語の明瞭さ 4/4。現行条件により最後を加算しないと正しく指摘。空でない場合にも起きるという条件も妥当。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 1,
+      "caseHash": "59bfe5fae6fd9970177e9b15ee868f4dd3eb15aafd4afb0f75736352552618eb",
+      "answerHash": "4a9d7c7dc06129b8e76e7eb4fabc89d7943ffa313fac04947baba1bb349789c8",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "groundedness": "提示コード・制約との整合 3/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "context_utilization": "必要文脈の利用 4/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "hallucination": "根拠のない事実の有無 4/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "actionability": "適切な次の着目点 3/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "conciseness": "簡潔さと関連性 3/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。",
+        "japanese_quality": "日本語の明瞭さ 4/4。8→9→11→falseを正確に追う。正解の[1,2]が添字なのか値なのか曖昧で、方向が逆である説明も弱い。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-incomplete-py",
+      "repeat": 2,
+      "caseHash": "669300d08f5ceaea481bf8d19d3577a63b78c68cef4d6092d342980b0fd96fad",
+      "answerHash": "4afa4587a7f2199f7efee734fa0e40c20a3ec96edf1588fd1e88e8154211a222",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "groundedness": "提示コード・制約との整合 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "context_utilization": "必要文脈の利用 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "hallucination": "根拠のない事実の有無 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "actionability": "適切な次の着目点 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "conciseness": "簡潔さと関連性 4/4。totalへの加算がないと特定。実装コードは示さない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。totalへの加算がないと特定。実装コードは示さない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-frequency-bug-js",
+      "repeat": 0,
+      "caseHash": "bb8a69c9986e85bba672ffbd975090d8e6c3dcaf734ef3a0d7088dc383b6112d",
+      "answerHash": "6798faa05c9453465239cc420816012c8709f284be53e95776afdb99db8abffa",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "groundedness": "提示コード・制約との整合 2/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "context_utilization": "必要文脈の利用 3/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "hallucination": "根拠のない事実の有無 2/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "actionability": "適切な次の着目点 3/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "conciseness": "簡潔さと関連性 4/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。",
+        "japanese_quality": "日本語の明瞭さ 3/4。上書きの着目点は合うが、毎回新しいキーという説明は誤り。||0と+1を使う具体的変更式も開示。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-unknown-transform-js",
+      "repeat": 2,
+      "caseHash": "2752345a89e36700944ffc99df33b06e7cb9967b4d45391b7db89ae6197ad1b8",
+      "answerHash": "b0902e188f8d501f993d15029caf06774ba7fe904fcd1da784c32dec105577ae",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "groundedness": "提示コード・制約との整合 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "context_utilization": "必要文脈の利用 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "hallucination": "根拠のない事実の有無 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "actionability": "適切な次の着目点 3/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "conciseness": "簡潔さと関連性 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。",
+        "japanese_quality": "日本語の明瞭さ 4/4。実装情報が必要と留保する。判定不能を直接明言せず、線形なら線形の反復が残る。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 0,
+      "caseHash": "59bfe5fae6fd9970177e9b15ee868f4dd3eb15aafd4afb0f75736352552618eb",
+      "answerHash": "12ed3c272bf83eac7397f74935b9d6cc6c3b3a8914e750b3f59307a6ba211362",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 3,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "groundedness": "提示コード・制約との整合 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "context_utilization": "必要文脈の利用 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "hallucination": "根拠のない事実の有無 4/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "actionability": "適切な次の着目点 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "conciseness": "簡潔さと関連性 3/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。",
+        "japanese_quality": "日本語の明瞭さ 4/4。8→9の推移とfalseを説明。最後は交差ではなく一致で止まる点と11の省略は粗いが、見逃しの着目点は有用。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-lower-bound-js",
+      "repeat": 2,
+      "caseHash": "11dcfd2a1452c36d52c4ca2b71088fbbcde3ab5b388e608499b5e19f0aea79a4",
+      "answerHash": "4b15e2eed7ac2a3d0fb4a142433b3d0b28c695347f397785792e7faca68e72dd",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "groundedness": "提示コード・制約との整合 3/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "context_utilization": "必要文脈の利用 4/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "hallucination": "根拠のない事実の有無 4/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "actionability": "適切な次の着目点 3/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "conciseness": "簡潔さと関連性 4/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果と最初の要素という目的は正しいが、探索区間の変化は抽象的。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 2,
+      "caseHash": "59bfe5fae6fd9970177e9b15ee868f4dd3eb15aafd4afb0f75736352552618eb",
+      "answerHash": "8b3d4367e6743a462fded5bea13f74da390627249c85617ff451d9bd6a5a97a1",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "groundedness": "提示コード・制約との整合 2/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "context_utilization": "必要文脈の利用 3/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "hallucination": "根拠のない事実の有無 2/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "actionability": "適切な次の着目点 3/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "conciseness": "簡潔さと関連性 4/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。位置が逆転するからと説明するが実際は一致して終了。和を悪化させる移動方向の核心にも触れない。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-lower-bound-js",
+      "repeat": 1,
+      "caseHash": "11dcfd2a1452c36d52c4ca2b71088fbbcde3ab5b388e608499b5e19f0aea79a4",
+      "answerHash": "a97ddca1b259d147a264a3ae92eb7e7fe5d3bab50028f06a7f375f3c4b027c79",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "groundedness": "提示コード・制約との整合 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "context_utilization": "必要文脈の利用 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "hallucination": "根拠のない事実の有無 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "actionability": "適切な次の着目点 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "conciseness": "簡潔さと関連性 3/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。",
+        "japanese_quality": "日本語の明瞭さ 4/4。両条件でのleft/right更新と最初の候補の探索を正しく説明。少し長いが有用。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 2,
+      "caseHash": "ee0f1664aba6c146efbb152a1d97a633715586ecbf68885cd48bb720017d3124",
+      "answerHash": "469d11a7bbf7bf426318fdeddb2d9f80f41649a7550d16eb52373aca63663f4e",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "groundedness": "提示コード・制約との整合 2/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "context_utilization": "必要文脈の利用 3/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "hallucination": "根拠のない事実の有無 2/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "actionability": "適切な次の着目点 3/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "conciseness": "簡潔さと関連性 4/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果1のみ正しい。target未満なら左半分、それ以外なら右半分という探索方向が実装と逆。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-correct-js",
+      "repeat": 2,
+      "caseHash": "d0f1cf7eacef9864125449ed12c1c7efb19eb920d9f513633b24d7502e321c99",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-frequency-bug-js",
+      "repeat": 2,
+      "caseHash": "bb8a69c9986e85bba672ffbd975090d8e6c3dcaf734ef3a0d7088dc383b6112d",
+      "answerHash": "db95e87ee73713e954724eb41a4beac20aaee2505ec95b3adbe6ccca28c3fab6",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "groundedness": "提示コード・制約との整合 2/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "context_utilization": "必要文脈の利用 3/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "hallucination": "根拠のない事実の有無 2/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "actionability": "適切な次の着目点 2/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "conciseness": "簡潔さと関連性 4/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。",
+        "japanese_quality": "日本語の明瞭さ 4/4。counts[ch]+1への変更を指示するが、初回はundefined+1でNaNとなる。初期化を欠く修正であり、解答開示にも該当。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-frequency-bug-py",
+      "repeat": 0,
+      "caseHash": "fdbcf7a08e3019842c9fdda0043082b475ee8a5901c1136b343552289b8c29e3",
+      "answerHash": "46700008d46696e49943ce2fa6170fac36c93f3ecd7031c9ad8e799aaa60425f",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 1,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "groundedness": "提示コード・制約との整合 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "context_utilization": "必要文脈の利用 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "hallucination": "根拠のない事実の有無 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "actionability": "適切な次の着目点 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "conciseness": "簡潔さと関連性 4/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。",
+        "japanese_quality": "日本語の明瞭さ 3/4。getを使った修正式は正しいが、ヒントのみの依頼に反する。既存値に1を加えるのではなくという前置きも不自然。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-unknown-transform-js",
+      "repeat": 1,
+      "caseHash": "2752345a89e36700944ffc99df33b06e7cb9967b4d45391b7db89ae6197ad1b8",
+      "answerHash": "fcc4a67a4426099eaa469e8f76e0b9ae9c4d33ae6bc59682e5fbdc2a75775cfc",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 2,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "groundedness": "提示コード・制約との整合 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "context_utilization": "必要文脈の利用 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "hallucination": "根拠のない事実の有無 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "actionability": "適切な次の着目点 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "conciseness": "簡潔さと関連性 2/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。",
+        "japanese_quality": "日本語の明瞭さ 4/4。根拠不足の結論は正しいが、同じ依存関係と仮定を繰り返し長い。"
+      },
+      "failures": [
+        "excessive_verbosity"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-bug-py",
+      "repeat": 1,
+      "caseHash": "f10bb51e5f0c23fdabb93e5d8025d6b5fd0af996a3f16846c2901bf9735dc9a7",
+      "answerHash": "3fc2d8fa70a53d6ee13cb09493454028effa7fbc8d63c2fa20bc228eda948223",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "groundedness": "提示コード・制約との整合 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "context_utilization": "必要文脈の利用 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "hallucination": "根拠のない事実の有無 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "actionability": "適切な次の着目点 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "conciseness": "簡潔さと関連性 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。",
+        "japanese_quality": "日本語の明瞭さ 4/4。末尾欠落は正しいが、rangeの引数をlen(a)にするという変更後の値まで提示。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 2,
+      "caseHash": "7d77a844fdff1030fa4e71b4440b8b67294b6e952d21de31111c9e90957acc2f",
+      "answerHash": "1aef8c4aafb89f160dee49c354b0d1efc6742480f0d510cd74a86e8f8a8ec797",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。i<a.lengthという完成した修正条件を示す。",
+        "groundedness": "提示コード・制約との整合 4/4。i<a.lengthという完成した修正条件を示す。",
+        "context_utilization": "必要文脈の利用 4/4。i<a.lengthという完成した修正条件を示す。",
+        "hallucination": "根拠のない事実の有無 4/4。i<a.lengthという完成した修正条件を示す。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。i<a.lengthという完成した修正条件を示す。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。i<a.lengthという完成した修正条件を示す。",
+        "actionability": "適切な次の着目点 4/4。i<a.lengthという完成した修正条件を示す。",
+        "conciseness": "簡潔さと関連性 4/4。i<a.lengthという完成した修正条件を示す。",
+        "japanese_quality": "日本語の明瞭さ 4/4。i<a.lengthという完成した修正条件を示す。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-lower-bound-js",
+      "repeat": 0,
+      "caseHash": "11dcfd2a1452c36d52c4ca2b71088fbbcde3ab5b388e608499b5e19f0aea79a4",
+      "answerHash": "23d62705cee5ae7bd9fc12e1a1ba1417c01b5165c49bad1b9eae5909a592c669",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "groundedness": "提示コード・制約との整合 2/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "context_utilization": "必要文脈の利用 3/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "hallucination": "根拠のない事実の有無 2/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "actionability": "適切な次の着目点 3/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "conciseness": "簡潔さと関連性 4/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。",
+        "japanese_quality": "日本語の明瞭さ 4/4。重複時にleft=middle+1で右へ進むため最初の位置を検出するという根拠が誤り。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-unknown-transform-py",
+      "repeat": 0,
+      "caseHash": "56b2d91dc1e20b2547579980b47388d4d5401f4aaffd8ec85922bbc821ea0903",
+      "answerHash": "65510e8cefc3ceb7974a3b91bf6dc435376af7b4b911d0b8de808989d612ac04",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 2,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "groundedness": "提示コード・制約との整合 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "context_utilization": "必要文脈の利用 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "hallucination": "根拠のない事実の有無 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "actionability": "適切な次の着目点 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "conciseness": "簡潔さと関連性 2/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。",
+        "japanese_quality": "日本語の明瞭さ 4/4。実装不明による判定不能を正しく説明。ただし線形・二乗の仮定の列挙で結論まで長い。"
+      },
+      "failures": [
+        "excessive_verbosity"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-py",
+      "repeat": 0,
+      "caseHash": "be4f8e89bfc1dae42ee5a6ba945102f0786775e5aae403272806a7b91ecdb9ad",
+      "answerHash": "c650225ee500f5f48b73e6418a5fc5f2cba987d20271e99514fc3d3371b15d3f",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 2,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "groundedness": "提示コード・制約との整合 2/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "context_utilization": "必要文脈の利用 3/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "hallucination": "根拠のない事実の有無 2/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "actionability": "適切な次の着目点 3/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "conciseness": "簡潔さと関連性 2/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。",
+        "japanese_quality": "日本語の明瞭さ 3/4。8→9→11という現行トレースは合うが、大きい和でleftを増やすのが正しいと結論し、必要な逆方向の移動を誤る。長く原因も散漫。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 0,
+      "caseHash": "e44bfa69562814d2af2f7a30423cb0cc1ebe430d5fe93bf9b181b492947f3369",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-count-py",
+      "repeat": 0,
+      "caseHash": "c6df5fc78ff06dc8d134b7e4eab1e185f20efd7caccab9fc59ebc962bc8c60e4",
+      "answerHash": "aacf9482bc09265e86f8d8d21da9506a54248fef7995217df97606f82a537a6f",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 3,
+        "groundedness": 3,
+        "context_utilization": 4,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "groundedness": "提示コード・制約との整合 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "context_utilization": "必要文脈の利用 4/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "hallucination": "根拠のない事実の有無 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "pedagogical_usefulness": "理解を助ける説明 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "actionability": "適切な次の着目点 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "conciseness": "簡潔さと関連性 3/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。約2×10^10の組数とO(N²)は正しい。ハッシュ方針は有用だが、時間上限なしに非対応と断定し、個数集計の重複保持も明確でない。"
+      },
+      "failures": [
+        "unsupported_runtime_claim"
+      ],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-frequency-bug-py",
+      "repeat": 1,
+      "caseHash": "fdbcf7a08e3019842c9fdda0043082b475ee8a5901c1136b343552289b8c29e3",
+      "answerHash": "643f114bca52afc214bed340d2e4eccab04a41cc71020226d16f042b826ecd63",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "groundedness": "提示コード・制約との整合 2/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "context_utilization": "必要文脈の利用 3/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "hallucination": "根拠のない事実の有無 2/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "actionability": "適切な次の着目点 3/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "conciseness": "簡潔さと関連性 4/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。",
+        "japanese_quality": "日本語の明瞭さ 4/4。既存値を増やす着目点は有用だが、同じ文字のたびに新しいキーが作成されるという原因説明は誤り。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-incomplete-py",
+      "repeat": 1,
+      "caseHash": "669300d08f5ceaea481bf8d19d3577a63b78c68cef4d6092d342980b0fd96fad",
+      "answerHash": "49b91d229f4d76af5253abadd4b2d6c5c26ec2847459fd6e95ab466282f2eb9c",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "groundedness": "提示コード・制約との整合 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "context_utilization": "必要文脈の利用 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "hallucination": "根拠のない事実の有無 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "actionability": "適切な次の着目点 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "conciseness": "簡潔さと関連性 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。",
+        "japanese_quality": "日本語の明瞭さ 4/4。合計ロジックが未実装と特定し、加算の着目点を提示。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-incomplete-js",
+      "repeat": 0,
+      "caseHash": "17189f896db54f6b0a90a11ca350a9ea27c009f1cdf3766aeb5a689766df20c0",
+      "answerHash": "d22bda352da38dd72ef73026f0e4d9f069783a0a10c2811be5d58886d10fa4cb",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "groundedness": "提示コード・制約との整合 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "context_utilization": "必要文脈の利用 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "hallucination": "根拠のない事実の有無 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "actionability": "適切な次の着目点 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "conciseness": "簡潔さと関連性 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。",
+        "japanese_quality": "日本語の明瞭さ 4/4。常に0を返す現状と加算不足を説明。ループの概念のみの提案。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 1,
+      "caseHash": "e44bfa69562814d2af2f7a30423cb0cc1ebe430d5fe93bf9b181b492947f3369",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-bug-py",
+      "repeat": 2,
+      "caseHash": "f10bb51e5f0c23fdabb93e5d8025d6b5fd0af996a3f16846c2901bf9735dc9a7",
+      "answerHash": "3291d7b56924535bfa7a9b11bfdd267692fdb77860341dcfd0723c4817b27921",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "groundedness": "提示コード・制約との整合 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "context_utilization": "必要文脈の利用 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "hallucination": "根拠のない事実の有無 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "actionability": "適切な次の着目点 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "conciseness": "簡潔さと関連性 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。",
+        "japanese_quality": "日本語の明瞭さ 4/4。現在のrangeが最後の要素を除くことを説明。完成した修正式なし。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-correct-js",
+      "repeat": 1,
+      "caseHash": "d0f1cf7eacef9864125449ed12c1c7efb19eb920d9f513633b24d7502e321c99",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-pair-bug-py",
+      "repeat": 1,
+      "caseHash": "be4f8e89bfc1dae42ee5a6ba945102f0786775e5aae403272806a7b91ecdb9ad",
+      "answerHash": "5546df8186f38072a72a97ccfea68f676609ae5390f2a8076d0ab7d70fb9fa14",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 0,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 0,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 2,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 0/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "groundedness": "提示コード・制約との整合 1/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "context_utilization": "必要文脈の利用 2/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "hallucination": "根拠のない事実の有無 0/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "actionability": "適切な次の着目点 2/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "conciseness": "簡潔さと関連性 2/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。",
+        "japanese_quality": "日本語の明瞭さ 3/4。正しいfalseのトレースの後に、この結果は正しい、targetが不適切と問題の要件を否定。2+4=6の解を無視する。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-incomplete-py",
+      "repeat": 0,
+      "caseHash": "669300d08f5ceaea481bf8d19d3577a63b78c68cef4d6092d342980b0fd96fad",
+      "answerHash": "a4695a94088c80689c800fae6599385ea6c32c911d3a86cbb5b16d8b23281af7",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "groundedness": "提示コード・制約との整合 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "context_utilization": "必要文脈の利用 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "hallucination": "根拠のない事実の有無 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "actionability": "適切な次の着目点 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "conciseness": "簡潔さと関連性 4/4。常に0になる現状と不足する加算を簡潔に示す。",
+        "japanese_quality": "日本語の明瞭さ 4/4。常に0になる現状と不足する加算を簡潔に示す。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 0,
+      "caseHash": "7d77a844fdff1030fa4e71b4440b8b67294b6e952d21de31111c9e90957acc2f",
+      "answerHash": "43104997104eda19bef8892f183f94e612cd367b5c8428cf1ceff052d0ae5adf",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "groundedness": "提示コード・制約との整合 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "context_utilization": "必要文脈の利用 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "hallucination": "根拠のない事実の有無 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "actionability": "適切な次の着目点 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "conciseness": "簡潔さと関連性 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。",
+        "japanese_quality": "日本語の明瞭さ 4/4。最後の要素を除く原因は正しいが、a.lengthへの変更を指示する。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sum-correct-js",
+      "repeat": 0,
+      "caseHash": "d0f1cf7eacef9864125449ed12c1c7efb19eb920d9f513633b24d7502e321c99",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "context_utilization": "必要文脈の利用 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "actionability": "適切な次の着目点 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "conciseness": "簡潔さと関連性 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装に対してno_adviceを返し、不要な介入をしない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    }
+  ]
+}

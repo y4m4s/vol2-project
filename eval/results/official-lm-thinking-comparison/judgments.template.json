@@ -1,0 +1,51 @@
+{
+  "judge": {
+    "id": "REQUIRED: model or reviewer",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "Record prior context and calibration limitations"
+  },
+  "packetHash": "05955b904ab9dda2a06b42e5f91789dadc198e62d86ab8ff17ec748753c31924",
+  "judgments": [
+    {
+      "pairId": "d1c6c667262f0966",
+      "pairHash": "c826a1f19891cf9707d0e8a7fca980f7a898b7734bf3e8335bd9b310bebec48f",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "ed84cc74cb44a257",
+      "pairHash": "4c93694ec0e0e01a0ceda72a8bca1bd951f4c46acc38e9419c252433b69aadbf",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "0ad0ad636eefa369",
+      "pairHash": "a079cd398f6c609d505ed68878121a01861d2d231f279ef94651e14af7d78795",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "30bea35493c18433",
+      "pairHash": "e49a8328bf8b4427b7f2957fc9971e0fa54b2764dace62a54e37bfbca0ee0429",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "1779c9cfb819d30a",
+      "pairHash": "0dc2b13a68489df8bc259ef414d660877791b7df3509a45017d8cb87c574e66f",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    }
+  ]
+}

@@ -1,0 +1,632 @@
+[
+  {
+    "experimentId": "r4-context-v2",
+    "comparison": "eval/results/r4-context-comparison",
+    "baseline": "eval/results/r4-baseline-v2",
+    "decision": "情報欠落修正を採用。全般的な品質優越は未確認。",
+    "nextHypothesis": "数値変換の仕様を参照しても誤るか。",
+    "pairwiseWinRate": 0.5769230769230769,
+    "ci95": {
+      "low": 0.4230769230769231,
+      "high": 0.7307692307692307,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.6153846153846154,
+        "candidate": 2.8461538461538463,
+        "delta": 0.23076923076923078
+      },
+      "groundedness": {
+        "baseline": 2.923076923076923,
+        "candidate": 3.1538461538461537,
+        "delta": 0.23076923076923078
+      },
+      "context_utilization": {
+        "baseline": 2.4615384615384617,
+        "candidate": 3.1538461538461537,
+        "delta": 0.6923076923076923
+      },
+      "hallucination": {
+        "baseline": 3.230769230769231,
+        "candidate": 3.3846153846153846,
+        "delta": 0.15384615384615385
+      },
+      "instruction_following": {
+        "baseline": 2.6923076923076925,
+        "candidate": 3,
+        "delta": 0.3076923076923077
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.3846153846153846,
+        "candidate": 2.6923076923076925,
+        "delta": 0.3076923076923077
+      },
+      "actionability": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.8461538461538463,
+        "delta": 0.15384615384615385
+      },
+      "conciseness": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.4615384615384617,
+        "delta": 0
+      },
+      "japanese_quality": {
+        "baseline": 3.6153846153846154,
+        "candidate": 3.5384615384615383,
+        "delta": -0.07692307692307693
+      }
+    },
+    "latencyMedianMs": 6844.215400000001,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "r5-hint-v3",
+    "comparison": "eval/results/r5-hint-comparison",
+    "baseline": "eval/results/r4-context-v2",
+    "decision": "生成指示変更は棄却。評価基準v2のみ保持。",
+    "nextHypothesis": "指示追加でなく標準仕様の参照を検証。",
+    "pairwiseWinRate": 0.4230769230769231,
+    "ci95": {
+      "low": 0.2692307692307692,
+      "high": 0.5769230769230769,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.8461538461538463,
+        "candidate": 2.8461538461538463,
+        "delta": 0
+      },
+      "groundedness": {
+        "baseline": 3.1538461538461537,
+        "candidate": 3.1538461538461537,
+        "delta": 0
+      },
+      "context_utilization": {
+        "baseline": 3.1538461538461537,
+        "candidate": 3.230769230769231,
+        "delta": 0.07692307692307693
+      },
+      "hallucination": {
+        "baseline": 3.3846153846153846,
+        "candidate": 3.3846153846153846,
+        "delta": 0
+      },
+      "instruction_following": {
+        "baseline": 3,
+        "candidate": 2.769230769230769,
+        "delta": -0.23076923076923078
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.5384615384615383,
+        "delta": -0.15384615384615385
+      },
+      "actionability": {
+        "baseline": 2.8461538461538463,
+        "candidate": 2.8461538461538463,
+        "delta": 0
+      },
+      "conciseness": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.3846153846153846,
+        "delta": -0.07692307692307693
+      },
+      "japanese_quality": {
+        "baseline": 3.5384615384615383,
+        "candidate": 3.6153846153846154,
+        "delta": 0.07692307692307693
+      }
+    },
+    "latencyMedianMs": 7658.404399999999,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "r6-language-v4",
+    "comparison": "eval/results/r6-language-comparison",
+    "baseline": "eval/results/r5-hint-v3",
+    "decision": "広い仕様メモは棄却。Numberは改善、Set/Promiseの誤適用あり。",
+    "nextHypothesis": "挿入順の用語定義だけで矛盾を減らせるか。",
+    "pairwiseWinRate": 0.5384615384615384,
+    "ci95": {
+      "low": 0.38461538461538464,
+      "high": 0.6923076923076923,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.8461538461538463,
+        "candidate": 3,
+        "delta": 0.15384615384615385
+      },
+      "groundedness": {
+        "baseline": 3.1538461538461537,
+        "candidate": 3,
+        "delta": -0.15384615384615385
+      },
+      "context_utilization": {
+        "baseline": 3.230769230769231,
+        "candidate": 3.076923076923077,
+        "delta": -0.15384615384615385
+      },
+      "hallucination": {
+        "baseline": 3.3846153846153846,
+        "candidate": 3.3076923076923075,
+        "delta": -0.07692307692307693
+      },
+      "instruction_following": {
+        "baseline": 2.769230769230769,
+        "candidate": 2.769230769230769,
+        "delta": 0
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.5384615384615383,
+        "candidate": 2.6153846153846154,
+        "delta": 0.07692307692307693
+      },
+      "actionability": {
+        "baseline": 2.8461538461538463,
+        "candidate": 2.923076923076923,
+        "delta": 0.07692307692307693
+      },
+      "conciseness": {
+        "baseline": 3.3846153846153846,
+        "candidate": 3.3846153846153846,
+        "delta": 0
+      },
+      "japanese_quality": {
+        "baseline": 3.6153846153846154,
+        "candidate": 3.769230769230769,
+        "delta": 0.15384615384615385
+      }
+    },
+    "latencyMedianMs": 7575.9061,
+    "gates": {
+      "noNewHardFailures": false,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "r7-set-reference",
+    "comparison": "eval/results/r7-set-comparison",
+    "baseline": "eval/results/r6-language-v4",
+    "decision": "Set説明の改善例はあるが全体では棄却。",
+    "nextHypothesis": "副作用のある配列・非同期メモを外す。",
+    "pairwiseWinRate": 0.5,
+    "ci95": {
+      "low": 0.34615384615384615,
+      "high": 0.6538461538461539,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 3,
+        "candidate": 3.076923076923077,
+        "delta": 0.07692307692307693
+      },
+      "groundedness": {
+        "baseline": 3,
+        "candidate": 3.076923076923077,
+        "delta": 0.07692307692307693
+      },
+      "context_utilization": {
+        "baseline": 3.076923076923077,
+        "candidate": 3.3076923076923075,
+        "delta": 0.23076923076923078
+      },
+      "hallucination": {
+        "baseline": 3.3076923076923075,
+        "candidate": 3.3846153846153846,
+        "delta": 0.07692307692307693
+      },
+      "instruction_following": {
+        "baseline": 2.769230769230769,
+        "candidate": 2.923076923076923,
+        "delta": 0.15384615384615385
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.6153846153846154,
+        "candidate": 2.6923076923076925,
+        "delta": 0.07692307692307693
+      },
+      "actionability": {
+        "baseline": 2.923076923076923,
+        "candidate": 3.1538461538461537,
+        "delta": 0.23076923076923078
+      },
+      "conciseness": {
+        "baseline": 3.3846153846153846,
+        "candidate": 3.3076923076923075,
+        "delta": -0.07692307692307693
+      },
+      "japanese_quality": {
+        "baseline": 3.769230769230769,
+        "candidate": 3.923076923076923,
+        "delta": 0.15384615384615385
+      }
+    },
+    "latencyMedianMs": 8633.184099999999,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "r8-focused-reference",
+    "comparison": "eval/results/r8-focused-comparison",
+    "baseline": "eval/results/r7-set-reference",
+    "decision": "棄却。新しい形式不正とSetの矛盾が残る。",
+    "nextHypothesis": "ユーザーのヒント境界を明確化して確認し探索終了。",
+    "pairwiseWinRate": 0.46153846153846156,
+    "ci95": {
+      "low": 0.2692307692307692,
+      "high": 0.6538461538461539,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 3.076923076923077,
+        "candidate": 2.5384615384615383,
+        "delta": -0.5384615384615384
+      },
+      "groundedness": {
+        "baseline": 3.076923076923077,
+        "candidate": 2.6923076923076925,
+        "delta": -0.38461538461538464
+      },
+      "context_utilization": {
+        "baseline": 3.3076923076923075,
+        "candidate": 2.6153846153846154,
+        "delta": -0.6923076923076923
+      },
+      "hallucination": {
+        "baseline": 3.3846153846153846,
+        "candidate": 3.4615384615384617,
+        "delta": 0.07692307692307693
+      },
+      "instruction_following": {
+        "baseline": 2.923076923076923,
+        "candidate": 2.923076923076923,
+        "delta": 0
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.5384615384615383,
+        "delta": -0.15384615384615385
+      },
+      "actionability": {
+        "baseline": 3.1538461538461537,
+        "candidate": 2.6923076923076925,
+        "delta": -0.46153846153846156
+      },
+      "conciseness": {
+        "baseline": 3.3076923076923075,
+        "candidate": 3.5384615384615383,
+        "delta": 0.23076923076923078
+      },
+      "japanese_quality": {
+        "baseline": 3.923076923076923,
+        "candidate": 3.4615384615384617,
+        "delta": -0.46153846153846156
+      }
+    },
+    "latencyMedianMs": 7888.4055,
+    "gates": {
+      "noNewHardFailures": false,
+      "criticalAxes": false,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "r9-keyword-hints",
+    "comparison": "eval/results/r9-keyword-comparison",
+    "baseline": "eval/results/r8-focused-reference",
+    "decision": "日本語指示の変更は棄却。出力変動と誤ヒントが残る。",
+    "nextHypothesis": "別入力で参照の効果と誤適用を確認。",
+    "pairwiseWinRate": 0.5384615384615384,
+    "ci95": {
+      "low": 0.38461538461538464,
+      "high": 0.6923076923076923,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.5384615384615383,
+        "candidate": 2.923076923076923,
+        "delta": 0.38461538461538464
+      },
+      "groundedness": {
+        "baseline": 2.6923076923076925,
+        "candidate": 3.230769230769231,
+        "delta": 0.5384615384615384
+      },
+      "context_utilization": {
+        "baseline": 2.6153846153846154,
+        "candidate": 3.1538461538461537,
+        "delta": 0.5384615384615384
+      },
+      "hallucination": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.5384615384615383,
+        "delta": 0.07692307692307693
+      },
+      "instruction_following": {
+        "baseline": 2.923076923076923,
+        "candidate": 3.1538461538461537,
+        "delta": 0.23076923076923078
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.5384615384615383,
+        "candidate": 2.6153846153846154,
+        "delta": 0.07692307692307693
+      },
+      "actionability": {
+        "baseline": 2.6923076923076925,
+        "candidate": 3.076923076923077,
+        "delta": 0.38461538461538464
+      },
+      "conciseness": {
+        "baseline": 3.5384615384615383,
+        "candidate": 3.3846153846153846,
+        "delta": -0.15384615384615385
+      },
+      "japanese_quality": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.6153846153846154,
+        "delta": 0.15384615384615385
+      }
+    },
+    "latencyMedianMs": 6299.344400000002,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "reference-transfer-production",
+    "comparison": "eval/results/reference-transfer-comparison",
+    "baseline": "eval/results/reference-transfer-off",
+    "decision": "広い参照を棄却。数値変換の2反復のみ正答改善。",
+    "nextHypothesis": "数値変換だけを残し、独自定義では参照しない。",
+    "pairwiseWinRate": 0.4375,
+    "ci95": {
+      "low": 0.125,
+      "high": 0.8125,
+      "unit": "case",
+      "cases": 4,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2,
+        "candidate": 2.25,
+        "delta": 0.25
+      },
+      "groundedness": {
+        "baseline": 2.125,
+        "candidate": 2.625,
+        "delta": 0.5
+      },
+      "context_utilization": {
+        "baseline": 2.75,
+        "candidate": 2.75,
+        "delta": 0
+      },
+      "hallucination": {
+        "baseline": 2.625,
+        "candidate": 2.875,
+        "delta": 0.25
+      },
+      "instruction_following": {
+        "baseline": 3,
+        "candidate": 2.875,
+        "delta": -0.125
+      },
+      "pedagogical_usefulness": {
+        "baseline": 1.75,
+        "candidate": 2.25,
+        "delta": 0.5
+      },
+      "actionability": {
+        "baseline": 2.25,
+        "candidate": 2.25,
+        "delta": 0
+      },
+      "conciseness": {
+        "baseline": 3.375,
+        "candidate": 3.125,
+        "delta": -0.25
+      },
+      "japanese_quality": {
+        "baseline": 3.625,
+        "candidate": 3.5,
+        "delta": -0.125
+      }
+    },
+    "latencyMedianMs": 8437.315649999999,
+    "gates": {
+      "noNewHardFailures": false,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "final-numeric-context",
+    "comparison": "eval/results/final-numeric-comparison",
+    "baseline": "eval/results/r4-baseline-v2",
+    "decision": "数値補強は保持候補。生成指示変更を含む全体は棄却。",
+    "nextHypothesis": "失敗した生成指示変更を元に戻して確認。",
+    "pairwiseWinRate": 0.4230769230769231,
+    "ci95": {
+      "low": 0.23076923076923078,
+      "high": 0.6153846153846154,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.6153846153846154,
+        "candidate": 2.6923076923076925,
+        "delta": 0.07692307692307693
+      },
+      "groundedness": {
+        "baseline": 2.923076923076923,
+        "candidate": 2.769230769230769,
+        "delta": -0.15384615384615385
+      },
+      "context_utilization": {
+        "baseline": 2.4615384615384617,
+        "candidate": 3,
+        "delta": 0.5384615384615384
+      },
+      "hallucination": {
+        "baseline": 3.230769230769231,
+        "candidate": 3.076923076923077,
+        "delta": -0.15384615384615385
+      },
+      "instruction_following": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.6923076923076925,
+        "delta": 0
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.3846153846153846,
+        "candidate": 2.3846153846153846,
+        "delta": 0
+      },
+      "actionability": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.8461538461538463,
+        "delta": 0.15384615384615385
+      },
+      "conciseness": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.076923076923077,
+        "delta": -0.38461538461538464
+      },
+      "japanese_quality": {
+        "baseline": 3.6153846153846154,
+        "candidate": 3.6923076923076925,
+        "delta": 0.07692307692307693
+      }
+    },
+    "latencyMedianMs": 7129.362800000003,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  },
+  {
+    "experimentId": "champion-context-numeric",
+    "comparison": "eval/results/champion-comparison",
+    "baseline": "eval/results/r4-baseline-v2",
+    "decision": "取得済み情報の欠落修正と数値変換の補強だけを保持。総合優越未認定。",
+    "nextHypothesis": "holdoutの失敗を報告し、以後は新holdout/独立Judgeと別能力検証が必要。",
+    "pairwiseWinRate": 0.5384615384615384,
+    "ci95": {
+      "low": 0.4230769230769231,
+      "high": 0.6538461538461539,
+      "unit": "case",
+      "cases": 13,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 2.6153846153846154,
+        "candidate": 2.8461538461538463,
+        "delta": 0.23076923076923078
+      },
+      "groundedness": {
+        "baseline": 2.923076923076923,
+        "candidate": 3.076923076923077,
+        "delta": 0.15384615384615385
+      },
+      "context_utilization": {
+        "baseline": 2.4615384615384617,
+        "candidate": 2.769230769230769,
+        "delta": 0.3076923076923077
+      },
+      "hallucination": {
+        "baseline": 3.230769230769231,
+        "candidate": 3.4615384615384617,
+        "delta": 0.23076923076923078
+      },
+      "instruction_following": {
+        "baseline": 2.6923076923076925,
+        "candidate": 3,
+        "delta": 0.3076923076923077
+      },
+      "pedagogical_usefulness": {
+        "baseline": 2.3846153846153846,
+        "candidate": 2.5384615384615383,
+        "delta": 0.15384615384615385
+      },
+      "actionability": {
+        "baseline": 2.6923076923076925,
+        "candidate": 2.923076923076923,
+        "delta": 0.23076923076923078
+      },
+      "conciseness": {
+        "baseline": 3.4615384615384617,
+        "candidate": 3.4615384615384617,
+        "delta": 0
+      },
+      "japanese_quality": {
+        "baseline": 3.6153846153846154,
+        "candidate": 3.769230769230769,
+        "delta": 0.15384615384615385
+      }
+    },
+    "latencyMedianMs": 7291.211800000005,
+    "gates": {
+      "noNewHardFailures": true,
+      "criticalAxes": true,
+      "qualityCI": false,
+      "latency": true
+    },
+    "scope": "Screening; one sample per task except reference transfer, two repeats per task."
+  }
+]

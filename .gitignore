@@ -3,3 +3,6 @@ out/
 .vscode-test/
 .test-out/
 *.vsix
+
+# Machine-specific assistant permissions and local paths.
+.claude/settings.local.json

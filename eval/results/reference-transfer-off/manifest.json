@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "reference-transfer-off",
+  "config": {
+    "id": "reference-transfer-off",
+    "provider": "lmStudio",
+    "model": "qwen/qwen3-8b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": null,
+    "languageReference": "off"
+  },
+  "split": "tuning",
+  "repeats": 2,
+  "caseIds": [
+    "transfer-numeric",
+    "transfer-set-reinsert",
+    "transfer-map-update",
+    "transfer-shadowed"
+  ],
+  "caseSetHash": "bb2fa6c30c0709ff495f880b6505da65faca746d007e176f08868a5f6329b449",
+  "provenance": {
+    "git": "877bad9ce0a2fc50ef803e26023809c3f99f9d31",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-15-keyword-hints-v5",
+    "files": {
+      "PromptBuilder": "64ceb69dac1407d3881e6e782708bfc47867d35d1939e033e0fccde4bd96442c",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "LanguageReference": "d651e59c6ad04d53cf9c77856f2ad49facfb840cd41ab261b00680338fafcacb",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "7681cb905f0e3e173c34fe80671cd33993f799089fbfc681ab59602d5630a93d"
+  },
+  "startedAt": "2026-09-15T11:15:14.602Z",
+  "orderSeed": "031ed9c548c5ba79d366990e9ec4c4ca",
+  "dry": false,
+  "finishedAt": "2026-09-15T11:16:36.757Z",
+  "status": "completed"
+}

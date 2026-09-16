@@ -1,0 +1,35 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "independent": false
+  },
+  "caseId": "hint-only",
+  "answerHash": "d027160eec4973dbe3ae78fa577c58e57ba24e58bef30cf7b2a3f1ba4aef49b0",
+  "scores": {
+    "correctness": 2,
+    "groundedness": 2,
+    "context_utilization": 2,
+    "hallucination": 4,
+    "instruction_following": 0,
+    "pedagogical_usefulness": 1,
+    "actionability": 1,
+    "conciseness": 4,
+    "japanese_quality": 4
+  },
+  "reasons": {
+    "correctness": "呼び出し元の待機だけでは内部のPromise誤用を直せない",
+    "groundedness": "待機対象の根拠が曖昧",
+    "context_utilization": "fetchへの注目はあるが位置が曖昧",
+    "hallucination": "架空の実装は創作しない",
+    "instruction_following": "awaitという答えを漏らす",
+    "pedagogical_usefulness": "自力発見を奪う",
+    "actionability": "呼び出し元という案内が不適切",
+    "conciseness": "短い",
+    "japanese_quality": "自然"
+  },
+  "failures": [
+    "hint_leakage",
+    "weak_pedagogy"
+  ],
+  "scope": "single infrastructure retry; not pooled with original run"
+}

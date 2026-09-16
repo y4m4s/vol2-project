@@ -106,6 +106,20 @@ function ollamaHarness() {
   };
 }
 
+test("routing only activates tested models matching current settings without another probe", async () => {
+  const h = ollamaHarness();
+  const settings = { ...h.settings, ...h.ollamaSettings, providerId: "copilot" as const };
+  assert.equal(h.service.activateTestedProvider("copilot", settings), false);
+  await h.service.connectAndActivate(settings);
+  await h.service.connectAndActivate({ ...settings, providerId: "ollama" });
+  assert.equal(h.service.getTestedModels(settings).length, 2);
+  assert.equal(h.service.activateTestedProvider("copilot", settings), true);
+  assert.equal(h.service.getProviderId(), "copilot");
+  assert.equal(h.service.activateTestedProvider("copilot", { ...settings, copilotModelId: "different" }), false);
+  h.service.markRestricted();
+  assert.equal(h.service.activateTestedProvider("copilot", settings), false);
+});
+
 test("Ollamaから切り替えると最後に使用したモデルだけをアンロードする", async () => {
   const h = ollamaHarness();
   assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, true);
@@ -116,6 +130,31 @@ test("Ollamaから切り替えると最後に使用したモデルだけをア�
   assert.equal(h.service.getProviderId(), "copilot");
   assert.equal((await h.service.connectAndActivate(h.ollamaSettings)).activated, true);
   assert.equal((await h.generate()).text, "回答");
+});
+
+test("候補から外した接続を解除してもOllamaモデルはアンロードしない", async () => {
+  const h = ollamaHarness();
+  const settings = { ...h.settings, ...h.ollamaSettings, providerId: "copilot" as const };
+  await h.service.connectAndActivate(settings);
+  await h.service.connectAndActivate({ ...settings, providerId: "ollama" });
+  assert.deepEqual(h.service.getTestedModels(settings).map(model => model.providerId).sort(), ["copilot", "ollama"]);
+
+  assert.equal(h.service.deactivateTestedProviders(["copilot"]), false);
+  assert.deepEqual(h.service.getTestedModels(settings).map(model => model.providerId), ["ollama"]);
+  assert.equal(h.service.getState(), "connected");
+
+  assert.equal(h.service.deactivateTestedProviders(["ollama"]), true);
+  assert.deepEqual(h.service.getTestedModels(settings), []);
+  assert.equal(h.service.getState(), "disconnected");
+  assert.deepEqual(h.unloaded, []);
+});
+
+test("保存時の接続確認ではOllamaモデルを維持する", async () => {
+  const h = ollamaHarness();
+  await h.service.connectAndActivate(h.ollamaSettings);
+  await h.generate();
+  await h.service.connectAndActivate(h.settings, true);
+  assert.deepEqual(h.unloaded, []);
 });
 
 test("Ollamaに接続しただけならモデルをアンロードしない", async () => {
@@ -198,6 +237,6 @@ test("Ollama一覧の更新失敗で古いモデル候補を消し、詳細を�
   fail = true;
   assert.deepEqual(await service.refreshAvailableOllamaModels("http://localhost:11434"), []);
   assert.equal(service.getOllamaModelsBaseUrl(), undefined);
-  assert.match(service.getOllamaStatus(), /接続できません/);
+  assert.match(service.getOllamaStatus(), /モデル一覧を取得できません/);
   assert.doesNotMatch(service.getOllamaStatus(), /internal/);
 });

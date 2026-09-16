@@ -9,6 +9,59 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
+test("Thinkingを低off・高onへ切り替え、推論本文を除外して性能統計を返す", async () => {
+  for (const effort of ["none", "high"] as const) {
+    globalThis.fetch = async (url, init) => {
+      if (String(url).endsWith("/api/v1/models")) return Response.json({ models: [{ key: "qwen",
+        capabilities: { reasoning: { allowed_options: ["off", "on"] } } }] });
+      assert.equal(String(url), "http://localhost:1234/api/v1/chat");
+      assert.deepEqual(JSON.parse(String(init?.body)), {
+        model: "qwen", system_prompt: "指示", input: "入力", reasoning: effort === "none" ? "off" : "on",
+        max_output_tokens: 2048, stream: false, store: false, integrations: []
+      });
+      return Response.json({ model_instance_id: "qwen", output: [
+        { type: "reasoning", content: "内部推論" }, { type: "message", content: "最終回答" }
+      ], stats: { input_tokens: 100, total_output_tokens: 50, reasoning_output_tokens: 30,
+        tokens_per_second: 25, time_to_first_token_seconds: 0.5 } });
+    };
+    const result = await new LmStudioClient().createCompletion("http://localhost:1234", "qwen", {
+      systemPrompt: "指示", userPrompt: "入力", purpose: "guidance", maxOutputTokens: 2048, reasoningEffort: effort
+    });
+    assert.equal(result.text, "最終回答");
+    assert.equal(result.reasoningTokens, 30);
+    assert.equal(result.outputTokens, 50);
+    assert.equal(result.tokensPerSecond, 25);
+    assert.doesNotMatch(JSON.stringify(result), /内部推論/);
+  }
+});
+
+test("段階式Thinkingにはhighを選び、off非対応なら生成前にエラーにする", async () => {
+  let posts = 0;
+  globalThis.fetch = async (_url, init) => {
+    if (init?.method === "GET") return Response.json({ models: [{ key: "model",
+      capabilities: { reasoning: { allowed_options: ["low", "medium", "high"] } } }] });
+    posts++;
+    assert.equal(JSON.parse(String(init?.body)).reasoning, "high");
+    return Response.json({ output: [{ type: "message", content: "回答" }], stats: { total_output_tokens: 5 } });
+  };
+  const client = new LmStudioClient();
+  const request = { systemPrompt: "指示", userPrompt: "入力", purpose: "guidance" as const, maxOutputTokens: 20 };
+  await client.createCompletion("http://localhost:1234", "model", { ...request, reasoningEffort: "high" });
+  await assert.rejects(client.createCompletion("http://localhost:1234", "model", { ...request, reasoningEffort: "none" }), /対応していません/);
+  assert.equal(posts, 1);
+});
+
+test("Thinkingで出力枠を使い切った場合は空の最終回答でもlengthを返す", async () => {
+  globalThis.fetch = async (_url, init) => init?.method === "GET"
+    ? Response.json({ models: [{ key: "model", capabilities: { reasoning: { allowed_options: ["on"] } } }] })
+    : Response.json({ output: [{ type: "reasoning", content: "推論" }], stats: { total_output_tokens: 20 } });
+  const result = await new LmStudioClient().createCompletion("http://localhost:1234", "model", {
+    systemPrompt: "指示", userPrompt: "入力", purpose: "guidance", maxOutputTokens: 20, reasoningEffort: "high"
+  });
+  assert.equal(result.text, "");
+  assert.equal(result.finishReason, "length");
+});
+
 test("モデル一覧を正規化しロード状態を保持する", async () => {
   globalThis.fetch = async () => new Response(JSON.stringify({
     models: [

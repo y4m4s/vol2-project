@@ -1,11 +1,16 @@
 import type { EvalScenario } from "./fixtures";
 import { hasNoFencedCode, includes, maxBulletLines } from "./assertions";
+import { taskHintChecks } from "./taskHintChecks";
 
 const problem = 'Q001 横に並べる（繰り返し） 文字「■」を横に5つ並べて表示させてください。';
 
 // Synthetic editor snapshots: never read a user's workspace in the live eval.
 export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   { id: "single", code: 'print("■")', expected: "continue" },
+  { id: "layout-h-h", code: 'print("■" * 5)', problem: "■を横並びに5つ表示するコードを書いてください。", openOnly: true, expected: "none" },
+  { id: "layout-v-h", code: 'print("■" * 5)', problem: "■を縦並びに5つ表示するコードを書いてください。", openOnly: true, expected: "continue" },
+  { id: "layout-h-v", code: Array(5).fill('print("■")').join('\n'), problem: "■を横並びに5つ表示するコードを書いてください。", openOnly: true, expected: "continue" },
+  { id: "layout-v-v", code: Array(5).fill('print("■")').join('\n'), problem: "■を縦並びに5つ表示するコードを書いてください。", openOnly: true, expected: "none" },
   { id: "complete", code: 'print("■" * 5)', before: 'print("■")', expected: "none" },
   { id: "complete-repeat", code: 'print("■" * 5)', before: 'print("■")', expected: "none", previousFocus: "continue" },
   { id: "complete-insert-delta", code: 'print("■" * 5)', delta: " * 5", expected: "none" },
@@ -23,6 +28,8 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
   { id: "vertical-five-initial", code: Array(5).fill('print("■")').join('\n'), openOnly: true, expected: "continue" },
   { id: "vertical-loop", code: 'for i in range(5):\n    print("■")', expected: "continue" },
   { id: "horizontal-five", code: Array(5).fill('print("■", end="")').join('\n'), expected: "none" },
+  { id: "horizontal-wrong-count", code: Array(4).fill('print("■", end="")').join('\n'), expected: "continue" },
+  { id: "complete-vertical-task", code: Array(5).fill('print("■")').join('\n'), problem: "文字「■」を縦に5つ、1行に1つずつ表示してください。", expected: "none" },
   { id: "missing-output", code: 'squares = "■" * 5', expected: "continue" },
   { id: "complete-loop", code: 'for i in range(5):\n    print("■", end="")', expected: "none" },
   { id: "complete-high", code: 'print("■" * 5)', expected: "none", high: true },
@@ -58,12 +65,16 @@ export const TASK_COMPLETION_SCENARIOS: EvalScenario[] = [
     }
   },
   promptChecks: [includes(sample.selected ?? sample.code), includes(sample.problem ?? problem)],
-  responseChecks: [hasNoFencedCode(), maxBulletLines(3), ...(sample.id.startsWith("vertical") ? [{
-    name: "identifies output layout rather than only counting symbols",
-    run: (text: string) => ({ passed: /改行|縦|横|同じ行|同一行|1行|一行|end/.test(text)
-      && !/要件を満たしています|要件を満たしている|要件を満たす[。です]|修正は不要|変更は不要/.test(text) })
-  }] : []), ...(sample.expected === "continue" ? [{
-    name: "hint does not prescribe duplicated lines or a completed expression",
-    run: (text: string) => ({ passed: !/(?:行|print文).{0,20}(?:コピー|複製)|(?:コピー|複製).{0,20}(?:行|print)|print\s*\(\s*[^)\s]|["'「]■["'」]\s*\*\s*5/.test(text) })
-  }] : [])]
+  responseChecks: [hasNoFencedCode(), maxBulletLines(3),
+    ...(sample.id === "layout-v-h" ? [{
+      name: "describes horizontal output and the vertical requirement",
+      run: (text: string) => ({ passed: /横|同じ行|同一行|1行|一行/.test(text) && /縦|各行|1つずつ|一つずつ/.test(text)
+        && !/現在.{0,12}(?:複数行|縦に|5行)/.test(text) })
+    }] : []),
+    ...(["single", "incomplete-initial-read", "wrong-count", "horizontal-wrong-count"].includes(sample.id) ? [{
+      name: "identifies the count mismatch rather than inventing multiple output lines",
+      run: (text: string) => ({ passed: /個数|回数|数|1つ|一つ|4つ|四つ/.test(text)
+        && !/現在.{0,12}(?:複数行|縦に|5行)/.test(text) })
+    }] : []),
+    ...(sample.expected === "continue" ? taskHintChecks(sample.id.startsWith("vertical") || sample.id === "layout-h-v") : [])]
 }));

@@ -1,0 +1,71 @@
+{
+  "currentAlgorithmProvenance": {
+    "algorithms.mjs": "8434241083432d2107e022a17c6c9060cb372b37de36bcd3ee3e666678f93faf",
+    "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+    "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+    "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+  },
+  "runs": [
+    {
+      "run": "eval/results/alg-lm-baseline-v2",
+      "observations": 48,
+      "responsesHash": "6393a2b647c24db39395d5168445574954f0f13affa0dfc9ab426535f7b12d26",
+      "originalAlgorithmProvenance": {
+        "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+        "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+        "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+        "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+      },
+      "allPromptsAndChecksUnchanged": true
+    },
+    {
+      "run": "eval/results/alg-lm-sections",
+      "observations": 48,
+      "responsesHash": "c038a05b48b9745b2636683e53612f85f60c4c8ce460decb148b7e11011bed45",
+      "originalAlgorithmProvenance": {
+        "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+        "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+        "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+        "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+      },
+      "allPromptsAndChecksUnchanged": true
+    },
+    {
+      "run": "eval/results/alg-oll-baseline",
+      "observations": 48,
+      "responsesHash": "ddf315e307b8057cb00f6731732f2403384992f1e0a0ebfcefed1e54701afcee",
+      "originalAlgorithmProvenance": {
+        "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+        "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+        "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+        "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+      },
+      "allPromptsAndChecksUnchanged": true
+    },
+    {
+      "run": "eval/results/alg-lm-holdout",
+      "observations": 16,
+      "responsesHash": "bbd8b40707ae5728173c55936691d761f52e2c37b5221a7aeb46c96af937d6c3",
+      "originalAlgorithmProvenance": {
+        "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+        "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+        "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+        "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+      },
+      "allPromptsAndChecksUnchanged": true
+    },
+    {
+      "run": "eval/results/alg-oll-holdout",
+      "observations": 16,
+      "responsesHash": "3ad57ad6a08ef84890bb1ee024005ac46c60cc0f36d90ca113ee864b27f0cec3",
+      "originalAlgorithmProvenance": {
+        "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+        "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+        "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+        "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+      },
+      "allPromptsAndChecksUnchanged": true
+    }
+  ],
+  "note": "After acquisition, scalar hard-check parsing was hardened against numeric prefixes and mixed duplicate labels. All 176 saved observations retain exactly the same prompts, runtime validation and hard-check results. No new inference or semantic retuning."
+}

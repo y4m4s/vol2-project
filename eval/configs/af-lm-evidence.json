@@ -1,0 +1,15 @@
+{
+  "id": "af-lm-evidence",
+  "provider": "lmStudio",
+  "model": "qwen/qwen3-8b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "automatic-evidence-v1",
+  "contextStrategy": "production",
+  "thinking": "none",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null,
+  "collectorContext": "bounded-file",
+  "problemLayout": "plain"
+}

@@ -1,0 +1,1400 @@
+[
+  {
+    "id": "alg-sum-incomplete-py",
+    "problemId": "sum",
+    "category": "automatic_incomplete",
+    "variant": "incomplete",
+    "kind": "always",
+    "expectedFocus": [
+      "continue"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "total remains zero because accumulation is missing. Briefly point to accumulating elements; do not supply completed implementation.",
+    "language": "python",
+    "code": "def solve(a):\n    total = 0\n    # TODO: accumulate the values\n    return total\n",
+    "fixturePath": "eval/fixtures/algorithms/sum-incomplete.py",
+    "fixtureHash": "612d43e93097d6d69fe7579227195704569ac2ddc9555aea2f1f67d3f0b47ae6",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "612d43e93097d6d69fe7579227195704569ac2ddc9555aea2f1f67d3f0b47ae6",
+      "scope": "all arrays length0..4 over -2..2",
+      "testCount": 781,
+      "mismatches": 670,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -2
+            ]
+          ],
+          "expected": -2,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2
+            ]
+          ],
+          "expected": -4,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2,
+              -2
+            ]
+          ],
+          "expected": -6,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "119501802bcdfe31e83b65e3eb9a2c50d71d34049b2d1e15230d24e393014828",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    total = 0\n    # TODO: accumulate the values\n    return total\n",
+        "additionalContext": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。\n0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。\nsolve([3, -1, 4]) -> 6; solve([]) -> 0",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 4,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a):\n    total = 0\n    # TODO: accumulate the values\n    return total\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 4,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sum-incomplete-js",
+    "problemId": "sum",
+    "category": "automatic_incomplete",
+    "variant": "incomplete",
+    "kind": "always",
+    "expectedFocus": [
+      "continue"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "total remains zero because accumulation is missing. Briefly point to accumulating elements; do not supply completed implementation.",
+    "language": "javascript",
+    "code": "function solve(a) {\n  let total = 0;\n  // TODO: accumulate the values\n  return total;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/sum-incomplete.js",
+    "fixtureHash": "2913d7cd0cb10f48d17e680328b78b7e25a48d75db7194599311224d194c8ea7",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "2913d7cd0cb10f48d17e680328b78b7e25a48d75db7194599311224d194c8ea7",
+      "scope": "all arrays length0..4 over -2..2",
+      "testCount": 781,
+      "mismatches": 670,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -2
+            ]
+          ],
+          "expected": -2,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2
+            ]
+          ],
+          "expected": -4,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2,
+              -2
+            ]
+          ],
+          "expected": -6,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "119501802bcdfe31e83b65e3eb9a2c50d71d34049b2d1e15230d24e393014828",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  let total = 0;\n  // TODO: accumulate the values\n  return total;\n}\n",
+        "additionalContext": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。\n0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。\nsolve([3, -1, 4]) -> 6; solve([]) -> 0",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  let total = 0;\n  // TODO: accumulate the values\n  return total;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-prefix-correct-py",
+    "problemId": "inclusive-range",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Correct inclusive range calculation. No advice/none; no off-by-one accusation.",
+    "language": "python",
+    "code": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right + 1] - prefix[left]\n",
+    "fixturePath": "eval/fixtures/algorithms/prefix-correct.py",
+    "fixtureHash": "578db124b8e73e71a61be0b4613b6d055e979bc536e5147534314dea2ab3ee2b",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "578db124b8e73e71a61be0b4613b6d055e979bc536e5147534314dea2ab3ee2b",
+      "scope": "all arrays length1..4 over -1,0,2 and all valid inclusive intervals",
+      "testCount": 1002,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "effd5c04708334b348ff3b2cd34d503a2187b4a9bda341c29bb661f164cf2b15",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right + 1] - prefix[left]\n",
+        "additionalContext": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。\n1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。\nsolve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right + 1] - prefix[left]\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-prefix-correct-js",
+    "problemId": "inclusive-range",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Correct inclusive range calculation. No advice/none; no off-by-one accusation.",
+    "language": "javascript",
+    "code": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right + 1] - prefix[left];\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/prefix-correct.js",
+    "fixtureHash": "f5f6dcf93c60437ab228b1ca687b66236ecf4e688c8072862ca2906f3c31a5c6",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "f5f6dcf93c60437ab228b1ca687b66236ecf4e688c8072862ca2906f3c31a5c6",
+      "scope": "all arrays length1..4 over -1,0,2 and all valid inclusive intervals",
+      "testCount": 1002,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "effd5c04708334b348ff3b2cd34d503a2187b4a9bda341c29bb661f164cf2b15",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right + 1] - prefix[left];\n}\n",
+        "additionalContext": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。\n1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。\nsolve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right + 1] - prefix[left];\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-prefix-bug-py",
+    "problemId": "inclusive-range",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Upper endpoint is excluded by prefix[right]. Hint at inclusive endpoint and prefix boundary, no corrected expression.",
+    "language": "python",
+    "code": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right] - prefix[left]\n",
+    "fixturePath": "eval/fixtures/algorithms/prefix-bug.py",
+    "fixtureHash": "2eb2f7e319fd38cade60238495fb105dd451f8f98651c096ea2935413ede7fbd",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "2eb2f7e319fd38cade60238495fb105dd451f8f98651c096ea2935413ede7fbd",
+      "scope": "all arrays length1..4 over -1,0,2 and all valid inclusive intervals",
+      "testCount": 1002,
+      "mismatches": 668,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -1
+            ],
+            0,
+            0
+          ],
+          "expected": -1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1
+            ],
+            0,
+            0
+          ],
+          "expected": -1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1
+            ],
+            0,
+            1
+          ],
+          "expected": -2,
+          "actual": {
+            "value": -1,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "a0fb6bb29ac0ba27e14f2e579f96abdd0cd5239c0c2b814d7e5f5eac5c3bb26a",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right] - prefix[left]\n",
+        "additionalContext": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。\n1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。\nsolve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a, left, right):\n    prefix = [0]\n    for value in a:\n        prefix.append(prefix[-1] + value)\n    return prefix[right] - prefix[left]\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-prefix-bug-js",
+    "problemId": "inclusive-range",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Upper endpoint is excluded by prefix[right]. Hint at inclusive endpoint and prefix boundary, no corrected expression.",
+    "language": "javascript",
+    "code": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right] - prefix[left];\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/prefix-bug.js",
+    "fixtureHash": "33fcaa3630d7d6026627f1802422eb1351c5c5018ec5422eda44bc761d01f52a",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "33fcaa3630d7d6026627f1802422eb1351c5c5018ec5422eda44bc761d01f52a",
+      "scope": "all arrays length1..4 over -1,0,2 and all valid inclusive intervals",
+      "testCount": 1002,
+      "mismatches": 668,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -1
+            ],
+            0,
+            0
+          ],
+          "expected": -1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1
+            ],
+            0,
+            0
+          ],
+          "expected": -1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1
+            ],
+            0,
+            1
+          ],
+          "expected": -2,
+          "actual": {
+            "value": -1,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "a0fb6bb29ac0ba27e14f2e579f96abdd0cd5239c0c2b814d7e5f5eac5c3bb26a",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right] - prefix[left];\n}\n",
+        "additionalContext": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。\n1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。\nsolve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a, left, right) {\n  const prefix = [0];\n  for (const value of a) prefix.push(prefix[prefix.length - 1] + value);\n  return prefix[right] - prefix[left];\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-bfs-correct-py",
+    "problemId": "shortest-path",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "bfs",
+    "problem": {
+      "task": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。",
+      "constraints": "1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。",
+      "examples": "solve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1"
+    },
+    "expected": "FIFO traversal with visited nodes yields shortest unweighted paths, includes same start/target and unreachable. No needless replacement.",
+    "language": "python",
+    "code": "def solve(graph, start, target):\n    queue = [(start, 0)]\n    seen = {start}\n    head = 0\n    while head < len(queue):\n        vertex, distance = queue[head]\n        head += 1\n        if vertex == target:\n            return distance\n        for nxt in graph[vertex]:\n            if nxt not in seen:\n                seen.add(nxt)\n                queue.append((nxt, distance + 1))\n    return -1\n",
+    "fixturePath": "eval/fixtures/algorithms/bfs-correct.py",
+    "fixtureHash": "4459c0d782ffcf5a9f63c5496fa2a193f6fe77ca2a61cb3a340633f0012bff1a",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "4459c0d782ffcf5a9f63c5496fa2a193f6fe77ca2a61cb3a340633f0012bff1a",
+      "scope": "all 64 directed loop-free graphs on3 nodes, all endpoints; one5-node counterexample",
+      "testCount": 577,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "ab74d2dae44df3fb9e4bbf628e5e1ab8a4ed64f92499585b0f1bcc06e085800d",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(graph, start, target):\n    queue = [(start, 0)]\n    seen = {start}\n    head = 0\n    while head < len(queue):\n        vertex, distance = queue[head]\n        head += 1\n        if vertex == target:\n            return distance\n        for nxt in graph[vertex]:\n            if nxt not in seen:\n                seen.add(nxt)\n                queue.append((nxt, distance + 1))\n    return -1\n",
+        "additionalContext": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。\n1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。\nsolve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 14,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(graph, start, target):\n    queue = [(start, 0)]\n    seen = {start}\n    head = 0\n    while head < len(queue):\n        vertex, distance = queue[head]\n        head += 1\n        if vertex == target:\n            return distance\n        for nxt in graph[vertex]:\n            if nxt not in seen:\n                seen.add(nxt)\n                queue.append((nxt, distance + 1))\n    return -1\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 14,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-bfs-correct-js",
+    "problemId": "shortest-path",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "bfs",
+    "problem": {
+      "task": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。",
+      "constraints": "1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。",
+      "examples": "solve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1"
+    },
+    "expected": "FIFO traversal with visited nodes yields shortest unweighted paths, includes same start/target and unreachable. No needless replacement.",
+    "language": "javascript",
+    "code": "function solve(graph, start, target) {\n  const queue = [[start, 0]], seen = new Set([start]);\n  let head = 0;\n  while (head < queue.length) {\n    const [vertex, distance] = queue[head++];\n    if (vertex === target) return distance;\n    for (const next of graph[vertex]) if (!seen.has(next)) {\n      seen.add(next);\n      queue.push([next, distance + 1]);\n    }\n  }\n  return -1;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/bfs-correct.js",
+    "fixtureHash": "b014f088a36cd08e72bfb70df951107fdaac304f8f5a57b64d5886421896e192",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "b014f088a36cd08e72bfb70df951107fdaac304f8f5a57b64d5886421896e192",
+      "scope": "all 64 directed loop-free graphs on3 nodes, all endpoints; one5-node counterexample",
+      "testCount": 577,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "ab74d2dae44df3fb9e4bbf628e5e1ab8a4ed64f92499585b0f1bcc06e085800d",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(graph, start, target) {\n  const queue = [[start, 0]], seen = new Set([start]);\n  let head = 0;\n  while (head < queue.length) {\n    const [vertex, distance] = queue[head++];\n    if (vertex === target) return distance;\n    for (const next of graph[vertex]) if (!seen.has(next)) {\n      seen.add(next);\n      queue.push([next, distance + 1]);\n    }\n  }\n  return -1;\n}\n",
+        "additionalContext": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。\n1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。\nsolve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 13,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(graph, start, target) {\n  const queue = [[start, 0]], seen = new Set([start]);\n  let head = 0;\n  while (head < queue.length) {\n    const [vertex, distance] = queue[head++];\n    if (vertex === target) return distance;\n    for (const next of graph[vertex]) if (!seen.has(next)) {\n      seen.add(next);\n      queue.push([next, distance + 1]);\n    }\n  }\n  return -1;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 13,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-stairs-bug-py",
+    "problemId": "stair-count",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "stairs",
+    "problem": {
+      "task": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。",
+      "constraints": "0 <= n <= 30。0段は何もしない1通りとする。",
+      "examples": "solve(2) -> 2; solve(3) -> 3"
+    },
+    "expected": "Base for zero steps is incorrectly0. Hint at initialization including do-nothing case, without completed assignment.",
+    "language": "python",
+    "code": "def solve(n):\n    ways = [0] * (n + 2)\n    ways[1] = 1\n    for i in range(2, n + 1):\n        ways[i] = ways[i - 1] + ways[i - 2]\n    return ways[n]\n",
+    "fixturePath": "eval/fixtures/algorithms/stairs-bug.py",
+    "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+      "scope": "all n0..12 using independent recursive enumeration",
+      "testCount": 13,
+      "mismatches": 12,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            0
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            2
+          ],
+          "expected": 2,
+          "actual": {
+            "value": 1,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            3
+          ],
+          "expected": 3,
+          "actual": {
+            "value": 2,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(n):\n    ways = [0] * (n + 2)\n    ways[1] = 1\n    for i in range(2, n + 1):\n        ways[i] = ways[i - 1] + ways[i - 2]\n    return ways[n]\n",
+        "additionalContext": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。\n0 <= n <= 30。0段は何もしない1通りとする。\nsolve(2) -> 2; solve(3) -> 3",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 6,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(n):\n    ways = [0] * (n + 2)\n    ways[1] = 1\n    for i in range(2, n + 1):\n        ways[i] = ways[i - 1] + ways[i - 2]\n    return ways[n]\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 6,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-stairs-bug-js",
+    "problemId": "stair-count",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "stairs",
+    "problem": {
+      "task": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。",
+      "constraints": "0 <= n <= 30。0段は何もしない1通りとする。",
+      "examples": "solve(2) -> 2; solve(3) -> 3"
+    },
+    "expected": "Base for zero steps is incorrectly0. Hint at initialization including do-nothing case, without completed assignment.",
+    "language": "javascript",
+    "code": "function solve(n) {\n  const ways = Array(n + 2).fill(0);\n  ways[1] = 1;\n  for (let i = 2; i <= n; i++) ways[i] = ways[i - 1] + ways[i - 2];\n  return ways[n];\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/stairs-bug.js",
+    "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+      "scope": "all n0..12 using independent recursive enumeration",
+      "testCount": 13,
+      "mismatches": 12,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            0
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            2
+          ],
+          "expected": 2,
+          "actual": {
+            "value": 1,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            3
+          ],
+          "expected": 3,
+          "actual": {
+            "value": 2,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(n) {\n  const ways = Array(n + 2).fill(0);\n  ways[1] = 1;\n  for (let i = 2; i <= n; i++) ways[i] = ways[i - 1] + ways[i - 2];\n  return ways[n];\n}\n",
+        "additionalContext": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。\n0 <= n <= 30。0段は何もしない1通りとする。\nsolve(2) -> 2; solve(3) -> 3",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 6,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(n) {\n  const ways = Array(n + 2).fill(0);\n  ways[1] = 1;\n  for (let i = 2; i <= n; i++) ways[i] = ways[i - 1] + ways[i - 2];\n  return ways[n];\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 6,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sort-correct-py",
+    "problemId": "numeric-sort",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Correct numeric ascending non-mutating sort; duplicates retained. No needless fixes.",
+    "language": "python",
+    "code": "def solve(a):\n    return sorted(a)\n",
+    "fixturePath": "eval/fixtures/algorithms/sort-correct.py",
+    "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+      "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+      "testCount": 781,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    return sorted(a)\n",
+        "additionalContext": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。\n0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。\nsolve([10, 2, 1]) -> [1, 2, 10]",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 2,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a):\n    return sorted(a)\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 2,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sort-correct-js",
+    "problemId": "numeric-sort",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Correct numeric ascending non-mutating sort; duplicates retained. No needless fixes.",
+    "language": "javascript",
+    "code": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/sort-correct.js",
+    "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+      "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+      "testCount": 781,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n",
+        "additionalContext": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。\n0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。\nsolve([10, 2, 1]) -> [1, 2, 10]",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 3,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 3,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sort-bug-py",
+    "problemId": "numeric-sort",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Lexicographic rather than numeric ordering; multiple digit numbers reveal the bug. Hint at comparison basis, no complete comparator.",
+    "language": "python",
+    "code": "def solve(a):\n    return sorted(a, key=str)\n",
+    "fixturePath": "eval/fixtures/algorithms/sort-bug.py",
+    "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+      "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+      "testCount": 781,
+      "mismatches": 350,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              0,
+              0,
+              2,
+              10
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            10
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              10,
+              2
+            ],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              0,
+              0,
+              2,
+              11
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            11
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              11,
+              2
+            ],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              0,
+              0,
+              10,
+              2
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            10
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              10,
+              2
+            ],
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    return sorted(a, key=str)\n",
+        "additionalContext": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。\n0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。\nsolve([10, 2, 1]) -> [1, 2, 10]",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 2,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a):\n    return sorted(a, key=str)\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 2,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sort-bug-js",
+    "problemId": "numeric-sort",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Lexicographic rather than numeric ordering; multiple digit numbers reveal the bug. Hint at comparison basis, no complete comparator.",
+    "language": "javascript",
+    "code": "function solve(a) {\n  return [...a].sort();\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/sort-bug.js",
+    "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+      "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+      "testCount": 781,
+      "mismatches": 350,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              0,
+              0,
+              2,
+              10
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            10
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              10,
+              2
+            ],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              0,
+              0,
+              2,
+              11
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            11
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              11,
+              2
+            ],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              0,
+              0,
+              10,
+              2
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            2,
+            10
+          ],
+          "actual": {
+            "value": [
+              0,
+              0,
+              10,
+              2
+            ],
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  return [...a].sort();\n}\n",
+        "additionalContext": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。\n0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。\nsolve([10, 2, 1]) -> [1, 2, 10]",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 3,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  return [...a].sort();\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 3,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  }
+]

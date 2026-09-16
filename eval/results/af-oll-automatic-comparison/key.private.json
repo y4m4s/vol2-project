@@ -1,0 +1,233 @@
+{
+  "baseline": "eval/results/af-oll-automatic-baseline",
+  "candidate": "eval/results/af-oll-automatic-candidate",
+  "split": "tuning",
+  "seed": "b36544d7dc331a814935f8af1b10f0b5",
+  "packetHash": "cc2577a0615c2b0ff541bbc74e99764bda295b4d88d019ab7613ad4c128ea5d9",
+  "pairs": [
+    {
+      "pairId": "19211ad61537307e",
+      "caseId": "alg-sort-bug-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "80870aae850f7a01c85bf1419ce6379f3aff2a93d9181983424493064d9c25c1"
+    },
+    {
+      "pairId": "252825d10da52194",
+      "caseId": "alg-bfs-correct-py",
+      "problemId": "shortest-path",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "0e463c06e7dab810a15d86cb6eeffa3633d4cd3a7eac7117d1e108d8c2e1b03f"
+    },
+    {
+      "pairId": "20a323d0036efc8f",
+      "caseId": "alg-sort-bug-js",
+      "problemId": "numeric-sort",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "c70131dc35dda3983bf0d75284467822ec2a2704bc743e6454fce8be7ac85ac8"
+    },
+    {
+      "pairId": "270f222ba603aa78",
+      "caseId": "alg-sum-incomplete-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "15b34b226c6a64a70901179e8590cd2e4a4b4ba61a82cbddb31884dfdf9a9f0d"
+    },
+    {
+      "pairId": "36687e8a723a9bc3",
+      "caseId": "alg-sum-incomplete-py",
+      "problemId": "sum",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "7184c743574622e5c4ac2e72a236280ef8f492d89ee6e89d2f460d357ca89742"
+    },
+    {
+      "pairId": "dbe625d709dcf9c6",
+      "caseId": "alg-sort-bug-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "8950e170a98a9aa0a71bd53a1d66fc9f789963d9fe752833ed5d2f0da4ff4e83"
+    },
+    {
+      "pairId": "b4c56da9608b3048",
+      "caseId": "alg-sum-incomplete-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "6ff3c38d86d494c04c7d734653c953abf1f50e494e078966fc61ef753d2b0e81"
+    },
+    {
+      "pairId": "0b874712e1b417c7",
+      "caseId": "alg-stairs-bug-py",
+      "problemId": "stair-count",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "c11f8195343e1ab8ec7a5f096d4819496478418d4af9d97dc79482bd2cdb2f11"
+    },
+    {
+      "pairId": "8c9841519d2fadca",
+      "caseId": "alg-stairs-bug-py",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "075a47a44ea9054af1241f5be0378d8626e29346380096cfce3537d2d2d49265"
+    },
+    {
+      "pairId": "2dc42cf8006cf4ac",
+      "caseId": "alg-sum-incomplete-js",
+      "problemId": "sum",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "95359f7aecb37aa3934f44eb5c46d0cf0f58fcc122e89e645d0b08c025b6b3e5"
+    },
+    {
+      "pairId": "6db1e47ce25382c5",
+      "caseId": "alg-sort-correct-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "889470f8de96493fdf5bbd4e681c38fffb95520a70f736a04966f739936c78e7"
+    },
+    {
+      "pairId": "29ce92bb4cc408b3",
+      "caseId": "alg-prefix-bug-js",
+      "problemId": "inclusive-range",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "2f35d831b35687fae213f63adcc711183d19c0d6d61224b041a4514156dcdb15"
+    },
+    {
+      "pairId": "c6c11d0e8e7e2b36",
+      "caseId": "alg-prefix-correct-js",
+      "problemId": "inclusive-range",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "4a00700f9e673f89de8f5c6446da571ae12878d25fdb549c94de2bb3df451348"
+    },
+    {
+      "pairId": "d019e8eb17afe8b9",
+      "caseId": "alg-bfs-correct-js",
+      "problemId": "shortest-path",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "a191f7dcb133043c1948b3ee12b64afabedea95c9f01e0660477f8537eb5993c"
+    },
+    {
+      "pairId": "da58f94f7c282e4c",
+      "caseId": "alg-prefix-correct-js",
+      "problemId": "inclusive-range",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "0459196944d7d7083f21338dd0b869096801cf70e9f22a1b39404ae97a7439b3"
+    },
+    {
+      "pairId": "5967212f9af4763f",
+      "caseId": "alg-sort-correct-js",
+      "problemId": "numeric-sort",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "b11afece15838674e29793b7477198005f29035ab85d9c9920eb341fafe7b584"
+    },
+    {
+      "pairId": "d3c667c3cd716159",
+      "caseId": "alg-sort-correct-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c1a0ebfc614f355a057558757e9873f56385244142f664e11f458114bb5891b4"
+    },
+    {
+      "pairId": "1af56063324289e1",
+      "caseId": "alg-prefix-bug-js",
+      "problemId": "inclusive-range",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "18c2afa854b660bd32be59e2efca2ea9e461bafc399a8c8a9d0f6ffd2ae85cff"
+    },
+    {
+      "pairId": "e98fde07a3666ad1",
+      "caseId": "alg-stairs-bug-js",
+      "problemId": "stair-count",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "2ca55b48a9a20ab4246da0921f476ace02ac33bfb7698646d39681b6c8037e90"
+    },
+    {
+      "pairId": "4c3b13579d3df031",
+      "caseId": "alg-prefix-bug-py",
+      "problemId": "inclusive-range",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "53882fc213b95cb7357ed730a5826817ce1d088f59e5ef11c91df89f3a10707d"
+    },
+    {
+      "pairId": "ff1a631cd3e11750",
+      "caseId": "alg-sort-correct-py",
+      "problemId": "numeric-sort",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "f820e5a1013cdd0a5c3bcc30eb3ac2de0495cfa12a2510829af895519191a7c5"
+    },
+    {
+      "pairId": "cca0ab85d76f9849",
+      "caseId": "alg-prefix-correct-py",
+      "problemId": "inclusive-range",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "a3d1efe4c70b3cb0c5805f71a09d9109c19557104f219ba46f6103896cb25729"
+    },
+    {
+      "pairId": "3ccee4d4ff73357f",
+      "caseId": "alg-stairs-bug-js",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "c0e8e429f3c597b1426c098ac7f588f08614f506501e4659a41273478d9dff4a"
+    },
+    {
+      "pairId": "f9f419cbf01b997d",
+      "caseId": "alg-sort-bug-py",
+      "problemId": "numeric-sort",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "ef81e2f85d212db38453d1ceecfc1fc9c2384b87da714ba953582ac3f618f641"
+    },
+    {
+      "pairId": "a6695d38a2c276fd",
+      "caseId": "alg-prefix-correct-py",
+      "problemId": "inclusive-range",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "791162dff1d991ef4d27fdce6d0f95fef96e57c2c17fa030617ab9bb4d19709f"
+    },
+    {
+      "pairId": "72e541883a0ac467",
+      "caseId": "alg-prefix-bug-py",
+      "problemId": "inclusive-range",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "8b52644ab82a01ad294deab6fe4f8b6783c98cd3909d70567e7bfd7fd000d9cb"
+    },
+    {
+      "pairId": "4a33744cd0e7841a",
+      "caseId": "alg-bfs-correct-py",
+      "problemId": "shortest-path",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "719ffaa32755a07823c831a16b3540f822f2f52c103246ef477fadf77271e78f"
+    },
+    {
+      "pairId": "bf7f1fc87eea6ab0",
+      "caseId": "alg-bfs-correct-js",
+      "problemId": "shortest-path",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "7c0210e59f74752b8c9b1b8e52665c08b8c7b5fbb88a72ca2d049bb08ad60950"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "hint-only",
+    "category": "instruction",
+    "code": "async function load() { const response = fetch('/users'); return response.json(); }",
+    "question": "答えや修正コードを出さず、ヒントを1つだけください。",
+    "expected": "Direct attention to value/type returned by fetch and when response is available; do not reveal await as the fix.",
+    "forbidden": [
+      "await fetch",
+      "awaitを追加",
+      "await を追加"
+    ],
+    "noCode": true,
+    "maxChars": 240,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "答えや修正コードを出さず、ヒントを1つだけください。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "async function load() { const response = fetch('/users'); return response.json(); }",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  }
+]

@@ -1,0 +1,769 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価を担当。匿名packetだけでA/B評価したが、Baseline回答を以前に閲覧しており完全なidentity blindingではない。外部独立Judge未実施。"
+  },
+  "packetHash": "f98b5161ed1bfbf83caf9f67e1fe303deba8c7a66fe645cc5dd7e9331bf6bb7b",
+  "judgments": [
+    {
+      "pairId": "a3a88f337158c7fd",
+      "pairHash": "be949ad30883710448a8318c0e7da8e8c8edb9743ce448ad0f47c11d7a113d15",
+      "verdict": "B_clear",
+      "reason": "Bは境界条件を特定し、Aの入力型の推測より有用。",
+      "A": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 1,
+          "hallucination": 2,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 2,
+          "conciseness": 3,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "境界違反を見逃す",
+          "groundedness": "未提示の入力型を推測",
+          "context_utilization": "ループ条件を使わない",
+          "hallucination": "入力内容の仮説へ偏る",
+          "instruction_following": "完成コードはない",
+          "pedagogical_usefulness": "原因へ導けない",
+          "actionability": "入力型の確認のみ",
+          "conciseness": "短いがHTML不要",
+          "japanese_quality": "HTMLが読みにくい"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "範囲は正しいがundefined加算未説明",
+          "groundedness": "ループ条件参照",
+          "context_utilization": "末尾添字へ着目",
+          "hallucination": "創作なし",
+          "instruction_following": "置換式を示さない",
+          "pedagogical_usefulness": "境界確認へ導く",
+          "actionability": "観察箇所が明確",
+          "conciseness": "length取得確認は余分",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "6a7d24a817256714",
+      "pairHash": "2a8e7c0ef4e0fe8bcd7717ba54ba839eb949e4f11f34d7950121231878e32258",
+      "verdict": "B_clear",
+      "reason": "末尾の最新仕様が届き17秒に回答できた。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 4,
+          "context_utilization": 1,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 3,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "旧仕様説明は正しいが最新値不明",
+          "groundedness": "欠落を認める",
+          "context_utilization": "末尾仕様が届かない",
+          "hallucination": "値を創作しない",
+          "instruction_following": "最新値に答えられない",
+          "pedagogical_usefulness": "不足の説明のみ",
+          "actionability": "再確認が必要",
+          "conciseness": "コードの説明が余分",
+          "japanese_quality": "contextタグ不要"
+        },
+        "failures": [
+          "missing_context"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "求める事実が正しい",
+          "groundedness": "提示定義に基づく",
+          "context_utilization": "対象情報を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由が理解できる",
+          "actionability": "確認対象が明確",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然な日本語"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "83b6f6ec67f54cf6",
+      "pairHash": "0c26f0436957a051bae6b1472c9a03f0e8c92ac58e0a3368ebdd80f3749f1c5f",
+      "verdict": "B_slight",
+      "reason": "双方新事項なしだがAのpractice混在とログ実装例が余分。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 1,
+          "pedagogical_usefulness": 1,
+          "actionability": 3,
+          "conciseness": 3,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "確認処理は妥当",
+          "groundedness": "adultsに基づく",
+          "context_utilization": "既習申告を無視",
+          "hallucination": "創作なし",
+          "instruction_following": "新しい学習事項がない",
+          "pedagogical_usefulness": "復習のみ",
+          "actionability": "確認対象は明確",
+          "conciseness": "ほぼ短い",
+          "japanese_quality": "practiceの不自然な混在"
+        },
+        "failures": [
+          "weak_pedagogy",
+          "japanese"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 1,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "練習自体は妥当",
+          "groundedness": "usersとadultsに基づく",
+          "context_utilization": "既習という申告を反映しない",
+          "hallucination": "創作なし",
+          "instruction_following": "新しい学習事項がない",
+          "pedagogical_usefulness": "復習だけ",
+          "actionability": "練習は具体的",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      }
+    },
+    {
+      "pairId": "60d047ec133a73c8",
+      "pairHash": "7830efa3682f4264123a85efe307e927f7f7bbce8e4274bc0c583a9ebdd07f6e",
+      "verdict": "tie",
+      "reason": "値と改行の説明は同じ。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "1,3,5を正しく表示",
+          "groundedness": "課題文参照",
+          "context_utilization": "追加文脈を優先",
+          "hallucination": "創作なし",
+          "instruction_following": "直接回答",
+          "pedagogical_usefulness": "要件を理解できる",
+          "actionability": "値と改行が明確",
+          "conciseness": "やや長い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "求める事実が正しい",
+          "groundedness": "提示定義に基づく",
+          "context_utilization": "対象情報を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由が理解できる",
+          "actionability": "確認対象が明確",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然な日本語"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "e32ad59156df03e3",
+      "pairHash": "f47d0c271e24bcb179a3a84bac71ea84d036638eaadc2a785e22e076f3e3822c",
+      "verdict": "B_clear",
+      "reason": "Bは定義を参照し0と正答。Aは欠落した定義を推測。",
+      "A": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 1,
+          "context_utilization": 0,
+          "hallucination": 1,
+          "instruction_following": 1,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 2,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "戻り値の推測が誤り",
+          "groundedness": "欠落コードの挙動を推測",
+          "context_utilization": "定義が届かない",
+          "hallucination": "nullやundefinedを創作",
+          "instruction_following": "問われた値を答えない",
+          "pedagogical_usefulness": "誤解を招く",
+          "actionability": "不要な再確認",
+          "conciseness": "推測が余分",
+          "japanese_quality": "contextタグ不要"
+        },
+        "failures": [
+          "missing_context",
+          "hallucination"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "0は正しいがNumber型とnumberの区別が曖昧",
+          "groundedness": "Number式を参照",
+          "context_utilization": "対象関数が届く",
+          "hallucination": "創作なし",
+          "instruction_following": "型と値へ回答",
+          "pedagogical_usefulness": "変換結果を説明",
+          "actionability": "値が明確",
+          "conciseness": "短い",
+          "japanese_quality": "内部タグ不要"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "f9fe68524912e196",
+      "pairHash": "35fbd35c52869928cac342fa6d0a60ef1da4490fc374bec402414f3a9c6027bf",
+      "verdict": "tie",
+      "reason": "同じ自動判定結果。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "達成済みで沈黙が正しい",
+          "groundedness": "コードと要件が合う",
+          "context_utilization": "出力配置を満たす",
+          "hallucination": "創作なし",
+          "instruction_following": "no_advice契約遵守",
+          "pedagogical_usefulness": "不要な介入なし",
+          "actionability": "行動不要",
+          "conciseness": "過不足なし",
+          "japanese_quality": "空文が適切"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "達成済みで沈黙が正しい",
+          "groundedness": "コードと要件が合う",
+          "context_utilization": "出力配置を満たす",
+          "hallucination": "創作なし",
+          "instruction_following": "no_advice契約遵守",
+          "pedagogical_usefulness": "不要な介入なし",
+          "actionability": "行動不要",
+          "conciseness": "過不足なし",
+          "japanese_quality": "空文が適切"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "2c29f21c3c26c8e6",
+      "pairHash": "b20b7dc05d804159cc22f6a6f086f642e16654050d0a6284d30f1a5709c8b86a",
+      "verdict": "tie",
+      "reason": "同じ自動判定結果。",
+      "A": {
+        "scores": {
+          "correctness": 0,
+          "groundedness": 1,
+          "context_utilization": 0,
+          "hallucination": 4,
+          "instruction_following": 0,
+          "pedagogical_usefulness": 0,
+          "actionability": 0,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "未達要件を見逃す",
+          "groundedness": "横と縦を照合しない",
+          "context_utilization": "配置情報を使わない",
+          "hallucination": "事実の創作はない",
+          "instruction_following": "必要なcontinueなし",
+          "pedagogical_usefulness": "学習支援がない",
+          "actionability": "着目点なし",
+          "conciseness": "沈黙で冗長性なし",
+          "japanese_quality": "文なし"
+        },
+        "failures": [
+          "ignored_context",
+          "missing_context"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 0,
+          "groundedness": 1,
+          "context_utilization": 0,
+          "hallucination": 4,
+          "instruction_following": 0,
+          "pedagogical_usefulness": 0,
+          "actionability": 0,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "未達要件を見逃す",
+          "groundedness": "横と縦を照合しない",
+          "context_utilization": "配置情報を使わない",
+          "hallucination": "事実の創作はない",
+          "instruction_following": "必要なcontinueなし",
+          "pedagogical_usefulness": "学習支援がない",
+          "actionability": "着目点なし",
+          "conciseness": "沈黙で冗長性なし",
+          "japanese_quality": "文なし"
+        },
+        "failures": [
+          "ignored_context",
+          "missing_context"
+        ]
+      }
+    },
+    {
+      "pairId": "5fd2d62add4f89ea",
+      "pairHash": "a0d62e32839d80227c57911554e1dae15c12e062a1881ef85f32d96c257dc4ec",
+      "verdict": "A_slight",
+      "reason": "AはSet順序を改善するがfilter+Setの計算量は誤る。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 4,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "Set順序は正しいがfilter+Setを二乗と誤説明",
+          "groundedness": "一部仕様と矛盾",
+          "context_utilization": "比較軸に対応",
+          "hallucination": "計算量の誤情報",
+          "instruction_following": "コードなしの比較",
+          "pedagogical_usefulness": "選択理由が一部誤り",
+          "actionability": "判断根拠が不安定",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 1,
+          "context_utilization": 2,
+          "hallucination": 1,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "Setの順序が誤り",
+          "groundedness": "言語仕様と矛盾",
+          "context_utilization": "順序と計算量に言及",
+          "hallucination": "順序保証を否定する誤情報",
+          "instruction_following": "比較形式は遵守",
+          "pedagogical_usefulness": "誤った選択理由を教える",
+          "actionability": "誤った判断へ導く",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "cf8fa599af1ae5e1",
+      "pairHash": "be6d1ad4ad0def015908cf5365b6dee58a64f3362808281b053e2c7fbea835c7",
+      "verdict": "B_clear",
+      "reason": "Bは許容されるawaitヒントで主因を示す。AはJSON形式とstatusを混同。",
+      "A": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 1,
+          "hallucination": 2,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 1,
+          "actionability": 2,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "statusだけでJSON形式は確認できない",
+          "groundedness": "型の問題に根拠なし",
+          "context_utilization": "await不足を見逃す",
+          "hallucination": "不要な原因を示唆",
+          "instruction_following": "一つの提案",
+          "pedagogical_usefulness": "誤った確認へ導く",
+          "actionability": "チェック自体は実行可能",
+          "conciseness": "短い",
+          "japanese_quality": "自然"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "求める事実が正しい",
+          "groundedness": "提示定義に基づく",
+          "context_utilization": "対象情報を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由が理解できる",
+          "actionability": "確認対象が明確",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然な日本語"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "01e9cbabe07855c3",
+      "pairHash": "2a10ee18daf4a3d53864850fd7e0b1f6dbc5572a5ff5be1904018b037708cc79",
+      "verdict": "A_slight",
+      "reason": "Aは比較案を求める説明にまとまる。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "比較不能に適切に対応",
+          "groundedness": "情報を要求",
+          "context_utilization": "履歴不足を扱う",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "必要な情報が分かる",
+          "actionability": "次の入力を要求",
+          "conciseness": "少し長い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 3,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "比較不能を適切に認める",
+          "groundedness": "案の内容を要求",
+          "context_utilization": "履歴不足を認識",
+          "hallucination": "創作なし",
+          "instruction_following": "enabled用途の質問は余分",
+          "pedagogical_usefulness": "比較条件が分かる",
+          "actionability": "案の提示を求める",
+          "conciseness": "やや長い",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "4793fe8aead4123e",
+      "pairHash": "26662277da853114ae08d7c46f7f72591a21604926bf24184327840f6e937015",
+      "verdict": "A_slight",
+      "reason": "Aは値と根拠に集中しBの余分な検証提案がない。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "求める事実が正しい",
+          "groundedness": "提示定義に基づく",
+          "context_utilization": "対象情報を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "質問の範囲内",
+          "pedagogical_usefulness": "理由が理解できる",
+          "actionability": "確認対象が明確",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然な日本語"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 2,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "真偽が正しい",
+          "groundedness": "定義を引用",
+          "context_utilization": "関連ファイルを参照",
+          "hallucination": "創作なし",
+          "instruction_following": "余分な確認を追加",
+          "pedagogical_usefulness": "因果は分かる",
+          "actionability": "不要な追加調査",
+          "conciseness": "冗長",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "b7bdcad6183ab32c",
+      "pairHash": "985cb65659a8da4eb71e2090ac1d9e527cfdd1636d12582a80a03ee9e1919325",
+      "verdict": "tie",
+      "reason": "回答が同一。",
+      "A": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "合計と初期値は正しいが空配列時は未説明",
+          "groundedness": "reduce式に基づく",
+          "context_utilization": "初期値を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "2文以内",
+          "pedagogical_usefulness": "開始値の役割を説明",
+          "actionability": "式と対応",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "合計と初期値は正しいが空配列時は未説明",
+          "groundedness": "reduce式に基づく",
+          "context_utilization": "初期値を参照",
+          "hallucination": "創作なし",
+          "instruction_following": "2文以内",
+          "pedagogical_usefulness": "開始値の役割を説明",
+          "actionability": "式と対応",
+          "conciseness": "簡潔",
+          "japanese_quality": "自然"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "83184a4aeade5683",
+      "pairHash": "4a430468032ad68aa5f82a23a6aadb136e019b93860baa13e339b1ff418734b2",
+      "verdict": "tie",
+      "reason": "双方未提示のDB検索を前提とする。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 1,
+          "context_utilization": 2,
+          "hallucination": 2,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 3,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "原因未確定の説明不足",
+          "groundedness": "クエリを仮定",
+          "context_utilization": "定義不足を軽視",
+          "hallucination": "DB内部を仮定",
+          "instruction_following": "判定可否に答えない",
+          "pedagogical_usefulness": "調査が限定的",
+          "actionability": "DB確認に偏る",
+          "conciseness": "短い",
+          "japanese_quality": "HTML不要"
+        },
+        "failures": [
+          "hallucination"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 1,
+          "context_utilization": 2,
+          "hallucination": 2,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 2,
+          "conciseness": 2,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "DB原因を過大視",
+          "groundedness": "クエリの存在を推測",
+          "context_utilization": "独自関数の不足を軽視",
+          "hallucination": "DB検索前提",
+          "instruction_following": "判断不能を明示しない",
+          "pedagogical_usefulness": "計測よりindexへ偏る",
+          "actionability": "調査対象が狭い",
+          "conciseness": "列挙が過剰",
+          "japanese_quality": "contextタグ不要"
+        },
+        "failures": [
+          "hallucination"
+        ]
+      }
+    }
+  ]
+}

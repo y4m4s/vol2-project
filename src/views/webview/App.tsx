@@ -98,6 +98,9 @@ function KnowledgeSaveToast() {
 function StatusMessageToast() {
   const { viewModel } = useApp();
   const statusMessage = viewModel?.statusMessage;
+  const isCheckingRoutingConnection =
+    viewModel?.requestState === "connecting" &&
+    viewModel.routingProviderConnection?.state === "connecting";
   const shouldSuppress =
     !statusMessage ||
     viewModel?.requestState === "saving_knowledge" ||
@@ -108,7 +111,9 @@ function StatusMessageToast() {
     <FloatingToast
       open={!shouldSuppress}
       kind={statusMessage?.kind}
+      providerIconId={isCheckingRoutingConnection ? viewModel.routingProviderConnection?.providerId : undefined}
       message={statusMessage?.text ?? ""}
+      persist={isCheckingRoutingConnection}
       durationMs={statusMessage?.kind === "error" ? 10_000 : undefined}
     />
   );

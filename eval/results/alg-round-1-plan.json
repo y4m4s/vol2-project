@@ -1,0 +1,10 @@
+{
+  "round": "algorithm-layout-1",
+  "baseline": "alg-lm-baseline-v2",
+  "candidate": "alg-lm-sections",
+  "observedBaseline": "48 observations acquired. All hard checks pass after the focus metadata correction. The largest substantive issue is incorrect code reasoning: reversed binary-search movement, invented duplicate-element diagnoses for two pointers, and a wrong numerical operation count. Python frequency hints also disclose replacement code.",
+  "hypothesis": "Separating task, constraints and examples may reduce confusion between the required result and the current buggy implementation. It is a deliberately weak, single-variable input-layout intervention, not an assumption that headings repair reasoning.",
+  "change": "Add headings and blank lines only to the same additional context. No system prompt, fixture, requirement, generation setting, or oracle injection changes.",
+  "selectionRule": "Existing rubric gates plus problem-cluster bootstrap and critical regression review. Keep current production settings if evidence is insufficient. Do not optimize on holdout answers.",
+  "scoringCorrection": "Baseline raw evidence remains in alg-lm-baseline. alg-lm-baseline-v2 rechecks those same observations, accepting review as well as continue for an edited concrete bug. Prepared input/request and runtime validation were checked unchanged. This is not an additional inference run. The same correction was applied to holdout metadata before any holdout model answers."
+}

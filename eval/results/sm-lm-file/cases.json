@@ -1,0 +1,256 @@
+[
+  {
+    "id": "sm-price",
+    "category": "missing_context",
+    "editor": {
+      "before": "function netPrice(amount: number) { return amount * 0.85; }",
+      "catalog": 12,
+      "visible": "const invoice = netPrice(200);"
+    },
+    "question": "invoiceの値はいくつですか。このファイルの処理を根拠に短く説明して。",
+    "expected": "170. netPrice multiplies 200 by 0.85. No invented tax or rounding rules.",
+    "evidence": "return amount * 0.85",
+    "maxChars": 400,
+    "code": "function netPrice(amount: number) { return amount * 0.85; }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n];\nconst invoice = netPrice(200);\n",
+    "viewport": "const invoice = netPrice(200);",
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "invoiceの値はいくつですか。このファイルの処理を根拠に短く説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "function netPrice(amount: number) { return amount * 0.85; }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n];\nconst invoice = netPrice(200);\n",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-format",
+    "category": "missing_context",
+    "editor": {
+      "before": "function labelFor(id: number) { return `SKU-${String(id).padStart(4, '0')}`; }",
+      "catalog": 135,
+      "visible": "const label = labelFor(27);"
+    },
+    "question": "labelの最終的な文字列を、このコードの定義に基づいて説明して。",
+    "expected": "SKU-0027. Prefix SKU- and padStart to four digits. Do not infer an unavailable implementation.",
+    "evidence": "padStart(4, '0')",
+    "maxChars": 400,
+    "code": "function labelFor(id: number) { return `SKU-${String(id).padStart(4, '0')}`; }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n  { id: 49, label: \"item-49\", enabled: false },\n  { id: 50, label: \"item-50\", enabled: true },\n  { id: 51, label: \"item-51\", enabled: true },\n  { id: 52, label: \"item-52\", enabled: false },\n  { id: 53, label: \"item-53\", enabled: true },\n  { id: 54, label: \"item-54\", enabled: true },\n  { id: 55, label: \"item-55\", enabled: false },\n  { id: 56, label: \"item-56\", enabled: true },\n  { id: 57, label: \"item-57\", enabled: true },\n  { id: 58, label: \"item-58\", enabled: false },\n  { id: 59, label: \"item-59\", enabled: true },\n  { id: 60, label: \"item-60\", enabled: true },\n  { id: 61, label: \"item-61\", enabled: false },\n  { id: 62, label: \"item-62\", enabled: true },\n  { id: 63, label: \"item-63\", enabled: true },\n  { id: 64, label: \"item-64\", enabled: false },\n  { id: 65, label: \"item-65\", enabled: true },\n  { id: 66, label: \"item-66\", enabled: true },\n  { id: 67, label: \"item-67\", enabled: false },\n  { id: 68, label: \"item-68\", enabled: true },\n  { id: 69, label: \"item-69\", enabled: true },\n  { id: 70, label: \"item-70\", enabled: false },\n  { id: 71, label: \"item-71\", enabled: true },\n  { id: 72, label: \"item-72\", enabled: true },\n  { id: 73, label: \"item-73\", enabled: false },\n  { id: 74, label: \"item-74\", enabled: true },\n  { id: 75, label: \"item-75\", enabled: true },\n  { id: 76, label: \"item-76\", enabled: false },\n  { id: 77, label: \"item-77\", enabled: true },\n  { id: 78, label: \"item-78\", enabled: true },\n  { id: 79, label: \"item-79\", enabled: false },\n  { id: 80, label: \"item-80\", enabled: true },\n  { id: 81, label: \"item-81\", enabled: true },\n  { id: 82, label: \"item-82\", enabled: false },\n  { id: 83, label: \"item-83\", enabled: true },\n  { id: 84, label: \"item-84\", enabled: true },\n  { id: 85, label: \"item-85\", enabled: false },\n  { id: 86, label: \"item-86\", enabled: true },\n  { id: 87, label: \"item-87\", enabled: true },\n  { id: 88, label: \"item-88\", enabled: false },\n  { id: 89, label: \"item-89\", enabled: true },\n  { id: 90, label: \"item-90\", enabled: true },\n  { id: 91, label: \"item-91\", enabled: false },\n  { id: 92, label: \"item-92\", enabled: true },\n  { id: 93, label: \"item-93\", enabled: true },\n  { id: 94, label: \"item-94\", enabled: false },\n  { id: 95, label: \"item-95\", enabled: true },\n  { id: 96, label: \"item-96\", enabled: true },\n  { id: 97, label: \"item-97\", enabled: false },\n  { id: 98, label: \"item-98\", enabled: true },\n  { id: 99, label: \"item-99\", enabled: true },\n  { id: 100, label: \"item-100\", enabled: false },\n  { id: 101, label: \"item-101\", enabled: true },\n  { id: 102, label: \"item-102\", enabled: true },\n  { id: 103, label: \"item-103\", enabled: false },\n  { id: 104, label: \"item-104\", enabled: true },\n  { id: 105, label: \"item-105\", enabled: true },\n  { id: 106, label: \"item-106\", enabled: false },\n  { id: 107, label: \"item-107\", enabled: true },\n  { id: 108, label: \"item-108\", enabled: true },\n  { id: 109, label: \"item-109\", enabled: false },\n  { id: 110, label: \"item-110\", enabled: true },\n  { id: 111, label: \"item-111\", enabled: true },\n  { id: 112, label: \"item-112\", enabled: false },\n  { id: 113, label: \"item-113\", enabled: true },\n  { id: 114, label: \"item-114\", enabled: true },\n  { id: 115, label: \"item-115\", enabled: false },\n  { id: 116, label: \"item-116\", enabled: true },\n  { id: 117, label: \"item-117\", enabled: true },\n  { id: 118, label: \"item-118\", enabled: false },\n  { id: 119, label: \"item-119\", enabled: true },\n  { id: 120, label: \"item-120\", enabled: true },\n  { id: 121, label: \"item-121\", enabled: false },\n  { id: 122, label: \"item-122\", enabled: true },\n  { id: 123, label: \"item-123\", enabled: true },\n  { id: 124, label: \"item-124\", enabled: false },\n  { id: 125, label: \"item-125\", enabled: true },\n  { id: 126, label: \"item-126\", enabled: true },\n  { id: 127, label: \"item-127\", enabled: false },\n  { id: 128, label: \"item-128\", enabled: true },\n  { id: 129, label: \"item-129\", enabled: true },\n  { id: 130, label: \"item-130\", enabled: false },\n  { id: 131, label: \"item-131\", enabled: true },\n  { id: 132, label: \"item-132\", enabled: true },\n  { id: 133, label: \"item-133\", enabled: false },\n  { id: 134, label: \"item-134\", enabled: true },\n  { id: 135, label: \"item-135\", enabled: true },\n];\nconst label = labelFor(27);\n",
+    "viewport": "const label = labelFor(27);",
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "labelの最終的な文字列を、このコードの定義に基づいて説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "function labelFor(id: number) { return `SKU-${String(id).padStart(4, '0')}`; }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n  { id: 49, label: \"item-49\", enabled: false },\n  { id: 50, label: \"item-50\", enabled: true },\n  { id: 51, label: \"item-51\", enabled: true },\n  { id: 52, label: \"item-52\", enabled: false },\n  { id: 53, label: \"item-53\", enabled: true },\n  { id: 54, label: \"item-54\", enabled: true },\n  { id: 55, label: \"item-55\", enabled: false },\n  { id: 56, label: \"item-56\", enabled: true },\n  { id: 57, label: \"item-57\", enabled: true },\n  { id: 58, label: \"item-58\", enabled: false },\n  { id: 59, label: \"item-59\", enabled: true },\n  { id: 60, label: \"item-60\", enabled: true },\n  { id: 61, label: \"item-61\", enabled: false },\n  { id: 62, label: \"item-62\", enabled: true },\n  { id: 63, label: \"item-63\", enabled: true },\n  { id: 64, label: \"item-64\", enabled: false },\n  { id: 65, label: \"item-65\", enabled: true },\n  { id: 66, label: \"item-66\", enabled: true },\n  { id: 67, label: \"item-67\", enabled: false },\n  { id: 68, label: \"item-68\", enabled: true },\n  { id: 69, label: \"item-69\", enabled: true },\n  { id: 70, label: \"item-70\", enabled: false },\n  { id: 71, label: \"item-71\", enabled: true },\n  { id: 72, label: \"item-72\", enabled: true },\n  { id: 73, label: \"item-73\", enabled: false },\n  { id: 74, label: \"item-74\", enabled: true },\n  { id: 75, label: \"item-75\", enabled: true },\n  { id: 76, label: \"item-76\", enabled: false },\n  { id: 77, label: \"item-77\", enabled: true },\n  { id: 78, label: \"item-78\", enabled: true },\n  { id: 79, label: \"item-79\", enabled: false },\n  { id: 80, label: \"item-80\", enabled: true },\n  { id: 81, label: \"item-81\", enabled: true },\n  { id: 82, label: \"item-82\", enabled: false },\n  { id: 83, label: \"item-83\", enabled: true },\n  { id: 84, label: \"item-84\", enabled: true },\n  { id: 85, label: \"item-85\", enabled: false },\n  { id: 86, label: \"item-86\", enabled: true },\n  { id: 87, label: \"item-87\", enabled: true },\n  { id: 88, label: \"item-88\", enabled: false },\n  { id: 89, label: \"item-89\", enabled: true },\n  { id: 90, label: \"item-90\", enabled: true },\n  { id: 91, label: \"item-91\", enabled: false },\n  { id: 92, label: \"item-92\", enabled: true },\n  { id: 93, label: \"item-93\", enabled: true },\n  { id: 94, label: \"item-94\", enabled: false },\n  { id: 95, label: \"item-95\", enabled: true },\n  { id: 96, label: \"item-96\", enabled: true },\n  { id: 97, label: \"item-97\", enabled: false },\n  { id: 98, label: \"item-98\", enabled: true },\n  { id: 99, label: \"item-99\", enabled: true },\n  { id: 100, label: \"item-100\", enabled: false },\n  { id: 101, label: \"item-101\", enabled: true },\n  { id: 102, label: \"item-102\", enabled: true },\n  { id: 103, label: \"item-103\", enabled: false },\n  { id: 104, label: \"item-104\", enabled: true },\n  { id: 105, label: \"item-105\", enabled: true },\n  { id: 106, label: \"item-106\", enabled: false },\n  { id: 107, label: \"item-107\", enabled: true },\n  { id: 108, label: \"item-108\", enabled: true },\n  { id: 109, label: \"item-109\", enabled: false },\n  { id: 110, label: \"item-110\", enabled: true },\n  { id: 111, label: \"item-111\", enabled: true },\n  { id: 112, label: \"item-112\", enabled: false },\n  { id: 113, label: \"item-113\", enabled: true },\n  { id: 114, label: \"item-114\", enabled: true },\n  { id: 115, label: \"item-115\", enabled: false },\n  { id: 116, label: \"item-116\", enabled: true },\n  { id: 117, label: \"item-117\", enabled: true },\n  { id: 118, label: \"item-118\", enabled: false },\n  { id: 119, label: \"item-119\", enabled: true },\n  { id: 120, label: \"item-120\", enabled: true },\n  { id: 121, label: \"item-121\", enabled: false },\n  { id: 122, label: \"item-122\", enabled: true },\n  { id: 123, label: \"item-123\", enabled: true },\n  { id: 124, label: \"item-124\", enabled: false },\n  { id: 125, label: \"item-125\", enabled: true },\n  { id: 126, label: \"item-126\", enabled: true },\n  { id: 127, label: \"item-127\", enabled: false },\n  { id: 128, label: \"item-128\", enabled: true },\n  { id: 129, label: \"item-129\", enabled: true },\n  { id: 130, label: \"item-130\", enabled: false },\n  { id: 131, label: \"item-131\", enabled: true },\n  { id: 132, label: \"item-132\", enabled: true },\n  { id: 133, label: \"item-133\", enabled: false },\n  { id: 134, label: \"item-134\", enabled: true },\n  { id: 135, label: \"item-135\", enabled: true },\n];\nconst label = labelFor(27);\n",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-tail-helper",
+    "category": "missing_context",
+    "editor": {
+      "visible": "const result = summarize([2, 5, 8]);",
+      "catalog": 48,
+      "after": "function summarize(values: number[]) { return values.filter(value => value > 4).map(value => value * 2); }"
+    },
+    "question": "resultに入る配列と、処理の順序を簡潔に説明して。",
+    "expected": "[10,16]. Filter removes 2, keeps 5 and 8, then doubles them.",
+    "evidence": "value > 4",
+    "maxChars": 400,
+    "code": "\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n];\nconst result = summarize([2, 5, 8]);\nfunction summarize(values: number[]) { return values.filter(value => value > 4).map(value => value * 2); }",
+    "viewport": "const result = summarize([2, 5, 8]);",
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "resultに入る配列と、処理の順序を簡潔に説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n];\nconst result = summarize([2, 5, 8]);\nfunction summarize(values: number[]) { return values.filter(value => value > 4).map(value => value * 2); }",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-boundary",
+    "category": "code_reasoning",
+    "code": "const values = [4, 7];\nlet total = 0;\nfor (let i = 0; i <= values.length; i++) total += values[i];",
+    "question": "このループでtotalが意図しない値になる原因を一つ、修正コードなしで説明して。",
+    "expected": "i reaches 2, values[2] is undefined, numeric addition yields NaN. Do not provide completed loop replacement.",
+    "noCode": true,
+    "forbidden": [
+      "i < values.length"
+    ],
+    "maxChars": 400,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "このループでtotalが意図しない値になる原因を一つ、修正コードなしで説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const values = [4, 7];\nlet total = 0;\nfor (let i = 0; i <= values.length; i++) total += values[i];",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-explain",
+    "category": "explanation",
+    "code": "const input = [1, 2, 3, 4];\nconst output = input.filter(n => n % 2 === 0).map(n => n * n);",
+    "question": "outputとinputの最終的な値を、初心者向けに3文以内で説明して。",
+    "expected": "output [4,16], input remains [1,2,3,4]. filter then map create new arrays, do not modify input.",
+    "maxChars": 400,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "outputとinputの最終的な値を、初心者向けに3文以内で説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const input = [1, 2, 3, 4];\nconst output = input.filter(n => n % 2 === 0).map(n => n * n);",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-hint",
+    "category": "hint_only",
+    "code": "async function showTitle() {\n  const response = fetch('/article');\n  const data = await response.json();\n  return data.title;\n}",
+    "question": "完成した式やコードは書かず、着目するキーワードを一つだけヒントにしてください。",
+    "expected": "await keyword is allowed; fetch returns a Promise, response must be resolved before using json. No concrete awaited call or unrelated status/JSON hint.",
+    "noCode": true,
+    "forbidden": [
+      "await fetch("
+    ],
+    "maxChars": 250,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "完成した式やコードは書かず、着目するキーワードを一つだけヒントにしてください。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "async function showTitle() {\n  const response = fetch('/article');\n  const data = await response.json();\n  return data.title;\n}",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-unknown",
+    "category": "uncertainty",
+    "code": "const records = readRecords('inbox');\nrender(records);",
+    "question": "表示される件数は何件ですか。分からない場合は必要な情報を一つだけ挙げてください。",
+    "expected": "Cannot determine count. Need readRecords implementation/return value (or actual records). Do not invent database, network, or particular count.",
+    "maxChars": 250,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "表示される件数は何件ですか。分からない場合は必要な情報を一つだけ挙げてください。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const records = readRecords('inbox');\nrender(records);",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-learn",
+    "category": "learning",
+    "code": "function greet(name: string) { return `Hello ${name}`; }\nconsole.log(greet('Aki'));",
+    "question": "引数と戻り値は理解できました。この次に学ぶことを一つ、理由と小さな練習課題を添えて。完成コードは不要です。",
+    "expected": "One appropriate next concept beyond repeating arguments/returns (e.g. conditions or input validation), rationale and small unsolved exercise grounded in greet.",
+    "noCode": true,
+    "maxChars": 450,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "引数と戻り値は理解できました。この次に学ぶことを一つ、理由と小さな練習課題を添えて。完成コードは不要です。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "function greet(name: string) { return `Hello ${name}`; }\nconsole.log(greet('Aki'));",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-compare",
+    "category": "tradeoff",
+    "code": "type User = { id: string; name: string };\nconst users: User[] = [];",
+    "additional": "最大30人。ID検索は画面を開いた時に1回だけ。読みやすさを優先し、順序も保持したい。",
+    "question": "配列のfindとMapのどちらから始めるのがよさそうですか。条件に沿って比較して、短く理由を説明して。",
+    "expected": "Prefer array find given <=30 and one lookup/readability; Map useful for repeated lookups but extra construction/sync. Do not say Map loses insertion order or promise benchmark speed.",
+    "maxChars": 450,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "配列のfindとMapのどちらから始めるのがよさそうですか。条件に沿って比較して、短く理由を説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "type User = { id: string; name: string };\nconst users: User[] = [];",
+        "additionalContext": "最大30人。ID検索は画面を開いた時に1回だけ。読みやすさを優先し、順序も保持したい。",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "sm-additional",
+    "category": "context_utilization",
+    "code": "const retryLimit = 2;",
+    "additional": "現在の仕様: 再試行は最大2回。待ち時間は各回750ミリ秒。初回の実行は再試行回数に含まない。",
+    "question": "失敗が続く場合、初回も含む試行回数と、再試行の待ち時間の合計を教えて。",
+    "expected": "3 attempts, 1500 milliseconds total waiting (2 * 750). Not 2 attempts or 2250 milliseconds.",
+    "maxChars": 300,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "失敗が続く場合、初回も含む試行回数と、再試行の待ち時間の合計を教えて。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const retryLimit = 2;",
+        "additionalContext": "現在の仕様: 再試行は最大2回。待ち時間は各回750ミリ秒。初回の実行は再試行回数に含まない。",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  }
+]

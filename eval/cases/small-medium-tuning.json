@@ -1,0 +1,108 @@
+[
+  {
+    "id": "sm-price",
+    "category": "missing_context",
+    "editor": {
+      "before": "function netPrice(amount: number) { return amount * 0.85; }",
+      "catalog": 12,
+      "visible": "const invoice = netPrice(200);"
+    },
+    "question": "invoiceの値はいくつですか。このファイルの処理を根拠に短く説明して。",
+    "expected": "170. netPrice multiplies 200 by 0.85. No invented tax or rounding rules.",
+    "evidence": "return amount * 0.85",
+    "maxChars": 400
+  },
+  {
+    "id": "sm-format",
+    "category": "missing_context",
+    "editor": {
+      "before": "function labelFor(id: number) { return `SKU-${String(id).padStart(4, '0')}`; }",
+      "catalog": 135,
+      "visible": "const label = labelFor(27);"
+    },
+    "question": "labelの最終的な文字列を、このコードの定義に基づいて説明して。",
+    "expected": "SKU-0027. Prefix SKU- and padStart to four digits. Do not infer an unavailable implementation.",
+    "evidence": "padStart(4, '0')",
+    "maxChars": 400
+  },
+  {
+    "id": "sm-tail-helper",
+    "category": "missing_context",
+    "editor": {
+      "visible": "const result = summarize([2, 5, 8]);",
+      "catalog": 48,
+      "after": "function summarize(values: number[]) { return values.filter(value => value > 4).map(value => value * 2); }"
+    },
+    "question": "resultに入る配列と、処理の順序を簡潔に説明して。",
+    "expected": "[10,16]. Filter removes 2, keeps 5 and 8, then doubles them.",
+    "evidence": "value > 4",
+    "maxChars": 400
+  },
+  {
+    "id": "sm-boundary",
+    "category": "code_reasoning",
+    "code": "const values = [4, 7];\nlet total = 0;\nfor (let i = 0; i <= values.length; i++) total += values[i];",
+    "question": "このループでtotalが意図しない値になる原因を一つ、修正コードなしで説明して。",
+    "expected": "i reaches 2, values[2] is undefined, numeric addition yields NaN. Do not provide completed loop replacement.",
+    "noCode": true,
+    "forbidden": [
+      "i < values.length"
+    ],
+    "maxChars": 400
+  },
+  {
+    "id": "sm-explain",
+    "category": "explanation",
+    "code": "const input = [1, 2, 3, 4];\nconst output = input.filter(n => n % 2 === 0).map(n => n * n);",
+    "question": "outputとinputの最終的な値を、初心者向けに3文以内で説明して。",
+    "expected": "output [4,16], input remains [1,2,3,4]. filter then map create new arrays, do not modify input.",
+    "maxChars": 400
+  },
+  {
+    "id": "sm-hint",
+    "category": "hint_only",
+    "code": "async function showTitle() {\n  const response = fetch('/article');\n  const data = await response.json();\n  return data.title;\n}",
+    "question": "完成した式やコードは書かず、着目するキーワードを一つだけヒントにしてください。",
+    "expected": "await keyword is allowed; fetch returns a Promise, response must be resolved before using json. No concrete awaited call or unrelated status/JSON hint.",
+    "noCode": true,
+    "forbidden": [
+      "await fetch("
+    ],
+    "maxChars": 250
+  },
+  {
+    "id": "sm-unknown",
+    "category": "uncertainty",
+    "code": "const records = readRecords('inbox');\nrender(records);",
+    "question": "表示される件数は何件ですか。分からない場合は必要な情報を一つだけ挙げてください。",
+    "expected": "Cannot determine count. Need readRecords implementation/return value (or actual records). Do not invent database, network, or particular count.",
+    "maxChars": 250
+  },
+  {
+    "id": "sm-learn",
+    "category": "learning",
+    "code": "function greet(name: string) { return `Hello ${name}`; }\nconsole.log(greet('Aki'));",
+    "question": "引数と戻り値は理解できました。この次に学ぶことを一つ、理由と小さな練習課題を添えて。完成コードは不要です。",
+    "expected": "One appropriate next concept beyond repeating arguments/returns (e.g. conditions or input validation), rationale and small unsolved exercise grounded in greet.",
+    "noCode": true,
+    "maxChars": 450
+  },
+  {
+    "id": "sm-compare",
+    "category": "tradeoff",
+    "code": "type User = { id: string; name: string };\nconst users: User[] = [];",
+    "additional": "最大30人。ID検索は画面を開いた時に1回だけ。読みやすさを優先し、順序も保持したい。",
+    "question": "配列のfindとMapのどちらから始めるのがよさそうですか。条件に沿って比較して、短く理由を説明して。",
+    "expected": "Prefer array find given <=30 and one lookup/readability; Map useful for repeated lookups but extra construction/sync. Do not say Map loses insertion order or promise benchmark speed.",
+    "maxChars": 450
+  },
+  {
+    "id": "sm-additional",
+    "category": "context_utilization",
+    "code": "const retryLimit = 2;",
+    "additional": "現在の仕様: 再試行は最大2回。待ち時間は各回750ミリ秒。初回の実行は再試行回数に含まない。",
+    "question": "失敗が続く場合、初回も含む試行回数と、再試行の待ち時間の合計を教えて。",
+    "expected": "3 attempts, 1500 milliseconds total waiting (2 * 750). Not 2 attempts or 2250 milliseconds.",
+    "maxChars": 300
+  }
+]

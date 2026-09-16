@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "r5-hint-v3",
+  "config": {
+    "id": "r5-hint-v3",
+    "provider": "lmStudio",
+    "model": "qwen/qwen3-8b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": null
+  },
+  "split": "tuning",
+  "repeats": 1,
+  "caseIds": [
+    "bug-boundary",
+    "explain-reduce",
+    "learn-next",
+    "hint-only",
+    "compare-approaches",
+    "additional-requirement",
+    "uncertain-external",
+    "long-active-tail",
+    "long-additional-tail",
+    "related-file",
+    "history-absent",
+    "auto-complete",
+    "auto-layout"
+  ],
+  "caseSetHash": "f038149bae79075a5f6184c94f6cfb7154dd16116bb38c07a9428d44fc766461",
+  "provenance": {
+    "git": "877bad9ce0a2fc50ef803e26023809c3f99f9d31",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-15-hint-boundary-v3",
+    "files": {
+      "PromptBuilder": "d8863d0a3289ddb650612572e54c2b7120c4c4f10cb4f122ec458a41f183b43c",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "891bd95790b23959a39fa68f07a6703bc8d92dfe1baa4de54987aafec2d4a880",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "6bc635190a15134de50990c51b0b891f40d3df435a990377d459b042a6a5d340"
+  },
+  "startedAt": "2026-09-15T11:01:37.868Z",
+  "orderSeed": "1a3fd69415094236b96e64bb9d55384b",
+  "dry": false,
+  "finishedAt": "2026-09-15T11:03:27.549Z",
+  "status": "completed"
+}

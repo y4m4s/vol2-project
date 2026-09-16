@@ -1,6 +1,21 @@
 :root {
   --navicom-min-view-width: 360px;
   --navicom-content-max-width: 720px;
+  /* キーボードフォーカス枚線の共通色。NaviComのアクセント色（テキストリンク色）を淡くして使う。 */
+  --navicom-focus-outline: color-mix(in srgb, var(--vscode-textLink-foreground) 55%, transparent);
+}
+
+/* Tabフォーカス枚線を全体で統一する。個別要素の focus-visible は原則ここに揃え、上書きは避ける。 */
+:focus-visible {
+  outline: 1px solid var(--navicom-focus-outline);
+  outline-offset: 1px;
+}
+
+/* ハイコントラストでは視認性を優先し、淡色ではなくコントラスト境界色を使う。
+   outline: none で上書きしている個別ルール（.connection-activity-provider 等）にも
+   確実にアウトラインを描画するため、色だけでなく outline 自体を再指定する。 */
+body.vscode-high-contrast :focus-visible {
+  outline: 1px solid var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
 }
 
 /* --- リセット・ベース --- */
@@ -269,7 +284,7 @@ button.danger {
 .connection-activity-provider:focus-visible {
   opacity: 1;
   color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
   background: var(--vscode-toolbar-hoverBackground);
   outline: none;
 }
@@ -435,6 +450,97 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   white-space: nowrap;
 }
 
+.connection-activity-tooltip-role {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+  white-space: nowrap;
+}
+
+.routing-mode-activity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  z-index: 89;
+}
+
+.routing-mode-activity-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 7px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+}
+
+.routing-mode-activity-button.automatic {
+  color: var(--vscode-charts-blue, #2d7df6);
+  border-color: color-mix(in srgb, var(--vscode-charts-blue, #2d7df6) 55%, var(--vscode-panel-border));
+}
+
+.routing-mode-activity-button:hover:not(:disabled),
+.routing-mode-activity-button:focus-visible {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: none;
+}
+
+.routing-mode-activity-icon {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+}
+
+.routing-mode-activity-tooltip {
+  position: absolute;
+  top: 4px;
+  right: 100%;
+  width: max-content;
+  max-width: 220px;
+  margin-right: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 6px 18px color-mix(in srgb, #000 28%, transparent);
+  font-size: 0.82em;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.routing-mode-activity-tooltip strong,
+.routing-mode-activity-tooltip span {
+  display: block;
+  white-space: nowrap;
+}
+
+.routing-mode-activity-tooltip span {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.86em;
+}
+
+.routing-mode-activity:hover .routing-mode-activity-tooltip,
+.routing-mode-activity:focus-within .routing-mode-activity-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes connection-activity-spin {
   to {
     transform: rotate(360deg);
@@ -596,7 +702,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-input-wrap:focus-within {
-  border-color: var(--vscode-focusBorder);
+  border-color: var(--navicom-focus-outline);
 }
 
 .request-plan-disclosure {
@@ -624,6 +730,10 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   opacity: 1;
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.request-plan-trigger:focus-visible {
+  outline-offset: -1px;
 }
 
 .request-plan-trigger > .material-symbols-outlined {
@@ -858,7 +968,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-auto-inline:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 2px;
 }
 
@@ -951,6 +1060,13 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   margin-top: 1px;
   color: var(--vscode-textLink-foreground);
   font-size: 17px;
+}
+
+.slash-command-option-provider-logo {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
 }
 
 .slash-command-option-body {
@@ -1232,6 +1348,10 @@ ul.bullet-list li {
   animation: floating-toast-in 0.18s ease-out;
 }
 
+.floating-toast.single-line {
+  align-items: center;
+}
+
 .confirming-delete {
   color: #fff !important;
   background: #dc2626 !important;
@@ -1257,6 +1377,16 @@ ul.bullet-list li {
   margin-top: 1px;
   font-size: 19px;
   color: var(--vscode-textLink-foreground);
+}
+
+.floating-toast.single-line .floating-toast-icon {
+  margin-top: 0;
+}
+
+.floating-toast-provider-logo {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
 }
 
 .floating-toast.success .floating-toast-icon {

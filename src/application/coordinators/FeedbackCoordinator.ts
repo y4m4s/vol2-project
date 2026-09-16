@@ -16,6 +16,7 @@ export interface FeedbackCoordinatorHost {
   navigateBack(): void;
   createGuidanceCard(entry: ConversationEntry): GuidanceCard;
   persistConversation(): Promise<void>;
+  onFeedbackSaved?(entry: ConversationEntry, rating: FeedbackRating): Promise<void>;
 }
 
 export class FeedbackCoordinator {
@@ -125,6 +126,8 @@ export class FeedbackCoordinator {
           slashCommand: entry.slashCommand
         }
       );
+      try { await this.host.onFeedbackSaved?.(entry, input.rating); }
+      catch (error) { console.error("Failed to persist routing feedback", error); }
       return feedbackId;
     } catch (error) {
       if (conversationUpdated) {

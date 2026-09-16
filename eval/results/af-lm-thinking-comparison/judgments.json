@@ -1,0 +1,254 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価。provider・設定名・速度・A/Bキーを除いたpacketを読んで判定。実験計画を知っているため完全な独立性はなく、外部Judgeおよび順序反転の追試は未実施。"
+  },
+  "packetHash": "ae948106da09142e9171d4cbed31655f4850da26a3175a866d93da9572b23937",
+  "judgments": [
+    {
+      "pairId": "53aaaaf566e42916",
+      "pairHash": "548f95ced655b5ba045cba2f6089b94fc03411b9f904d3a6ed9133d7e6cb0440",
+      "verdict": "A_slight",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 1,
+          "pedagogical_usefulness": 2,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "groundedness": "提示コード・制約との整合 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "context_utilization": "必要文脈の利用 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "hallucination": "根拠のない事実の有無 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "instruction_following": "質問とヒント制約の遵守 1/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "pedagogical_usefulness": "理解を助ける説明 2/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "actionability": "適切な次の着目点 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "conciseness": "簡潔さと関連性 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。",
+          "japanese_quality": "日本語の明瞭さ 4/4。末尾の加算漏れの原因は正しいが、i<a.lengthという完成した条件を提示。"
+        },
+        "failures": [
+          "hint_leakage"
+        ],
+        "meetsTask": false
+      },
+      "B": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 1,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "groundedness": "提示コード・制約との整合 2/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "context_utilization": "必要文脈の利用 3/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "hallucination": "根拠のない事実の有無 2/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "instruction_following": "質問とヒント制約の遵守 1/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "pedagogical_usefulness": "理解を助ける説明 2/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "actionability": "適切な次の着目点 3/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "conciseness": "簡潔さと関連性 4/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。",
+          "japanese_quality": "日本語の明瞭さ 4/4。末尾欠落は捉えるが、a.length-1が範囲外になることを原因にしている。空配列でもループは実行されず範囲外アクセスは起きない。修正条件も開示。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hint_leakage"
+        ],
+        "meetsTask": false
+      },
+      "reason": "両方解答開示があるが、Aは誤った範囲外診断を含まない。"
+    },
+    {
+      "pairId": "152b6188b0e2337f",
+      "pairHash": "276d1844436d41af001403d7821c919676c35fd143cf1e35e89a1af14250d631",
+      "verdict": "tie",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。正しい総和実装で適切に沈黙。",
+          "groundedness": "提示コード・制約との整合 4/4。正しい総和実装で適切に沈黙。",
+          "context_utilization": "必要文脈の利用 4/4。正しい総和実装で適切に沈黙。",
+          "hallucination": "根拠のない事実の有無 4/4。正しい総和実装で適切に沈黙。",
+          "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装で適切に沈黙。",
+          "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装で適切に沈黙。",
+          "actionability": "適切な次の着目点 4/4。正しい総和実装で適切に沈黙。",
+          "conciseness": "簡潔さと関連性 4/4。正しい総和実装で適切に沈黙。",
+          "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装で適切に沈黙。"
+        },
+        "failures": [],
+        "meetsTask": true
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。正しい総和実装で適切に沈黙。",
+          "groundedness": "提示コード・制約との整合 4/4。正しい総和実装で適切に沈黙。",
+          "context_utilization": "必要文脈の利用 4/4。正しい総和実装で適切に沈黙。",
+          "hallucination": "根拠のない事実の有無 4/4。正しい総和実装で適切に沈黙。",
+          "instruction_following": "質問とヒント制約の遵守 4/4。正しい総和実装で適切に沈黙。",
+          "pedagogical_usefulness": "理解を助ける説明 4/4。正しい総和実装で適切に沈黙。",
+          "actionability": "適切な次の着目点 4/4。正しい総和実装で適切に沈黙。",
+          "conciseness": "簡潔さと関連性 4/4。正しい総和実装で適切に沈黙。",
+          "japanese_quality": "日本語の明瞭さ 4/4。正しい総和実装で適切に沈黙。"
+        },
+        "failures": [],
+        "meetsTask": true
+      },
+      "reason": "どちらも不要な介入なし。"
+    },
+    {
+      "pairId": "987fabc413f05c0c",
+      "pairHash": "bd006d24f9dd90f86b91c79417f53308ac7c801f81eac16585be94186e0a7fb2",
+      "verdict": "A_clear",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 2,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "groundedness": "提示コード・制約との整合 2/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "context_utilization": "必要文脈の利用 3/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "hallucination": "根拠のない事実の有無 2/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "instruction_following": "質問とヒント制約の遵守 4/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "pedagogical_usefulness": "理解を助ける説明 2/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "actionability": "適切な次の着目点 3/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "conciseness": "簡潔さと関連性 2/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。",
+          "japanese_quality": "日本語の明瞭さ 4/4。8→9→11とfalseのトレースは合うが、和3の[1,2]を正解と誤記し、和6へ向けた移動方向の説明も弱い。長い。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ],
+        "meetsTask": false
+      },
+      "B": {
+        "scores": {
+          "correctness": 0,
+          "groundedness": 0,
+          "context_utilization": 0,
+          "hallucination": 0,
+          "instruction_following": 0,
+          "pedagogical_usefulness": 0,
+          "actionability": 0,
+          "conciseness": 0,
+          "japanese_quality": 0
+        },
+        "reasons": {
+          "correctness": "正確性 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "groundedness": "提示コード・制約との整合 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "context_utilization": "必要文脈の利用 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "hallucination": "根拠のない事実の有無 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "instruction_following": "質問とヒント制約の遵守 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "pedagogical_usefulness": "理解を助ける説明 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "actionability": "適切な次の着目点 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "conciseness": "簡潔さと関連性 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。",
+          "japanese_quality": "日本語の明瞭さ 0/4。リクエストが完了せず、ユーザーに回答を届けられない。モデルの意味的能力の誤答とは区別。"
+        },
+        "failures": [
+          "infrastructure"
+        ],
+        "meetsTask": false
+      },
+      "reason": "Aにも誤答はあるが一部の動作情報が届く。Bは未配信。"
+    },
+    {
+      "pairId": "62756ff3f2d814d6",
+      "pairHash": "62d65ed2dd47cb0918ad787e57b71cf9f01b9461fc8eb0911efca64ba6fa281a",
+      "verdict": "B_clear",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "groundedness": "提示コード・制約との整合 2/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "context_utilization": "必要文脈の利用 3/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "hallucination": "根拠のない事実の有無 2/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "instruction_following": "質問とヒント制約の遵守 4/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "pedagogical_usefulness": "理解を助ける説明 2/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "actionability": "適切な次の着目点 3/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "conciseness": "簡潔さと関連性 4/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。",
+          "japanese_quality": "日本語の明瞭さ 4/4。結果1は合うが、重複時の根拠をleftの右移動に帰しており、等値時のright更新と逆。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ],
+        "meetsTask": false
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "groundedness": "提示コード・制約との整合 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "hallucination": "根拠のない事実の有無 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "instruction_following": "質問とヒント制約の遵守 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "pedagogical_usefulness": "理解を助ける説明 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "actionability": "適切な次の着目点 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "conciseness": "簡潔さと関連性 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。結果1と等値時に右境界をmiddleへ移す動作を正しく説明。"
+        },
+        "failures": [],
+        "meetsTask": true
+      },
+      "reason": "Bだけが重複時の探索方向を正答。"
+    }
+  ]
+}
