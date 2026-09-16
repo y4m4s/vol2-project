@@ -1435,6 +1435,20 @@ ul.bullet-list li {
   overflow-wrap: anywhere;
 }
 
+.floating-toast-action {
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+
+.floating-toast-action:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
 .floating-toast-progress {
   position: relative;
   height: 3px;

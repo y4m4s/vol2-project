@@ -2,7 +2,7 @@ import type { AiProviderId, NavigatorViewModel, RequestState } from "./types";
 
 type ConnectionActivityInput = Pick<NavigatorViewModel,
   "providerId" | "connectionState" | "requestState" | "modelLabel" |
-  "testedProviderIds" | "testedProviderModels" | "routingProviderConnection"
+  "testedProviderIds" | "testedProviderModels" | "routingProviderConnection" | "lmStudioServer"
 >;
 
 export function connectionActivityState(viewModel: ConnectionActivityInput): {
@@ -18,15 +18,20 @@ export function connectionActivityState(viewModel: ConnectionActivityInput): {
   const providerId = viewModel.providerId;
   const isConnected = viewModel.connectionState === "connected";
   const isAvailable = isConnected || (viewModel.testedProviderIds ?? []).includes(providerId);
-  const isChecking = viewModel.requestState === "connecting" &&
+  const isCheckingRouting = viewModel.requestState === "connecting" &&
     viewModel.routingProviderConnection?.providerId === providerId &&
     viewModel.routingProviderConnection.state === "connecting";
+  const isCheckingServer = providerId === "lmStudio" &&
+    (viewModel.lmStudioServer?.state === "starting" ||
+      viewModel.lmStudioServer?.state === "stopping" ||
+      viewModel.lmStudioServer?.state === "checking");
+  const isChecking = isCheckingRouting || isCheckingServer;
   const testedModelLabel = viewModel.testedProviderModels?.find(model => model.providerId === providerId)?.modelLabel;
   return {
     providerId,
     modelLabel: (isConnected ? viewModel.modelLabel : testedModelLabel)
       ?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, ""),
-    stateLabel: isConnected ? "接続中" : isChecking ? "接続確認中" : isAvailable ? "接続可能" : "未接続",
+    stateLabel: isChecking ? "接続確認中" : isConnected ? "接続中" : isAvailable ? "接続可能" : "未接続",
     stateClass: isAvailable && !isChecking ? "connected" : "switching",
     isAvailable,
     isChecking

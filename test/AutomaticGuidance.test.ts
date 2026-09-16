@@ -37,6 +37,7 @@ const { ConversationStore } = require("../src/services/ConversationStore") as ty
 const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
 const { ConversationMemoryCoordinator } = require("../src/application/coordinators/ConversationMemoryCoordinator") as typeof import("../src/application/coordinators/ConversationMemoryCoordinator");
 const { LmStudioCoordinator } = require("../src/application/coordinators/LmStudioCoordinator") as typeof import("../src/application/coordinators/LmStudioCoordinator");
+const { ConnectionSettingsCoordinator } = require("../src/application/coordinators/ConnectionSettingsCoordinator") as typeof import("../src/application/coordinators/ConnectionSettingsCoordinator");
 const { LmStudioServerService } = require("../src/services/LmStudioServerService") as typeof import("../src/services/LmStudioServerService");
 loader._load = originalLoad;
 
@@ -281,7 +282,7 @@ test("untrusted workspaces cannot check LM Studio during routing synchronization
 test("routing synchronization does not start a stopped LM Studio server", async () => {
   let starts = 0;
   const coordinator = new LmStudioCoordinator(
-    { notifyStateChanged: () => {} } as never,
+    { getProviderId: () => "copilot" } as never,
     {
       getStatus: async () => ({ state: "stopped", canStart: true, canStop: false }),
       start: async () => { starts++; return { state: "running", canStart: false, canStop: true }; }
@@ -292,6 +293,128 @@ test("routing synchronization does not start a stopped LM Studio server", async 
 
   assert.equal(await coordinator.checkServerForRoutingConnection(), false);
   assert.equal(starts, 0);
+});
+
+test("LM Studio 停止時は許可済みで接続確認済みの Copilot だけへ切り替える", async () => {
+  let provider: AiProviderId = "lmStudio";
+  let savedProvider: AiProviderId | undefined;
+  let connectionState = "connected";
+  let statusAction: string | undefined;
+  const settings = {
+    providerId: "lmStudio",
+    lmStudioBaseUrl: "http://127.0.0.1:1234",
+    routing: { mode: "automatic", allowedProviderIds: ["lmStudio", "copilot"] }
+  } as NavigatorSettings;
+  const coordinator = new LmStudioCoordinator(
+    {
+      getProviderId: () => provider,
+      markUnavailable: () => { connectionState = "unavailable"; },
+      getTestedModels: () => [{ providerId: "copilot" }],
+      activateTestedProvider: (id: AiProviderId) => { provider = id; connectionState = "connected"; return true; },
+      clearLmStudioModelOptions: () => {}
+    } as never,
+    { stop: async () => ({ state: "stopped", canStart: true, canStop: false }) } as never,
+    { getSettings: () => settings } as never,
+    {
+      getState: () => ({ requestState: "idle", conversationHistory: [] }),
+      patchSession: (partial: { connectionState?: string; statusMessage?: { action?: string } }) => {
+        if (partial.connectionState) connectionState = partial.connectionState;
+        statusAction = partial.statusMessage?.action ?? statusAction;
+      },
+      notifyStateChanged: () => {},
+      saveSettings: async (next: NavigatorSettings) => { savedProvider = next.providerId; return next; }
+    } as never
+  );
+
+  await coordinator.stopServer();
+  assert.equal(provider, "copilot");
+  assert.equal(savedProvider, "copilot");
+  assert.equal(connectionState, "connected");
+  assert.equal(statusAction, undefined);
+});
+
+test("ローカル限定の会話では LM Studio 停止後も Copilot に送らず設定リンクを出す", async () => {
+  let activated = false;
+  let saved = false;
+  let connectionState = "connected";
+  let statusAction: string | undefined;
+  const settings = {
+    providerId: "lmStudio",
+    lmStudioBaseUrl: "http://127.0.0.1:1234",
+    routing: { mode: "automatic", allowedProviderIds: ["lmStudio", "copilot"] }
+  } as NavigatorSettings;
+  const coordinator = new LmStudioCoordinator(
+    {
+      getProviderId: () => "lmStudio",
+      markUnavailable: () => { connectionState = "unavailable"; },
+      getTestedModels: () => [{ providerId: "copilot" }],
+      activateTestedProvider: () => { activated = true; return true; },
+      clearLmStudioModelOptions: () => {}
+    } as never,
+    { stop: async () => ({ state: "stopped", canStart: true, canStop: false }) } as never,
+    { getSettings: () => settings } as never,
+    {
+      getState: () => ({ requestState: "idle", conversationHistory: [{ transmissionClass: "localOnly" }] }),
+      patchSession: (partial: { connectionState?: string; statusMessage?: { action?: string } }) => {
+        if (partial.connectionState) connectionState = partial.connectionState;
+        statusAction = partial.statusMessage?.action ?? statusAction;
+      },
+      notifyStateChanged: () => {},
+      saveSettings: async () => { saved = true; return settings; }
+    } as never
+  );
+
+  await coordinator.stopServer();
+  assert.equal(activated, false);
+  assert.equal(saved, false);
+  assert.equal(connectionState, "unavailable");
+  assert.equal(statusAction, "openConnectionSettings");
+});
+
+test("LM Studio 接続失敗時もローカル限定の相談画面を維持する", async () => {
+  let activated = false;
+  let saved = false;
+  let serviceConnectionState = "connected";
+  const settings = {
+    providerId: "lmStudio",
+    defaultMode: "manual",
+    defaultAssistanceDepth: "low",
+    routing: { mode: "automatic", allowedProviderIds: ["lmStudio", "copilot"] }
+  } as NavigatorSettings;
+  let state = {
+    requestState: "idle",
+    screen: "main",
+    screenHistory: [],
+    connectionState: "connected",
+    conversationHistory: [{ transmissionClass: "localOnly" }],
+    mode: "manual"
+  } as unknown as NavigatorSessionState;
+  const coordinator = new ConnectionSettingsCoordinator(
+    {
+      connectAndActivate: async () => ({ activated: false, connectionState: "connected", failureState: "unavailable", previousProviderId: "lmStudio" }),
+      getProviderId: () => "lmStudio",
+      getState: () => serviceConnectionState,
+      markUnavailable: () => { serviceConnectionState = "unavailable"; },
+      getLastLmStudioIssue: () => "unreachable",
+      getTestedModels: () => [{ providerId: "copilot" }],
+      activateTestedProvider: () => { activated = true; return true; }
+    } as never,
+    { getSettings: () => settings, saveSettings: async () => { saved = true; return settings; } } as never,
+    {} as never,
+    {
+      getState: () => state,
+      patchSession: (partial: Partial<NavigatorSessionState>) => { state = { ...state, ...partial }; },
+      collectContextPreview: () => ({}),
+      notifyStateChanged: () => {}
+    } as never
+  );
+
+  await coordinator.connect();
+  assert.equal(state.screen, "main");
+  assert.equal(state.connectionState, "unavailable");
+  assert.equal(state.statusMessage?.action, "openConnectionSettings");
+  assert.equal(activated, false);
+  assert.equal(saved, false);
 });
 
 test("LM Studio API応答とCLI停止報告の不一致を起動中と区別する", async () => {

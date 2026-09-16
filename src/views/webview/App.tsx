@@ -97,7 +97,7 @@ function KnowledgeSaveToast() {
 }
 
 function StatusMessageToast() {
-  const { viewModel } = useApp();
+  const { viewModel, send } = useApp();
   const statusMessage = viewModel?.statusMessage;
   const isCheckingRoutingConnection =
     viewModel?.requestState === "connecting" &&
@@ -115,8 +115,10 @@ function StatusMessageToast() {
       kind={statusMessage?.kind}
       providerIconId={isCheckingRoutingConnection ? viewModel.routingProviderConnection?.providerId : undefined}
       message={statusMessage?.text ?? ""}
+      actionLabel={statusMessage?.action === "openConnectionSettings" ? "接続設定を開く" : undefined}
+      onAction={statusMessage?.action === "openConnectionSettings" ? () => send({ type: "navigate", screen: "settings" }) : undefined}
       persist={isCheckingRoutingConnection}
-      durationMs={statusMessage?.kind === "error" ? 10_000 : undefined}
+      durationMs={statusMessage?.kind === "error" || statusMessage?.action ? 10_000 : undefined}
     />
   );
 }

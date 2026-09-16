@@ -20,6 +20,7 @@
   "include": [
     "test/AdaptiveProviderRouting.test.ts",
     "test/UiActivity.test.ts",
+    "test/CopilotFallback.test.ts",
     "src/shared/uiActivity.ts",
     "test/ProviderEvaluationStore.test.ts",
     "test/ProviderRoutingCoordinator.test.ts",
