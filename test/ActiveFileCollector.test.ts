@@ -41,9 +41,9 @@ function editor(text: string, visibleLine: number, selected = false): vscode.Tex
 test("collector through planner to prompt retains off-screen helpers and honors exclusions", () => {
   const text = "function convertMeters(n: number) { return n * 100; }\nconst distance = convertMeters(3);";
   state.activeTextEditor=editor(text,1);
-  const context=new ContextCollector().collectGuidanceContext();
-  assert.equal(context.activeFileExcerpt,text);
   for(const provider of ["lmStudio","ollama"] as const) {
+    const context=new ContextCollector().collectGuidanceContext(provider);
+    assert.equal(context.activeFileExcerpt,text);
     const settings: NavigatorSettings={providerId:provider,protectedExcludedGlobs:[],excludedGlobs:[],
       defaultMode:"manual",defaultAssistanceDepth:"low",lmStudioBaseUrl:"http://127.0.0.1:1234",
       requestIntervalMs:60000,idleDelayMs:10000,dailyTokenLimit:100000};
@@ -60,13 +60,29 @@ test("collector through planner to prompt retains off-screen helpers and honors 
 test("explicit selection, large files and non-workspace editors retain their boundaries", () => {
   const small="function internal() { return 71; }\nconst value = internal();";
   state.activeTextEditor=editor(small,1,true);
-  const selected=new ContextCollector().collectGuidanceContext();
+  const selected=new ContextCollector().collectGuidanceContext("lmStudio");
   assert.equal(selected.activeFileExcerpt,"const value = internal();");
   assert.equal(selected.selectedText,selected.activeFileExcerpt);
   const large="x".repeat(8100)+"\nconst visible = 4;";
   state.activeTextEditor=editor(large,1);
-  assert.equal(new ContextCollector().collectGuidanceContext().activeFileExcerpt,"const visible = 4;");
+  assert.equal(new ContextCollector().collectGuidanceContext("ollama").activeFileExcerpt,"const visible = 4;");
   inWorkspace=false;
-  try {assert.equal(new ContextCollector().collectGuidanceContext().activeFileExcerpt,undefined);}
+  try {assert.equal(new ContextCollector().collectGuidanceContext("ollama").activeFileExcerpt,undefined);}
   finally {inWorkspace=true;state.activeTextEditor=undefined;}
+});
+
+test("cloud and unspecified providers retain viewport/selection without reading the full file", () => {
+  const text="function helper() { return 31; }\nconst value = helper();";
+  for(const provider of ["copilot","orcaRouter",undefined] as const) {
+    for(const selected of [false,true]) {
+      state.activeTextEditor=editor(text,1,selected);
+      const doc=state.activeTextEditor.document;
+      const getText=doc.getText.bind(doc);
+      Object.assign(doc,{getText:(range?: vscode.Range)=>{assert.ok(range,"must not read the whole document");return getText(range);}});
+      const context=new ContextCollector().collectGuidanceContext(provider);
+      assert.equal(context.activeFileExcerpt,"const value = helper();");
+      assert.equal(context.selectedText,selected?context.activeFileExcerpt:undefined);
+    }
+  }
+  state.activeTextEditor=undefined;
 });

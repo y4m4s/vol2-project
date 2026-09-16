@@ -10,6 +10,27 @@ loader._load = (id, parent, isMain) => id === "vscode" ? { workspace: { workspac
 const { RequestPlanCoordinator } = require("../src/application/coordinators/RequestPlanCoordinator") as typeof import("../src/application/coordinators/RequestPlanCoordinator");
 loader._load = originalLoad;
 
+test("provider changes invalidate capture policy even when model profile is unchanged", () => {
+  const state = { requestState:"idle",mode:"manual",assistanceDepth:"low",contextPreview:{diagnosticsSummary:[]} } as unknown as NavigatorSessionState;
+  const settings = {providerId:"lmStudio",excludedGlobs:[],protectedExcludedGlobs:[]} as unknown as NavigatorSettings;
+  const providers: unknown[]=[];
+  const context: GuidanceContext={activeFilePath:"app.ts",activeFileExcerpt:"const value = 1;",referencedFiles:[],diagnosticsSummary:[],recentEditsSummary:[],relatedSymbols:[]};
+  const coordinator=new RequestPlanCoordinator({collectGuidanceContext:(provider: unknown)=>{providers.push(provider);return context;}} as never,
+    new RequestPlanner(),{getSettings:()=>settings} as never,{
+      getState:()=>state,patchSession:()=>{},rememberSelectionContext:p=>p,
+      getVisibleAdditionalContext:()=>undefined,collectGuidanceContextForDepth:async()=>context
+    });
+  coordinator.getCurrentPlan(state);
+  coordinator.getCurrentPlan(state);
+  settings.providerId="copilot";
+  coordinator.getCurrentPlan(state);
+  settings.providerId="orcaRouter";
+  coordinator.getCurrentPlan(state);
+  settings.providerId="ollama";
+  coordinator.getCurrentPlan(state);
+  assert.deepEqual(providers,["lmStudio","copilot","orcaRouter","ollama"]);
+});
+
 test("入力中のflow・hint・next deepと追加文脈を送信予定へ反映する", async () => {
   const state = { requestState: "idle", assistanceDepth: "low", contextPreview: { diagnosticsSummary: [] } } as unknown as NavigatorSessionState;
   const settings = { excludedGlobs: [], protectedExcludedGlobs: [] } as unknown as NavigatorSettings;

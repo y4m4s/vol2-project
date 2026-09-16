@@ -156,7 +156,7 @@ export class ContextCollector {
     };
   }
 
-  public collectGuidanceContext(): GuidanceContext {
+  public collectGuidanceContext(providerId?: NavigatorSettings["providerId"]): GuidanceContext {
     const editor = vscode.window.activeTextEditor;
 
     if (!editor || !this.isWorkspaceFile(editor.document.uri)) {
@@ -173,7 +173,7 @@ export class ContextCollector {
     return {
       activeFilePath: editor.document.uri.fsPath,
       activeFileLanguage: editor.document.languageId,
-      activeFileExcerpt: this.collectActiveFileExcerpt(editor, selectedText),
+      activeFileExcerpt: this.collectActiveFileExcerpt(editor, selectedText, providerId),
       selectedText: this.limitText(selectedText, MAX_SELECTED_TEXT_LENGTH),
       referencedFiles: [],
       diagnosticsSummary: this.collectDiagnostics(editor.document.uri),
@@ -252,7 +252,7 @@ export class ContextCollector {
     settings: NavigatorSettings,
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
-    const context = baseContext ?? this.collectGuidanceContext();
+    const context = baseContext ?? this.collectGuidanceContext(settings.providerId);
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const [workspaceTree, referencedFiles] = await Promise.all([
       this.collectWorkspaceTree(excludedGlobs),
@@ -271,7 +271,7 @@ export class ContextCollector {
     scope: ProjectContextScope,
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
-    const context = baseContext ?? this.collectGuidanceContext();
+    const context = baseContext ?? this.collectGuidanceContext(settings.providerId);
     const excludedGlobs = this.getEffectiveExcludedGlobs(settings);
     const limits = NEXT_CONTEXT_LIMITS[scope];
     const [
@@ -355,14 +355,16 @@ export class ContextCollector {
     }));
   }
 
-  private collectActiveFileExcerpt(editor: vscode.TextEditor, selectedText?: string): string | undefined {
+  private collectActiveFileExcerpt(editor: vscode.TextEditor, selectedText?: string,
+    providerId?: NavigatorSettings["providerId"]): string | undefined {
     if (selectedText) {
       return this.limitText(selectedText, MAX_ACTIVE_FILE_EXCERPT_LENGTH);
     }
 
-    // Small files often define a called helper outside the visible viewport.
-    // Keep that evidence; the planner still applies exclusions and the final input budget.
-    const complete = completeActiveFile(editor.document);
+    // Expand small files only for local inference. Cloud/unknown providers keep
+    // the previous viewport budget; exclusions and final input limits still apply.
+    const complete = providerId === "lmStudio" || providerId === "ollama"
+      ? completeActiveFile(editor.document) : undefined;
     if (complete !== undefined) return complete;
 
     const visibleRange = editor.visibleRanges[0];

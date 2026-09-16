@@ -601,7 +601,7 @@ export class NavigatorController implements vscode.Disposable {
       const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
       const additionalContext = this.getGuidanceAdditionalContext(state);
       const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
-      const baseContext = this.contextCollector.collectGuidanceContext();
+      const baseContext = this.contextCollector.collectGuidanceContext(settings.providerId);
       const automaticEditorSnapshot = this.contextCollector.automaticEditorSnapshot();
       const automaticDocumentSnapshot = this.contextCollector.automaticDocumentSnapshot();
       const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
@@ -711,7 +711,7 @@ export class NavigatorController implements vscode.Disposable {
       ? normalizeAdditionalContext(additionalContext)
       : resolveAdditionalContext(undefined, this.getStreamAdditionalContext(state));
     const livePreview = this.rememberSelectionContext(this.contextCollector.collectPreview());
-    const liveContext = this.contextCollector.collectGuidanceContext();
+    const liveContext = this.contextCollector.collectGuidanceContext(settings.providerId);
     const stickySelectionAvailable = Boolean(
       state.contextPreview.selectedTextPreview &&
         this.pendingSelectionContext?.selectedText &&
@@ -1309,7 +1309,7 @@ export class NavigatorController implements vscode.Disposable {
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
     if (guidanceContentDepth(settings.providerId, assistanceDepth) !== "high") {
-      return baseContext ?? this.contextCollector.collectGuidanceContext();
+      return baseContext ?? this.contextCollector.collectGuidanceContext(settings.providerId);
     }
 
     return this.contextCollector.collectGuidanceContextWithWorkspace(settings, baseContext);
@@ -1339,7 +1339,7 @@ export class NavigatorController implements vscode.Disposable {
       return preview;
     }
 
-    const context = this.contextCollector.collectGuidanceContext();
+    const context = this.contextCollector.collectGuidanceContext(this.settingsService.getSettings().providerId);
     if (context.selectedText) {
       this.pendingSelectionContext = context;
       this.pendingSelectionPreview = preview;

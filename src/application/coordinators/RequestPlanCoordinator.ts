@@ -71,7 +71,7 @@ export class RequestPlanCoordinator {
     const kind: GuidanceKind = state.mode === "always" && !this.draft.userPrompt.trim()
       ? "always" : state.contextPreview.selectedTextPreview ? "context" : "manual";
     const plan = this.externalize(this.requestPlanner.prepareGuidanceRequest(
-      withAdditionalContext(this.contextCollector.collectGuidanceContext(), this.draft.additionalContext),
+      withAdditionalContext(this.contextCollector.collectGuidanceContext(settings.providerId), this.draft.additionalContext),
       state.contextPreview,
       settings,
       kind,
@@ -185,6 +185,7 @@ export class RequestPlanCoordinator {
   private createKey(state: NavigatorSessionState): string {
     return JSON.stringify({
       draft: this.draft,
+      providerId: this.settingsService.getSettings().providerId,
       modelProfile: this.host.getModelProfile?.(),
       mode: state.mode,
       assistanceDepth: state.assistanceDepth,
