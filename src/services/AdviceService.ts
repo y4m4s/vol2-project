@@ -24,7 +24,9 @@ import { classifyOrcaRouterFailure, orcaRouterAccessMessage, requestRejectionMes
 import { deriveModelProfile } from "./ModelProfile";
 import {
   buildGuidanceFormatRepairPrompt,
+  diagnoseGuidanceEnvelope,
   guidanceResponseValidationOptions,
+  type GuidanceResponseValidation,
   validateGuidanceResponse
 } from "./GuidanceResponsePolicy";
 import { buildGuidancePromptMessages, formatReferencedFileReason, GUIDANCE_POLICY_REVISION } from "./PromptBuilder";
@@ -66,6 +68,7 @@ export interface GuidanceRequestFailure {
 export type GuidanceRequestResult = GuidanceRequestSuccess | GuidanceRequestFailure;
 
 export interface GuidanceRequestInput {
+  conversationMemory?: string;
   automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   referencedFilePaths?: string[];
@@ -166,6 +169,7 @@ export class AdviceService {
         )
       };
     }
+    this.logValidationFailure("initial", firstValidation, first, input.kind);
 
     if (cancellationToken?.isCancellationRequested) {
       return this.cancelledResult();
@@ -189,11 +193,11 @@ export class AdviceService {
 
     const repairedValidation = validateGuidanceResponse(input.slashCommand, repaired.text, validationOptions);
     if (!repairedValidation.ok) {
-      this.logDiagnostic({ event: "validation_failed", reason: repairedValidation.reason });
+      this.logValidationFailure("repair", repairedValidation, repaired, input.kind);
       return {
         ok: false,
         connectionState: this.connectionService.getState(),
-        message: "AI は応答しましたが、出力の安全性・形式契約を2回とも満たせませんでした。入力を短くしてもう一度実行してください。"
+        message: "AI は応答しましたが、出力の安全性・形式契約を2回とも満たせませんでした。詳細は「出力」の NaviCom Diagnostics で確認してください。"
       };
     }
 
@@ -391,6 +395,26 @@ export class AdviceService {
   private logDiagnostic(entry: Record<string, unknown>): void {
     // Never log prompts, response bodies or API keys; diagnostics must not affect requests.
     try { this.diagnostic(entry); } catch { /* Logging is best effort. */ }
+  }
+
+  private logValidationFailure(
+    attempt: "initial" | "repair",
+    validation: Extract<GuidanceResponseValidation, { ok: false }>,
+    response: GuidanceRequestSuccess,
+    kind: GuidanceKind
+  ): void {
+    const model = this.connectionService.getConnectedModel();
+    this.logDiagnostic({
+      event: "validation_failed",
+      attempt,
+      reason: validation.reason,
+      provider: model?.providerId,
+      model: model?.modelId,
+      resolvedModel: response.responseMetadata?.resolvedModelIds?.at(-1),
+      requestId: response.responseMetadata?.requestIds?.at(-1),
+      policyRevision: GUIDANCE_POLICY_REVISION,
+      ...diagnoseGuidanceEnvelope(response.text, kind === "always")
+    });
   }
 
   private combineUsage(

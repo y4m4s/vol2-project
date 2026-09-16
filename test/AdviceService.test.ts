@@ -48,6 +48,12 @@ const input = {
 };
 const answer = JSON.stringify({ kind: "advice", text: "確認の観点です。" });
 
+test("conversation memory is included as reference data in real provider requests", async () => {
+  const h = harness();
+  await h.service.requestGuidance({ ...input, conversationMemory: '{"requirement":"削除は禁止"}' });
+  assert.ok(h.requests[0].userPrompt.includes("削除は禁止"));
+});
+
 function harness(options: {
   providerId?: "ollama" | "copilot";
   countTokens?: ConnectedProviderModel["countTokens"];
@@ -152,6 +158,30 @@ test("高設定の形式修復でもThinking指定を維持する", async () => 
   await h.service.requestGuidance({ ...input, kind: "always", assistanceDepth: "high" });
   assert.equal(h.calls(), 2);
   assert.deepEqual(h.requests.map(r => r.reasoningEffort), ["high", "high"]);
+});
+
+test("形式失敗は初回と修復を本文なしの詳細診断へ記録する", async () => {
+  const h = harness({ responses: ["秘密の通常文", JSON.stringify({ kind: "advice", text: "秘密", extra: true })] });
+  const result = await h.service.requestGuidance(input);
+  assert.ok(!result.ok);
+  assert.match(result.message, /NaviCom Diagnostics/);
+  const failures = h.diagnostics.filter(item => item.event === "validation_failed");
+  assert.equal(failures.length, 2);
+  assert.deepEqual(failures.map(item => item.attempt), ["initial", "repair"]);
+  assert.deepEqual(failures.map(item => item.envelopeIssue), ["invalidJson", "unexpectedKeys"]);
+  assert.equal(failures[1].unexpectedKeyCount, 1);
+  assert.ok(failures.every(item => item.provider === "copilot" && item.model === "mock"));
+  assert.doesNotMatch(JSON.stringify(failures), /秘密/);
+});
+
+test("手動相談の短い学習コード例は形式修復なしで表示する", async () => {
+  const response = JSON.stringify({ kind: "advice", text: "次の例です。\n\n```ruby\nmessage = 'こんにちは'\nputs message\n```" });
+  const h = harness({ response });
+  const result = await h.service.requestGuidance(input);
+  assert.ok(result.ok);
+  assert.equal(result.text, JSON.parse(response).text);
+  assert.equal(h.calls(), 1);
+  assert.equal(h.diagnostics.some(item => item.event === "validation_failed"), false);
 });
 
 test("Ollamaの低と高は同じ高相当の指示・出力枠を使いThinkingだけ切り替える", async () => {

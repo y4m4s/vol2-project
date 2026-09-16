@@ -1,6 +1,14 @@
 import * as vscode from "vscode";
 import { guidanceContentDepth } from "../services/GuidanceDepthPolicy";
 import { randomUUID } from "node:crypto";
+import {
+  ConversationMemoryCoordinator,
+  type CommandMemoryCompactionResult,
+  type MemoryCompactionTarget
+} from "./coordinators/ConversationMemoryCoordinator";
+import { normalizeRoutingSettings, PROVIDER_IDS, PROVIDER_LABELS, routingConnectionProviderIds } from "../shared/providerRouting";
+import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordinator";
+import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
 import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
 import { AdviceService } from "../services/AdviceService";
@@ -86,6 +94,8 @@ interface GuidanceExecutionOptions {
 type GuidanceExecutionOptionsFactory = () => Promise<GuidanceExecutionOptions | undefined>;
 
 export class NavigatorController implements vscode.Disposable {
+  private readonly conversationMemoryCoordinator: ConversationMemoryCoordinator;
+  private readonly providerRoutingCoordinator: ProviderRoutingCoordinator;
   private readonly sessionStore: SessionStore;
   private readonly connectionSettingsCoordinator: ConnectionSettingsCoordinator;
   private readonly lmStudioCoordinator: LmStudioCoordinator;
@@ -110,6 +120,8 @@ export class NavigatorController implements vscode.Disposable {
   // requestState がまだ "idle" のまま進む準備区間を含めて、助言リクエストを 1 本に絞る。
   private readonly guidanceRequestGate = new SingleFlightGate();
   private schedulerConfigurationKey?: string;
+  private routingProviderConnection?: NavigatorViewModel["routingProviderConnection"];
+  private routingProviderConnectionRevision = 0;
   private initialized = false;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
@@ -125,9 +137,14 @@ export class NavigatorController implements vscode.Disposable {
     private readonly conversationStore: ConversationStore,
     private readonly knowledgeStore: KnowledgeStore,
     private readonly feedbackStore: FeedbackStore,
-    private readonly usageMeter: UsageMeter
+    private readonly usageMeter: UsageMeter,
+    diagnostic: (entry: Record<string, unknown>) => void = () => {}
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
+    this.providerRoutingCoordinator = new ProviderRoutingCoordinator(this.connectionService, this.usageMeter, conversationStore);
+    this.conversationMemoryCoordinator = new ConversationMemoryCoordinator(
+      this.connectionService, conversationStore, this.usageMeter, diagnostic
+    );
     this.requestPlanCoordinator = new RequestPlanCoordinator(
       this.contextCollector,
       this.requestPlanner,
@@ -142,6 +159,8 @@ export class NavigatorController implements vscode.Disposable {
         getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
         getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
         getPromptExtras: (context, plan) => ({
+          conversationMemory: this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
+            this.settingsService.getSettings(), this.sessionStore.getState().conversationHistory, this.sessionStore.getState().activeConversationStreamId),
           knowledgeItems: this.knowledgeStore.findReusable(context),
           feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
             kind: plan.kind, assistanceDepth: plan.assistanceDepth, slashCommand: plan.slashCommand
@@ -316,6 +335,7 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     const settings = this.settingsService.getSettings();
     const currentRequestPlan = this.requestPlanCoordinator.getCurrentPlan(state);
+    const testedProviderModels = this.connectionService.getTestedModels?.(settings) ?? [];
 
     return {
       screen: state.screen,
@@ -324,7 +344,9 @@ export class NavigatorController implements vscode.Disposable {
       mode: state.mode,
       assistanceDepth: state.assistanceDepth,
       canConnect: state.requestState === "idle",
-      canAskForGuidance: state.connectionState === "connected" && state.requestState === "idle",
+      canAskForGuidance: state.requestState === "idle" && (state.connectionState === "connected" ||
+        (settings.routing?.mode !== "manual" && Boolean(settings.routing) &&
+          testedProviderModels.some(model => routingConnectionProviderIds(settings.routing!).includes(model.providerId)))),
       canSwitchMode: state.connectionState === "connected" && state.requestState === "idle",
       canSwitchAssistanceDepth: state.requestState === "idle",
       isBusy: state.requestState !== "idle",
@@ -342,6 +364,14 @@ export class NavigatorController implements vscode.Disposable {
       orcaRouterApiKeyConfigured: this.connectionService.isOrcaRouterApiKeyConfigured(),
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
       settingsRevision: this.connectionSettingsCoordinator.revision,
+      testedProviderIds: testedProviderModels.map(model => model.providerId),
+      testedProviderModels: testedProviderModels.map(model => ({
+        providerId: model.providerId,
+        modelId: model.modelId,
+        modelLabel: model.modelLabel
+      })),
+      routingProviderConnection: this.routingProviderConnection,
+      conversationRoutingPreference: this.providerRoutingCoordinator.preference(state.activeConversationStreamId),
       statusMessage: state.statusMessage,
       contextPreview: state.contextPreview,
       conversationStreams: state.conversationStreams,
@@ -360,7 +390,115 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async connectCopilot(providerId?: AiProviderId): Promise<void> {
+    const initialState = this.sessionStore.getState();
+    const initialSettings = this.settingsService.getSettings();
+    const restoreAutomaticRouting = initialState.screen === "onboarding" || (
+      initialState.screen === "settings" &&
+      initialState.screenHistory.at(-1) === "onboarding" &&
+      providerId !== undefined &&
+      initialSettings.providerId === providerId
+    );
     await this.connectionSettingsCoordinator.connect(providerId);
+    const selectedProviderConnected = providerId !== undefined &&
+      this.connectionService.getState() === "connected" &&
+      this.connectionService.getProviderId() === providerId;
+    if (!restoreAutomaticRouting || !selectedProviderConnected) return;
+
+    let settings = this.settingsService.getSettings();
+    let routing = normalizeRoutingSettings(settings.routing);
+    if (routing.mode === "automatic" && routing.preferredProviderId !== providerId) {
+      routing = {
+        ...routing,
+        allowedProviderIds: routing.allowedProviderIds.includes(providerId)
+          ? routing.allowedProviderIds
+          : [...routing.allowedProviderIds, providerId],
+        preferredProviderId: providerId
+      };
+      settings = await this.connectionSettingsCoordinator.saveSettingsWithRevision({ ...settings, routing });
+    }
+    if (routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {
+      await this.synchronizeRoutingProviders();
+    }
+  }
+
+  public async testRoutingProvider(providerId: AiProviderId): Promise<void> {
+    if (this.sessionStore.getState().requestState !== "idle") return;
+    const settings = this.settingsService.getSettings();
+    const previous = this.connectionService.getProviderId();
+    const revision = ++this.routingProviderConnectionRevision;
+    this.routingProviderConnection = { providerId, state: "connecting", revision };
+    this.patchSession({
+      requestState: "connecting",
+      statusMessage: { kind: "info", text: `${PROVIDER_LABELS[providerId]}への接続を開始します。` }
+    });
+    try {
+      const result = await this.connectionService.connectAndActivate({ ...settings, providerId }, true);
+      this.connectionService.activateTestedProvider(previous, settings);
+      this.routingProviderConnection = { providerId, state: result.activated ? "connected" : "failed", revision };
+      this.patchSession({ connectionState: this.connectionService.getState(), statusMessage: {
+        kind: result.activated ? "info" : "warning",
+        text: result.activated
+          ? `${PROVIDER_LABELS[providerId]}に接続しました。自動切り替え候補に追加します。`
+          : `${PROVIDER_LABELS[providerId]}への接続に失敗しました。接続設定を確認してください。`
+      } });
+    } catch (error) {
+      this.routingProviderConnection = { providerId, state: "failed", revision };
+      this.patchSession({ statusMessage: {
+        kind: "error",
+        text: `${PROVIDER_LABELS[providerId]}への接続に失敗しました。接続設定を確認してください。`
+      } });
+      throw error;
+    } finally { this.patchSession({ requestState: "idle" }); }
+  }
+
+  public async setRoutingPin(providerId?: AiProviderId): Promise<void> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle" || !state.activeConversationStreamId) return;
+    await this.providerRoutingCoordinator.pin(state.activeConversationStreamId, providerId);
+    this.patchSession({ statusMessage: { kind: "info", text: providerId ? `${PROVIDER_LABELS[providerId]}にこの相談を固定しました。` : "この相談の自動選択に戻しました。" } });
+  }
+
+  public async setConversationRouting(mode?: NonNullable<NavigatorSettings["routing"]>["mode"], providerId?: AiProviderId): Promise<void> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle" || !state.activeConversationStreamId) return;
+    if (providerId) this.providerRoutingCoordinator.selectOnce(state.activeConversationStreamId, providerId);
+    else await this.providerRoutingCoordinator.setPreference(state.activeConversationStreamId, { mode });
+    this.patchSession({ statusMessage: { kind: "info", text: providerId ? "次の送信だけ指定した接続先を使用します。" : "この相談の切り替え方式を更新しました。" } });
+  }
+
+  public async compactActiveConversation(
+    target: MemoryCompactionTarget,
+    cancellation?: vscode.CancellationToken
+  ): Promise<CommandMemoryCompactionResult> {
+    const state = this.sessionStore.getState();
+    if (state.requestState !== "idle") {
+      return { status: "unavailable", reason: "別の処理が完了してから、もう一度実行してください。" };
+    }
+    if (!state.activeConversationStreamId || state.conversationHistory.length === 0) {
+      return { status: "unavailable", reason: "圧縮する会話をNaviComで開いてください。" };
+    }
+
+    const targetLabel = target === "local" ? "ローカルLLM" : "ローカルLLMなし";
+    this.patchSession({
+      requestState: "compacting_memory",
+      statusMessage: { kind: "info", text: `${targetLabel}でコンテキスト圧縮を開始します。` }
+    });
+    try {
+      const result = await this.conversationMemoryCoordinator.compactNow(
+        this.settingsService.getSettings(),
+        state.conversationHistory,
+        state.activeConversationStreamId,
+        target,
+        cancellation
+      );
+      const kind = result.status === "saved" ? "info" : result.status === "failed" || result.status === "blocked" ? "error" : "warning";
+      this.patchSession({ statusMessage: { kind, text: result.reason } });
+      return result;
+    } finally {
+      if (this.sessionStore.getState().requestState === "compacting_memory") {
+        this.patchSession({ requestState: "idle" });
+      }
+    }
   }
 
   public async refreshCurrentRequestPlan(userPrompt?: string, additionalContext?: string): Promise<void> {
@@ -381,10 +519,12 @@ export class NavigatorController implements vscode.Disposable {
 
   public async deleteConversationStream(streamId: string): Promise<void> {
     await this.conversationCoordinator.deleteStream(streamId);
+    this.providerRoutingCoordinator.forget(streamId);
   }
 
   public async deleteAllConversationStreams(): Promise<void> {
     await this.conversationCoordinator.deleteAllStreams();
+    this.providerRoutingCoordinator.forget();
   }
 
   public async askForGuidance(userPrompt?: string, kind?: GuidanceKind, additionalContext?: string): Promise<void> {
@@ -467,7 +607,74 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async saveSettings(input: SettingsInput): Promise<void> {
+    const previousRevision = this.connectionSettingsCoordinator.revision;
     await this.connectionSettingsCoordinator.save(input);
+    if (this.connectionSettingsCoordinator.revision !== previousRevision) {
+      await this.synchronizeRoutingProviders();
+    }
+  }
+
+  private async synchronizeRoutingProviders(): Promise<void> {
+    const settings = this.settingsService.getSettings();
+    const routing = normalizeRoutingSettings(settings.routing);
+    if (routing.mode !== "automatic") return;
+
+    const selected = routingConnectionProviderIds(routing);
+    const previousProviderId = this.connectionService.getProviderId();
+    const connected: AiProviderId[] = [];
+    const failed: AiProviderId[] = [];
+    this.connectionService.deactivateTestedProviders(PROVIDER_IDS);
+    this.patchSession({ requestState: "connecting", connectionState: this.connectionService.getState() });
+
+    try {
+      for (const [index, providerId] of selected.entries()) {
+        const revision = ++this.routingProviderConnectionRevision;
+        this.routingProviderConnection = { providerId, state: "connecting", revision };
+        this.patchSession({ statusMessage: {
+          kind: "info",
+          text: `${PROVIDER_LABELS[providerId]}への接続を確認しています…（${index + 1}/${selected.length}）`
+        } });
+
+        let activated = false;
+        try {
+          const localReady = providerId !== "lmStudio" ||
+            await this.lmStudioCoordinator.ensureServerForRoutingConnection();
+          if (localReady) {
+            const result = await this.connectionService.connectAndActivate(
+              { ...settings, providerId },
+              true
+            );
+            activated = result.activated;
+          }
+        } catch {
+          activated = false;
+        }
+        if (activated) connected.push(providerId); else failed.push(providerId);
+        this.routingProviderConnection = { providerId, state: activated ? "connected" : "failed", revision };
+        this.patchSession({ connectionState: this.connectionService.getState() });
+      }
+
+      const preferred = routing.preferredProviderId && connected.includes(routing.preferredProviderId)
+        ? routing.preferredProviderId
+        : connected.includes(previousProviderId)
+          ? previousProviderId
+          : connected[0];
+      if (preferred) this.connectionService.activateTestedProvider(preferred, settings);
+
+      const connectedLabels = connected.map(providerId => PROVIDER_LABELS[providerId]).join("、");
+      const failedLabels = failed.map(providerId => PROVIDER_LABELS[providerId]).join("、");
+      this.patchSession({
+        connectionState: this.connectionService.getState(),
+        statusMessage: failed.length
+          ? {
+            kind: "warning",
+            text: `${failedLabels}に接続できませんでした。接続設定とアプリの起動状態を確認してください。${connectedLabels ? ` 接続確認済み: ${connectedLabels}` : ""}`
+          }
+          : { kind: "info", text: `設定を保存し、${connectedLabels}への接続を確認しました。` }
+      });
+    } finally {
+      this.patchSession({ requestState: "idle" });
+    }
   }
 
   public async resetSettings(): Promise<void> {
@@ -590,7 +797,7 @@ export class NavigatorController implements vscode.Disposable {
       const state = this.sessionStore.getState();
       const settings = this.settingsService.getSettings();
 
-      if (this.usageMeter.isTokenLimitExceeded(
+      if (normalizeRoutingSettings(settings.routing).mode === "manual" && this.usageMeter.isTokenLimitExceeded(
         this.connectionSettingsCoordinator.getCurrentProviderId(),
         settings.dailyTokenLimit
       )) {
@@ -810,7 +1017,7 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
 
-    if (this.connectionService.getState() !== "connected") {
+    if (this.connectionService.getState() !== "connected" && normalizeRoutingSettings(this.settingsService.getSettings().routing).mode === "manual") {
       if (!automatic) {
         this.patchSession({
           connectionState: this.connectionService.getState(),
@@ -850,7 +1057,7 @@ export class NavigatorController implements vscode.Disposable {
       if (latestState.requestState !== "preparing_guidance") {
         return { ok: false };
       }
-      if (this.connectionService.getState() !== "connected") {
+      if (this.connectionService.getState() !== "connected" && normalizeRoutingSettings(this.settingsService.getSettings().routing).mode === "manual") {
         if (!automatic) {
           this.patchSession({
             connectionState: this.connectionService.getState(),
@@ -943,6 +1150,34 @@ export class NavigatorController implements vscode.Disposable {
         ? this.clearSelectionPreview(preview)
         : preview;
 
+    const history = this.sessionStore.getState().conversationHistory;
+    const requestId = this.nextGuidanceRequestId++;
+    const tokenSource = new vscode.CancellationTokenSource();
+    this.activeGuidanceRequest = { id: requestId, tokenSource };
+    const route = await this.providerRoutingCoordinator.prepare(settings, history, state.activeConversationStreamId, options.userPrompt, () => tokenSource.token.isCancellationRequested);
+    if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
+      this.patchSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
+      return { ok: false };
+    }
+    let conversationMemory: string;
+    try {
+      conversationMemory = await this.conversationMemoryCoordinator.assemble(settings, history, state.activeConversationStreamId, tokenSource.token);
+    } catch (error) {
+      this.patchSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "会話を引き継げません。" } });
+      return { ok: false };
+    }
+    if (tokenSource.token.isCancellationRequested) { tokenSource.dispose(); return { ok: false }; }
+    prepared.requestPlan.categories = prepared.requestPlan.categories.map(c => c.key === "conversationHistory"
+      ? { ...c, enabled: true, included: Boolean(conversationMemory), note: conversationMemory ? "要件の原文と入力予算内の会話メモリを引き継ぎます" : "過去の会話はありません" } : c);
+    prepared.requestPlan = reconcileRequestPlan(prepared.requestPlan, {
+      ...prepared.requestPlan, context: prepared.context, conversationMemory, userPrompt: options.userPrompt,
+      automaticObservation: prepared.automaticObservation,
+      assistanceDepth: guidanceContentDepth(this.connectionService.getProviderId(), assistanceDepth),
+      modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
+      knowledgeItems: this.knowledgeStore.findReusable(prepared.context),
+      feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({ kind: options.kind, assistanceDepth, slashCommand: options.slashCommand })
+    });
+
     // 文脈収集の await をまたいでいるので、履歴は積む直前の最新状態から組み直す。
     // 古い state から組むと、その間に入った更新を巻き戻してしまう。
     const nextHistory = [...this.sessionStore.getState().conversationHistory];
@@ -964,6 +1199,9 @@ export class NavigatorController implements vscode.Disposable {
         options.slashCommand,
         options.slashCommandScope
       ));
+      const userEntry = nextHistory.at(-1)!;
+      userEntry.providerId = this.connectionService.getProviderId();
+      userEntry.transmissionClass = userEntry.providerId === "ollama" || userEntry.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
     }
 
     this.patchSession({
@@ -980,15 +1218,9 @@ export class NavigatorController implements vscode.Disposable {
 
     const responseModel = this.connectionService.getConnectedModel();
     const responseModelLabel = this.connectionSettingsCoordinator.getCurrentModelLabel();
-    const requestId = this.nextGuidanceRequestId++;
-    const tokenSource = new vscode.CancellationTokenSource();
-    this.activeGuidanceRequest = {
-      id: requestId,
-      tokenSource
-    };
-
     const result = await this.adviceService.requestGuidance(
       {
+        conversationMemory,
         context: prepared.context,
         automaticObservation: prepared.automaticObservation,
         referencedFilePaths: prepared.requestPlan.targetFiles
@@ -1104,6 +1336,8 @@ export class NavigatorController implements vscode.Disposable {
         };
       }
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
+      assistantEntry.routeReason = route.reason;
+      assistantEntry.transmissionClass = history.some(e => e.transmissionClass === "localOnly") || responseModel?.providerId === "ollama" || responseModel?.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
       const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
       this.patchSession({
@@ -1123,7 +1357,7 @@ export class NavigatorController implements vscode.Disposable {
               kind: "warning",
               text: "NaviCom内の本日の概算トークン数が設定上限を超えています。設定から上限を確認できます。"
             }
-          : isNoAdvice ? { kind: "info", text: noAdviceText } : undefined
+          : isNoAdvice ? { kind: "info", text: noAdviceText } : route.reason ? { kind: "info", text: route.reason } : undefined
       });
       await this.persistActiveConversationState();
       // Stream creation resets these caches, so record the displayed focus only

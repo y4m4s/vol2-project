@@ -9,7 +9,7 @@
   },
   "note": "使用アイコンだけを含むサブセット。アイコンを増やしたら scripts/subset-icon-font.py で作り直す。",
   "maxBytes": 65536,
-  "sha256": "61e11051b603425274d5919ef4403c9b28fd5e6be571398c066b4e528288e604",
+  "sha256": "00354269f4b2892b1453e64e1c40ea6f4021cf06a9cfcc58aa4fe724719c3d16",
   "icons": [
     "account_circle",
     "account_tree",
@@ -30,7 +30,6 @@
     "cable",
     "chat",
     "chat_bubble",
-    "check",
     "check_circle",
     "chevron_right",
     "circle",

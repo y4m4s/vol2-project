@@ -14,8 +14,10 @@ import {
 import { resolveHomeScreen } from "./NavigationCoordinator";
 import { normalizeAdditionalContext } from "../GuidanceInput";
 import { orcaRouterAccessMessage } from "../../services/OrcaRouterErrorPolicy";
+import { normalizeRoutingSettings } from "../../shared/providerRouting";
 
 export interface SettingsInput {
+  routing?: NavigatorSettings["routing"];
   providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
@@ -155,9 +157,11 @@ export class ConnectionSettingsCoordinator {
   }
 
   public async save(input: SettingsInput): Promise<void> {
+    if (this.host.getState().requestState !== "idle") return;
     const previousSettings = this.settingsService.getSettings();
     const nextSettings: NavigatorSettings = {
       ...previousSettings,
+      routing: input.routing ?? previousSettings.routing,
       providerId: input.providerId,
       defaultMode: input.defaultMode,
       defaultAssistanceDepth: input.defaultAssistanceDepth,
@@ -175,6 +179,11 @@ export class ConnectionSettingsCoordinator {
         .filter((value) => value.length > 0)
     };
 
+    const routing = normalizeRoutingSettings(nextSettings.routing);
+    if (routing.mode !== "manual" && !routing.allowedProviderIds.length) {
+      this.host.patchSession({ statusMessage: { kind: "warning", text: "使用するプロバイダーを1件以上選択してください。" } });
+      return;
+    }
     const isConnected = this.connectionService.getState() === "connected";
     const canApplyAlways = input.defaultMode !== "always" || isConnected;
     const modelSettingChanged =

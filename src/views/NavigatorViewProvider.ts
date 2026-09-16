@@ -119,6 +119,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "saveSettings":
             await this.controller.saveSettings(message.payload);
             return;
+          case "testRoutingProvider":
+            await this.controller.testRoutingProvider(message.providerId);
+            return;
+          case "setRoutingPin":
+            await this.controller.setRoutingPin(message.providerId);
+            return;
+          case "setConversationRouting":
+            await this.controller.setConversationRouting(message.mode, message.providerId);
+            return;
           case "refreshLmStudioServerStatus":
             await this.controller.refreshLmStudioServerStatus();
             return;

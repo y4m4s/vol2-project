@@ -64,7 +64,7 @@ export function S04Conversation() {
             <img src={window.__ICON_URI__} alt="NaviCom" className="s04-empty-icon" />
             <div className="s04-empty-title">ここから会話が始まります</div>
             <div className="s04-empty-desc">
-              質問と回答はここに保存されます。過去の発言は次のAI入力へ自動送信されません
+              質問と回答はここに保存されます。次のAI入力には要件と入力予算内の会話メモリを引き継ぎます
             </div>
           </div>
         )}
@@ -87,7 +87,7 @@ export function S04Conversation() {
       </div>
 
       <div className="s04-stateless-note">
-        各質問は、その時点の作業文脈と入力内容だけをAIへ送信します。
+        各質問では、その時点の作業文脈、入力内容、入力予算内の会話メモリをAIへ送信します。
       </div>
 
       <ChatInputComposer resetKey={activeConversationStreamId} />
@@ -146,6 +146,7 @@ function ChatBubble(
         {slashCommandLabel && <span className="s04-meta-pill command">{slashCommandLabel}</span>}
         {depthLabel && !isUser && <span className="s04-meta-pill depth">{depthLabel}</span>}
         {modelLabel && <span className="s04-meta-pill model" title={modelDetails}>{modelLabel}</span>}
+        {entry.routeReason && <span className="s04-meta-pill" title={entry.routeReason}>{entry.routeReason}</span>}
         <span className="s04-bubble-time">{formatTime(entry.createdAt)}</span>
       </div>
 

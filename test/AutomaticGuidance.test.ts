@@ -7,10 +7,11 @@ import type { AutoAdviceTriggerEvent } from "../src/services/AdviceScheduler";
 import type { GuidanceRequestResult } from "../src/services/AdviceService";
 import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/RequestPlanner";
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
-import type { AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
+import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
+let workspaceTrusted = true;
 class Emitter<T> {
   private listeners: ((value: T) => void)[] = [];
   public event = (listener: (value: T) => void) => {
@@ -22,6 +23,7 @@ class Emitter<T> {
 }
 loader._load = (id, parent, isMain) => id === "vscode" ? {
   EventEmitter: Emitter,
+  workspace: { get isTrusted() { return workspaceTrusted; } },
   CancellationTokenSource: class {
     public token = { isCancellationRequested: false };
     public cancel(): void { this.token.isCancellationRequested = true; }
@@ -32,14 +34,75 @@ const { NavigatorController } = require("../src/application/NavigatorController"
 const { AdviceScheduler } = require("../src/services/AdviceScheduler") as typeof import("../src/services/AdviceScheduler");
 const { ConversationCoordinator } = require("../src/application/coordinators/ConversationCoordinator") as typeof import("../src/application/coordinators/ConversationCoordinator");
 const { ConversationStore } = require("../src/services/ConversationStore") as typeof import("../src/services/ConversationStore");
+const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
+const { ConversationMemoryCoordinator } = require("../src/application/coordinators/ConversationMemoryCoordinator") as typeof import("../src/application/coordinators/ConversationMemoryCoordinator");
+const { LmStudioCoordinator } = require("../src/application/coordinators/LmStudioCoordinator") as typeof import("../src/application/coordinators/LmStudioCoordinator");
 loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
 interface Driver {
+  connectCopilot(providerId?: AiProviderId): Promise<void>;
   handleAutomaticGuidance(event?: AutoAdviceTriggerEvent): Promise<void>;
   runGuidanceRequest(options: Options, state: NavigatorSessionState): Promise<{ ok: boolean }>;
   setAdditionalContext(additionalContext: string): Promise<void>;
 }
+
+test("オンボーディングで選んだ接続先を基本プロバイダーにして自動候補を再確認する", async () => {
+  const connected: AiProviderId[] = [];
+  let settings = {
+    providerId: "copilot" as AiProviderId,
+    routing: { mode: "automatic" as const, allowedProviderIds: ["orcaRouter", "ollama"] as AiProviderId[], preferredProviderId: "copilot" as AiProviderId }
+  };
+  let synchronized = 0;
+  const driver = Object.create(NavigatorController.prototype) as Driver;
+  Object.assign(driver, {
+    connectionSettingsCoordinator: { connect: async (providerId?: AiProviderId) => {
+      if (providerId) connected.push(providerId);
+    }, saveSettingsWithRevision: async (next: typeof settings) => { settings = next; return settings; } },
+    settingsService: { getSettings: () => settings },
+    sessionStore: { getState: () => ({ screen: "onboarding", screenHistory: [] }) },
+    connectionService: { getState: () => "connected", getProviderId: () => connected.at(-1) },
+    synchronizeRoutingProviders: async () => { synchronized++; }
+  });
+
+  await driver.connectCopilot("ollama");
+
+  assert.deepEqual(connected, ["ollama"]);
+  assert.equal(settings.routing.preferredProviderId, "ollama");
+  assert.deepEqual(settings.routing.allowedProviderIds, ["orcaRouter", "ollama"]);
+  assert.equal(synchronized, 1);
+
+  Object.assign(driver, { sessionStore: { getState: () => ({ screen: "main", screenHistory: [] }) } });
+  await driver.connectCopilot("orcaRouter");
+  assert.deepEqual(connected, ["ollama", "orcaRouter"]);
+  assert.equal(settings.routing.preferredProviderId, "ollama");
+  assert.equal(synchronized, 1);
+});
+
+test("オンボーディングからOrcaRouter設定を経由しても明示選択を基本プロバイダーにする", async () => {
+  let settings = {
+    providerId: "orcaRouter" as AiProviderId,
+    routing: { mode: "automatic" as const, allowedProviderIds: ["copilot"] as AiProviderId[], preferredProviderId: "copilot" as AiProviderId }
+  };
+  let synchronized = 0;
+  const driver = Object.create(NavigatorController.prototype) as Driver;
+  Object.assign(driver, {
+    connectionSettingsCoordinator: {
+      connect: async () => {},
+      saveSettingsWithRevision: async (next: typeof settings) => { settings = next; return settings; }
+    },
+    settingsService: { getSettings: () => settings },
+    sessionStore: { getState: () => ({ screen: "settings", screenHistory: ["onboarding"] }) },
+    connectionService: { getState: () => "connected", getProviderId: () => "orcaRouter" },
+    synchronizeRoutingProviders: async () => { synchronized++; }
+  });
+
+  await driver.connectCopilot("orcaRouter");
+
+  assert.equal(settings.routing.preferredProviderId, "orcaRouter");
+  assert.deepEqual(settings.routing.allowedProviderIds, ["copilot", "orcaRouter"]);
+  assert.equal(synchronized, 1);
+});
 
 // Keep the real scheduler, request gate, controller execution and stream lifecycle.
 // Only the editor/provider and filesystem persistence are replaced.
@@ -72,7 +135,7 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
     sessionStore: { getState: () => state, patch: (patch: Partial<NavigatorSessionState>) => Object.assign(state, patch) },
     settingsService: { getSettings: () => settings }, usageMeter: { isTokenLimitExceeded: () => false },
     connectionSettingsCoordinator: { getCurrentProviderId: () => "copilot", getCurrentModelLabel: () => "test" },
-    connectionService: { getState: () => connection, getConnectedModel: () => ({ providerId: "copilot", modelId: "test" }) },
+    connectionService: { getProviderId: () => "copilot", getState: () => connection, getConnectedModel: () => ({ providerId: "copilot", modelId: "test" }) },
     contextCollector: { collectPreview: () => state.contextPreview, collectGuidanceContext: () => context,
       collectAutomaticObservation: (event: AutoAdviceTriggerEvent) => ({ triggerReasons: event.signals.map((x) => x.reason),
         idleDurationMs: event.idleDurationMs, selectionPresent: false, cursor: { line: 1, column: 1 }, cursorExcerpt: "<<<NAVICOM_CURSOR>>>" + context.activeFileExcerpt }),
@@ -94,8 +157,20 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
       : currentState.activeAdditionalContext
   });
   Object.assign(driver, { conversationCoordinator: coordinator });
+  const internals = driver as unknown as { connectionService: ConstructorParameters<typeof ProviderRoutingCoordinator>[0]; usageMeter: ConstructorParameters<typeof ProviderRoutingCoordinator>[1] };
+  Object.assign(driver, {
+    providerRoutingCoordinator: new ProviderRoutingCoordinator(internals.connectionService, internals.usageMeter),
+    conversationMemoryCoordinator: new ConversationMemoryCoordinator(internals.connectionService, store, internals.usageMeter)
+  });
   driver.patchSession({});
   return { driver, state, scheduler, store, context,
+    memoryRowCount: (streamId: string) => {
+      const stmt = db.prepare("SELECT COUNT(*) AS count FROM conversation_memories WHERE stream_id = ?");
+      try {
+        stmt.bind([streamId]);
+        return stmt.step() ? Number(stmt.getAsObject().count ?? 0) : 0;
+      } finally { stmt.free(); }
+    },
     moveCursor: () => { snapshot = "v1:cursor2"; },
     changeEditor: () => { snapshot = "v2:cursor2"; context.activeFileExcerpt = "const x = 2;"; },
     restrict: () => { connection = "restricted"; },
@@ -145,6 +220,60 @@ for (const phase of ["preparing", "requesting"] as const) {
     assert.equal(h.state.conversationHistory.length, 1);
   });
 }
+
+test("SQLite memory rejects stale revisions, round-trips policy and removes memory with the conversation", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "決定事項", focus: "continue" }));
+  t.after(h.dispose);
+  await h.driver.handleAutomaticGuidance();
+  const id = h.state.activeConversationStreamId!;
+  const record = h.store.get(id)!;
+  record.entries[0].transmissionClass = "localOnly";
+  record.entries[0].routeReason = "設定上限で切り替え";
+  const saved = await h.store.saveStream(record);
+  const items = [{ text: "決定事項", sourceEntryIds: [record.entries[0].id] }];
+  assert.equal(await h.store.saveMemory(id, record.revision, items[0].sourceEntryIds, items), false);
+  assert.equal(await h.store.saveMemory(id, saved.revision, items[0].sourceEntryIds, items), true);
+  assert.deepEqual(h.store.getMemory(id)?.items, items);
+  assert.equal(h.memoryRowCount(id), 1);
+  assert.equal(h.store.get(id)?.entries[0].transmissionClass, "localOnly");
+  assert.equal(h.store.get(id)?.entries[0].routeReason, "設定上限で切り替え");
+  await h.store.deleteStream(id);
+  assert.equal(h.store.getMemory(id), undefined);
+  assert.equal(h.memoryRowCount(id), 0);
+});
+
+test("removing a source entry physically deletes its stored conversation memory", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "決定事項", focus: "continue" }));
+  t.after(h.dispose);
+  await h.driver.handleAutomaticGuidance();
+  const id = h.state.activeConversationStreamId!;
+  const record = h.store.get(id)!;
+  const sourceId = record.entries[0].id;
+  assert.equal(await h.store.saveMemory(id, record.revision, [sourceId], [{ text: "決定事項", sourceEntryIds: [sourceId] }]), true);
+  assert.equal(h.memoryRowCount(id), 1);
+  await h.store.saveStream({ ...record, entries: record.entries.slice(1) });
+  assert.equal(h.memoryRowCount(id), 0);
+});
+
+test("untrusted workspaces cannot start LM Studio during routing synchronization", async () => {
+  workspaceTrusted = false;
+  let statusChecks = 0;
+  let starts = 0;
+  const coordinator = new LmStudioCoordinator(
+    {} as never,
+    { getStatus: async () => { statusChecks++; return { state: "stopped", canStart: true, canStop: false }; },
+      start: async () => { starts++; return { state: "running", canStart: false, canStop: true }; } } as never,
+    { getSettings: () => ({ lmStudioBaseUrl: "http://127.0.0.1:1234" }) } as never,
+    {} as never
+  );
+  try {
+    assert.equal(await coordinator.ensureServerForRoutingConnection(), false);
+    assert.equal(statusChecks, 0);
+    assert.equal(starts, 0);
+  } finally {
+    workspaceTrusted = true;
+  }
+});
 
 test("生成中の編集を古い回答の破棄後に再実行する（実スケジューラと排他制御）", async (t) => {
   let finishFirst!: (result: GuidanceRequestResult) => void;
@@ -341,7 +470,7 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
       settingsService: { getSettings: () => settings },
       usageMeter: { isTokenLimitExceeded: () => false },
       connectionSettingsCoordinator: { getCurrentProviderId: () => providerId, getCurrentModelLabel: () => "test model" },
-      connectionService: { getState: () => "connected", getConnectedModel: () => ({ providerId, modelId: "test" }) },
+      connectionService: { getProviderId: () => providerId, getState: () => "connected", getConnectedModel: () => ({ providerId, modelId: "test" }) },
       contextCollector: {
         collectPreview: () => state.contextPreview,
         collectGuidanceContext: () => context,
@@ -355,6 +484,8 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
       requestPlanCoordinator: { externalize: (prepared: PreparedGuidanceRequest) => prepared },
       knowledgeStore: { findReusable: () => [] },
       conversationCoordinator: { ensureStreamForAutomaticResult: async () => state, setGuidanceContext: () => {} },
+      providerRoutingCoordinator: new ProviderRoutingCoordinator({ getState: () => "connected" } as never, {} as never),
+      conversationMemoryCoordinator: new ConversationMemoryCoordinator({ getConnectedModel: () => ({ providerId, profileSource: {} }) } as never, {} as never, {} as never),
       adviceService: { requestGuidance: async (input: GuidanceRequestInput) => {
         sent.push(input);
         if (editWhileResponding) editorSnapshot = "app.ts:v3:1:15";

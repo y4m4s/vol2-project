@@ -8,6 +8,35 @@ export type ConnectionState =
 
 export type AiProviderId = "copilot" | "lmStudio" | "orcaRouter" | "ollama";
 
+export interface AutomaticRoutingSettings {
+  mode: "manual" | "automatic";
+  allowedProviderIds: AiProviderId[];
+  preferredProviderId?: AiProviderId;
+  thresholdPercent: number;
+  dailyProviderTokenSoftLimits: Partial<Record<AiProviderId, number>>;
+  dailyCloudTokenSoftLimit: number;
+  orcaDailyCostSoftLimit: number;
+  compressionStrategy: "automatic" | "localPreferred" | "cloudOnly";
+  localHelperProviderId?: "ollama" | "lmStudio";
+}
+
+export interface ConversationRoutingPreference {
+  mode?: AutomaticRoutingSettings["mode"];
+  providerId?: AiProviderId;
+}
+
+export interface RoutingProviderConnectionStatus {
+  providerId: AiProviderId;
+  state: "connecting" | "connected" | "failed";
+  revision: number;
+}
+
+export interface TestedProviderModel {
+  providerId: AiProviderId;
+  modelId: string;
+  modelLabel: string;
+}
+
 export type AdviceMode = "manual" | "always";
 
 export type AssistanceDepth = "low" | "high";
@@ -77,6 +106,7 @@ export type RequestState =
   | "connecting"
   | "preparing_guidance"
   | "requesting_guidance"
+  | "compacting_memory"
   | "saving_knowledge"
   | "saving_feedback";
 
@@ -193,6 +223,7 @@ export interface GuidanceContext {
 }
 
 export interface NavigatorSettings {
+  routing?: AutomaticRoutingSettings;
   providerId: AiProviderId;
   defaultMode: AdviceMode;
   defaultAssistanceDepth: AssistanceDepth;
@@ -324,6 +355,8 @@ export interface ProviderResponseMetadata {
 }
 
 export interface ConversationEntry {
+  transmissionClass?: "localOnly" | "cloudAllowed" | "excluded";
+  routeReason?: string;
   focus?: AutomaticGuidanceFocus;
   id: string;
   role: ConversationRole;
@@ -411,6 +444,10 @@ export interface NavigatorSessionState {
 }
 
 export interface NavigatorViewModel {
+  conversationRoutingPreference?: ConversationRoutingPreference;
+  testedProviderIds?: AiProviderId[];
+  testedProviderModels?: TestedProviderModel[];
+  routingProviderConnection?: RoutingProviderConnectionStatus;
   screen: NavigatorScreen;
   connectionState: ConnectionState;
   requestState: RequestState;
