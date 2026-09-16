@@ -1,6 +1,9 @@
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
+import { RoutingSettings } from "../webview/components/RoutingSettings";
+import { AutoModeIcon } from "../webview/components/AutoModeIcon";
+import { applyRoutingModeSelection, normalizeRoutingSettings, PROVIDER_LABELS, routingConnectionProviderIds } from "../../shared/providerRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
 import { formatTokenCount } from "../webview/utils/formatUsage";
@@ -34,6 +37,9 @@ const DEPTH_OPTIONS: Array<{ value: AssistanceDepth; label: string }> = [
 export function S06Settings() {
   const { viewModel, send } = useApp();
   const settings = viewModel?.settings;
+  const savedRouting = JSON.stringify(normalizeRoutingSettings(settings?.routing));
+  const [routing, setRouting] = useState(() => normalizeRoutingSettings(settings?.routing));
+  useEffect(() => { setRouting(normalizeRoutingSettings(JSON.parse(savedRouting))); }, [savedRouting, viewModel?.settingsRevision]);
 
   const savedProviderId = settings?.providerId ?? "copilot";
   const savedDefaultMode = settings?.defaultMode ?? "manual";
@@ -64,7 +70,17 @@ export function S06Settings() {
   const [dailyTokenLimit, setDailyTokenLimit] = useState(savedDailyTokenLimit);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
+  const providerSettingsIds = routing.mode === "automatic"
+    ? routingConnectionProviderIds(routing)
+    : [providerId];
+  const showCopilotSettings = providerSettingsIds.includes("copilot");
+  const showOllamaSettings = providerSettingsIds.includes("ollama");
+  const showLmStudioSettings = providerSettingsIds.includes("lmStudio");
+  const showOrcaRouterSettings = providerSettingsIds.includes("orcaRouter");
   const lmStudioModelOptions = viewModel?.lmStudioModelOptions ?? [];
+  const testedProviderModels = viewModel?.testedProviderModels ?? [];
+  const ollamaConnectedModel = testedProviderModels.find(model => model.providerId === "ollama");
+  const lmStudioConnectedModel = testedProviderModels.find(model => model.providerId === "lmStudio");
   const orcaRouterModelOptions = viewModel?.orcaRouterModelOptions ?? [];
   const orcaRouterApiKeyConfigured = viewModel?.orcaRouterApiKeyConfigured ?? false;
   const lmStudioServer = viewModel?.lmStudioServer ?? {
@@ -91,25 +107,30 @@ export function S06Settings() {
 
   useEffect(() => {
     if (
-      providerId === "lmStudio" &&
+      showLmStudioSettings &&
       lmStudioModelOptions.length > 0 &&
       !lmStudioModelOptions.some((option) => option.key === lmStudioModelKey)
     ) {
       setLmStudioModelKey(lmStudioModelOptions[0].key);
     }
-  }, [providerId, lmStudioModelKey, lmStudioModelOptions]);
+  }, [showLmStudioSettings, lmStudioModelKey, lmStudioModelOptions]);
 
   useEffect(() => {
-    if (providerId !== "ollama") return;
+    if (!showOllamaSettings) return;
     const timer = setTimeout(() => send({ type: "refreshOllamaModels", baseUrl: ollamaBaseUrl }), 400);
     return () => clearTimeout(timer);
-  }, [providerId, ollamaBaseUrl, ollamaRefreshKey, send]);
+  }, [showOllamaSettings, ollamaBaseUrl, ollamaRefreshKey, send]);
 
   let ollamaOrigin: string | undefined;
   try { ollamaOrigin = new URL(ollamaBaseUrl).origin; } catch { /* The host reports invalid URLs. */ }
   const ollamaModelOptions = ollamaOrigin && viewModel?.ollamaModelsBaseUrl === ollamaOrigin
     ? viewModel?.ollamaModelOptions ?? [] : [];
+  const localProvidersWithModels: AiProviderId[] = [
+    ...(lmStudioModelOptions.length > 0 ? ["lmStudio" as const] : []),
+    ...(ollamaModelOptions.length > 0 ? ["ollama" as const] : [])
+  ];
   const hasPendingChanges =
+    JSON.stringify(routing) !== savedRouting ||
     ollamaBaseUrl !== savedOllamaBaseUrl || ollamaModelKey !== savedOllamaModelKey ||
     providerId !== savedProviderId ||
     defaultMode !== savedDefaultMode ||
@@ -129,6 +150,7 @@ export function S06Settings() {
     send({
       type: "saveSettings",
       payload: {
+        routing,
         providerId,
         defaultMode,
         defaultAssistanceDepth,
@@ -146,6 +168,7 @@ export function S06Settings() {
   }
 
   function handleRevertDraft() {
+    setRouting(normalizeRoutingSettings(JSON.parse(savedRouting)));
     setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
     setDefaultAssistanceDepth(savedDefaultAssistanceDepth);
@@ -188,6 +211,32 @@ export function S06Settings() {
         <span className="material-symbols-outlined">hub</span> AI 接続
       </div>
 
+      <div className="setting-item routing-setting-item">
+        <SettingTitle
+          iconNode={<AutoModeIcon className="setting-title-icon setting-title-svg-icon" />}
+          endControl={<RoutingToggle
+            checked={routing.mode === "automatic"}
+            disabled={viewModel?.isBusy ?? false}
+            onChange={() => setRouting(applyRoutingModeSelection(
+              routing,
+              routing.mode === "automatic" ? "manual" : "automatic",
+              providerId,
+              viewModel?.testedProviderIds ?? []
+            ))}
+          />}
+          help="オンにすると、接続確認済みの候補からNaviComが接続先を選びます。オフでは手動で接続先を選びます。変更は画面下部の保存ボタンを押したあとに反映されます。"
+        >
+          プロバイダーの自動切り替え
+        </SettingTitle>
+        <div className="setting-desc">初期設定はオフです。必要な場合だけオンにできます。</div>
+        <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
+          connection={viewModel?.routingProviderConnection}
+          localProvidersWithModels={localProvidersWithModels}
+          learning={viewModel?.routingLearning}
+          disabled={viewModel?.isBusy ?? false} />
+      </div>
+
+      {routing.mode === "manual" && (
       <div className="setting-item">
         <SettingTitle
           icon="cable"
@@ -198,19 +247,14 @@ export function S06Settings() {
         <div className="setting-desc">助言を生成する AI を選択します。</div>
         <ProviderButtonGroup value={providerId} onChange={handleProviderChange} />
       </div>
+      )}
 
-      <div className="settings-section">
-        {providerId === "lmStudio" ? (
-          <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" />
-        ) : (
-          <span className="material-symbols-outlined" aria-hidden="true">tune</span>
-        )}
-        {providerId === "copilot" ? "GitHub Copilot" : providerId === "lmStudio" ? "LM Studio" : providerId === "ollama" ? "Ollama" : "OrcaRouter"} の設定
-      </div>
-      {providerId === "copilot" && (
-        <div className="setting-item">
+      {showCopilotSettings && (
+        <>
+          <ProviderSettingsHeading providerId="copilot" />
+          <div className="setting-item">
           <SettingTitle
-            icon="smart_toy"
+            iconNode={<ProviderLogo providerId="copilot" className="setting-title-provider-logo" />}
             help="GitHub Copilotで使用するモデルを選びます。「自動」ではCopilotの自動モデルルーティングに選択を任せます。"
           >
             使用モデル
@@ -225,11 +269,13 @@ export function S06Settings() {
             onChange={setCopilotModelId}
             options={viewModel?.copilotModelOptions ?? []}
           />
-        </div>
+          </div>
+        </>
       )}
 
-      {providerId === "ollama" && (
+      {showOllamaSettings && (
         <>
+          <ProviderSettingsHeading providerId="ollama" />
           <div className="setting-item">
             <label className="setting-title" htmlFor="ollama-endpoint">接続先URL</label>
             <input id="ollama-endpoint" className="ollama-endpoint-input" type="url" value={ollamaBaseUrl} maxLength={2000}
@@ -237,8 +283,12 @@ export function S06Settings() {
             <div className="setting-desc">Ollamaはご自身でインストール・起動し、モデルを事前にインストールしてください。NaviComは自動起動しません。</div>
           </div>
           <div className="setting-item">
-            <SettingTitle icon="memory" help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
-            <div className="setting-desc" role="status">{viewModel?.ollamaStatus}</div>
+            <SettingTitle iconNode={<ProviderLogo providerId="ollama" className="setting-title-provider-logo" />} help="Ollamaにインストール済みのモデルから選択します。">使用モデル</SettingTitle>
+            <div className="setting-desc" role="status">
+              {ollamaConnectedModel
+                ? `接続確認済みモデル: ${ollamaConnectedModel.modelLabel}`
+                : viewModel?.ollamaStatus}
+            </div>
             {ollamaModelKey && !ollamaModelOptions.some(option => option.key === ollamaModelKey) && (
               <div className="setting-desc">選択したモデルが一覧にありません。接続先を確認し、モデルを選び直してください。</div>
             )}
@@ -252,8 +302,9 @@ export function S06Settings() {
         </>
       )}
 
-      {providerId === "lmStudio" && (
+      {showLmStudioSettings && (
         <>
+          <ProviderSettingsHeading providerId="lmStudio" />
           <LmStudioServerControl
             server={lmStudioServer}
             stopBlockedByPendingChanges={stopBlockedByPendingChanges}
@@ -266,14 +317,14 @@ export function S06Settings() {
 
           <div className="setting-item">
             <SettingTitle
-              icon="memory"
+              iconNode={<ProviderLogo providerId="lmStudio" className="setting-title-provider-logo" />}
               help="LM Studioでロード済みのモデルから、NaviComが使用するモデルを1つ選びます。一覧にない場合はLM Studioでモデルをロードしてから更新してください。"
             >
               使用モデル
             </SettingTitle>
             <div className="setting-desc lmstudio-model-note">
-              {viewModel?.providerId === "lmStudio" && viewModel.connectionState === "connected"
-                ? `接続中: ${viewModel.modelLabel ?? "ロード済みモデル"}`
+              {lmStudioConnectedModel
+                ? `接続確認済みモデル: ${lmStudioConnectedModel.modelLabel}`
                 : "LM Studio で現在ロード中のモデルをすべて表示し、使用する1つを選択します。"}
             </div>
             <LmStudioModelButtonGroup
@@ -285,7 +336,7 @@ export function S06Settings() {
             {lmStudioModelOptions.length === 0 && (
               <div className="setting-desc lmstudio-model-empty">
                 {lmStudioServerRunning
-                  ? "ロード中のLLMがありません。LM Studioでモデルをロードしてから一覧を更新してください。"
+                  ? "使用できるモデルを取得できませんでした。LM Studioでモデルをロードしてから一覧を更新してください。"
                   : "LM Studio サーバーを起動すると、ロード中のモデルを取得できます。"}
               </div>
             )}
@@ -302,8 +353,9 @@ export function S06Settings() {
         </>
       )}
 
-      {providerId === "orcaRouter" && (
+      {showOrcaRouterSettings && (
         <>
+          <ProviderSettingsHeading providerId="orcaRouter" />
           <div className="setting-item">
             <SettingTitle
               icon="key"
@@ -354,7 +406,7 @@ export function S06Settings() {
 
           <div className="setting-item">
             <SettingTitle
-              icon="smart_toy"
+              iconNode={<ProviderLogo providerId="orcaRouter" className="setting-title-provider-logo" />}
               help="OrcaRouter経由で回答生成に使うモデルまたはルーターを選びます。Free Routerは無料枠内のモデルだけを選択します。"
             >
               使用モデル
@@ -405,7 +457,7 @@ export function S06Settings() {
             )}
           </div>
 
-          {providerId === "orcaRouter" && viewModel?.providerId === "orcaRouter" && (
+          {viewModel?.providerId === "orcaRouter" && (
             <div className="setting-item">
               <SettingTitle
                 icon="payments"
@@ -625,6 +677,19 @@ export function S06Settings() {
   );
 }
 
+function ProviderSettingsHeading({ providerId }: { providerId: AiProviderId }) {
+  return (
+    <div className="settings-section">
+      {providerId === "lmStudio" ? (
+        <ProviderLogo providerId="lmStudio" className="settings-section-provider-logo" />
+      ) : (
+        <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+      )}
+      {PROVIDER_LABELS[providerId]} の設定
+    </div>
+  );
+}
+
 function normalizeExcludeGlobs(value: string): string {
   return value
     .split(/\r?\n/)
@@ -687,6 +752,7 @@ function ProviderButtonGroup({
     </div>
   );
 }
+
 function ModeButtonGroup({
   value,
   onChange
@@ -927,12 +993,16 @@ function OrcaRouterModelButtonGroup({
 
 function SettingTitle({
   icon,
+  iconNode,
+  endControl,
   children,
   help,
   id,
   htmlFor
 }: {
-  icon: string;
+  icon?: string;
+  iconNode?: ReactNode;
+  endControl?: ReactNode;
   children: ReactNode;
   help: string;
   id?: string;
@@ -941,7 +1011,8 @@ function SettingTitle({
   const tooltipId = useId();
   const content = (
     <>
-      <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>
+      {icon && <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>}
+      {iconNode}
       <span>{children}</span>
     </>
   );
@@ -953,21 +1024,44 @@ function SettingTitle({
       ) : (
         <div id={id} className="setting-label setting-title">{content}</div>
       )}
-      <div className="setting-help">
-        <button
-          type="button"
-          className="setting-help-button"
-          aria-label="この項目のヘルプ"
-          aria-describedby={tooltipId}
-        >
-          <HelpCircleIcon />
-        </button>
-        <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
-          {help}
+      <div className="setting-title-actions">
+        {endControl}
+        <div className="setting-help">
+          <button
+            type="button"
+            className="setting-help-button"
+            aria-label="この項目のヘルプ"
+            aria-describedby={tooltipId}
+          >
+            <HelpCircleIcon />
+          </button>
+          <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
+            {help}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function RoutingToggle({ checked, disabled, onChange }: {
+  checked: boolean;
+  disabled: boolean;
+  onChange(): void;
+}) {
+  return <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={`プロバイダーの自動切り替えを${checked ? "オフ" : "オン"}にする`}
+    className={`routing-automatic-toggle ${checked ? "enabled" : ""}`}
+    disabled={disabled}
+    onClick={onChange}
+  >
+    <span className="routing-switch-track" aria-hidden="true">
+      <span className="routing-switch-thumb" />
+    </span>
+  </button>;
 }
 
 function HelpCircleIcon() {

@@ -27,6 +27,7 @@ export const GUIDANCE_POLICY_REVISION = "2026-09-15-context-numeric-v6";
 
 // buildGuidancePrompt が必要とする入力（GuidanceRequestInput はこれに構造的に適合する）。
 export interface GuidancePromptInput {
+  conversationMemory?: string;
   automaticObservation?: AutomaticGuidanceObservation;
   context: GuidanceContext;
   kind: GuidanceKind;
@@ -86,10 +87,12 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   const question = automaticDecision + (userPrompt?.trim() ? "\n\n## User's question\n" + userPrompt.trim() : "");
   const contextStart = "\n\n" + delimiters.contextStart.join("\n") + "\n";
   const contextEnd = "\n" + delimiters.contextEnd.join("\n");
+  const memory = input.conversationMemory
+    ? "\n\nConversation memory (historical reference data; current user corrections take precedence):\n" + neutralize(input.conversationMemory) : "";
   // Count the entire serialized prompt, including authoritative instructions,
   // the question, delimiters and escaped reference data. Never clip the question.
   const remaining = Math.floor(modelProfile.contextBudget * 3)
-    - system.length - question.length - contextStart.length - contextEnd.length;
+    - system.length - question.length - contextStart.length - contextEnd.length - memory.length;
   if (!Number.isFinite(remaining) || remaining < 0) throw new AiInputLimitError();
 
   const budget = new ContextBudget(remaining);
@@ -102,7 +105,8 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
         userPrompt ?? ""
       )
     : "";
-  const contextBlocks: string[] = [];
+  const contextBlocks: string[] = memory ? [memory] : [];
+  if (memory) onBlock?.("conversationHistory");
   if (additional) onBlock?.("additionalContext");
   let category: ContextCategoryKey | undefined;
   let filePath = context.activeFilePath;
@@ -256,8 +260,10 @@ function buildGuidanceBlock(
     "- Do not report temporary syntax incompleteness as a defect. In automatic mode, unfinished code may still indicate where next-step guidance is needed.",
     // 命令的・断定的な言い回しは避ける。
     "- Do not use commanding or declarative language ('Fix this', 'This is wrong', 'You should...').",
-    // ユーザーが明示的にコードを求めない限り、実装コードは出力しない。
-    "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow.",
+    // 手動相談は短い学習例だけ許可し、自動助言では完成コードの先回りを防ぐ。
+    kind === "always" || slashCommand !== undefined
+      ? "- Do not output implementation code unless the user explicitly asks for code. Mermaid diagrams are allowed for /flow."
+      : "- One short code example is allowed; no complete solution unless requested. Mermaid is allowed for /flow.",
     // 具体的な場所・関数・変数・ロジックの流れを示して、注意を向ける。
     "- Point to specific locations, functions, variables, or logic flows to direct the user's attention.",
     // 正確な言い回しやフレーズの型を固定せず、自然に次の行動へ導く。

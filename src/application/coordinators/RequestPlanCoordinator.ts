@@ -39,7 +39,7 @@ export interface RequestPlanCoordinatorHost {
   getVisibleAdditionalContext(state: NavigatorSessionState): string | undefined;
   getModelProfile?(): ModelProfile;
   getAutomaticObservation?(): AutomaticGuidanceObservation | undefined;
-  getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency">;
+  getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency" | "conversationMemory">;
 }
 
 export class RequestPlanCoordinator {

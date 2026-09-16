@@ -59,6 +59,18 @@
   width: 100%;
 }
 
+.setting-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.routing-setting-item > .setting-title-row {
+  align-items: center;
+}
+
 .setting-title-row:hover,
 .setting-title-row:focus-within {
   z-index: 20;
@@ -82,6 +94,20 @@
   font-weight: 400;
 }
 
+.setting-title-svg-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.setting-title-provider-logo {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+
 .setting-title > span:last-child {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -90,7 +116,6 @@
 .setting-help {
   position: relative;
   flex: 0 0 auto;
-  margin-left: auto;
 }
 
 .setting-help-button {
@@ -287,6 +312,182 @@
   padding: 12px 8px;
 }
 
+.routing-settings {
+  min-width: 0;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.routing-auto-settings {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.routing-learning-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.35));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-focusBorder) 12%);
+}
+
+.routing-learning-status > .material-symbols-outlined {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--vscode-focusBorder);
+  font-size: 20px;
+}
+
+.routing-learning-status > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.routing-learning-status span:last-child {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.routing-learning-status.active {
+  border-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #73c991) 55%, transparent);
+}
+
+.routing-learning-status.active > .material-symbols-outlined {
+  color: var(--vscode-testing-iconPassed, #73c991);
+}
+
+.routing-subsection + .routing-subsection {
+  margin-top: 16px;
+}
+
+.routing-provider-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.routing-provider-heading > div {
+  min-width: 0;
+}
+
+.routing-provider-heading strong,
+.routing-provider-heading span {
+  display: block;
+}
+
+.routing-provider-heading span {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+}
+
+.routing-provider-count {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--vscode-textLink-foreground) !important;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 13%, transparent);
+  font-size: 0.72em !important;
+}
+
+.routing-subsection-heading strong,
+.routing-subsection-heading span {
+  display: block;
+}
+
+.routing-subsection-heading span {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.76em;
+}
+
+.routing-preferred-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.routing-preferred-options .choice-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 54px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.routing-preferred-option {
+  --provider-accent: var(--vscode-textLink-foreground);
+}
+
+.routing-preferred-option.lmStudio { --provider-accent: #8b5cf6; }
+.routing-preferred-option.ollama { --provider-accent: #ffffff; }
+.routing-preferred-option.orcaRouter { --provider-accent: #2d7df6; }
+
+.routing-preferred-options .routing-preferred-option.selected {
+  border-color: var(--provider-accent);
+  background: color-mix(in srgb, var(--provider-accent) 12%, var(--vscode-editorWidget-background));
+  box-shadow: 0 0 0 1px var(--provider-accent), 0 0 10px color-mix(in srgb, var(--provider-accent) 28%, transparent);
+}
+
+.routing-preferred-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.routing-preferred-logo {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  object-fit: contain;
+}
+
+.routing-preferred-copy,
+.routing-preferred-copy strong,
+.routing-preferred-copy small {
+  display: block;
+  min-width: 0;
+}
+
+.routing-preferred-copy {
+  overflow: hidden;
+}
+
+.routing-preferred-copy strong {
+  color: var(--vscode-foreground);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.routing-preferred-copy small {
+  margin-top: 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+@media (max-width: 520px) {
+  .routing-preferred-options {
+    grid-template-columns: 1fr;
+  }
+}
+
 .settings-scope-heading {
   margin-top: 24px;
   padding-top: 16px;
@@ -347,6 +548,160 @@
   height: 26px;
   flex: 0 0 26px;
   object-fit: contain;
+}
+
+.routing-automatic-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  min-width: 46px;
+  height: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  background: transparent;
+}
+
+.routing-automatic-toggle:hover,
+.routing-automatic-toggle:focus-visible,
+.routing-automatic-toggle.enabled {
+  opacity: 1;
+  background: transparent;
+}
+
+.routing-automatic-toggle:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.routing-switch-track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 42px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 999px;
+  background: var(--vscode-input-background);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.routing-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.routing-automatic-toggle.enabled .routing-switch-track {
+  border-color: var(--vscode-textLink-foreground);
+  background: var(--vscode-textLink-foreground);
+}
+
+.routing-automatic-toggle.enabled .routing-switch-thumb {
+  background: var(--vscode-button-foreground);
+  transform: translateX(18px);
+}
+
+.routing-provider-picker {
+  margin-top: 4px;
+}
+
+.routing-provider-options {
+  flex-wrap: wrap;
+}
+
+.routing-provider-option {
+  position: relative;
+}
+
+.routing-provider-option:not(.connected):not(.connecting) {
+  opacity: 0.66;
+}
+
+.routing-provider-option:not(.connected):hover,
+.routing-provider-option:not(.connected):focus-visible {
+  opacity: 1;
+}
+
+.routing-provider-option-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+}
+
+.routing-provider-connected-dot,
+.routing-provider-connecting-dot {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--vscode-editorWidget-background);
+  border-radius: 50%;
+}
+
+.routing-provider-connected-dot {
+  background: var(--vscode-testing-iconPassed, #22c55e);
+}
+
+.routing-provider-connecting-dot {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.routing-provider-connecting-dot .material-symbols-outlined {
+  font-size: 9px;
+  animation: connection-activity-spin 0.9s linear infinite;
+}
+
+.routing-provider-selection {
+  overflow-wrap: anywhere;
+}
+
+.routing-provider-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 7px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-textBlockQuote-background);
+  font-size: 0.8em;
+  line-height: 1.45;
+}
+
+.routing-provider-feedback .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 17px;
+}
+
+.routing-provider-feedback.connecting .material-symbols-outlined {
+  color: var(--vscode-editorWarning-foreground, #cca700);
+  animation: connection-activity-spin 0.9s linear infinite;
+}
+
+.routing-provider-feedback.connected .material-symbols-outlined {
+  color: var(--vscode-testing-iconPassed, #22c55e);
+}
+
+.routing-provider-feedback.failed .material-symbols-outlined {
+  color: var(--vscode-errorForeground, #f87171);
 }
 
 .schedule-options {

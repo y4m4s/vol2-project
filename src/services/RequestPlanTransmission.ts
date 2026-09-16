@@ -27,8 +27,9 @@ export function reconcileRequestPlan(plan: RequestPlanSnapshot, input: GuidanceP
       { key: "feedback" as const, label: "フィードバック傾向", description: "評価理由から生成した定型の傾向（補足コメントは含みません）", enabled: true, included: input.kind !== "always" && Boolean(input.feedbackTendency?.goodPatterns.length || input.feedbackTendency?.badAvoidPatterns.length) }
     ].map((item) => ({
       ...item,
+      ...(item.key === "conversationHistory" ? { enabled: true, note: categories.has(item.key) ? "入力予算内の会話メモリを引き継ぎます" : "過去の会話は送信対象に含まれていません" } : {}),
       included: categories.has(item.key),
-      note: item.included && !categories.has(item.key) ? omitted : item.note
+      ...(item.key !== "conversationHistory" ? { note: item.included && !categories.has(item.key) ? omitted : item.note } : {})
     })),
     targetFiles: plan.targetFiles.map((item) => ({
       ...item,

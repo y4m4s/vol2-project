@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildGuidanceFormatRepairPrompt,
+  diagnoseGuidanceEnvelope,
   guidanceResponseValidationOptions,
   userExplicitlyRequestedImplementationCode,
   validateGuidanceResponse
@@ -219,6 +220,59 @@ test("JSON外のテキストと未依頼の実装コードを拒否する", () =
     ok: false,
     reason: "implementationCodeNotRequested"
   });
+});
+
+test("手動相談は短いコード例を許可し、自動助言は同じ例を拒否する", () => {
+  const shortExample = advice("次の例です。\n\n```ruby\nmessage = \"こんにちは\"\nputs message\n```");
+  for (const kind of ["manual", "context"] as const) {
+    const result = validateGuidanceResponse(undefined, shortExample, { kind, allowImplementationCode: false });
+    assert.ok(result.ok && result.outcome === "advice");
+  }
+  assert.deepEqual(validateGuidanceResponse(undefined, JSON.stringify({
+    kind: "advice", focus: "continue", text: "```ruby\nputs 'hello'\n```"
+  }), { kind: "always", allowImplementationCode: false }), {
+    ok: false,
+    reason: "implementationCodeNotRequested"
+  });
+  assert.deepEqual(validateGuidanceResponse("hint", shortExample, {
+    kind: "manual", allowImplementationCode: false
+  }), {
+    ok: false,
+    reason: "implementationCodeNotRequested"
+  });
+});
+
+test("暗黙許可の手動コード例は1ブロック・20行・1000文字以内に制限する", () => {
+  const validate = (text: string) => validateGuidanceResponse(undefined, advice(text), {
+    kind: "manual", allowImplementationCode: false
+  });
+  const twentyLines = Array.from({ length: 20 }, (_, index) => `puts ${index}`).join("\n");
+  assert.equal(validate(`\`\`\`ruby\n${twentyLines}\n\`\`\``).ok, true);
+  for (const text of [
+    `\`\`\`ruby\n${twentyLines}\nputs 20\n\`\`\``,
+    `\`\`\`text\n${"x".repeat(1001)}\n\`\`\``,
+    "```ruby\nputs 1\n```\n```ruby\nputs 2\n```",
+    "```ruby\nputs 1",
+    "~~~ruby\nputs 1\n~~~"
+  ]) assert.deepEqual(validate(text), { ok: false, reason: "implementationCodeNotRequested" });
+});
+
+test("形式診断は本文を保持せずJSON契約の崩れ方を分類する", () => {
+  const plain = diagnoseGuidanceEnvelope("秘密の通常文", false);
+  assert.deepEqual(plain, {
+    responseChars: 6,
+    trimmedChars: 6,
+    envelopeIssue: "invalidJson",
+    markdownFence: false
+  });
+  const surrounded = diagnoseGuidanceEnvelope('prefix {"kind":"advice","text":"秘密"} suffix', false);
+  assert.equal(surrounded.envelopeIssue, "surroundingText");
+  const extra = diagnoseGuidanceEnvelope(JSON.stringify({ kind: "advice", text: "秘密", extra: true }), false);
+  assert.equal(extra.envelopeIssue, "unexpectedKeys");
+  assert.equal(extra.actualKeyCount, 3);
+  assert.equal(extra.missingKeyCount, 0);
+  assert.equal(extra.unexpectedKeyCount, 1);
+  assert.doesNotMatch(JSON.stringify([plain, surrounded, extra]), /秘密|prefix|suffix/);
 });
 
 test("Mermaidは/flowだけで許可し、未閉鎖フェンスは拒否する", () => {
