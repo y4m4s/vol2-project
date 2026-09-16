@@ -25,11 +25,18 @@ const AUTO_SCROLL_THRESHOLD_PX = 80;
 
 export function S04Conversation() {
   const { viewModel, send } = useApp();
+  const chatRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
   useEffect(() => {
-    if (isAtBottomRef.current) {
+    const chat = chatRef.current;
+    const isNowAtBottom = chat
+      ? chat.scrollHeight - chat.scrollTop - chat.clientHeight <= AUTO_SCROLL_THRESHOLD_PX
+      : false;
+
+    if (isAtBottomRef.current || isNowAtBottom) {
+      isAtBottomRef.current = true;
       chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [viewModel?.conversationHistory, viewModel?.isBusy]);
@@ -68,7 +75,7 @@ export function S04Conversation() {
         ]}
       />
 
-      <div className="s04-chat" onScroll={handleChatScroll}>
+      <div ref={chatRef} className="s04-chat" onScroll={handleChatScroll}>
         {conversationHistory.length === 0 && (
           <div className="s04-empty">
             <img src={window.__ICON_URI__} alt="NaviCom" className="s04-empty-icon" />
