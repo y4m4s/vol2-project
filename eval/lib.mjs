@@ -11,6 +11,8 @@ import { assertRequestInputLimit } from '../out/services/AiRequestPolicy.js';
 import { validateGuidanceResponse, guidanceResponseValidationOptions, buildGuidanceFormatRepairPrompt } from '../out/services/GuidanceResponsePolicy.js';
 import { OllamaClient } from '../out/services/OllamaClient.js';
 import { LmStudioClient } from '../out/services/LmStudioClient.js';
+import { completeActiveFile } from '../out/services/ActiveFileContext.js';
+import { expandSmallMedium } from './small-medium-fixtures.mjs';
 
 export const AXES = ['correctness','groundedness','context_utilization','hallucination','instruction_following','pedagogical_usefulness','actionability','conciseness','japanese_quality'];
 export const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
@@ -20,7 +22,7 @@ export function newDirectory(path) { mkdirSync(path, { recursive: false }); }
 export function provenance() {
   return { git: execFileSync('git', ['rev-parse','HEAD'], {encoding:'utf8'}).trim(),
     node: process.version, platform: process.platform, promptRevision: GUIDANCE_POLICY_REVISION,
-    files: Object.fromEntries(['PromptBuilder','RequestPlanner','ContextExcerpt','LanguageReference','GuidanceDepthPolicy','ModelProfile','GuidanceResponsePolicy','OllamaClient','LmStudioClient','OpenAICompatibleClient'].map(name => [name, hash(readFileSync(`out/services/${name}.js`, 'utf8'))])),
+    files: Object.fromEntries(['PromptBuilder','RequestPlanner','ContextExcerpt','ActiveFileContext','ContextCollector','LanguageReference','GuidanceDepthPolicy','ModelProfile','GuidanceResponsePolicy','OllamaClient','LmStudioClient','OpenAICompatibleClient'].map(name => [name, hash(readFileSync(`out/services/${name}.js`, 'utf8'))])),
     harnessHash: hash(readFileSync('eval/lib.mjs', 'utf8')) };
 }
 export function validateConfig(c) {
@@ -32,6 +34,7 @@ export function validateConfig(c) {
   if (!['production','evidence-v1'].includes(c.promptVersion)) throw Error('Unknown prompt version');
   if (!['production','none','high'].includes(c.thinking)) throw Error('Invalid thinking');
   if (c.languageReference !== undefined && !['production','off'].includes(c.languageReference)) throw Error('Invalid language reference control');
+  if (c.collectorContext !== undefined && !['viewport','bounded-file'].includes(c.collectorContext)) throw Error('Invalid collector control');
   if (c.contextLength != null && (!Number.isInteger(c.contextLength) || c.contextLength < 2048 || c.contextLength > 32768)) throw Error('Context must be 2048..32768');
   if (c.maxOutputTokens != null && (!Number.isInteger(c.maxOutputTokens) || c.maxOutputTokens < 64 || c.maxOutputTokens > 32768)) throw Error('Invalid output budget');
   const allowed = c.provider === 'lmStudio' || c.transport === 'ollama-native'
@@ -43,10 +46,13 @@ export function validateConfig(c) {
   if (c.provider === 'ollama' && c.transport === 'production' && c.contextLength != null) throw Error('num_ctx unsupported in OpenAI API; use native adapter');
   return c;
 }
-export function loadCases(split, caseFile) {
+export function loadCases(split, caseFile, suite) {
   if (!['tuning','holdout'].includes(split)) throw Error('Invalid split');
+  if (suite !== undefined && suite !== 'small-medium') throw Error('Unknown suite');
+  if (suite && caseFile) throw Error('Suite cannot be combined with custom cases');
   if (caseFile && split !== 'tuning') throw Error('Custom cases cannot replace frozen holdout');
-  return readJson(caseFile ?? `eval/cases/${split}.json`).map(item => {
+  return readJson(caseFile ?? `eval/cases/${suite ? suite+'-' : ''}${split}.json`).map(raw => {
+    const item = suite === 'small-medium' ? expandSmallMedium(raw) : raw;
     if (item.existing) {
       const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === item.existing);
       if (!scenario) throw Error('Unknown existing scenario');
@@ -70,6 +76,16 @@ export function headTail(text, budget) {
 }
 export function prepare(item, config) {
   let input = structuredClone(item.input);
+  let collection = null;
+  if (item.viewport !== undefined) {
+    const full = input.context.activeFileExcerpt;
+    const lines = full.split(/\r?\n/);
+    const complete = config.collectorContext === 'bounded-file'
+      ? completeActiveFile({lineCount:lines.length,lineAt:i=>({text:lines[i]}),getText:()=>full},input.context.selectedText)
+      : undefined;
+    input.context.activeFileExcerpt = complete ?? item.viewport;
+    collection = {strategy:config.collectorContext ?? 'viewport',fullChars:full.length,collectedChars:input.context.activeFileExcerpt.length};
+  }
   const effectiveDepth = guidanceContentDepth(config.provider, input.assistanceDepth);
   // Evaluation-only minimal candidate: same 2000-char cap, preserve both ends instead of prefix.
   if (config.contextStrategy === 'head-tail-v1' && effectiveDepth === 'low') input.context.activeFileExcerpt = headTail(input.context.activeFileExcerpt, 2000);
@@ -84,7 +100,7 @@ export function prepare(item, config) {
   const request = {...messages, purpose:'guidance', reasoningEffort:config.thinking === 'production' ? item.input.assistanceDepth === 'high' ? 'high' : 'none' : config.thinking,
     maxOutputTokens:config.maxOutputTokens ?? (effectiveDepth === 'high' ? 8192 : input.slashCommand === 'flow' ? 3072 : 2048)};
   assertRequestInputLimit(request, profile.contextBudget);
-  return {input, request, plan:planned.requestPlan, profile,
+  return {input, request, plan:planned.requestPlan, profile, collection,
     evidencePresent: item.evidence ? messages.userPrompt.includes(item.evidence) : null,
     approximateInputTokens:Math.ceil((messages.systemPrompt.length + messages.userPrompt.length + 2) / 3)};
 }

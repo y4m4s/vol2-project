@@ -1,0 +1,16 @@
+{
+  "id": "sm-lm-temp02",
+  "provider": "lmStudio",
+  "model": "qwen/qwen3-8b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "production",
+  "sampling": {
+    "temperature": 0.2
+  },
+  "contextLength": null,
+  "maxOutputTokens": null,
+  "collectorContext": "bounded-file"
+}

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { isPathExcluded } from "./globMatch";
+import { completeActiveFile } from "./ActiveFileContext";
 import {
   AutomaticGuidanceObservation,
   AutomaticEditObservation,
@@ -358,6 +359,11 @@ export class ContextCollector {
     if (selectedText) {
       return this.limitText(selectedText, MAX_ACTIVE_FILE_EXCERPT_LENGTH);
     }
+
+    // Small files often define a called helper outside the visible viewport.
+    // Keep that evidence; the planner still applies exclusions and the final input budget.
+    const complete = completeActiveFile(editor.document);
+    if (complete !== undefined) return complete;
 
     const visibleRange = editor.visibleRanges[0];
     if (visibleRange) {

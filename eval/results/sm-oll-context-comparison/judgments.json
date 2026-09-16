@@ -1,0 +1,534 @@
+{
+  "judge": {
+    "id": "Codex-manual",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同じCodexが実験設計と採点を担当。A/Bキーは採点前に未参照だが完全独立ではない。"
+  },
+  "packetHash": "ac95e384dac824ab841a33d7bb7160c56dc1b4521eb48e0cb32839e5a9456227",
+  "judgments": [
+    {
+      "pairId": "cfdffeb5d0f1524b",
+      "pairHash": "4dfb848bf170ec4f87292f49a5f4041d541797feb2d729a569bd71d10d9fa91c",
+      "verdict": "tie",
+      "reason": "A: filter→mapの説明はあるがoutputを[4]とし、16を落とす。 B: filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "a5ac42437fc49947",
+      "pairHash": "a5d49d4adaeb3a3967e6f6b540f9c8e30cea80d68043644f78a47e331ded13c5",
+      "verdict": "tie",
+      "reason": "A: 初回を含む3回と1500msを正しく説明。 B: 初回を含む3回と1500msを正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回と1500msを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回と1500msを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回と1500msを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回と1500msを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回と1500msを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回と1500msを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回と1500msを正しく説明。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回と1500msを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回と1500msを正しく説明。"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回と1500msを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回と1500msを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回と1500msを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回と1500msを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回と1500msを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回と1500msを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回と1500msを正しく説明。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回と1500msを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回と1500msを正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "69181e41184bfb73",
+      "pairHash": "6baf76c2eaf55de78e1fe3beeb7a07e987c1f4c6f60dc87a2e8c68813b756320",
+      "verdict": "B_clear",
+      "reason": "A: 3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。 B: 初回を含む3回と1500msを正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 2,
+          "japanese_quality": 2
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "groundedness": "提示コードとの整合 4/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "context_utilization": "必要文脈の利用 4/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "hallucination": "未提示の事実の追加 4/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "instruction_following": "質問の条件の遵守 4/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "pedagogical_usefulness": "学習への助け 3/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "actionability": "質問に対する具体性 3/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "conciseness": "長さと関連性 2/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。",
+          "japanese_quality": "日本語の明瞭さ 2/4。3回・1500msは正しいが75摘秒という誤記、冗長さ、不要な再確認がある。"
+        },
+        "failures": [
+          "japanese",
+          "excessive_verbosity"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回と1500msを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回と1500msを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回と1500msを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回と1500msを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回と1500msを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回と1500msを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回と1500msを正しく説明。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回と1500msを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回と1500msを正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "f7815da8256c44e7",
+      "pairHash": "87a6d890537bfe6e19e5e434eec67d82ea2394fe4ab2397787a3f142da2e7e0b",
+      "verdict": "B_slight",
+      "reason": "A: 文字列とゼロ埋めは正しいが同じ結論を繰り返す。 B: 4桁ゼロ埋めとSKU-0027を正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 2,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "groundedness": "提示コードとの整合 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "context_utilization": "必要文脈の利用 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "hallucination": "未提示の事実の追加 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "instruction_following": "質問の条件の遵守 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "pedagogical_usefulness": "学習への助け 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "actionability": "質問に対する具体性 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "conciseness": "長さと関連性 2/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。",
+          "japanese_quality": "日本語の明瞭さ 4/4。文字列とゼロ埋めは正しいが同じ結論を繰り返す。"
+        },
+        "failures": [
+          "excessive_verbosity"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "conciseness": "長さと関連性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "7c1b618fdfadc2a4",
+      "pairHash": "c1db265f08ef8b511bac7a7d33515d6c03867da9e57f9422699c8a5707a6d5d8",
+      "verdict": "tie",
+      "reason": "A: filter→mapの説明はあるがoutputを[4]とし、16を落とす。 B: filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "ae517c043bfbd46d",
+      "pairHash": "b056736c50ce65b038380a11bf418f3746745bfbea4ac054e5ba3494fd375aa7",
+      "verdict": "tie",
+      "reason": "A: 初回を含む3回と1500msを正しく説明。 B: 初回を含む3回と1500msを正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回と1500msを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回と1500msを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回と1500msを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回と1500msを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回と1500msを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回と1500msを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回と1500msを正しく説明。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回と1500msを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回と1500msを正しく説明。"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回と1500msを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回と1500msを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回と1500msを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回と1500msを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回と1500msを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回と1500msを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回と1500msを正しく説明。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回と1500msを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回と1500msを正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "52bf4fff24d24124",
+      "pairHash": "c639cbbf895031281bfe13b87c486177c0e03d6276e9101c877e30236c25e75a",
+      "verdict": "tie",
+      "reason": "A: 4桁ゼロ埋めとSKU-0027を正しく説明。 B: 4桁ゼロ埋めとSKU-0027を正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "conciseness": "長さと関連性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。"
+        },
+        "failures": []
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "conciseness": "長さと関連性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "c02d662d55ed0724",
+      "pairHash": "6abca47082016af3d3a8af103f6fdb9f0161ea99b351c6b4d37361bc65b3ca11",
+      "verdict": "tie",
+      "reason": "A: filter→mapの説明はあるがoutputを[4]とし、16を落とす。 B: filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+      "A": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "actionability": "質問に対する具体性 3/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "conciseness": "長さと関連性 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapの説明はあるがoutputを[4]とし、16を落とす。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "57182b4e7407a8bb",
+      "pairHash": "72cfc07c02bcfc2399179abdea3a633ddc643fbdc6388b947ea32f8f8fa5e975",
+      "verdict": "B_slight",
+      "reason": "A: SKU-0027は正しいがString(id)を数字への変換と誤説明。 B: 4桁ゼロ埋めとSKU-0027を正しく説明。",
+      "A": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "groundedness": "提示コードとの整合 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "context_utilization": "必要文脈の利用 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "hallucination": "未提示の事実の追加 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "instruction_following": "質問の条件の遵守 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "pedagogical_usefulness": "学習への助け 3/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "actionability": "質問に対する具体性 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "conciseness": "長さと関連性 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。SKU-0027は正しいがString(id)を数字への変換と誤説明。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "B": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "conciseness": "長さと関連性 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁ゼロ埋めとSKU-0027を正しく説明。"
+        },
+        "failures": []
+      }
+    }
+  ]
+}

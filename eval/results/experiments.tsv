@@ -26,3 +26,11 @@ r8-focused-reference	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	product
 r9-keyword-hints	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.188034188034188	0.5769230769230769	0.9230769230769231	6299.344400000002	29005.13560000001	13.323054791233428
 reference-transfer-off	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.611111111111111	unknown	0.875	8183.533399999999	21719.578299999997	13.835417664889615
 reference-transfer-production	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.7222222222222223	0.4375	0.875	8437.315649999999	11797.5723	13.733111244275339
+sm-lm-file	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.522222222222222	0.6833333333333333	1	6171.371899999998	15855.408500000005	15.612321877677124
+sm-lm-file	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.592592592592592	unknown	1	7062.2931499999995	14215.840800000002	13.902056174477643
+sm-lm-temp02	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	0.2	unknown	unknown	unknown	unknown	8192	3.537037037037037	0.5333333333333333	1	6528.88005	18618.921100000007	13.994308794499455
+sm-lm-viewport	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.17037037037037	unknown	1	4558.759900000001	10984.963999999993	15.72038943387308
+sm-oll-file-openai	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	3.592592592592593	unknown	1	7804.795900000001	28008.329500000007	unknown
+sm-oll-file-openai	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	3.592592592592593	unknown	1	8786.664149999999	22322.8537	unknown
+sm-oll-file4	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	4096	4096	3.518518518518518	0.4444444444444444	1	8613.085599999995	19455.406799999997	14.516019904169665
+sm-oll-file8	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	8192	8192	3.6049382716049383	0.5555555555555556	1	9514.819300000003	39062.5423	12.233145138169066

@@ -1,0 +1,14 @@
+{
+  "id": "sm-oll-file4",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "baseUrl": "http://127.0.0.1:11434",
+  "transport": "ollama-native",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "production",
+  "sampling": {},
+  "contextLength": 4096,
+  "maxOutputTokens": null,
+  "collectorContext": "bounded-file"
+}

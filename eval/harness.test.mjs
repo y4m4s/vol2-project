@@ -3,6 +3,20 @@ import assert from 'node:assert/strict';
 import { loadCases,prepare,readJson,validateConfig,createClient,hardChecks,headTail,hash,AXES,generate } from './lib.mjs';
 import { validateJudgments,bootstrapCases,metrics } from './statistics.mjs';
 const lm=readJson('eval/configs/baseline-lmstudio.json'),oll=readJson('eval/configs/baseline-ollama.json');
+test('small-medium suite is frozen separately and collector control changes only editor evidence',()=>{
+  const cases=loadCases('tuning',undefined,'small-medium');
+  assert.equal(cases.length,10);
+  for(const item of cases) {
+    const a=prepare(item,{...lm,collectorContext:'viewport'}),b=prepare(item,{...lm,collectorContext:'bounded-file'});
+    assert.equal(a.request.systemPrompt,b.request.systemPrompt);
+    assert.equal(a.request.maxOutputTokens,b.request.maxOutputTokens);
+    assert.equal(a.request.reasoningEffort,b.request.reasoningEffort);
+    if(item.viewport!==undefined){assert.equal(a.evidencePresent,false);assert.equal(b.evidencePresent,true);}
+    else assert.deepEqual(a.request,b.request);
+  }
+  assert.throws(()=>loadCases('holdout','eval/cases/small-medium-tuning.json','small-medium'));
+  assert.throws(()=>loadCases('tuning',undefined,'unknown'));
+});
 test('production planner retains collected evidence for both local providers',()=>{
   const item=loadCases('tuning').find(c=>c.id==='long-active-tail');
   const a=prepare(item,lm),b=prepare(item,oll);

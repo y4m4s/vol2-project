@@ -1,0 +1,83 @@
+{
+  "judge": {
+    "id": "REQUIRED: model or reviewer",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "Record prior context and calibration limitations"
+  },
+  "packetHash": "5fddbe1a8803c4ecfd96acf98631b4cf3c9d8ce25adb8222c41f38860c8785ac",
+  "judgments": [
+    {
+      "pairId": "b1a9de4a00d27523",
+      "pairHash": "9f492feb5d82012a5366c788827784a4be2fc50551eef60ae6b15b5849fb19cd",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "f874c1e0b8ddc088",
+      "pairHash": "9e2a4c26ca062ab4e503c8a19783cf5536d8d74be43ec67e0563a67918beaf1b",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "05bf53b08f91a65a",
+      "pairHash": "7431040a30952f13db576379b4b6718f860d29e6945a748596567501ccde3695",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "fb4fe70e8b35a585",
+      "pairHash": "5a9d9879c85fa7225ac4abb6f0944d6623a82c3796e723c6dc7e6bc0c7383ac2",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "b1a5b1baa192af0b",
+      "pairHash": "00670847615141313e26e2e4a7e5d7e279c1ac93d4fa958b66db7d171a7c3722",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "421e7040c423f612",
+      "pairHash": "7740db24d371e878e3c3f9c67c14025899df721087e5edd64ab63eca4f2f2e63",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "3d119575726e42b3",
+      "pairHash": "ac2fb8a482664f66f3767a9ac548d94ec285fb2e3267f799b231e0508c0ebdf8",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "644c66bbd5c8de4a",
+      "pairHash": "6d33e04eec9e44c999d82c161a7b9352677dbada1cd7a08c62d52bd34d85dd8b",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    },
+    {
+      "pairId": "90b43315d61a4d49",
+      "pairHash": "6c207bc629b70e327ccf5dfa5a8987396a0e5f173845e445d4c93912299adb50",
+      "verdict": null,
+      "reason": null,
+      "A": null,
+      "B": null
+    }
+  ]
+}

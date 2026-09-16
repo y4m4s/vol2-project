@@ -104,3 +104,16 @@ Champion scope: deterministic context repair plus numeric reference only. No sta
 | champion-context-numeric | 53.8% | 7291 | 取得済み情報の欠落修正と数値変換の補強だけを保持。総合優越未認定。 | holdoutの失敗を報告し、以後は新holdout/独立Judgeと別能力検証が必要。 |
 
 Each comparison report linked by results/followup-decisions.json records all nine axis deltas, including regressions, per-case reasons and the baseline. Holdout: 6/6 hard checks pass, 3/6 meet the main semantic requirement. No tuning after reviewing holdout. See FOLLOWUP.md for the final scope and remaining failures.
+
+## Small/medium rounds — new dataset, three repeats (2026-09-16)
+
+User priority: precision on small/medium code; large files/projects are outside this tuning scope. New 10-case tuning and 6-case holdout are independent of the old holdout. Preregistration, frozen selection, speed caveats and final confirmation: [SMALL_MEDIUM.md](SMALL_MEDIUM.md).
+
+| Change | Win/tie/loss | Tie-adjusted win rate | Decision | Next hypothesis |
+|---|---|---|---|---|
+| bounded whole active file vs viewport (LM Studio) | 15/11/4 | 68.3% | Keep limited information-loss fix; latency gate fails (+35.4%), so no unconditional overall champion. | With evidence present, does lower temperature reduce remaining errors? |
+| temperature 0.2 only | 8/16/6 | 53.3% | Reject: instruction-following -0.267; array errors persist. | Separate Ollama transport and allocation effects. |
+| native Ollama at same 4K | 1/6/2 | 44.4% | Reject transport migration. | Does 8K change processed input or answer quality? |
+| native 4K→8K | 2/6/1 | 55.6% | Reject global/default increase: same processed input, short-code errors persist. | Stop settings search; confirm bounded collection on new holdout. |
+
+All nine axes and all rejected outputs are retained. Changes on the seven LM cases with identical wire input are sampling variation, not evidence for collection's causal effect. Source frozen in `results/sm-freeze.json` before holdout; no prompt/source tuning after inspecting holdout.
