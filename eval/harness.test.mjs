@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadCases,prepare,readJson,validateConfig,createClient,hardChecks,headTail,hash,AXES,generate } from './lib.mjs';
 import { validateJudgments,bootstrapCases,metrics } from './statistics.mjs';
+import { algorithmHardChecks,problemText } from './algorithms.mjs';
 const lm=readJson('eval/configs/baseline-lmstudio.json'),oll=readJson('eval/configs/baseline-ollama.json');
 test('small-medium suite is frozen separately and collector control changes only editor evidence',()=>{
   const cases=loadCases('tuning',undefined,'small-medium');
@@ -84,4 +85,53 @@ test('HTTP failures without stats remain measurable and never invent token throu
   const result=metrics([{latencyMs:104,hardPassed:false,attempts:[],calls:[{error:'HTTP 500',latencyMs:104}],failureCategories:['infrastructure']}]);
   assert.equal(result.tokensPerSecondMedian,null);assert.equal(result.inputTokensMean,null);
   assert.equal(result.hardPassRate,0);assert.equal(result.pipelineFailures.infrastructure,1);
+});
+
+test('algorithm fixtures execute equivalently in both languages with disjoint holdout problem groups',()=>{
+  const tuning=loadCases('tuning',undefined,'algorithms'),holdout=loadCases('holdout',undefined,'algorithms');
+  assert.equal(tuning.length,16);assert.equal(holdout.length,16);
+  assert.ok(!holdout.some(x=>tuning.some(y=>x.problemId===y.problemId)));
+  for(const cases of [tuning,holdout])for(let i=0;i<cases.length;i+=2){
+    const [a,b]=cases.slice(i,i+2);
+    assert.deepEqual([a.language,b.language],['python','javascript']);
+    assert.equal(a.oracleEvidence.testCount,b.oracleEvidence.testCount);
+    assert.equal(a.oracleEvidence.mismatches,b.oracleEvidence.mismatches);
+    if(a.variant==='unknown'){assert.equal(a.oracleEvidence.status,'unavailable');continue;}
+    assert.ok(a.oracleEvidence.testCount>0);
+    assert.equal(a.oracleEvidence.correctOnTestDomain,['correct','correct_slow'].includes(a.variant));
+    if(['buggy','incomplete'].includes(a.variant))assert.ok(a.oracleEvidence.counterexamples.length>0);
+    if(a.kind==='always'&&a.variant==='buggy')assert.deepEqual(a.expectedFocus,['continue','review']);
+  }
+});
+
+test('algorithm section candidate changes only problem layout and never sends oracle evidence',()=>{
+  for(const item of loadCases('tuning',undefined,'algorithms')){
+    const a=prepare(item,{...lm,problemLayout:'plain'}),b=prepare(item,{...lm,problemLayout:'sections'});
+    assert.equal(a.request.systemPrompt,b.request.systemPrompt);
+    assert.equal(a.request.reasoningEffort,b.request.reasoningEffort);
+    assert.equal(a.request.maxOutputTokens,b.request.maxOutputTokens);
+    assert.equal(a.input.context.additionalContext,problemText(item.problem,'plain'));
+    assert.equal(b.input.context.additionalContext,problemText(item.problem,'sections'));
+    for(const p of [a,b]){
+      assert.ok(p.request.userPrompt.includes(item.problem.task));
+      assert.ok(!p.request.userPrompt.includes(item.id));
+      assert.ok(!p.request.userPrompt.includes('counterexamples'));
+      assert.ok(!p.request.userPrompt.includes(item.expected));
+      assert.ok(!p.request.userPrompt.includes(item.fixtureHash));
+    }
+  }
+  assert.throws(()=>validateConfig({...lm,problemLayout:'unknown'}));
+});
+
+test('algorithm scalar check requires one exact labelled integer',()=>{
+  const check=text=>algorithmHardChecks({scalarAnswer:1},text)[0].passed;
+  for(const text of ['結果: 1','<p>結果：<strong>1</strong>。説明</p>'])assert.equal(check(text),true);
+  for(const text of ['結果: 10','結果: 1.5','結果: 1e2','結果: 1,000','結果: 1x','結果: 1/2','結果: -1','結果: 1 結果: 1','結果: 1 結果: 2.5','1です'])assert.equal(check(text),false);
+});
+
+test('algorithm bootstrap clusters languages and variants by problem rather than independent cases',()=>{
+  const original=[{problemId:'sum',caseId:'correct-py',win:1},{problemId:'search',caseId:'search-py',win:0}];
+  const expanded=[...original,{problemId:'sum',caseId:'bug-js',win:1},{problemId:'sum',caseId:'incomplete-py',win:1}];
+  assert.deepEqual(bootstrapCases(original),bootstrapCases(expanded));
+  assert.equal(bootstrapCases(expanded).unit,'problem');assert.equal(bootstrapCases(expanded).cases,2);
 });

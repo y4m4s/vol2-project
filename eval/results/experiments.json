@@ -1,5 +1,509 @@
 [
   {
+    "experimentId": "alg-lm-baseline",
+    "run": "eval/results/alg-lm-baseline",
+    "derivedFrom": null,
+    "split": "tuning",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen/qwen3-8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": null,
+    "provider": "lmStudio",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "plain",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": null,
+    "contextLengthRequested": null,
+    "contextLengthObserved": 8192,
+    "maxOutputTokens": [
+      2048
+    ],
+    "evaluationScore": null,
+    "axes": null,
+    "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
+    "comparison": null,
+    "n": 48,
+    "hardPassRate": 0.875,
+    "latencyMedianMs": 8475.591100000005,
+    "latencyP95Ms": 13880.535700000002,
+    "inputTokensMean": 1139.1,
+    "tokensPerSecondMedian": 10.713713873841442,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": null
+  },
+  {
+    "experimentId": "alg-lm-baseline",
+    "run": "eval/results/alg-lm-baseline-v2",
+    "derivedFrom": "eval/results/alg-lm-baseline",
+    "split": "tuning",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen/qwen3-8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": null,
+    "provider": "lmStudio",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "plain",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": null,
+    "contextLengthRequested": null,
+    "contextLengthObserved": 8192,
+    "maxOutputTokens": [
+      2048
+    ],
+    "evaluationScore": 3.527777777777778,
+    "axes": {
+      "correctness": 3.3333333333333335,
+      "groundedness": 3.3958333333333335,
+      "context_utilization": 3.6875,
+      "hallucination": 3.4166666666666665,
+      "instruction_following": 3.625,
+      "pedagogical_usefulness": 3.0208333333333335,
+      "actionability": 3.4791666666666665,
+      "conciseness": 3.875,
+      "japanese_quality": 3.9166666666666665
+    },
+    "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
+    "comparison": null,
+    "n": 48,
+    "hardPassRate": 1,
+    "latencyMedianMs": 8475.591100000005,
+    "latencyP95Ms": 13880.535700000002,
+    "inputTokensMean": 1139.1,
+    "tokensPerSecondMedian": 10.713713873841442,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": {
+      "incorrect_code_reasoning": 11,
+      "hint_leakage": 6,
+      "japanese": 1,
+      "weak_pedagogy": 1
+    }
+  },
+  {
+    "experimentId": "alg-lm-baseline",
+    "run": "eval/results/alg-lm-holdout",
+    "derivedFrom": null,
+    "split": "holdout",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen/qwen3-8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": null,
+    "provider": "lmStudio",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "plain",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": null,
+    "contextLengthRequested": null,
+    "contextLengthObserved": 8192,
+    "maxOutputTokens": [
+      2048
+    ],
+    "evaluationScore": 2.951388888888889,
+    "axes": {
+      "correctness": 2.5625,
+      "groundedness": 2.625,
+      "context_utilization": 3.125,
+      "hallucination": 2.625,
+      "instruction_following": 2.875,
+      "pedagogical_usefulness": 2.375,
+      "actionability": 2.625,
+      "conciseness": 3.875,
+      "japanese_quality": 3.875
+    },
+    "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
+    "comparison": null,
+    "n": 16,
+    "hardPassRate": 0.625,
+    "latencyMedianMs": 8006.430150000006,
+    "latencyP95Ms": 12659.8154,
+    "inputTokensMean": 1616.125,
+    "tokensPerSecondMedian": 11.81637864997838,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": {
+      "incorrect_code_reasoning": 4,
+      "ignored_context": 1,
+      "unnecessary_intervention": 4,
+      "missed_bug": 2,
+      "hint_leakage": 2,
+      "hallucination": 1
+    }
+  },
+  {
+    "experimentId": "alg-lm-sections",
+    "run": "eval/results/alg-lm-sections",
+    "derivedFrom": null,
+    "split": "tuning",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen/qwen3-8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": null,
+    "provider": "lmStudio",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "sections",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": null,
+    "contextLengthRequested": null,
+    "contextLengthObserved": 8192,
+    "maxOutputTokens": [
+      2048
+    ],
+    "evaluationScore": 3.5185185185185186,
+    "axes": {
+      "correctness": 3.3333333333333335,
+      "groundedness": 3.4166666666666665,
+      "context_utilization": 3.6666666666666665,
+      "hallucination": 3.4375,
+      "instruction_following": 3.6666666666666665,
+      "pedagogical_usefulness": 3.0416666666666665,
+      "actionability": 3.4166666666666665,
+      "conciseness": 3.7916666666666665,
+      "japanese_quality": 3.8958333333333335
+    },
+    "pairwiseWinRate": 0.53125,
+    "problemBalancedWinRate": 0.5231481481481481,
+    "comparison": "eval/results/alg-lm-baseline-v2",
+    "n": 48,
+    "hardPassRate": 1,
+    "latencyMedianMs": 7925.449099999998,
+    "latencyP95Ms": 13646.237099999998,
+    "inputTokensMean": 1161.875,
+    "tokensPerSecondMedian": 12.220579765766242,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": {
+      "incorrect_code_reasoning": 10,
+      "hint_leakage": 6,
+      "weak_pedagogy": 1,
+      "imprecise_operation_count": 1,
+      "unsupported_runtime_claim": 1
+    }
+  },
+  {
+    "experimentId": "alg-oll-baseline",
+    "run": "eval/results/alg-oll-baseline",
+    "derivedFrom": null,
+    "split": "tuning",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen3:8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "provider": "ollama",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "plain",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": "top_k                          20\ntop_p                          0.95\nrepeat_penalty                 1\nstop                           \"<|im_start|>\"\nstop                           \"<|im_end|>\"\ntemperature                    0.6",
+    "contextLengthRequested": null,
+    "contextLengthObserved": 4096,
+    "maxOutputTokens": [
+      8192
+    ],
+    "evaluationScore": 3.511574074074074,
+    "axes": {
+      "correctness": 3.3541666666666665,
+      "groundedness": 3.4166666666666665,
+      "context_utilization": 3.75,
+      "hallucination": 3.4791666666666665,
+      "instruction_following": 3.5,
+      "pedagogical_usefulness": 3.0833333333333335,
+      "actionability": 3.4583333333333335,
+      "conciseness": 3.7083333333333335,
+      "japanese_quality": 3.8541666666666665
+    },
+    "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
+    "comparison": null,
+    "n": 48,
+    "hardPassRate": 1,
+    "latencyMedianMs": 7361.878600000004,
+    "latencyP95Ms": 18468.74859999999,
+    "inputTokensMean": 1164.875,
+    "tokensPerSecondMedian": null,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": {
+      "japanese": 1,
+      "imprecise_operation_count": 2,
+      "weak_pedagogy": 1,
+      "unsupported_runtime_claim": 3,
+      "hint_leakage": 8,
+      "incorrect_code_reasoning": 9,
+      "excessive_verbosity": 2
+    }
+  },
+  {
+    "experimentId": "alg-oll-baseline",
+    "run": "eval/results/alg-oll-holdout",
+    "derivedFrom": null,
+    "split": "holdout",
+    "suite": "algorithms",
+    "collectorContext": "bounded-file",
+    "model": "qwen3:8b",
+    "quantization": "Q4_K_M",
+    "modelDigest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "provider": "ollama",
+    "promptVersion": "production",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "sourceHashes": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "languageReferenceControl": "production",
+    "contextStrategy": "production",
+    "thinking": "production",
+    "problemLayout": "plain",
+    "algorithmProvenance": {
+      "algorithms.mjs": "3e2e1152010e2efe3edcc423869bd6a3ee9c66c9240df9ccc4916096c44f5e44",
+      "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+      "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+      "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51"
+    },
+    "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+    "temperature": null,
+    "top_p": null,
+    "top_k": null,
+    "min_p": null,
+    "penalty": {
+      "repeat": null,
+      "presence": null,
+      "frequency": null
+    },
+    "unspecifiedParameters": "Inherited backend value; null is unknown/unset, never zero.",
+    "modelParameterDefaults": "top_k                          20\ntop_p                          0.95\nrepeat_penalty                 1\nstop                           \"<|im_start|>\"\nstop                           \"<|im_end|>\"\ntemperature                    0.6",
+    "contextLengthRequested": null,
+    "contextLengthObserved": 4096,
+    "maxOutputTokens": [
+      8192
+    ],
+    "evaluationScore": 2.9652777777777777,
+    "axes": {
+      "correctness": 2.5,
+      "groundedness": 2.625,
+      "context_utilization": 3.0625,
+      "hallucination": 2.625,
+      "instruction_following": 3.0625,
+      "pedagogical_usefulness": 2.375,
+      "actionability": 2.6875,
+      "conciseness": 3.75,
+      "japanese_quality": 4
+    },
+    "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
+    "comparison": null,
+    "n": 16,
+    "hardPassRate": 0.6875,
+    "latencyMedianMs": 6912.182600000004,
+    "latencyP95Ms": 9686.2804,
+    "inputTokensMean": 1632.125,
+    "tokensPerSecondMedian": null,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {},
+    "semanticFailures": {
+      "hint_leakage": 2,
+      "incorrect_code_reasoning": 3,
+      "unnecessary_intervention": 3,
+      "hallucination": 1,
+      "missed_bug": 2,
+      "weak_pedagogy": 2,
+      "ignored_context": 3
+    }
+  },
+  {
     "experimentId": "baseline-lmstudio",
     "run": "eval/results/baseline-lmstudio",
     "derivedFrom": null,
@@ -25,6 +529,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -55,6 +562,7 @@
       "japanese_quality": 3.230769230769231
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -67,7 +575,14 @@
     "pipelineFailures": {
       "missing_context": 2
     },
-    "semanticFailures": null
+    "semanticFailures": {
+      "weak_pedagogy": 3,
+      "japanese": 2,
+      "incorrect_code_reasoning": 3,
+      "ignored_context": 1,
+      "missing_context": 2,
+      "hallucination": 4
+    }
   },
   {
     "experimentId": "baseline-ollama",
@@ -95,6 +610,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -124,6 +642,7 @@
       "japanese_quality": 3.769230769230769
     },
     "pairwiseWinRate": 0.5769230769230769,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/baseline-lmstudio",
     "n": 13,
     "hardPassRate": 0.8461538461538461,
@@ -176,6 +695,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -206,6 +728,7 @@
       "japanese_quality": 3.769230769230769
     },
     "pairwiseWinRate": 0.5384615384615384,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r4-baseline-v2",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -252,6 +775,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -281,6 +807,7 @@
       "japanese_quality": 2.8333333333333335
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 6,
     "hardPassRate": 1,
@@ -291,7 +818,13 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "weak_pedagogy": 1,
+      "japanese": 1,
+      "incorrect_code_reasoning": 1,
+      "hallucination": 1,
+      "hint_leakage": 1
+    }
   },
   {
     "experimentId": "final-numeric-context",
@@ -321,6 +854,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -350,6 +886,7 @@
       "japanese_quality": 4
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 4,
     "hardPassRate": 1,
@@ -360,7 +897,7 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {}
   },
   {
     "experimentId": "final-numeric-context",
@@ -390,6 +927,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -420,6 +960,7 @@
       "japanese_quality": 3.6923076923076925
     },
     "pairwiseWinRate": 0.4230769230769231,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r4-baseline-v2",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -466,6 +1007,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "none",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.7,
     "top_p": 0.8,
     "top_k": 20,
@@ -485,6 +1029,7 @@
     "evaluationScore": null,
     "axes": null,
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 5,
     "hardPassRate": 0,
@@ -525,6 +1070,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "none",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.7,
     "top_p": 0.8,
     "top_k": 20,
@@ -554,6 +1102,7 @@
       "japanese_quality": 3.6
     },
     "pairwiseWinRate": 0.6,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/official-reference-none",
     "n": 5,
     "hardPassRate": 0.8,
@@ -598,6 +1147,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "none",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.7,
     "top_p": 0.8,
     "top_k": 20,
@@ -627,6 +1179,7 @@
       "japanese_quality": 3.2
     },
     "pairwiseWinRate": 0.4,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/official-reference-ollama",
     "n": 5,
     "hardPassRate": 0.8,
@@ -671,6 +1224,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -700,6 +1256,7 @@
       "japanese_quality": 3.6
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 5,
     "hardPassRate": 0.8,
@@ -710,7 +1267,12 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "incorrect_code_reasoning": 3,
+      "hallucination": 2,
+      "ignored_context": 1,
+      "weak_pedagogy": 1
+    }
   },
   {
     "experimentId": "ollama-native",
@@ -738,6 +1300,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -767,6 +1332,7 @@
       "japanese_quality": 3.6
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 5,
     "hardPassRate": 0.8,
@@ -777,7 +1343,13 @@
     "loadMedianMs": 7.9828,
     "loadMaxMs": 8.9949,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "incorrect_code_reasoning": 2,
+      "hallucination": 1,
+      "excessive_verbosity": 2,
+      "ignored_context": 1,
+      "hint_leakage": 2
+    }
   },
   {
     "experimentId": "r3-thinking",
@@ -805,6 +1377,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "high",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -834,6 +1409,7 @@
       "japanese_quality": 2.8
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 5,
     "hardPassRate": 1,
@@ -844,7 +1420,13 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "weak_pedagogy": 1,
+      "hint_leakage": 2,
+      "incorrect_code_reasoning": 1,
+      "hallucination": 1,
+      "japanese": 2
+    }
   },
   {
     "experimentId": "official-thinking-lmstudio",
@@ -872,6 +1454,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "high",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.6,
     "top_p": 0.95,
     "top_k": 20,
@@ -901,6 +1486,7 @@
       "japanese_quality": 3
     },
     "pairwiseWinRate": 0.2,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/official-reference-thinking",
     "n": 5,
     "hardPassRate": 0.6,
@@ -949,6 +1535,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "high",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.6,
     "top_p": 0.95,
     "top_k": 20,
@@ -978,6 +1567,7 @@
       "japanese_quality": 4
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 1,
     "hardPassRate": 1,
@@ -1016,6 +1606,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1045,6 +1638,7 @@
       "japanese_quality": 3.769230769230769
     },
     "pairwiseWinRate": 0.5384615384615384,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/baseline-ollama",
     "n": 13,
     "hardPassRate": 0.8461538461538461,
@@ -1094,6 +1688,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "head-tail-v1",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1124,6 +1721,7 @@
       "japanese_quality": 3.4615384615384617
     },
     "pairwiseWinRate": 0.5384615384615384,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/baseline-lmstudio",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1173,6 +1771,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1203,6 +1804,7 @@
       "japanese_quality": 3.4615384615384617
     },
     "pairwiseWinRate": 0.46153846153846156,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/baseline-lmstudio",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1252,6 +1854,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "high",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1282,6 +1887,7 @@
       "japanese_quality": 3.076923076923077
     },
     "pairwiseWinRate": 0.34615384615384615,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/baseline-lmstudio",
     "n": 13,
     "hardPassRate": 1,
@@ -1330,6 +1936,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1360,6 +1969,7 @@
       "japanese_quality": 3.6153846153846154
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1372,7 +1982,13 @@
     "pipelineFailures": {
       "missing_context": 2
     },
-    "semanticFailures": null
+    "semanticFailures": {
+      "ignored_context": 2,
+      "missing_context": 3,
+      "hallucination": 2,
+      "weak_pedagogy": 1,
+      "incorrect_code_reasoning": 2
+    }
   },
   {
     "experimentId": "r4-context-v2",
@@ -1400,6 +2016,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1430,6 +2049,7 @@
       "japanese_quality": 3.5384615384615383
     },
     "pairwiseWinRate": 0.5769230769230769,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r4-baseline-v2",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1475,6 +2095,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1505,6 +2128,7 @@
       "japanese_quality": 3.6153846153846154
     },
     "pairwiseWinRate": 0.4230769230769231,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r4-context-v2",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1552,6 +2176,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1582,6 +2209,7 @@
       "japanese_quality": 3.769230769230769
     },
     "pairwiseWinRate": 0.5384615384615384,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r5-hint-v3",
     "n": 13,
     "hardPassRate": 0.8461538461538461,
@@ -1630,6 +2258,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1660,6 +2291,7 @@
       "japanese_quality": 3.923076923076923
     },
     "pairwiseWinRate": 0.5,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r6-language-v4",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1707,6 +2339,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1737,6 +2372,7 @@
       "japanese_quality": 3.4615384615384617
     },
     "pairwiseWinRate": 0.46153846153846156,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r7-set-reference",
     "n": 13,
     "hardPassRate": 0.8461538461538461,
@@ -1785,6 +2421,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1815,6 +2454,7 @@
       "japanese_quality": 3.6153846153846154
     },
     "pairwiseWinRate": 0.5769230769230769,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/r4-baseline-v2",
     "n": 13,
     "hardPassRate": 0.9230769230769231,
@@ -1862,6 +2502,9 @@
     "languageReferenceControl": "off",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1891,6 +2534,7 @@
       "japanese_quality": 3.625
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 8,
     "hardPassRate": 0.875,
@@ -1903,7 +2547,10 @@
     "pipelineFailures": {
       "invalid_format": 1
     },
-    "semanticFailures": null
+    "semanticFailures": {
+      "invalid_format": 1,
+      "incorrect_code_reasoning": 4
+    }
   },
   {
     "experimentId": "reference-transfer-production",
@@ -1933,6 +2580,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -1962,6 +2612,7 @@
       "japanese_quality": 3.5
     },
     "pairwiseWinRate": 0.4375,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/reference-transfer-off",
     "n": 8,
     "hardPassRate": 0.875,
@@ -2009,6 +2660,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2038,6 +2692,7 @@
       "japanese_quality": 3.933333333333333
     },
     "pairwiseWinRate": 0.6833333333333333,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/sm-lm-viewport",
     "n": 30,
     "hardPassRate": 1,
@@ -2085,6 +2740,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2114,6 +2772,7 @@
       "japanese_quality": 3.8333333333333335
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 6,
     "hardPassRate": 1,
@@ -2124,7 +2783,11 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "incorrect_code_reasoning": 1,
+      "ignored_context": 1,
+      "weak_pedagogy": 1
+    }
   },
   {
     "experimentId": "sm-lm-temp02",
@@ -2156,6 +2819,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": 0.2,
     "top_p": null,
     "top_k": null,
@@ -2185,6 +2851,7 @@
       "japanese_quality": 3.966666666666667
     },
     "pairwiseWinRate": 0.5333333333333333,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/sm-lm-file",
     "n": 30,
     "hardPassRate": 1,
@@ -2232,6 +2899,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2261,6 +2931,7 @@
       "japanese_quality": 3.8666666666666667
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 30,
     "hardPassRate": 1,
@@ -2273,7 +2944,13 @@
     "pipelineFailures": {
       "missing_context": 9
     },
-    "semanticFailures": null
+    "semanticFailures": {
+      "missing_context": 9,
+      "weak_pedagogy": 5,
+      "incorrect_code_reasoning": 9,
+      "ignored_context": 3,
+      "hallucination": 4
+    }
   },
   {
     "experimentId": "sm-oll-file-openai",
@@ -2305,6 +2982,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2334,6 +3014,7 @@
       "japanese_quality": 4
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 9,
     "hardPassRate": 1,
@@ -2344,7 +3025,10 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "excessive_verbosity": 1,
+      "incorrect_code_reasoning": 3
+    }
   },
   {
     "experimentId": "sm-oll-file-openai",
@@ -2376,6 +3060,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2405,6 +3092,7 @@
       "japanese_quality": 3.8333333333333335
     },
     "pairwiseWinRate": null,
+    "problemBalancedWinRate": null,
     "comparison": null,
     "n": 6,
     "hardPassRate": 1,
@@ -2415,7 +3103,9 @@
     "loadMedianMs": null,
     "loadMaxMs": null,
     "pipelineFailures": {},
-    "semanticFailures": null
+    "semanticFailures": {
+      "incorrect_code_reasoning": 2
+    }
   },
   {
     "experimentId": "sm-oll-file4",
@@ -2447,6 +3137,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2476,6 +3169,7 @@
       "japanese_quality": 3.7777777777777777
     },
     "pairwiseWinRate": 0.4444444444444444,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/sm-oll-file-openai",
     "n": 9,
     "hardPassRate": 1,
@@ -2522,6 +3216,9 @@
     "languageReferenceControl": "production",
     "contextStrategy": "production",
     "thinking": "production",
+    "problemLayout": null,
+    "algorithmProvenance": null,
+    "rubricHash": null,
     "temperature": null,
     "top_p": null,
     "top_k": null,
@@ -2551,6 +3248,7 @@
       "japanese_quality": 4
     },
     "pairwiseWinRate": 0.5555555555555556,
+    "problemBalancedWinRate": null,
     "comparison": "eval/results/sm-oll-file4",
     "n": 9,
     "hardPassRate": 1,

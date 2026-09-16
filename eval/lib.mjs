@@ -13,6 +13,7 @@ import { OllamaClient } from '../out/services/OllamaClient.js';
 import { LmStudioClient } from '../out/services/LmStudioClient.js';
 import { completeActiveFile } from '../out/services/ActiveFileContext.js';
 import { expandSmallMedium } from './small-medium-fixtures.mjs';
+import { expandAlgorithms,problemText,algorithmHardChecks } from './algorithms.mjs';
 
 export const AXES = ['correctness','groundedness','context_utilization','hallucination','instruction_following','pedagogical_usefulness','actionability','conciseness','japanese_quality'];
 export const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
@@ -35,6 +36,7 @@ export function validateConfig(c) {
   if (!['production','none','high'].includes(c.thinking)) throw Error('Invalid thinking');
   if (c.languageReference !== undefined && !['production','off'].includes(c.languageReference)) throw Error('Invalid language reference control');
   if (c.collectorContext !== undefined && !['viewport','bounded-file'].includes(c.collectorContext)) throw Error('Invalid collector control');
+  if (c.problemLayout !== undefined && !['plain','sections'].includes(c.problemLayout)) throw Error('Invalid problem layout');
   if (c.contextLength != null && (!Number.isInteger(c.contextLength) || c.contextLength < 2048 || c.contextLength > 32768)) throw Error('Context must be 2048..32768');
   if (c.maxOutputTokens != null && (!Number.isInteger(c.maxOutputTokens) || c.maxOutputTokens < 64 || c.maxOutputTokens > 32768)) throw Error('Invalid output budget');
   const allowed = c.provider === 'lmStudio' || c.transport === 'ollama-native'
@@ -48,10 +50,12 @@ export function validateConfig(c) {
 }
 export function loadCases(split, caseFile, suite) {
   if (!['tuning','holdout'].includes(split)) throw Error('Invalid split');
-  if (suite !== undefined && suite !== 'small-medium') throw Error('Unknown suite');
+  if (suite !== undefined && !['small-medium','algorithms'].includes(suite)) throw Error('Unknown suite');
   if (suite && caseFile) throw Error('Suite cannot be combined with custom cases');
   if (caseFile && split !== 'tuning') throw Error('Custom cases cannot replace frozen holdout');
-  return readJson(caseFile ?? `eval/cases/${suite ? suite+'-' : ''}${split}.json`).map(raw => {
+  const data=readJson(caseFile ?? `eval/cases/${suite ? suite+'-' : ''}${split}.json`);
+  if(suite==='algorithms')return expandAlgorithms(data);
+  return data.map(raw => {
     const item = suite === 'small-medium' ? expandSmallMedium(raw) : raw;
     if (item.existing) {
       const scenario = TASK_COMPLETION_SCENARIOS.find(s => s.id === item.existing);
@@ -76,6 +80,10 @@ export function headTail(text, budget) {
 }
 export function prepare(item, config) {
   let input = structuredClone(item.input);
+  if(config.problemLayout==='sections') {
+    if(!item.problem)throw Error('Structured problem candidate requires algorithm suite');
+    input.context.additionalContext=problemText(item.problem,'sections');
+  }
   let collection = null;
   if (item.viewport !== undefined) {
     const full = input.context.activeFileExcerpt;
@@ -133,6 +141,7 @@ export function hardChecks(item, response, input) {
   if (item.noCode) checks.push({name:'no_fenced_code',passed:!text.includes('```')});
   if (item.maxChars) checks.push({name:'explicit_length_bound',passed:text.length <= item.maxChars,reason:`${text.length}/${item.maxChars} chars`});
   for (const forbidden of item.forbidden ?? []) checks.push({name:`forbidden:${forbidden}`,passed:!text.includes(forbidden)});
+  checks.push(...algorithmHardChecks(item,text));
   return {validation,checks};
 }
 export function createClient(config) {

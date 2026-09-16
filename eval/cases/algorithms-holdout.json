@@ -1,0 +1,137 @@
+[
+  {
+    "id": "prefix-correct",
+    "problemId": "inclusive-range",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Correct inclusive range calculation. No advice/none; no off-by-one accusation."
+  },
+  {
+    "id": "prefix-bug",
+    "problemId": "inclusive-range",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "prefix",
+    "problem": {
+      "task": "solve(a,left,right)は、0始まりで両端を含む区間[left,right]の総和を返す。",
+      "constraints": "1 <= N <= 100000、0 <= left <= right < N、各要素は-1000以上1000以下。",
+      "examples": "solve([2, 5, -1], 1, 2) -> 4; solve([7], 0, 0) -> 7"
+    },
+    "expected": "Upper endpoint is excluded by prefix[right]. Hint at inclusive endpoint and prefix boundary, no corrected expression."
+  },
+  {
+    "id": "bfs-correct",
+    "problemId": "shortest-path",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "bfs",
+    "problem": {
+      "task": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。",
+      "constraints": "1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。",
+      "examples": "solve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1"
+    },
+    "expected": "FIFO traversal with visited nodes yields shortest unweighted paths, includes same start/target and unreachable. No needless replacement."
+  },
+  {
+    "id": "bfs-bug",
+    "problemId": "shortest-path",
+    "category": "hint_only",
+    "variant": "buggy",
+    "oracle": "bfs",
+    "problem": {
+      "task": "有向・重みなしグラフの隣接リストgraphが与えられる。solve(graph,start,target)で最短経路の辺数を返す。到達不能は-1。",
+      "constraints": "1 <= V <= 100000、0 <= E <= 200000、頂点番号は0始まり。startとtargetが同じ場合は0。",
+      "examples": "solve([[1], [2], []], 0, 2) -> 2; solve([[], []], 0, 1) -> -1"
+    },
+    "question": "最短距離にならない場合があります。取り出す順序の着目点を一つだけ、完成コードなしで教えて。",
+    "noCode": true,
+    "expected": "pop uses LIFO, so may find a longer route first. Focus on visiting nearer distances first / FIFO, do not provide full corrected queue statement."
+  },
+  {
+    "id": "stairs-correct",
+    "problemId": "stair-count",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "stairs",
+    "problem": {
+      "task": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。",
+      "constraints": "0 <= n <= 30。0段は何もしない1通りとする。",
+      "examples": "solve(2) -> 2; solve(3) -> 3"
+    },
+    "question": "solve(4)の戻り値を「結果: 数字」で示し、直前の2つの状態を足す理由を短く説明して。",
+    "scalarAnswer": 5,
+    "expected": "Result5. Last step comes from3 or2, disjoint choices, dp3+dp2=3+2."
+  },
+  {
+    "id": "stairs-bug",
+    "problemId": "stair-count",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "stairs",
+    "problem": {
+      "task": "1段または2段ずつ上る。合計n段になる上り方の個数をsolve(n)で返す。順番が違えば別の上り方。",
+      "constraints": "0 <= n <= 30。0段は何もしない1通りとする。",
+      "examples": "solve(2) -> 2; solve(3) -> 3"
+    },
+    "expected": "Base for zero steps is incorrectly0. Hint at initialization including do-nothing case, without completed assignment."
+  },
+  {
+    "id": "sort-correct",
+    "problemId": "numeric-sort",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Correct numeric ascending non-mutating sort; duplicates retained. No needless fixes."
+  },
+  {
+    "id": "sort-bug",
+    "problemId": "numeric-sort",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Lexicographic rather than numeric ordering; multiple digit numbers reveal the bug. Hint at comparison basis, no complete comparator."
+  }
+]

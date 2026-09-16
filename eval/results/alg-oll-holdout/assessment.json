@@ -1,0 +1,547 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同一エージェントが設計と評価。各回答をコード・制約・有限領域の実行根拠に照合。単独評価でproviderは既知。外部独立Judgeなし。holdout回答による追加最適化なし。"
+  },
+  "caseSetHash": "fab1d06647b86f5a8ff5c84b4fa2ba697b59f8f01db5fdb78b00c625e8ab8926",
+  "responsesHash": "3ad57ad6a08ef84890bb1ee024005ac46c60cc0f36d90ca113ee864b27f0cec3",
+  "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+  "scores": {
+    "correctness": 2.5,
+    "groundedness": 2.625,
+    "context_utilization": 3.0625,
+    "hallucination": 2.625,
+    "instruction_following": 3.0625,
+    "pedagogical_usefulness": 2.375,
+    "actionability": 2.6875,
+    "conciseness": 3.75,
+    "japanese_quality": 4
+  },
+  "meetsTask": 6,
+  "observations": [
+    {
+      "caseId": "alg-sort-bug-py",
+      "repeat": 0,
+      "caseHash": "60629a8bc4d77ace4ee3d70506274a81d2f0036398359cbe524a1ae6646851df",
+      "answerHash": "2585627f04997fab1b5b3caa1d6640931e028f5bb1d9168156ee48b35bd4e659",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "groundedness": "提示コード・制約との整合 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "context_utilization": "必要文脈の利用 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "hallucination": "根拠のない事実の有無 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "actionability": "適切な次の着目点 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "conciseness": "簡潔さと関連性 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。",
+        "japanese_quality": "日本語の明瞭さ 4/4。key=strの文字列順を検出するが、key=intという変更後の引数まで提示。"
+      },
+      "failures": [
+        "hint_leakage"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sort-correct-js",
+      "repeat": 0,
+      "caseHash": "5c8f91ede83bcdab7f7e3bf5f1ad866f10619433bddc8953810654aaba04e0f4",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "groundedness": "提示コード・制約との整合 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "context_utilization": "必要文脈の利用 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "hallucination": "根拠のない事実の有無 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "actionability": "適切な次の着目点 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "conciseness": "簡潔さと関連性 4/4。数値比較・コピー済みの正解実装で適切に沈黙。",
+        "japanese_quality": "日本語の明瞭さ 4/4。数値比較・コピー済みの正解実装で適切に沈黙。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-prefix-correct-py",
+      "repeat": 0,
+      "caseHash": "f823cde0078b5ff8a57fedc26369a790e61d47accb269e51754620929ed80ee6",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "groundedness": "提示コード・制約との整合 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "context_utilization": "必要文脈の利用 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "hallucination": "根拠のない事実の有無 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "actionability": "適切な次の着目点 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "conciseness": "簡潔さと関連性 4/4。正しい閉区間和の実装で適切に沈黙。",
+        "japanese_quality": "日本語の明瞭さ 4/4。正しい閉区間和の実装で適切に沈黙。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-bfs-correct-py",
+      "repeat": 0,
+      "caseHash": "47c7548c38c5635715886a1c5863fe179961348ecd59f34c5e46b0b357106353",
+      "answerHash": "dad3b8e5603766244211f7fd10846ec45b30371558d380c0c8b4a70d8e67eb7d",
+      "hardPassed": false,
+      "scores": {
+        "correctness": 0,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 0,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 0/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "groundedness": "提示コード・制約との整合 1/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "context_utilization": "必要文脈の利用 2/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "hallucination": "根拠のない事実の有無 0/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "actionability": "適切な次の着目点 2/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "conciseness": "簡潔さと関連性 4/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。",
+        "japanese_quality": "日本語の明瞭さ 4/4。distance+1を追加している正しいコードに、距離を保持していないという存在しない欠陥を指摘。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "unnecessary_intervention",
+        "hallucination"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-stairs-bug-js",
+      "repeat": 0,
+      "caseHash": "5f59a0c204968cbf16e5d1f5afd8134e04c708369426a8ed3ec867b35a96de73",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": false,
+      "scores": {
+        "correctness": 1,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 1,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 1,
+        "actionability": 1,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 1/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "groundedness": "提示コード・制約との整合 1/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "context_utilization": "必要文脈の利用 2/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "hallucination": "根拠のない事実の有無 1/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "actionability": "適切な次の着目点 1/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "conciseness": "簡潔さと関連性 4/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。",
+        "japanese_quality": "日本語の明瞭さ 4/4。0段の初期値とsolve(2)の欠陥があるのに沈黙する。"
+      },
+      "failures": [
+        "missed_bug"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-stairs-correct-js",
+      "repeat": 0,
+      "caseHash": "129a044b05f23f9fab8c970b73aebbfc34f68735b5db237d5447f9c982820d5c",
+      "answerHash": "e802b1815b0742020d13738600287e2dbee6be008470e4df5d3bde33f4663c35",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "groundedness": "提示コード・制約との整合 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "context_utilization": "必要文脈の利用 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "hallucination": "根拠のない事実の有無 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "actionability": "適切な次の着目点 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "conciseness": "簡潔さと関連性 3/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果5とn-1またはn-2から到達する2通りの分割を説明。内容は正しく若干長い。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-bfs-bug-py",
+      "repeat": 0,
+      "caseHash": "d186a0dfeb97b41183b32c6b07731ea781b8eb0ed1c3fbd9d2180bd14de983b7",
+      "answerHash": "1401501ef3bde17a1f74f1efba84a2b35403898651ade08ed4318976b21f5c71",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 3,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "groundedness": "提示コード・制約との整合 2/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "context_utilization": "必要文脈の利用 3/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "hallucination": "根拠のない事実の有無 3/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "actionability": "適切な次の着目点 2/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "conciseness": "簡潔さと関連性 3/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。",
+        "japanese_quality": "日本語の明瞭さ 4/4。取り出す順序には着目するがFIFO/LIFOの説明がなく、pop(0)ではなくpopか確認するという誘導が曖昧。具体的な呼び出し式も開示。"
+      },
+      "failures": [
+        "hint_leakage",
+        "weak_pedagogy"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-bfs-correct-js",
+      "repeat": 0,
+      "caseHash": "6e4ce880d8de264b06755ec3be14474f616e04cfa36bddf2d3871b41d805a461",
+      "answerHash": "8b9a42448e2019c37fbd96053e213c4928a0a03fbaebbb9d6e888409c6fba680",
+      "hardPassed": false,
+      "scores": {
+        "correctness": 1,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 1,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 1/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "groundedness": "提示コード・制約との整合 1/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "context_utilization": "必要文脈の利用 2/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "hallucination": "根拠のない事実の有無 1/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "actionability": "適切な次の着目点 2/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "conciseness": "簡潔さと関連性 4/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。",
+        "japanese_quality": "日本語の明瞭さ 4/4。有効な頂点・非空グラフという制約下で正しい実装。空グラフの-1を確認するという対象外の介入。"
+      },
+      "failures": [
+        "unnecessary_intervention",
+        "ignored_context"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-bfs-bug-js",
+      "repeat": 0,
+      "caseHash": "a10df9b086ae2deecac428db4c5502a3d88f98a6c79b18d6c8c55265f868ccc9",
+      "answerHash": "79183b4368dd27d2764868428f22c4331d4b25f13bd66696711c3841a3f73830",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "groundedness": "提示コード・制約との整合 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "context_utilization": "必要文脈の利用 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "hallucination": "根拠のない事実の有無 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "actionability": "適切な次の着目点 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "conciseness": "簡潔さと関連性 3/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。",
+        "japanese_quality": "日本語の明瞭さ 4/4。末尾からのpopではなく先頭/FIFOが必要と説明。shiftというAPI名の提案だけで完成した呼び出し式はなく許容。やや長い。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-sort-bug-js",
+      "repeat": 0,
+      "caseHash": "9a0013fa54112c916056cc7125f87f121210061a32f24a53d6c2825ded52adbc",
+      "answerHash": "7afbbd89295f60d0571436aaf83218d16e66920f42b8f57ce2659f227f70da5a",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 0,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 0,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 0/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "groundedness": "提示コード・制約との整合 1/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "context_utilization": "必要文脈の利用 2/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "hallucination": "根拠のない事実の有無 0/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "actionability": "適切な次の着目点 2/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "conciseness": "簡潔さと関連性 4/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。",
+        "japanese_quality": "日本語の明瞭さ 4/4。既定sortを数値順として正しいと誤認し、[...a]のコピーも無視。欠陥と修正対象を取り違える。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "ignored_context"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-stairs-correct-py",
+      "repeat": 0,
+      "caseHash": "c448a28a7fab673ee24f4b0173ad2a1606f5ac8747dcd5e62afab02524481571",
+      "answerHash": "a937b7c222704063faad46de8489e2eaab357bccb38bfc72fe842dfc91706cbe",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "groundedness": "提示コード・制約との整合 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "context_utilization": "必要文脈の利用 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "hallucination": "根拠のない事実の有無 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "actionability": "適切な次の着目点 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "conciseness": "簡潔さと関連性 3/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。",
+        "japanese_quality": "日本語の明瞭さ 4/4。結果5と、最後の1段/2段という互いに別の遷移を正しく説明。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-prefix-correct-js",
+      "repeat": 0,
+      "caseHash": "95dcd72026698c9db5665bde85d499168cfc77329d104c1170e7533db0fe4910",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "groundedness": "提示コード・制約との整合 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "context_utilization": "必要文脈の利用 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "hallucination": "根拠のない事実の有無 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "pedagogical_usefulness": "理解を助ける説明 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "actionability": "適切な次の着目点 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "conciseness": "簡潔さと関連性 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。",
+        "japanese_quality": "日本語の明瞭さ 4/4。right+1のprefix差で閉区間を計算する正解に沈黙。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "alg-prefix-bug-py",
+      "repeat": 0,
+      "caseHash": "cec9a530b4eb04a9d3f61a9673138105063f3536bc0656c05a7537fc9469c9bb",
+      "answerHash": "8e561557054e62009b244e3ddd0d1bbbfe3fb8ae4d7cd95bc47bfbc918f96623",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 1,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 1,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 1,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 1/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "groundedness": "提示コード・制約との整合 1/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "context_utilization": "必要文脈の利用 2/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "hallucination": "根拠のない事実の有無 1/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "actionability": "適切な次の着目点 2/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "conciseness": "簡潔さと関連性 4/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。",
+        "japanese_quality": "日本語の明瞭さ 4/4。prefix[right]-prefix[left]を閉区間和と誤認。保証済みのleft<=rightを問題にし、右端欠落を見逃す。"
+      },
+      "failures": [
+        "incorrect_code_reasoning",
+        "ignored_context"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-sort-correct-py",
+      "repeat": 0,
+      "caseHash": "bb87ccdb866fb67f207ad8e015303972247d25709555c0c17341982ec1bd14aa",
+      "answerHash": "66f7a035bf36dce14c0c57bbc50e796661f910b913e3a720de6cb98c8adaa470",
+      "hardPassed": false,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 3,
+        "hallucination": 4,
+        "instruction_following": 1,
+        "pedagogical_usefulness": 2,
+        "actionability": 1,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "groundedness": "提示コード・制約との整合 4/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "context_utilization": "必要文脈の利用 3/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "hallucination": "根拠のない事実の有無 4/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "instruction_following": "質問とヒント制約の遵守 1/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "actionability": "適切な次の着目点 1/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "conciseness": "簡潔さと関連性 4/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。",
+        "japanese_quality": "日本語の明瞭さ 4/4。数値順で新しい配列を返すという認識は正しいが、正解済みの自動支援では発話せずnoneを返す条件に違反。"
+      },
+      "failures": [
+        "unnecessary_intervention"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-stairs-bug-py",
+      "repeat": 0,
+      "caseHash": "5ac4ad1a8a5b27ed63381dc5ff3250461f4bc94d6f6eff7edd4136dbc4dd762f",
+      "answerHash": "a11d480a3c7e4f6b3aff13531ea630f5bf6f5bc149e1a5e143b8d99487468ab9",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 3,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "groundedness": "提示コード・制約との整合 2/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "context_utilization": "必要文脈の利用 3/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "hallucination": "根拠のない事実の有無 3/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "pedagogical_usefulness": "理解を助ける説明 2/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "actionability": "適切な次の着目点 2/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "conciseness": "簡潔さと関連性 4/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。",
+        "japanese_quality": "日本語の明瞭さ 4/4。solve(2)の不一致には触れるが、正しい漸化式を再確認させる。必要なのは0段の初期値であり着目点がずれる。"
+      },
+      "failures": [
+        "weak_pedagogy"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "alg-prefix-bug-js",
+      "repeat": 0,
+      "caseHash": "40d522c38744690a870b1692ea6bf260afa092c46eec2b873596526dad13f0a5",
+      "answerHash": "2fa464d16b4c7552fb12557fb102672d7569e859fe1553f2464b27b110c19684",
+      "hardPassed": false,
+      "scores": {
+        "correctness": 1,
+        "groundedness": 1,
+        "context_utilization": 2,
+        "hallucination": 1,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 1,
+        "actionability": 1,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 1/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "groundedness": "提示コード・制約との整合 1/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "context_utilization": "必要文脈の利用 2/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "hallucination": "根拠のない事実の有無 1/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "instruction_following": "質問とヒント制約の遵守 4/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "pedagogical_usefulness": "理解を助ける説明 1/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "actionability": "適切な次の着目点 1/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "conciseness": "簡潔さと関連性 4/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。",
+        "japanese_quality": "日本語の明瞭さ 4/4。右端を含まない実装でno_advice。単要素区間でも失敗する欠陥を見逃す。"
+      },
+      "failures": [
+        "missed_bug"
+      ],
+      "meetsTask": false
+    }
+  ]
+}

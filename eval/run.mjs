@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync,readFileSync,writeFileSync } from 'node:fs';
+import { algorithmProvenance } from './algorithms.mjs';
 import { readJson,save,validateConfig,loadCases,provenance,hash,probe,createClient,generate,prepare,shuffle,randomSeed,newDirectory } from './lib.mjs';
 
 const {values:v} = parseArgs({options:{config:{type:'string'},suite:{type:'string'},'cases-file':{type:'string'},split:{type:'string',default:'tuning'},repeat:{type:'string',default:'1'},out:{type:'string'},filter:{type:'string'},ids:{type:'string'},dry:{type:'boolean',default:false},'confirm-holdout':{type:'boolean',default:false}}});
@@ -14,9 +15,11 @@ if(!cases.length) throw Error('No cases');
 mkdirSync('eval/results',{recursive:true});
 newDirectory(v.out);
 const orderSeed = randomSeed();
-const manifest = {schemaVersion:1,experimentId:config.id,config,suite:v.suite ?? 'original',split:v.split,repeats,caseIds:cases.map(x=>x.id),caseSetHash:hash(cases),provenance:provenance(),startedAt:new Date().toISOString(),orderSeed,dry:v.dry};
+const rubric=readFileSync('eval/rubric.md','utf8')+(v.suite==='algorithms'?'\n\n'+readFileSync('eval/algorithm-rubric.md','utf8'):'');
+const manifest = {schemaVersion:1,experimentId:config.id,config,suite:v.suite ?? 'original',split:v.split,repeats,caseIds:cases.map(x=>x.id),caseSetHash:hash(cases),provenance:provenance(),...(v.suite==='algorithms'?{algorithmProvenance:algorithmProvenance()}:{}),rubricHash:hash(rubric),startedAt:new Date().toISOString(),orderSeed,dry:v.dry};
 save(`${v.out}/manifest.json`,manifest);
 save(`${v.out}/cases.json`,cases);
+writeFileSync(`${v.out}/rubric.md`,rubric);
 if(v.dry) { save(`${v.out}/prompts.json`,cases.map(item=>({caseId:item.id,...prepare(item,config)}))); process.exit(0); }
 save(`${v.out}/environment-before.json`,await probe(config));
 const client = createClient(config), results = [];

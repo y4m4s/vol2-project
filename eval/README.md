@@ -1,5 +1,7 @@
 # NaviCom local quality loop
 
+アルゴリズム問題の新しい評価設計: [ALGORITHMS.md](ALGORITHMS.md)。結果: [ALGORITHM_RESULTS.md](ALGORITHM_RESULTS.md)。PythonとJavaScriptの同一問題を評価し、fixtureの実行結果で参照情報を検証する。
+
 最新の小〜中規模向け検証: [SMALL_MEDIUM.md](SMALL_MEDIUM.md)。採用範囲と速度の代償、未解決の誤答を分けて記録している。
 
 調査: [AUDIT.md](AUDIT.md)。判断履歴: [rounds.md](rounds.md)。評価基準: [rubric.md](rubric.md)。生成APIはlocalhostのみ。グローバル設定・モデルファイルを変更しない。推論時にモデルがロードされ、request-local context変更で再ロードされることはある。Judge APIは明示実行時のみ利用する。

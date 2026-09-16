@@ -117,3 +117,15 @@ User priority: precision on small/medium code; large files/projects are outside 
 | native 4K→8K | 2/6/1 | 55.6% | Reject global/default increase: same processed input, short-code errors persist. | Stop settings search; confirm bounded collection on new holdout. |
 
 All nine axes and all rejected outputs are retained. Changes on the seven LM cases with identical wire input are sampling variation, not evidence for collection's causal effect. Source frozen in `results/sm-freeze.json` before holdout; no prompt/source tuning after inspecting holdout.
+
+## Algorithm round — Python and JavaScript (2026-09-16)
+
+Scope: original short coding-test functions, 6 tuning problem groups / 4 separate holdout groups, 16 cases per split. Fixtures verified against independent finite-domain oracles. See [ALGORITHM_RESULTS.md](ALGORITHM_RESULTS.md) for settings, all axes, examples, latency and limits.
+
+| Candidate | Baseline | Outcome | Champion / next hypothesis |
+|---|---|---|---|
+| Problem/constraints/examples headings only, LM Studio | Current production, 48 observations | 12 wins / 27 ties / 9 losses; problem-balanced 52.3%, 95% CI 41.7–66.2%. Correctness unchanged; instruction +0.04, actionability -0.06, conciseness -0.08. Median 8.48→7.93s; block order not counterbalanced. Rejected. | Keep current production. Test reasoning/automatic intervention with fresh problem groups, not more heading variations. |
+
+Current baselines: LM 30/48 and Ollama 33/48 meet the primary semantic task; both pass 48/48 hard checks. Separate holdout confirmation: 6/16 meet the task on each provider. Unnecessary automatic advice on correct code: LM 4/6, Ollama 3/6; silence on defective code: 2/6 each. No tuning after confirmation. No new production changes or backend/global settings changes.
+
+The initial LM hard-check focus metadata was corrected without new generation; `alg-lm-baseline-v2` is a derived recheck, not another 48 samples. Raw evidence remains. Total new observations: 176. Holdout has now been observed and must not be reused as unseen selection evidence in a later round.

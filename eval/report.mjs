@@ -22,7 +22,7 @@ summary.gates={noNewHardFailures:summary.rows.every(row=>{
 summary.decision='Review gates and qualitative regressions; no automatic champion promotion. Holdout required for adoption.';
 save(`${v.comparison}/summary.json`,summary);
 const lines=['# Pairwise evaluation',`\nBaseline: ${key.baseline}\n\nCandidate: ${key.candidate}\n\nSplit: ${key.split}; judge: ${judgments.judge.id}`,
-  `\nWin rate (ties=0.5): ${summary.pairwiseWinRate.toFixed(3)}; case bootstrap 95% CI [${summary.ci95.low.toFixed(3)}, ${summary.ci95.high.toFixed(3)}]; ties ${summary.ties}/${summary.rows.length}.`,
+  `\nWin rate (ties=0.5): ${summary.pairwiseWinRate.toFixed(3)}; ${summary.ci95.unit} bootstrap 95% CI [${summary.ci95.low.toFixed(3)}, ${summary.ci95.high.toFixed(3)}]; ties ${summary.ties}/${summary.rows.length}.${summary.problemBalancedWinRate!==undefined?' Problem-balanced win rate: '+summary.problemBalancedWinRate.toFixed(3)+'.':''}`,
   '\n| Axis | Baseline | Candidate | Delta |','|---|---:|---:|---:|',...Object.entries(summary.axes).map(([a,s])=>`| ${a} | ${s.baseline.toFixed(2)} | ${s.candidate.toFixed(2)} | ${s.delta.toFixed(2)} |`),
   `\nHard pass: ${baseline.hardPassRate} → ${candidate.hardPassRate}. Median latency: ${Math.round(baseline.latencyMedianMs)} → ${Math.round(candidate.latencyMedianMs)} ms. p95: ${Math.round(baseline.latencyP95Ms)} → ${Math.round(candidate.latencyP95Ms)} ms.`,
   `\nGates: ${JSON.stringify(summary.gates)}\n\n${summary.decision}`,
