@@ -1456,6 +1456,13 @@ ul.bullet-list li {
   animation: floating-toast-progress 1.1s ease-in-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .floating-toast.progress-running .floating-toast-progress > span {
+    width: 100%;
+    animation: none;
+  }
+}
+
 .floating-toast.progress-done .floating-toast-progress > span {
   width: 100%;
   background: #22c55e;

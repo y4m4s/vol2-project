@@ -9,6 +9,7 @@ import { S07Error } from "../screens/s07-error";
 import { S08History } from "../screens/s08-history";
 import { S09FeedbackForm } from "../screens/s09-feedback-form";
 import { FloatingToast } from "./components/FloatingToast";
+import { guidanceProgressState } from "../../shared/uiActivity";
 import type { NavigatorScreen } from "../../shared/types";
 
 const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレッジ用に整理しています...";
@@ -28,7 +29,7 @@ export function App() {
       {renderScreen(screen)}
       <StatusMessageToast />
       <KnowledgeSaveToast />
-      <AlwaysModeRequestingToast />
+      <GuidanceProgressToast />
       <FloatingToast key={operationErrorRevision} open={Boolean(operationError)} kind="error" message={operationError ?? ""} />
     </>
   );
@@ -103,6 +104,7 @@ function StatusMessageToast() {
     viewModel.routingProviderConnection?.state === "connecting";
   const shouldSuppress =
     !statusMessage ||
+    viewModel?.requestState === "preparing_guidance" ||
     viewModel?.requestState === "saving_knowledge" ||
     statusMessage.text === KNOWLEDGE_SAVE_PENDING_TEXT ||
     statusMessage.text === KNOWLEDGE_SAVE_DONE_TEXT;
@@ -119,19 +121,17 @@ function StatusMessageToast() {
   );
 }
 
-function AlwaysModeRequestingToast() {
+function GuidanceProgressToast() {
   const { viewModel } = useApp();
-  const open =
-    viewModel?.screen === "main" &&
-    viewModel?.requestState === "requesting_guidance";
+  const progress = viewModel && guidanceProgressState(viewModel.requestState, viewModel.screen);
 
   return (
     <FloatingToast
-      open={open}
+      open={Boolean(progress)}
       kind="info"
       icon="auto_awesome"
-      title="回答を生成しています"
-      message="現在の作業文脈をもとに自動でフィードバックを生成しています。"
+      title={progress?.title}
+      message={progress?.message ?? ""}
       persist
       progress="running"
     />

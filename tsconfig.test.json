@@ -19,6 +19,8 @@
   },
   "include": [
     "test/AdaptiveProviderRouting.test.ts",
+    "test/UiActivity.test.ts",
+    "src/shared/uiActivity.ts",
     "test/ProviderEvaluationStore.test.ts",
     "test/ProviderRoutingCoordinator.test.ts",
     "test/MemoryCompactor.test.ts",
