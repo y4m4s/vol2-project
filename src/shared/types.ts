@@ -20,6 +20,27 @@ export interface AutomaticRoutingSettings {
   localHelperProviderId?: "ollama" | "lmStudio";
 }
 
+export type RoutingTaskPurpose = "learning" | "explanation" | "implementation" | "review" | "riskAssessment" | "summarization";
+export type RoutingComplexity = "low" | "medium" | "high";
+export type RoutingScope = "selection" | "singleFile" | "multiFile" | "project";
+export type RoutingLearningStatus = "manual" | "learning" | "readySingleProvider" | "active";
+
+export interface RoutingTaskProfile {
+  purpose: RoutingTaskPurpose;
+  complexity: RoutingComplexity;
+  scope: RoutingScope;
+  confidence: number;
+  reasons: string[];
+}
+
+export interface RoutingLearningViewData {
+  status: RoutingLearningStatus;
+  successfulResponseCount: number;
+  threshold: number;
+  eligibleProviderCount: number;
+  reason: string;
+}
+
 export interface ConversationRoutingPreference {
   mode?: AutomaticRoutingSettings["mode"];
   providerId?: AiProviderId;
@@ -357,6 +378,7 @@ export interface ProviderResponseMetadata {
 export interface ConversationEntry {
   transmissionClass?: "localOnly" | "cloudAllowed" | "excluded";
   routeReason?: string;
+  routingTaskPurpose?: RoutingTaskPurpose;
   focus?: AutomaticGuidanceFocus;
   id: string;
   role: ConversationRole;
@@ -445,6 +467,7 @@ export interface NavigatorSessionState {
 
 export interface NavigatorViewModel {
   conversationRoutingPreference?: ConversationRoutingPreference;
+  routingLearning?: RoutingLearningViewData;
   testedProviderIds?: AiProviderId[];
   testedProviderModels?: TestedProviderModel[];
   routingProviderConnection?: RoutingProviderConnectionStatus;
