@@ -1,5 +1,7 @@
 # NaviCom local quality loop
 
+Thinkingと不要な自動介入の検証: [THINKING_INTERVENTION_RESULTS.md](THINKING_INTERVENTION_RESULTS.md)。160回答を比較し、速度・見逃し・新holdoutの結果から今回の候補は本番未採用。再現手順と事前条件: [FOLLOWUP_THINKING_PLAN.md](FOLLOWUP_THINKING_PLAN.md)。
+
 アルゴリズム問題の新しい評価設計: [ALGORITHMS.md](ALGORITHMS.md)。結果: [ALGORITHM_RESULTS.md](ALGORITHM_RESULTS.md)。PythonとJavaScriptの同一問題を評価し、fixtureの実行結果で参照情報を検証する。
 
 最新の小〜中規模向け検証: [SMALL_MEDIUM.md](SMALL_MEDIUM.md)。採用範囲と速度の代償、未解決の誤答を分けて記録している。

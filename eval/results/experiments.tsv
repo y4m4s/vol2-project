@@ -1,4 +1,14 @@
 experimentId	provider	model	quantization	promptVersion	contextStrategy	thinking	temperature	top_p	top_k	min_p	contextLengthRequested	contextLengthObserved	evaluationScore	pairwiseWinRate	hardPassRate	latencyMedianMs	latencyP95Ms	tokensPerSecondMedian
+af-lm-off	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	2.829365079365079	unknown	0.5357142857142857	7385.5990500000335	12847.206000000006	11.124617738663948
+af-lm-evidence	lmStudio	qwen/qwen3-8b	Q4_K_M	automatic-evidence-v1	production	none	unknown	unknown	unknown	unknown	unknown	8192	3.03968253968254	0.6071428571428571	0.6071428571428571	7644.132799999999	10974.066500000015	11.003690501502103
+af-lm-off	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	2.9027777777777777	unknown	0.625	7516.592099999994	11942.1299	12.215001383962218
+af-lm-evidence	lmStudio	qwen/qwen3-8b	Q4_K_M	automatic-evidence-v1	production	none	unknown	unknown	unknown	unknown	unknown	8192	3.0277777777777777	0.46875	0.625	6155.034650000009	15719.276	12.181585940829667
+af-lm-off	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	3.0277777777777777	unknown	1	6649.404849999999	20899.838999999993	11.623094794417476
+af-lm-on	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	unknown	unknown	unknown	unknown	unknown	8192	3.8148148148148144	0.625	0.75	43234.7814	120048.51269999999	12.117673700871915
+af-oll-off	ollama	qwen3:8b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	4096	2.988095238095238	unknown	0.5714285714285714	5650.332650000011	9805.819500000041	unknown
+af-oll-evidence	ollama	qwen3:8b	Q4_K_M	automatic-evidence-v1	production	none	unknown	unknown	unknown	unknown	unknown	4096	3.059523809523809	0.5178571428571429	0.5714285714285714	5422.6116500000135	11373.220399999991	unknown
+af-oll-off	ollama	qwen3:8b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	4096	3.638888888888889	unknown	1	10615.905449999991	17611.305	unknown
+af-oll-on	ollama	qwen3:8b	Q4_K_M	production	production	high	unknown	unknown	unknown	unknown	unknown	4096	3.638888888888889	0.625	1	37403.303700000004	72784.51000000001	unknown
 alg-lm-baseline	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	unknown	unknown	0.875	8475.591100000005	13880.535700000002	10.713713873841442
 alg-lm-baseline	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.527777777777778	unknown	1	8475.591100000005	13880.535700000002	10.713713873841442
 alg-lm-baseline	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.951388888888889	unknown	0.625	8006.430150000006	12659.8154	11.81637864997838

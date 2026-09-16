@@ -1,0 +1,202 @@
+{
+  "control": "automatic-policy",
+  "runs": [
+    {
+      "run": "eval/results/af-lm-confirmation-baseline",
+      "n": 16,
+      "hardPassRate": 0.625,
+      "latencyMedianMs": 7516.592099999994,
+      "latencyP95Ms": 11942.1299,
+      "inputTokensMean": 1610.875,
+      "tokensPerSecondMedian": 12.215001383962218,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": 0,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 55.125,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 2
+      },
+      "automaticDefective": {
+        "n": 8,
+        "missedBySilence": 4
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 2048
+        }
+      ]
+    },
+    {
+      "run": "eval/results/af-lm-confirmation-candidate",
+      "n": 16,
+      "hardPassRate": 0.625,
+      "latencyMedianMs": 6155.034650000009,
+      "latencyP95Ms": 15719.276,
+      "inputTokensMean": 1776.625,
+      "tokensPerSecondMedian": 12.181585940829667,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": 0,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 50,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 2
+      },
+      "automaticDefective": {
+        "n": 8,
+        "missedBySilence": 4
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 2048
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "caseId": "alg-paren-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "8b59f59fad63c247765bd1a933ce2dcf018bdd8bc5ec3a131c5e8c6a8d2bba9a",
+      "baselineRequestHash": "9ad470635978992b29ea3f18a6cb1019a15b8dceecc7b353d452070b3dfde15d",
+      "candidateRequestHash": "4a80bc6e495855f6d1e6e3e9c60415585cbcbaa0ccd36725be55f720385244d6"
+    },
+    {
+      "caseId": "alg-paren-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "7c76a734d6ea7cd32ab21bae9c834d803013fa6e1586a94c85c3fef2008a0890",
+      "baselineRequestHash": "f38e7ae1e28062828ed39afa0721381268f69c6bc8c5689ad2b07957d26fec03",
+      "candidateRequestHash": "6f23ba9f24360a9dcfaa602ba9d80e180e3fe44e12c0d26f1a8a95019ae5fbc7"
+    },
+    {
+      "caseId": "alg-gcd-bug-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "3e0bab986cdbd86b124fc228796e42c29b04a97f8f5abed11689700a60ed9c1c",
+      "baselineRequestHash": "419f0975f7b9b83e482b8ff0376d0dbc900ece5fd2e5b29200c53069fd5f61f8",
+      "candidateRequestHash": "3097a32e4a0b82107f0e7673a4b2eaee9bbec528b27392dbeb0e3be9ef2fc040"
+    },
+    {
+      "caseId": "alg-gcd-correct-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "aa35e2ef52892643f70aba80688930ce89dd8126612af6f79eb96aa18616e68d",
+      "baselineRequestHash": "d6fa8b44842a25985262662db80811527104414d4582916165fa0c941415bcec",
+      "candidateRequestHash": "d6fa8b44842a25985262662db80811527104414d4582916165fa0c941415bcec"
+    },
+    {
+      "caseId": "alg-merge-correct-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "4bb2e1e3852a3ea2fe473a4fd54de4a417a0fc9971fcab58913c6f5526f45a61",
+      "baselineRequestHash": "d74861e01dca30f8603d6b1ac8fca611ffceeae7274a98856153f103f11d1259",
+      "candidateRequestHash": "26bf96e635575c9bfd43258f457ad2b457c3f2c29326668b8579cfea8651c014"
+    },
+    {
+      "caseId": "alg-merge-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "9fe8a47c8b66941e43a053f0d182103e32c8d08b833fc11c6655bab5877544ef",
+      "baselineRequestHash": "f20b568cb5a0f09fd6608f8bc6c03d6789b69d34b339f94d412b9bf662dbe38b",
+      "candidateRequestHash": "c3d5fe264970a3c8a46e06a51818fa49433d1c05aef82319feb5f82b98457c7e"
+    },
+    {
+      "caseId": "alg-gcd-correct-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "a676134f6095d8589bf0c368bc7791508930f285124e47e01e8a41e5505b8251",
+      "baselineRequestHash": "31f15034f9bbef5fdcedba40311957c7211aebfe69e3cb9b3aeea24054e21963",
+      "candidateRequestHash": "31f15034f9bbef5fdcedba40311957c7211aebfe69e3cb9b3aeea24054e21963"
+    },
+    {
+      "caseId": "alg-merge-correct-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "d9dddda6ae3ced8827b69e782470f610f20510db72f0f1626e6d26f5320aefed",
+      "baselineRequestHash": "9f9a26355660c9fe01f38397461bc93bd8316fd0b08b08459df3e79c37d45dd8",
+      "candidateRequestHash": "555140a4d06898028b328ed4b00f35e31d2166bc846b6a9507742557cf8813a9"
+    },
+    {
+      "caseId": "alg-max-subarray-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "b8f23ec92411d6b4d07c872af3ac3223ee911ce0b8c060f97a490269b32dc55a",
+      "baselineRequestHash": "9f06ae334bc2334ec955ebc18d098184961cd1584d97cba1523ef08580b872f5",
+      "candidateRequestHash": "9f06ae334bc2334ec955ebc18d098184961cd1584d97cba1523ef08580b872f5"
+    },
+    {
+      "caseId": "alg-paren-bug-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "b5abde56ba2e0d79eea9f422c432b492c6bc05ec7c908bc9aae206f9ba0b2b00",
+      "baselineRequestHash": "9f27b50005428ff4b81533b0125f6c1beb9c99d911d1148589c9e2b5f20b1b42",
+      "candidateRequestHash": "c7f15c6e63b1860f5a2d541e9fcee3484225e786a52226dfb96a4861fd33e65d"
+    },
+    {
+      "caseId": "alg-max-subarray-correct-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "af3c994b6ad1aa76607dd52898b9174821ba10d83a9c106ad35cf70debbf50f3",
+      "baselineRequestHash": "cece15a118effee42b637e3353e39515b5091b5b9a210ac36b6d1540d607d251",
+      "candidateRequestHash": "cece15a118effee42b637e3353e39515b5091b5b9a210ac36b6d1540d607d251"
+    },
+    {
+      "caseId": "alg-max-subarray-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "8afdc480a51bcf53630f3548aa04f12c5dc0c6f3a2c3e5afa4a6eb4ef8ffbcd0",
+      "baselineRequestHash": "7fe3f0e21edb02051566672d652b70d0a0b25fe8fd2b80f10ae7fd7f7202626b",
+      "candidateRequestHash": "8c9e326844caac2c272bd07a2d3d898d48d37eb2d77861abaabac5b6d3644a80"
+    },
+    {
+      "caseId": "alg-gcd-bug-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "18d930af932f64f9c5c115736db038788e423b258c7c96f2ab480bdfdd746aa2",
+      "baselineRequestHash": "0a7c2c93271af74659339c847be8cd4ffd378adc14a5f109064a67ec9066fc83",
+      "candidateRequestHash": "f5e3294c136be069724e152e446def36f29669a1c712d1ccb815863d44cac4e4"
+    },
+    {
+      "caseId": "alg-paren-correct-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "ff463ee036a87b86919d40708c36f5bdb2f7aca8c158c06289d253bb4ae6504f",
+      "baselineRequestHash": "71417282ffd3a823c2d60824892f90b33a89c2c87ab06aa631d25b496c131459",
+      "candidateRequestHash": "f82c30a91378b2113a1f5ccfe20b54b2333e95c073ec41e10994d4d305721b78"
+    },
+    {
+      "caseId": "alg-merge-bug-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "d1375f77f5ce0999403ea75754ff899972e1cb5f7e8f68c82f8f1be43f7f7ed2",
+      "baselineRequestHash": "b05d235d5d39c018978ce8d04d1020efd4fd2f69d4d03b9375e72c138dd3240e",
+      "candidateRequestHash": "f2735bc770f9f5ae08716392133261e9933ac4d4da34c75ff0d13066b3adafb6"
+    },
+    {
+      "caseId": "alg-max-subarray-bug-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "50addf67279b9f2281dd79822727bcfbe2ab124b74061ea307c7677ed83cff84",
+      "baselineRequestHash": "ff37cdf07bb96c9b868c05ba9cb75398ba47cc8d97905db3dcf0e6270f7bdb3c",
+      "candidateRequestHash": "8926b771e5b365015dee37a621616d5cb824348b4d3523e72e265aad32cdec0c"
+    }
+  ],
+  "latencyRatio": 0.8188597396418535,
+  "balancedFirstArm": true,
+  "note": "Mechanical diagnostics only. Semantic judgments required. Timeout without received reasoning counters is unknown, not proof Thinking was off."
+}

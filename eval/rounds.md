@@ -129,3 +129,17 @@ Scope: original short coding-test functions, 6 tuning problem groups / 4 separat
 Current baselines: LM 30/48 and Ollama 33/48 meet the primary semantic task; both pass 48/48 hard checks. Separate holdout confirmation: 6/16 meet the task on each provider. Unnecessary automatic advice on correct code: LM 4/6, Ollama 3/6; silence on defective code: 2/6 each. No tuning after confirmation. No new production changes or backend/global settings changes.
 
 The initial LM hard-check focus metadata was corrected without new generation; `alg-lm-baseline-v2` is a derived recheck, not another 48 samples. Raw evidence remains. Total new observations: 176. Holdout has now been observed and must not be reused as unseen selection evidence in a later round.
+
+## Thinking / intervention rounds — 2026-09-16
+
+Current champion: existing production, Thinking OFF. No production/backend/global changes in these rounds. Full nine-axis deltas, individual regressions and limitations: [THINKING_INTERVENTION_RESULTS.md](THINKING_INTERVENTION_RESULTS.md), machine-readable [decisions](results/af-decisions.json). Total 160 new observations, 80 blinded comparisons.
+
+| Round | Baseline → candidate | Improved / regressed | Decision / next hypothesis |
+|---|---|---|---|
+| Thinking pilot, LM | Primary task 1/4→2/4; median 6.65→43.23s | Correctness +0.50; instruction -1.00 including one timeout | Reject default ON; investigate explicit manual-only reasoning with an acceptable latency budget. |
+| Thinking pilot, Ollama | Primary task 2/4→2/4; median 10.62→37.40s | Instruction +0.75; conciseness -0.50 | Reject default ON; pilot feasibility gate fails. |
+| Automatic evidence policy, LM tuning | Primary task 9/28→11/28; unwanted advice 8/12→7/12 | All axis means non-decreasing, but new individual BFS and hint regressions | Numeric gates pass; freeze and confirm on new holdout once. |
+| Automatic evidence policy, Ollama tuning | Primary task 11/28→11/28; unwanted advice 6/12→5/12 | Correctness +0.11; missed-by-silence 6/16→7/16 | Reject: reduced advice hides another defect. Test evidence-based intervention decisions separately from hint generation. |
+| LM fresh holdout | Primary task 8/16→8/16; unwanted advice 2/4→2/4 | Correctness +0.31; conciseness -0.06; new silence on merge bug | Reject; no champion update. Four manual inputs unchanged, so their 4→3 change is sampling variation. Holdout now consumed. |
+
+Short-code evidence remains in the actual requests; residual failures include incorrect final-state reasoning, inventing print requirements, false warnings on correct BFS/bracket checking, and exact fix disclosure. These experiments do not establish the 8B capability ceiling. Rejected prompts/settings and every response remain available. Do not tune further on this now-observed holdout.

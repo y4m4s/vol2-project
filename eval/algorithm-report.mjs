@@ -10,7 +10,7 @@ if(!v.runs||!v.out)throw Error('Usage: node eval/algorithm-report.mjs --runs RUN
 const comparisons=(v.comparisons?.split(',')??[]).map(dir=>readJson(`${dir}/summary.json`));
 const runs=v.runs.split(',').map(dir=>{
   const manifest=readJson(`${dir}/manifest.json`),cases=readJson(`${dir}/cases.json`),responses=readJson(`${dir}/responses.json`);
-  if(manifest.suite!=='algorithms'||!manifest.finishedAt||hash(cases)!==manifest.caseSetHash)throw Error('Incomplete or changed algorithm run');
+  if(!['algorithms','algorithms-v2'].includes(manifest.suite)||!manifest.finishedAt||hash(cases)!==manifest.caseSetHash)throw Error('Incomplete or changed algorithm run');
   const comparison=comparisons.find(x=>[x.baselineRun,x.candidateRun].includes(dir));
   let reviewed=[];
   if(comparison){

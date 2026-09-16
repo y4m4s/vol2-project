@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
+import { followupOracle } from './algorithm-followup-oracles.mjs';
 
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const cache=new Map();
@@ -9,7 +10,7 @@ export const ALGORITHM_LANGUAGES=['python','javascript'];
 export const ALGORITHM_RUBRIC_PATH='eval/algorithm-rubric.md';
 
 export function algorithmProvenance() {
-  return Object.fromEntries(['algorithms.mjs','algorithm-worker.py','algorithm-worker.mjs','algorithm-rubric.md'].map(name=>[name,digest(readFileSync(`eval/${name}`))]));
+  return Object.fromEntries(['algorithms.mjs','algorithm-worker.py','algorithm-worker.mjs','algorithm-rubric.md','algorithm-followup-oracles.mjs','intervention-policy.mjs'].map(name=>[name,digest(readFileSync(`eval/${name}`))]));
 }
 
 export function problemText(problem,layout='plain') {
@@ -52,6 +53,7 @@ function shortest(graph,start,target) {
   visit(start,[start]);return Number.isFinite(best)?best:-1;
 }
 export function oracleDomain(name) {
+  const followup=followupOracle(name);if(followup)return followup;
   switch(name) {
     case 'sum': return {inputs:arrays([-2,-1,0,1,2],4).map(a=>[a]),expected:([a])=>a.reduce((n,x)=>n+x,0),scope:'all arrays length0..4 over -2..2'};
     case 'lower-bound': return {inputs:sortedArrays([-1,0,1,2],4).flatMap(a=>[-2,-1,0,1,2,3].map(t=>[a,t])),expected:([a,t])=>{const i=a.findIndex(x=>x>=t);return i<0?a.length:i;},scope:'all sorted arrays length0..4 over -1..2; targets -2..3'};
@@ -86,7 +88,7 @@ export function verifyAlgorithm(item) {
   const failures=[];
   response.answers.forEach((actual,i)=>{
     const expected=domain.expected(inputs[i]);
-    if(actual.error||!isDeepStrictEqual(actual.value,expected)||item.oracle==='sort'&&actual.mutated)
+    if(actual.error||!isDeepStrictEqual(actual.value,expected)||['sort','merge'].includes(item.oracle)&&actual.mutated)
       failures.push({input:inputs[i],expected,actual});
   });
   const correct=['correct','correct_slow'].includes(item.variant);

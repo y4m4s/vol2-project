@@ -1,0 +1,1372 @@
+[
+  {
+    "id": "alg-max-subarray-correct-py",
+    "problemId": "v2-max-subarray",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "max-subarray",
+    "problem": {
+      "task": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。",
+      "constraints": "1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。",
+      "examples": "solve([2,-3,4,1]) -> 5"
+    },
+    "expected": "Result -2. Every allowed segment is nonempty; for all negative numbers the best singleton wins.",
+    "question": "solve([-4,-2,-7])の戻り値を「結果: 数字」で示し、全要素が負の場合もこの初期化でよい理由を簡潔に説明して。",
+    "scalarAnswer": -2,
+    "language": "python",
+    "code": "def solve(a):\n    best = current = a[0]\n    for value in a[1:]:\n        current = max(value, current + value)\n        best = max(best, current)\n    return best\n",
+    "fixturePath": "eval/fixtures/algorithms/max-subarray-correct.py",
+    "fixtureHash": "95e0223bf28763572f8d6c16757b39d5d7f997fdcea125b444b4266b7a97ef14",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "95e0223bf28763572f8d6c16757b39d5d7f997fdcea125b444b4266b7a97ef14",
+      "scope": "all nonempty arrays length1..5 over -3,-1,0,2; brute contiguous segment enumeration",
+      "testCount": 1364,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "69f0354e242c055b133453f4bf0b77422f8cb8ce9aeecaeabb950f8f63086225",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve([-4,-2,-7])の戻り値を「結果: 数字」で示し、全要素が負の場合もこの初期化でよい理由を簡潔に説明して。",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    best = current = a[0]\n    for value in a[1:]:\n        current = max(value, current + value)\n        best = max(best, current)\n    return best\n",
+        "additionalContext": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。\n1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。\nsolve([2,-3,4,1]) -> 5",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-max-subarray-correct-js",
+    "problemId": "v2-max-subarray",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "max-subarray",
+    "problem": {
+      "task": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。",
+      "constraints": "1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。",
+      "examples": "solve([2,-3,4,1]) -> 5"
+    },
+    "expected": "Result -2. Every allowed segment is nonempty; for all negative numbers the best singleton wins.",
+    "question": "solve([-4,-2,-7])の戻り値を「結果: 数字」で示し、全要素が負の場合もこの初期化でよい理由を簡潔に説明して。",
+    "scalarAnswer": -2,
+    "language": "javascript",
+    "code": "function solve(a) {\n  let best = a[0], current = a[0];\n  for (const value of a.slice(1)) {\n    current = Math.max(value, current + value);\n    best = Math.max(best, current);\n  }\n  return best;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/max-subarray-correct.js",
+    "fixtureHash": "506a194146e53d9cb3332061862597a55e6e04ea6f6029ab1995e12f22713634",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "506a194146e53d9cb3332061862597a55e6e04ea6f6029ab1995e12f22713634",
+      "scope": "all nonempty arrays length1..5 over -3,-1,0,2; brute contiguous segment enumeration",
+      "testCount": 1364,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "69f0354e242c055b133453f4bf0b77422f8cb8ce9aeecaeabb950f8f63086225",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve([-4,-2,-7])の戻り値を「結果: 数字」で示し、全要素が負の場合もこの初期化でよい理由を簡潔に説明して。",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  let best = a[0], current = a[0];\n  for (const value of a.slice(1)) {\n    current = Math.max(value, current + value);\n    best = Math.max(best, current);\n  }\n  return best;\n}\n",
+        "additionalContext": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。\n1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。\nsolve([2,-3,4,1]) -> 5",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-max-subarray-bug-py",
+    "problemId": "v2-max-subarray",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "max-subarray",
+    "problem": {
+      "task": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。",
+      "constraints": "1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。",
+      "examples": "solve([2,-3,4,1]) -> 5"
+    },
+    "expected": "Empty subarray is implicitly allowed by zero initialization/reset. Hint at the nonempty constraint and all-negative input; no completed replacement.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "python",
+    "code": "def solve(a):\n    best = current = 0\n    for value in a:\n        current = max(0, current + value)\n        best = max(best, current)\n    return best\n",
+    "fixturePath": "eval/fixtures/algorithms/max-subarray-bug.py",
+    "fixtureHash": "e14e7e283ec8b0a263dfd3e54bf6fdac2f089292f190094dda319ce8e0ea2575",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "e14e7e283ec8b0a263dfd3e54bf6fdac2f089292f190094dda319ce8e0ea2575",
+      "scope": "all nonempty arrays length1..5 over -3,-1,0,2; brute contiguous segment enumeration",
+      "testCount": 1364,
+      "mismatches": 62,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -3,
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -3,
+              -3,
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "b964a7d6b0c85855d1de5b9c0bb390f7a4d5f1439970a7a44f3fc4697ee8da81",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    best = current = 0\n    for value in a:\n        current = max(0, current + value)\n        best = max(best, current)\n    return best\n",
+        "additionalContext": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。\n1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。\nsolve([2,-3,4,1]) -> 5",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 6,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a):\n    best = current = 0\n    for value in a:\n        current = max(0, current + value)\n        best = max(best, current)\n    return best\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 6,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-max-subarray-bug-js",
+    "problemId": "v2-max-subarray",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "max-subarray",
+    "problem": {
+      "task": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。",
+      "constraints": "1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。",
+      "examples": "solve([2,-3,4,1]) -> 5"
+    },
+    "expected": "Empty subarray is implicitly allowed by zero initialization/reset. Hint at the nonempty constraint and all-negative input; no completed replacement.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "javascript",
+    "code": "function solve(a) {\n  let best = 0, current = 0;\n  for (const value of a) {\n    current = Math.max(0, current + value);\n    best = Math.max(best, current);\n  }\n  return best;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/max-subarray-bug.js",
+    "fixtureHash": "a356113f35e5ab5d0dab94b1f5e569ff43e7851de624c874cf441bfd2d32f3f5",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "a356113f35e5ab5d0dab94b1f5e569ff43e7851de624c874cf441bfd2d32f3f5",
+      "scope": "all nonempty arrays length1..5 over -3,-1,0,2; brute contiguous segment enumeration",
+      "testCount": 1364,
+      "mismatches": 62,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -3,
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -3,
+              -3,
+              -3
+            ]
+          ],
+          "expected": -3,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "b964a7d6b0c85855d1de5b9c0bb390f7a4d5f1439970a7a44f3fc4697ee8da81",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  let best = 0, current = 0;\n  for (const value of a) {\n    current = Math.max(0, current + value);\n    best = Math.max(best, current);\n  }\n  return best;\n}\n",
+        "additionalContext": "空でない整数配列aの、空でない連続部分配列の和の最大値をsolve(a)で返す。\n1 <= N <= 100000、各値は-1000以上1000以下。少なくとも1要素を選び、元配列は変更しない。\nsolve([2,-3,4,1]) -> 5",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 8,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  let best = 0, current = 0;\n  for (const value of a) {\n    current = Math.max(0, current + value);\n    best = Math.max(best, current);\n  }\n  return best;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 8,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-paren-correct-py",
+    "problemId": "v2-paren",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "oracle": "parentheses",
+    "problem": {
+      "task": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。",
+      "constraints": "文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。",
+      "examples": "solve(\"(())\") -> true; solve(\"(()\") -> false"
+    },
+    "expected": "Correct prefix balance check and final balance check. Stay silent.",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "language": "python",
+    "code": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n        if balance < 0:\n            return False\n    return balance == 0\n",
+    "fixturePath": "eval/fixtures/algorithms/paren-correct.py",
+    "fixtureHash": "b152e66883ba10b9b22ad5b20ea9d0a91f7703ee10b5142385bb59cfafe6778d",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "b152e66883ba10b9b22ad5b20ea9d0a91f7703ee10b5142385bb59cfafe6778d",
+      "scope": "all parenthesis strings length0..7; independent repeated pair removal",
+      "testCount": 255,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "89c414836d178564a3e3001c1c952be7b713c6b09686fef8129a62cf0aabdb73",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n        if balance < 0:\n            return False\n    return balance == 0\n",
+        "additionalContext": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。\n文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。\nsolve(\"(())\") -> true; solve(\"(()\") -> false",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 7,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n        if balance < 0:\n            return False\n    return balance == 0\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 7,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-paren-correct-js",
+    "problemId": "v2-paren",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "oracle": "parentheses",
+    "problem": {
+      "task": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。",
+      "constraints": "文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。",
+      "examples": "solve(\"(())\") -> true; solve(\"(()\") -> false"
+    },
+    "expected": "Correct prefix balance check and final balance check. Stay silent.",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "language": "javascript",
+    "code": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n    if (balance < 0) return false;\n  }\n  return balance === 0;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/paren-correct.js",
+    "fixtureHash": "c9cdcf0e71b0a069c643815981c6c81b95a4cba748d3794c44f40fd3e74b54ae",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "c9cdcf0e71b0a069c643815981c6c81b95a4cba748d3794c44f40fd3e74b54ae",
+      "scope": "all parenthesis strings length0..7; independent repeated pair removal",
+      "testCount": 255,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "89c414836d178564a3e3001c1c952be7b713c6b09686fef8129a62cf0aabdb73",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n    if (balance < 0) return false;\n  }\n  return balance === 0;\n}\n",
+        "additionalContext": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。\n文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。\nsolve(\"(())\") -> true; solve(\"(()\") -> false",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 8,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n    if (balance < 0) return false;\n  }\n  return balance === 0;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 8,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-paren-bug-py",
+    "problemId": "v2-paren",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "parentheses",
+    "problem": {
+      "task": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。",
+      "constraints": "文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。",
+      "examples": "solve(\"(())\") -> true; solve(\"(()\") -> false"
+    },
+    "expected": "Final balance alone misses a premature closing bracket, e.g. )(. Hint at intermediate states, no exact replacement condition.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "python",
+    "code": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n    return balance == 0\n",
+    "fixturePath": "eval/fixtures/algorithms/paren-bug.py",
+    "fixtureHash": "66f34a72a3d7ef68cbff6664ad791ce821772af5bdc2d0e228ad3262d9487a1f",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "66f34a72a3d7ef68cbff6664ad791ce821772af5bdc2d0e228ad3262d9487a1f",
+      "scope": "all parenthesis strings length0..7; independent repeated pair removal",
+      "testCount": 255,
+      "mismatches": 20,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            "(()))("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            "()())("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            "())("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "6562bb6f896b9a912d35d4966c19c670f96f9ba154acb512dc837e47fefbb718",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n    return balance == 0\n",
+        "additionalContext": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。\n文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。\nsolve(\"(())\") -> true; solve(\"(()\") -> false",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(text):\n    balance = 0\n    for ch in text:\n        balance += 1 if ch == '(' else -1\n    return balance == 0\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-paren-bug-js",
+    "problemId": "v2-paren",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "parentheses",
+    "problem": {
+      "task": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。",
+      "constraints": "文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。",
+      "examples": "solve(\"(())\") -> true; solve(\"(()\") -> false"
+    },
+    "expected": "Final balance alone misses a premature closing bracket, e.g. )(. Hint at intermediate states, no exact replacement condition.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "javascript",
+    "code": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n  }\n  return balance === 0;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/paren-bug.js",
+    "fixtureHash": "0de569f3e2668b8270ff4a8c06a82688224ace58cfb98d76f70a28f7d5cd948f",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "0de569f3e2668b8270ff4a8c06a82688224ace58cfb98d76f70a28f7d5cd948f",
+      "scope": "all parenthesis strings length0..7; independent repeated pair removal",
+      "testCount": 255,
+      "mismatches": 20,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            "(()))("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            "()())("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            "())("
+          ],
+          "expected": false,
+          "actual": {
+            "value": true,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "6562bb6f896b9a912d35d4966c19c670f96f9ba154acb512dc837e47fefbb718",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n  }\n  return balance === 0;\n}\n",
+        "additionalContext": "文字列textが正しく対応した丸括弧列かsolve(text)で真偽値を返す。\n文字は(または)のみ。0 <= length <= 100000。空文字は正しい。どの位置でも閉じ括弧が対応する開き括弧に先行してはいけない。\nsolve(\"(())\") -> true; solve(\"(()\") -> false",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 7,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(text) {\n  let balance = 0;\n  for (const ch of text) {\n    balance += ch === '(' ? 1 : -1;\n  }\n  return balance === 0;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 7,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-gcd-correct-py",
+    "problemId": "v2-gcd",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "gcd",
+    "problem": {
+      "task": "正の整数a,bの最大公約数をsolve(a,b)で返す。",
+      "constraints": "1 <= a,b <= 1000000。入力は整数。",
+      "examples": "solve(12,8) -> 4"
+    },
+    "expected": "Result6. Replacing (a,b) by (b,a mod b) preserves common divisors, and final nonzero a is the gcd.",
+    "question": "solve(48,18)の戻り値を「結果: 数字」で示し、余りを使う更新と終了時の変数の関係を短く説明して。",
+    "scalarAnswer": 6,
+    "language": "python",
+    "code": "def solve(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return a\n",
+    "fixturePath": "eval/fixtures/algorithms/gcd-correct.py",
+    "fixtureHash": "25a9ccfe99622d5883641b7967c910e3f561ed02e03ddfb6ab3648de0e6a5687",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "25a9ccfe99622d5883641b7967c910e3f561ed02e03ddfb6ab3648de0e6a5687",
+      "scope": "all positive integer pairs1..16 plus48,18; divisor enumeration",
+      "testCount": 257,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "9100b4e093a10125ab204b5e9b80e4dd095df74609b3986c247310680c556768",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve(48,18)の戻り値を「結果: 数字」で示し、余りを使う更新と終了時の変数の関係を短く説明して。",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return a\n",
+        "additionalContext": "正の整数a,bの最大公約数をsolve(a,b)で返す。\n1 <= a,b <= 1000000。入力は整数。\nsolve(12,8) -> 4",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-gcd-correct-js",
+    "problemId": "v2-gcd",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "gcd",
+    "problem": {
+      "task": "正の整数a,bの最大公約数をsolve(a,b)で返す。",
+      "constraints": "1 <= a,b <= 1000000。入力は整数。",
+      "examples": "solve(12,8) -> 4"
+    },
+    "expected": "Result6. Replacing (a,b) by (b,a mod b) preserves common divisors, and final nonzero a is the gcd.",
+    "question": "solve(48,18)の戻り値を「結果: 数字」で示し、余りを使う更新と終了時の変数の関係を短く説明して。",
+    "scalarAnswer": 6,
+    "language": "javascript",
+    "code": "function solve(a, b) {\n  while (b !== 0) [a, b] = [b, a % b];\n  return a;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/gcd-correct.js",
+    "fixtureHash": "24f8687d6296a839c18a68f50ac9ac31c7510ad637341737b64269d00a3e0edd",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "24f8687d6296a839c18a68f50ac9ac31c7510ad637341737b64269d00a3e0edd",
+      "scope": "all positive integer pairs1..16 plus48,18; divisor enumeration",
+      "testCount": 257,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "9100b4e093a10125ab204b5e9b80e4dd095df74609b3986c247310680c556768",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve(48,18)の戻り値を「結果: 数字」で示し、余りを使う更新と終了時の変数の関係を短く説明して。",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, b) {\n  while (b !== 0) [a, b] = [b, a % b];\n  return a;\n}\n",
+        "additionalContext": "正の整数a,bの最大公約数をsolve(a,b)で返す。\n1 <= a,b <= 1000000。入力は整数。\nsolve(12,8) -> 4",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-gcd-bug-py",
+    "problemId": "v2-gcd",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "gcd",
+    "problem": {
+      "task": "正の整数a,bの最大公約数をsolve(a,b)で返す。",
+      "constraints": "1 <= a,b <= 1000000。入力は整数。",
+      "examples": "solve(12,8) -> 4"
+    },
+    "expected": "Loop terminates with b=0, yet returns b instead of the nonzero gcd. Point to final state and return value without replacement code.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "python",
+    "code": "def solve(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return b\n",
+    "fixturePath": "eval/fixtures/algorithms/gcd-bug.py",
+    "fixtureHash": "1470f89a3a08f6b39dfaa1c629b0545f3a833e4de2cbe987b93c9617ce5d3cb6",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "1470f89a3a08f6b39dfaa1c629b0545f3a833e4de2cbe987b93c9617ce5d3cb6",
+      "scope": "all positive integer pairs1..16 plus48,18; divisor enumeration",
+      "testCount": 257,
+      "mismatches": 257,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            1,
+            1
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            1,
+            2
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            1,
+            3
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "98ead65b30c7ce2df4c0a55b27e2ed1c08cb643fdac73f05e606ee56b5e76eb6",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return b\n",
+        "additionalContext": "正の整数a,bの最大公約数をsolve(a,b)で返す。\n1 <= a,b <= 1000000。入力は整数。\nsolve(12,8) -> 4",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 4,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a, b):\n    while b != 0:\n        a, b = b, a % b\n    return b\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 4,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-gcd-bug-js",
+    "problemId": "v2-gcd",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "gcd",
+    "problem": {
+      "task": "正の整数a,bの最大公約数をsolve(a,b)で返す。",
+      "constraints": "1 <= a,b <= 1000000。入力は整数。",
+      "examples": "solve(12,8) -> 4"
+    },
+    "expected": "Loop terminates with b=0, yet returns b instead of the nonzero gcd. Point to final state and return value without replacement code.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "javascript",
+    "code": "function solve(a, b) {\n  while (b !== 0) [a, b] = [b, a % b];\n  return b;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/gcd-bug.js",
+    "fixtureHash": "d1b2511c45f51a7008578d6fefcb410027d41c5ad16f1aed2b8d170bd5131fa1",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "d1b2511c45f51a7008578d6fefcb410027d41c5ad16f1aed2b8d170bd5131fa1",
+      "scope": "all positive integer pairs1..16 plus48,18; divisor enumeration",
+      "testCount": 257,
+      "mismatches": 257,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            1,
+            1
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            1,
+            2
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            1,
+            3
+          ],
+          "expected": 1,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "98ead65b30c7ce2df4c0a55b27e2ed1c08cb643fdac73f05e606ee56b5e76eb6",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, b) {\n  while (b !== 0) [a, b] = [b, a % b];\n  return b;\n}\n",
+        "additionalContext": "正の整数a,bの最大公約数をsolve(a,b)で返す。\n1 <= a,b <= 1000000。入力は整数。\nsolve(12,8) -> 4",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 4,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a, b) {\n  while (b !== 0) [a, b] = [b, a % b];\n  return b;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 4,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-merge-correct-py",
+    "problemId": "v2-merge",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "oracle": "merge",
+    "problem": {
+      "task": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。",
+      "constraints": "0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。",
+      "examples": "solve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []"
+    },
+    "expected": "Correct stable merge with both remaining tails; preserves duplicates and inputs. Stay silent.",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "language": "python",
+    "code": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    result.extend(b[j:])\n    return result\n",
+    "fixturePath": "eval/fixtures/algorithms/merge-correct.py",
+    "fixtureHash": "8d8735f2dd4d81903adf567e3ce323fbb1a87f232948ed072b0e7672def9c852",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "8d8735f2dd4d81903adf567e3ce323fbb1a87f232948ed072b0e7672def9c852",
+      "scope": "all pairs of sorted arrays length0..3 over -1,0,2; concatenation and numeric sorting; immutability checked",
+      "testCount": 400,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "24ae293ad02b28f0f770cd2e8e0c082ccf635b09fc85b47e667448c27b7d6cb0",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    result.extend(b[j:])\n    return result\n",
+        "additionalContext": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。\n0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。\nsolve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 13,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    result.extend(b[j:])\n    return result\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 13,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-merge-correct-js",
+    "problemId": "v2-merge",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "oracle": "merge",
+    "problem": {
+      "task": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。",
+      "constraints": "0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。",
+      "examples": "solve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []"
+    },
+    "expected": "Correct stable merge with both remaining tails; preserves duplicates and inputs. Stay silent.",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "language": "javascript",
+    "code": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  result.push(...b.slice(j));\n  return result;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/merge-correct.js",
+    "fixtureHash": "d50e46e6b752c8c08348e41a335ebcea0faf012757b662555b081e60da7e6a1f",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "d50e46e6b752c8c08348e41a335ebcea0faf012757b662555b081e60da7e6a1f",
+      "scope": "all pairs of sorted arrays length0..3 over -1,0,2; concatenation and numeric sorting; immutability checked",
+      "testCount": 400,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "24ae293ad02b28f0f770cd2e8e0c082ccf635b09fc85b47e667448c27b7d6cb0",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  result.push(...b.slice(j));\n  return result;\n}\n",
+        "additionalContext": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。\n0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。\nsolve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 11,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  result.push(...b.slice(j));\n  return result;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 11,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-merge-bug-py",
+    "problemId": "v2-merge",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "merge",
+    "problem": {
+      "task": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。",
+      "constraints": "0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。",
+      "examples": "solve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []"
+    },
+    "expected": "Remaining b tail is dropped if a finishes first, including empty a. Hint at termination and unconsumed elements; no completed append statement.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "python",
+    "code": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    return result\n",
+    "fixturePath": "eval/fixtures/algorithms/merge-bug.py",
+    "fixtureHash": "01ea3e66a0ec6ac2fec35adfa844af088646c6d045acf8eb7bc5c62a1cf84d64",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "01ea3e66a0ec6ac2fec35adfa844af088646c6d045acf8eb7bc5c62a1cf84d64",
+      "scope": "all pairs of sorted arrays length0..3 over -1,0,2; concatenation and numeric sorting; immutability checked",
+      "testCount": 400,
+      "mismatches": 272,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [],
+            [
+              -1
+            ]
+          ],
+          "expected": [
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [],
+            [
+              -1,
+              -1
+            ]
+          ],
+          "expected": [
+            -1,
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [],
+            [
+              -1,
+              -1,
+              -1
+            ]
+          ],
+          "expected": [
+            -1,
+            -1,
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "833beb2472809fc046fe89a7a38dcb812014c07a2cf87e5f65956544029f877d",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    return result\n",
+        "additionalContext": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。\n0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。\nsolve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 12,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a, b):\n    result = []\n    i = j = 0\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    return result\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 12,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-merge-bug-js",
+    "problemId": "v2-merge",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "oracle": "merge",
+    "problem": {
+      "task": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。",
+      "constraints": "0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。",
+      "examples": "solve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []"
+    },
+    "expected": "Remaining b tail is dropped if a finishes first, including empty a. Hint at termination and unconsumed elements; no completed append statement.",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "language": "javascript",
+    "code": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  return result;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/merge-bug.js",
+    "fixtureHash": "3c2fc8b3f15bccb1d72865d3ef2124883c21d2234e14e8a965e4c09ba42a877a",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "3c2fc8b3f15bccb1d72865d3ef2124883c21d2234e14e8a965e4c09ba42a877a",
+      "scope": "all pairs of sorted arrays length0..3 over -1,0,2; concatenation and numeric sorting; immutability checked",
+      "testCount": 400,
+      "mismatches": 272,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [],
+            [
+              -1
+            ]
+          ],
+          "expected": [
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [],
+            [
+              -1,
+              -1
+            ]
+          ],
+          "expected": [
+            -1,
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [],
+            [
+              -1,
+              -1,
+              -1
+            ]
+          ],
+          "expected": [
+            -1,
+            -1,
+            -1
+          ],
+          "actual": {
+            "value": [],
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "833beb2472809fc046fe89a7a38dcb812014c07a2cf87e5f65956544029f877d",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  return result;\n}\n",
+        "additionalContext": "昇順の整数配列a,bを、すべての要素と重複を保持して1つの昇順の新しい配列に統合しsolve(a,b)で返す。\n0 <= len(a),len(b) <= 50000。値は-1000以上1000以下。入力配列は変更しない。\nsolve([1,3],[2,3]) -> [1,2,3,3]; solve([],[]) -> []",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 10,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a, b) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < a.length && j < b.length) {\n    if (a[i] <= b[j]) result.push(a[i++]);\n    else result.push(b[j++]);\n  }\n  result.push(...a.slice(i));\n  return result;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 10,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  }
+]

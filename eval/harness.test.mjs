@@ -135,3 +135,29 @@ test('algorithm bootstrap clusters languages and variants by problem rather than
   assert.deepEqual(bootstrapCases(original),bootstrapCases(expanded));
   assert.equal(bootstrapCases(expanded).unit,'problem');assert.equal(bootstrapCases(expanded).cases,2);
 });
+
+test('fresh followup holdout has disjoint problem families and executable matched variants',()=>{
+  const tuning=loadCases('tuning',undefined,'algorithms-v2'),holdout=loadCases('holdout',undefined,'algorithms-v2');
+  assert.equal(tuning.length,32);assert.equal(holdout.length,16);
+  assert.ok(holdout.every(h=>!tuning.some(t=>t.problemId===h.problemId)));
+  for(let i=0;i<holdout.length;i+=2){
+    const a=holdout[i],b=holdout[i+1];
+    assert.equal(a.oracleEvidence.mismatches,b.oracleEvidence.mismatches);
+    assert.equal(a.oracleEvidence.correctOnTestDomain,a.variant==='correct');
+    if(a.variant==='buggy')assert.ok(a.oracleEvidence.counterexamples.length>0);
+  }
+});
+
+test('Thinking and intervention are isolated controls, and intervention leaves manual requests unchanged',()=>{
+  for(const item of loadCases('tuning',undefined,'algorithms-v2')){
+    const a=prepare(item,{...lm,thinking:'none'}).request;
+    const b=prepare(item,{...lm,thinking:'high'}).request;
+    assert.deepEqual({...b,reasoningEffort:'none'},a);
+    const c=prepare(item,{...lm,thinking:'none',promptVersion:'automatic-evidence-v1'}).request;
+    if(item.input.kind==='always'){
+      assert.ok(c.systemPrompt.startsWith(a.systemPrompt));
+      assert.deepEqual({...c,systemPrompt:a.systemPrompt},a);
+      assert.ok(!c.systemPrompt.includes(item.expected));
+    }else assert.deepEqual(c,a);
+  }
+});

@@ -1,0 +1,389 @@
+{
+  "plan": "eval/FOLLOWUP_THINKING_PLAN.md",
+  "decisions": [
+    {
+      "provider": "lm",
+      "round": "thinking",
+      "comparison": "eval/results/af-lm-thinking-comparison",
+      "diagnostics": "eval/results/af-lm-thinking-pilot-diagnostics.json",
+      "n": 4,
+      "taskSuccess": {
+        "baseline": 1,
+        "candidate": 2
+      },
+      "defectiveTaskSuccess": {
+        "n": 1,
+        "baseline": 0,
+        "candidate": 0
+      },
+      "pairwiseWinRate": 0.625,
+      "problemBalancedWinRate": 0.5833333333333334,
+      "ci95": {
+        "low": 0,
+        "high": 1,
+        "unit": "problem",
+        "cases": 3,
+        "iterations": 5000
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 2.5,
+          "candidate": 3,
+          "delta": 0.5
+        },
+        "groundedness": {
+          "baseline": 2.5,
+          "candidate": 3,
+          "delta": 0.5
+        },
+        "context_utilization": {
+          "baseline": 3.25,
+          "candidate": 3,
+          "delta": -0.25
+        },
+        "hallucination": {
+          "baseline": 2.5,
+          "candidate": 3,
+          "delta": 0.5
+        },
+        "instruction_following": {
+          "baseline": 3.25,
+          "candidate": 2.25,
+          "delta": -1
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.5,
+          "candidate": 2.5,
+          "delta": 0
+        },
+        "actionability": {
+          "baseline": 3.25,
+          "candidate": 3,
+          "delta": -0.25
+        },
+        "conciseness": {
+          "baseline": 3.5,
+          "candidate": 3,
+          "delta": -0.5
+        },
+        "japanese_quality": {
+          "baseline": 4,
+          "candidate": 3,
+          "delta": -1
+        }
+      },
+      "latencyRatio": 6.502052796499525,
+      "gates": {
+        "noNewHardFailures": false,
+        "criticalAxes": false,
+        "qualityCI": false,
+        "latency": false,
+        "pilotFeasible": false
+      },
+      "failedGates": [
+        "noNewHardFailures",
+        "criticalAxes",
+        "qualityCI",
+        "latency",
+        "pilotFeasible"
+      ],
+      "decision": "reject_keep_production",
+      "nextHypothesis": "Explicit manual reasoning may merit an opt-in latency budget; no automatic/default rollout from this pilot."
+    },
+    {
+      "provider": "lm",
+      "round": "automatic",
+      "comparison": "eval/results/af-lm-automatic-comparison",
+      "diagnostics": "eval/results/af-lm-automatic-diagnostics.json",
+      "n": 28,
+      "taskSuccess": {
+        "baseline": 9,
+        "candidate": 11
+      },
+      "defectiveTaskSuccess": {
+        "n": 16,
+        "baseline": 5,
+        "candidate": 6
+      },
+      "pairwiseWinRate": 0.6071428571428571,
+      "problemBalancedWinRate": 0.6,
+      "ci95": {
+        "low": 0.525,
+        "high": 0.675,
+        "unit": "problem",
+        "cases": 5,
+        "iterations": 5000
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 2.5,
+          "candidate": 2.8214285714285716,
+          "delta": 0.32142857142857145
+        },
+        "groundedness": {
+          "baseline": 2.5,
+          "candidate": 2.8214285714285716,
+          "delta": 0.32142857142857145
+        },
+        "context_utilization": {
+          "baseline": 2.9285714285714284,
+          "candidate": 3.142857142857143,
+          "delta": 0.21428571428571427
+        },
+        "hallucination": {
+          "baseline": 3.0714285714285716,
+          "candidate": 3.392857142857143,
+          "delta": 0.32142857142857145
+        },
+        "instruction_following": {
+          "baseline": 2.1785714285714284,
+          "candidate": 2.5714285714285716,
+          "delta": 0.39285714285714285
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.25,
+          "candidate": 2.4642857142857144,
+          "delta": 0.21428571428571427
+        },
+        "actionability": {
+          "baseline": 2.4642857142857144,
+          "candidate": 2.4642857142857144,
+          "delta": 0
+        },
+        "conciseness": {
+          "baseline": 3.6785714285714284,
+          "candidate": 3.7142857142857144,
+          "delta": 0.03571428571428571
+        },
+        "japanese_quality": {
+          "baseline": 3.892857142857143,
+          "candidate": 3.9642857142857144,
+          "delta": 0.07142857142857142
+        }
+      },
+      "latencyRatio": 1.0350051158003175,
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": true,
+        "qualityCI": true,
+        "latency": true,
+        "fewerUnnecessaryInterventions": true,
+        "noLossOfDefectTaskSuccess": true,
+        "noMoreMissedBySilence": true
+      },
+      "failedGates": [],
+      "decision": "eligible_for_confirmation_not_adopted",
+      "nextHypothesis": "Investigate contract confusion and defect-specific reasoning using independent execution evidence, rather than forcing silence."
+    },
+    {
+      "provider": "oll",
+      "round": "thinking",
+      "comparison": "eval/results/af-oll-thinking-comparison",
+      "diagnostics": "eval/results/af-oll-thinking-pilot-diagnostics.json",
+      "n": 4,
+      "taskSuccess": {
+        "baseline": 2,
+        "candidate": 2
+      },
+      "defectiveTaskSuccess": {
+        "n": 1,
+        "baseline": 0,
+        "candidate": 0
+      },
+      "pairwiseWinRate": 0.625,
+      "problemBalancedWinRate": 0.6666666666666666,
+      "ci95": {
+        "low": 0.5,
+        "high": 1,
+        "unit": "problem",
+        "cases": 3,
+        "iterations": 5000
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 3.75,
+          "candidate": 3.75,
+          "delta": 0
+        },
+        "groundedness": {
+          "baseline": 3.75,
+          "candidate": 3.75,
+          "delta": 0
+        },
+        "context_utilization": {
+          "baseline": 4,
+          "candidate": 3.75,
+          "delta": -0.25
+        },
+        "hallucination": {
+          "baseline": 4,
+          "candidate": 3.75,
+          "delta": -0.25
+        },
+        "instruction_following": {
+          "baseline": 2.5,
+          "candidate": 3.25,
+          "delta": 0.75
+        },
+        "pedagogical_usefulness": {
+          "baseline": 3,
+          "candidate": 3.25,
+          "delta": 0.25
+        },
+        "actionability": {
+          "baseline": 3.75,
+          "candidate": 3.75,
+          "delta": 0
+        },
+        "conciseness": {
+          "baseline": 4,
+          "candidate": 3.5,
+          "delta": -0.5
+        },
+        "japanese_quality": {
+          "baseline": 4,
+          "candidate": 4,
+          "delta": 0
+        }
+      },
+      "latencyRatio": 3.5233267549495775,
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": true,
+        "qualityCI": false,
+        "latency": false,
+        "pilotFeasible": false
+      },
+      "failedGates": [
+        "qualityCI",
+        "latency",
+        "pilotFeasible"
+      ],
+      "decision": "reject_keep_production",
+      "nextHypothesis": "Explicit manual reasoning may merit an opt-in latency budget; no automatic/default rollout from this pilot."
+    },
+    {
+      "provider": "oll",
+      "round": "automatic",
+      "comparison": "eval/results/af-oll-automatic-comparison",
+      "diagnostics": "eval/results/af-oll-automatic-diagnostics.json",
+      "n": 28,
+      "taskSuccess": {
+        "baseline": 11,
+        "candidate": 11
+      },
+      "defectiveTaskSuccess": {
+        "n": 16,
+        "baseline": 5,
+        "candidate": 4
+      },
+      "pairwiseWinRate": 0.5178571428571429,
+      "problemBalancedWinRate": 0.525,
+      "ci95": {
+        "low": 0.5,
+        "high": 0.575,
+        "unit": "problem",
+        "cases": 5,
+        "iterations": 5000
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 2.7142857142857144,
+          "candidate": 2.8214285714285716,
+          "delta": 0.10714285714285714
+        },
+        "groundedness": {
+          "baseline": 2.7142857142857144,
+          "candidate": 2.8214285714285716,
+          "delta": 0.10714285714285714
+        },
+        "context_utilization": {
+          "baseline": 3.142857142857143,
+          "candidate": 3.25,
+          "delta": 0.10714285714285714
+        },
+        "hallucination": {
+          "baseline": 3.392857142857143,
+          "candidate": 3.5714285714285716,
+          "delta": 0.17857142857142858
+        },
+        "instruction_following": {
+          "baseline": 2.392857142857143,
+          "candidate": 2.392857142857143,
+          "delta": 0
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.4285714285714284,
+          "candidate": 2.5,
+          "delta": 0.07142857142857142
+        },
+        "actionability": {
+          "baseline": 2.4642857142857144,
+          "candidate": 2.4642857142857144,
+          "delta": 0
+        },
+        "conciseness": {
+          "baseline": 3.75,
+          "candidate": 3.7857142857142856,
+          "delta": 0.03571428571428571
+        },
+        "japanese_quality": {
+          "baseline": 3.892857142857143,
+          "candidate": 3.9285714285714284,
+          "delta": 0.03571428571428571
+        }
+      },
+      "latencyRatio": 0.9596977710683995,
+      "gates": {
+        "noNewHardFailures": false,
+        "criticalAxes": true,
+        "qualityCI": false,
+        "latency": true,
+        "fewerUnnecessaryInterventions": true,
+        "noLossOfDefectTaskSuccess": false,
+        "noMoreMissedBySilence": false
+      },
+      "failedGates": [
+        "noNewHardFailures",
+        "qualityCI",
+        "noLossOfDefectTaskSuccess",
+        "noMoreMissedBySilence"
+      ],
+      "decision": "reject_keep_production",
+      "nextHypothesis": "Investigate contract confusion and defect-specific reasoning using independent execution evidence, rather than forcing silence."
+    }
+  ],
+  "confirmation": {
+    "summary": "eval/results/af-lm-confirmation-comparison/summary.json",
+    "n": 16,
+    "taskSuccess": {
+      "baseline": 8,
+      "candidate": 8
+    },
+    "automaticTaskSuccess": {
+      "baseline": 4,
+      "candidate": 5
+    },
+    "unchangedManualControls": {
+      "baseline": 4,
+      "candidate": 3
+    },
+    "gates": {
+      "noNewHardFailures": false,
+      "criticalAxes": true,
+      "latency": true,
+      "noLossOfTaskSuccess": true,
+      "noLossOfAutomaticTaskSuccess": true,
+      "noMoreMissedBySilence": true
+    },
+    "decision": "reject_keep_production",
+    "warning": "Holdout is now observed. Do not tune against these answers and reuse it as unseen evidence."
+  },
+  "champion": "Current production; no automatic adoption from numeric gates.",
+  "holdout": {
+    "caseSetHash": "abdc357fc826e759a3eff7d4d4ba6a181ddddfb51137510c8a841972e7c3f9da",
+    "unchanged": true,
+    "observed": true
+  },
+  "limitations": "Shared-design Codex judge; no independent external judge or order reversal. Thinking pilot only four pairs/provider; automatic round five problem clusters. No model-capability ceiling claim."
+}

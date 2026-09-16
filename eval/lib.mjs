@@ -14,6 +14,7 @@ import { LmStudioClient } from '../out/services/LmStudioClient.js';
 import { completeActiveFile } from '../out/services/ActiveFileContext.js';
 import { expandSmallMedium } from './small-medium-fixtures.mjs';
 import { expandAlgorithms,problemText,algorithmHardChecks } from './algorithms.mjs';
+import { AUTOMATIC_EVIDENCE_POLICY } from './intervention-policy.mjs';
 
 export const AXES = ['correctness','groundedness','context_utilization','hallucination','instruction_following','pedagogical_usefulness','actionability','conciseness','japanese_quality'];
 export const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
@@ -32,7 +33,7 @@ export function validateConfig(c) {
   if (!['127.0.0.1','localhost','[::1]'].includes(url.hostname) || !['http:','https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw Error('Local eval requires a loopback root URL');
   if (!['production','ollama-native'].includes(c.transport) || c.transport === 'ollama-native' && c.provider !== 'ollama') throw Error('Invalid transport');
   if (!['production','head-tail-v1'].includes(c.contextStrategy)) throw Error('Unknown context strategy');
-  if (!['production','evidence-v1'].includes(c.promptVersion)) throw Error('Unknown prompt version');
+  if (!['production','evidence-v1','automatic-evidence-v1'].includes(c.promptVersion)) throw Error('Unknown prompt version');
   if (!['production','none','high'].includes(c.thinking)) throw Error('Invalid thinking');
   if (c.languageReference !== undefined && !['production','off'].includes(c.languageReference)) throw Error('Invalid language reference control');
   if (c.collectorContext !== undefined && !['viewport','bounded-file'].includes(c.collectorContext)) throw Error('Invalid collector control');
@@ -50,11 +51,11 @@ export function validateConfig(c) {
 }
 export function loadCases(split, caseFile, suite) {
   if (!['tuning','holdout'].includes(split)) throw Error('Invalid split');
-  if (suite !== undefined && !['small-medium','algorithms'].includes(suite)) throw Error('Unknown suite');
+  if (suite !== undefined && !['small-medium','algorithms','algorithms-v2'].includes(suite)) throw Error('Unknown suite');
   if (suite && caseFile) throw Error('Suite cannot be combined with custom cases');
   if (caseFile && split !== 'tuning') throw Error('Custom cases cannot replace frozen holdout');
   const data=readJson(caseFile ?? `eval/cases/${suite ? suite+'-' : ''}${split}.json`);
-  if(suite==='algorithms')return expandAlgorithms(data);
+  if(suite==='algorithms'||suite==='algorithms-v2')return expandAlgorithms(data);
   return data.map(raw => {
     const item = suite === 'small-medium' ? expandSmallMedium(raw) : raw;
     if (item.existing) {
@@ -105,6 +106,7 @@ export function prepare(item, config) {
   if (config.languageReference === 'off') profile.languageReference = false;
   const messages = buildGuidancePromptMessages({...input, assistanceDepth:effectiveDepth, modelProfile:profile});
   if (config.promptVersion === 'evidence-v1') messages.systemPrompt += '\n- Base factual claims on the supplied code and requirements. Trace relevant expressions using the language semantics before describing their behavior. If a required definition or requirement is absent or truncated, state what is missing rather than guessing.';
+  if (config.promptVersion === 'automatic-evidence-v1' && input.kind==='always') messages.systemPrompt += '\n'+AUTOMATIC_EVIDENCE_POLICY;
   const request = {...messages, purpose:'guidance', reasoningEffort:config.thinking === 'production' ? item.input.assistanceDepth === 'high' ? 'high' : 'none' : config.thinking,
     maxOutputTokens:config.maxOutputTokens ?? (effectiveDepth === 'high' ? 8192 : input.slashCommand === 'flow' ? 3072 : 2048)};
   assertRequestInputLimit(request, profile.contextBudget);

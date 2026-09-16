@@ -1,0 +1,107 @@
+{
+  "control": "thinking",
+  "runs": [
+    {
+      "run": "eval/results/af-oll-thinking-pilot-baseline",
+      "n": 4,
+      "hardPassRate": 1,
+      "latencyMedianMs": 10615.905449999991,
+      "latencyP95Ms": 17611.305,
+      "inputTokensMean": 1330.5,
+      "tokensPerSecondMedian": null,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": null,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 65.75,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 1,
+        "unnecessaryAdvice": 0
+      },
+      "automaticDefective": {
+        "n": 1,
+        "missedBySilence": 0
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 8192
+        }
+      ]
+    },
+    {
+      "run": "eval/results/af-oll-thinking-pilot-candidate",
+      "n": 4,
+      "hardPassRate": 1,
+      "latencyMedianMs": 37403.303700000004,
+      "latencyP95Ms": 72784.51000000001,
+      "inputTokensMean": 1324.5,
+      "tokensPerSecondMedian": null,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 4,
+      "reasoningTokensMedian": null,
+      "reasoningCharsMedian": 1812,
+      "outputTokensMean": 579.75,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 1,
+        "unnecessaryAdvice": 0
+      },
+      "automaticDefective": {
+        "n": 1,
+        "missedBySilence": 0
+      },
+      "requestSettings": [
+        {
+          "thinking": "high",
+          "maxOutputTokens": 8192
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "0b17ee75de2afe44dd5b5745acf53f50d76a934b7fa9a5a478f55bfad777fb5b",
+      "baselineRequestHash": "feb03c756acc70963fb6d8886729e4a26fbcac2c9f0222a1a18657053bfd6a9c",
+      "candidateRequestHash": "a95571c59491cb34744dd9cfbb3b0778ae846cd197aac8649ab2f8264a2a4e20"
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "9e58e0e371a9d272c17fa64bf03a58b1fa73751c17af6da32748b586c54add67",
+      "baselineRequestHash": "cff5a388a9bda502a883b4a2d60ca6951e7fd8eadaeb4740d5ffb4f51ce1cf6a",
+      "candidateRequestHash": "72846c0f65520950cf53895f22744f277b4368abcb32079a2e400313035e5567"
+    },
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "4e64d96a42dad0ceb95fb210490697a221b308b5eb1047453081fbddf03b4dac",
+      "baselineRequestHash": "f243bd167e7e8783825b41c80fdfff61912cdcd7ded2cabb95eddccbdeffd461",
+      "candidateRequestHash": "b6844251232276226aaece21faee0e74c0a2715a47e06688ede211aaa4b18b5d"
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "071c6e615aadc496092d48e617a994f1205a4539e9f931ee5b5ec20be5b45ee9",
+      "baselineRequestHash": "bc53fa17eec1fb1acb35578ba0be935c553c0fefe1c5d3a5e51a96c471377e01",
+      "candidateRequestHash": "c9e0b21938f3351f815b8423d82440d69830503d4468c98acf94f108c8016df0"
+    }
+  ],
+  "latencyRatio": 3.5233267549495775,
+  "balancedFirstArm": true,
+  "pilotExpansionAllowed": false,
+  "note": "Mechanical diagnostics only. Semantic judgments required. Timeout without received reasoning counters is unknown, not proof Thinking was off."
+}

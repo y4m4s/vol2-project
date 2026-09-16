@@ -1,0 +1,109 @@
+{
+  "control": "thinking",
+  "runs": [
+    {
+      "run": "eval/results/af-lm-thinking-pilot-baseline",
+      "n": 4,
+      "hardPassRate": 1,
+      "latencyMedianMs": 6649.404849999999,
+      "latencyP95Ms": 20899.838999999993,
+      "inputTokensMean": 1316.5,
+      "tokensPerSecondMedian": 11.623094794417476,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": 0,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 94.5,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 1,
+        "unnecessaryAdvice": 0
+      },
+      "automaticDefective": {
+        "n": 1,
+        "missedBySilence": 0
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 2048
+        }
+      ]
+    },
+    {
+      "run": "eval/results/af-lm-thinking-pilot-candidate",
+      "n": 4,
+      "hardPassRate": 0.75,
+      "latencyMedianMs": 43234.7814,
+      "latencyP95Ms": 120048.51269999999,
+      "inputTokensMean": 1497,
+      "tokensPerSecondMedian": 12.117673700871915,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {
+        "infrastructure": 1
+      },
+      "thinkingObserved": 3,
+      "reasoningTokensMedian": 418,
+      "reasoningCharsMedian": 1498,
+      "outputTokensMean": 446,
+      "outputLimited": 0,
+      "timeouts": 1,
+      "automaticCorrect": {
+        "n": 1,
+        "unnecessaryAdvice": 0
+      },
+      "automaticDefective": {
+        "n": 1,
+        "missedBySilence": 0
+      },
+      "requestSettings": [
+        {
+          "thinking": "high",
+          "maxOutputTokens": 2048
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "9e58e0e371a9d272c17fa64bf03a58b1fa73751c17af6da32748b586c54add67",
+      "baselineRequestHash": "e7188391d826d6f7f391e7a94191f78abcfe870ac1262303919f0efb5d73f0d3",
+      "candidateRequestHash": "58113c4c9ed4f49f26991b49593a9f6431f30350590e7178938841d4f992cf7a"
+    },
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "4e64d96a42dad0ceb95fb210490697a221b308b5eb1047453081fbddf03b4dac",
+      "baselineRequestHash": "665be4d1a04dfc62477e4dc35c80e22c5651a3eeefb9946e0ea91f1aea231d06",
+      "candidateRequestHash": "f70c5a7e2464839076731ff9eefa0a0af83a7c81d9170523ce66408ea63459cf"
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "071c6e615aadc496092d48e617a994f1205a4539e9f931ee5b5ec20be5b45ee9",
+      "baselineRequestHash": "20d6d61aeae9ed5d874442e7df8b5a143fafa21f295385631c88e58e0459f575",
+      "candidateRequestHash": "9403a272d02ce5a92f84d4a45b148921adeecd2c80758e5794e9dbc9e6a4296c"
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "0b17ee75de2afe44dd5b5745acf53f50d76a934b7fa9a5a478f55bfad777fb5b",
+      "baselineRequestHash": "38c31e91d24e7897514d18c2def91f313f4c9929f93110ee0b2ce70c2939def6",
+      "candidateRequestHash": "e607944f031b4410e244dcb80aa6fc49e91933973c66207f729c044b0b8da265"
+    }
+  ],
+  "latencyRatio": 6.502052796499525,
+  "balancedFirstArm": true,
+  "pilotExpansionAllowed": false,
+  "note": "Mechanical diagnostics only. Semantic judgments required. Timeout without received reasoning counters is unknown, not proof Thinking was off."
+}
