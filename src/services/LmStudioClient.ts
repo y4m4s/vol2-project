@@ -20,10 +20,20 @@ export class LmStudioClient extends OpenAICompatibleClient {
     }
     const origin = this.normalizeBaseUrl(baseUrl);
     const model = (await this.listModels(origin, cancellationToken)).find(item => item.key === modelKey);
-    const options = model?.reasoningOptions ?? [];
+    if (!model) {
+      throw new LmStudioError("invalidResponse", "LM Studioの選択モデルをモデル一覧で確認できません。");
+    }
+    const options = model.reasoningOptions;
+    // LM Studio 0.4.x also serves ordinary models that do not publish a
+    // capabilities.reasoning contract. Missing metadata is not an explicit
+    // rejection of the selected assistance depth, so preserve the prompt and
+    // output budget while using the standard OpenAI-compatible endpoint.
+    if (options === undefined) {
+      return super.createCompletion(origin, modelKey, prompt, referencedFilePaths, cancellationToken);
+    }
     const reasoning = prompt.reasoningEffort === "none" ? "off" : options.includes("on") ? "on" : "high";
     if (!options.includes(reasoning)) {
-      throw new LmStudioError("other", `LM StudioのモデルはThinking設定「${reasoning}」に対応していません。対応モデルを選択してください。`);
+      throw new LmStudioError("unsupportedReasoning", `LM StudioのモデルはThinking設定「${reasoning}」に対応していません。対応モデルを選択してください。`);
     }
     const payload = await this.requestJson(`${origin}/api/v1/chat`, {
       method: "POST", headers: this.createHeaders(),

@@ -1435,6 +1435,20 @@ ul.bullet-list li {
   overflow-wrap: anywhere;
 }
 
+.floating-toast-action {
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+}
+
+.floating-toast-action:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
 .floating-toast-progress {
   position: relative;
   height: 3px;
@@ -1454,6 +1468,13 @@ ul.bullet-list li {
 .floating-toast.progress-running .floating-toast-progress > span {
   width: 38%;
   animation: floating-toast-progress 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-toast.progress-running .floating-toast-progress > span {
+    width: 100%;
+    animation: none;
+  }
 }
 
 .floating-toast.progress-done .floating-toast-progress > span {

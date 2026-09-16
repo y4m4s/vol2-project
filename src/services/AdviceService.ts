@@ -311,8 +311,9 @@ export class AdviceService {
     } catch (error) {
       this.logDiagnostic({ event: "request_failed", provider: model.providerId, model: model.modelId,
         purpose: request.purpose, elapsedMs: Date.now() - startedAt,
-        kind: error instanceof OrcaRouterError ? error.kind : error instanceof Error ? error.name : "unknown",
-        status: error instanceof OrcaRouterError ? error.status : undefined,
+        kind: error instanceof OrcaRouterError || error instanceof OpenAICompatibleError
+          ? error.kind : error instanceof Error ? error.name : "unknown",
+        status: error instanceof OrcaRouterError || error instanceof OpenAICompatibleError ? error.status : undefined,
         code: error instanceof OrcaRouterError ? error.code?.slice(0, 100) : undefined });
       if (this.isCancellation(error, cancellationToken)) {
         return this.cancelledResult();
@@ -710,6 +711,7 @@ export class AdviceService {
       return this.connectionService.getState();
     }
     if (error instanceof OpenAICompatibleError) {
+      if (error.kind === "unsupportedReasoning") return this.connectionService.getState();
       return "unavailable";
     }
     if (error instanceof OrcaRouterError) {
@@ -748,9 +750,11 @@ export class AdviceService {
         case "auth":
           return "LM Studio の認証設定を確認してください。";
         case "unreachable":
-          return "LM Studio サーバーに接続できません。起動状態を確認してください。";
+          return "LM Studio Local Server APIに接続できません。APIの応答状態を確認してください。";
         case "timeout":
           return "LM Studio の応答がタイムアウトしました。";
+        case "unsupportedReasoning":
+          return error.message;
         default:
           return "LM Studio へのリクエストに失敗しました。";
       }

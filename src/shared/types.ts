@@ -289,6 +289,7 @@ export type LmStudioServerState =
   | "stopped"
   | "starting"
   | "running"
+  | "statusMismatch"
   | "portMismatch"
   | "stopping"
   | "authRequired"
@@ -412,6 +413,7 @@ export interface ConversationStreamListItem {
 export interface NavigatorStatusMessage {
   kind: "info" | "warning" | "error";
   text: string;
+  action?: "openConnectionSettings";
 }
 
 export interface AutoAdviceState {

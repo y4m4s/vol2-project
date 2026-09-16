@@ -650,7 +650,7 @@ export class NavigatorController implements vscode.Disposable {
         let activated = false;
         try {
           const localReady = providerId !== "lmStudio" ||
-            await this.lmStudioCoordinator.ensureServerForRoutingConnection();
+            await this.lmStudioCoordinator.checkServerForRoutingConnection();
           if (localReady) {
             const result = await this.connectionService.connectAndActivate(
               { ...settings, providerId },
@@ -1437,10 +1437,12 @@ export class NavigatorController implements vscode.Disposable {
 
     const nextConnectionState = result.connectionState;
     const nextMode = options.kind === "always" ? "manual" : latestState.mode;
+    const lmStudioConnectionFailed = responseModel?.providerId === "lmStudio" &&
+      (nextConnectionState === "unavailable" || nextConnectionState === "disconnected");
 
     this.patchSession({
       connectionState: nextConnectionState,
-      screen: resolveScreenAfterFailure(
+      screen: lmStudioConnectionFailed ? latestState.screen : resolveScreenAfterFailure(
         options.kind,
         latestState.screen,
         nextConnectionState,
@@ -1452,10 +1454,11 @@ export class NavigatorController implements vscode.Disposable {
       activeAdditionalContext: nextActiveAdditionalContext,
       statusMessage: {
         kind: "error",
+        ...(lmStudioConnectionFailed ? { action: "openConnectionSettings" as const } : {}),
         text:
           options.kind === "always"
-            ? `${result.message} 自動助言は停止し、必要時モードに戻しました。`
-            : result.message
+            ? `${result.message} 自動助言は停止し、必要時モードに戻しました。${lmStudioConnectionFailed ? " 接続先を確認してください。" : ""}`
+            : `${result.message}${lmStudioConnectionFailed ? " 接続先を確認してください。" : ""}`
       }
     });
     await this.persistActiveConversationState();

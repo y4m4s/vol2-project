@@ -14,7 +14,8 @@ import {
 import { resolveHomeScreen } from "./NavigationCoordinator";
 import { normalizeAdditionalContext } from "../GuidanceInput";
 import { orcaRouterAccessMessage } from "../../services/OrcaRouterErrorPolicy";
-import { normalizeRoutingSettings } from "../../shared/providerRouting";
+import { normalizeRoutingSettings, PROVIDER_LABELS } from "../../shared/providerRouting";
+import { canFallbackToTestedCopilot } from "../../shared/copilotFallback";
 
 export interface SettingsInput {
   routing?: NavigatorSettings["routing"];
@@ -123,8 +124,10 @@ export class ConnectionSettingsCoordinator {
       this.host.patchSession({
         connectionState: fallback.connectionState,
         requestState: "idle",
-        screen: fallback.connectionState === "connected" ? "main" : resolveHomeScreen(fallback.connectionState),
-        mode: fallback.settings.defaultMode,
+        screen: state.screen,
+        mode: fallback.connectionState === "connected" || fallback.settings.defaultMode !== "always"
+          ? fallback.settings.defaultMode
+          : state.mode,
         assistanceDepth: fallback.settings.defaultAssistanceDepth,
         statusMessage: fallback.statusMessage,
         contextPreview: this.host.collectContextPreview()
@@ -376,7 +379,7 @@ export class ConnectionSettingsCoordinator {
           case "auth":
             return { kind: "error", text: "LM Studio の認証設定を確認してください。" };
           case "unreachable":
-            return { kind: "error", text: "LM Studio サーバーに接続できません。起動状態を確認してください。" };
+            return { kind: "error", text: "LM Studio Local Server APIに接続できません。APIの応答状態を確認してください。" };
           case "timeout":
             return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
           case "noLoadedModel":
@@ -516,30 +519,42 @@ export class ConnectionSettingsCoordinator {
       "lmStudio",
       lmStudioResult.failureState ?? lmStudioResult.connectionState
     );
-    const settings = await this.saveSettingsWithRevision({
-      ...attemptedSettings,
-      providerId: "copilot"
-    });
-
-    if (
-      this.connectionService.getProviderId() !== "copilot" ||
-      this.connectionService.getState() !== "connected"
-    ) {
-      this.connectionService.resetToDisconnected();
-      await this.connectionService.connectAndActivate(settings);
+    const currentSettings = this.settingsService.getSettings();
+    const activeProviderId = this.connectionService.getProviderId();
+    if (this.connectionService.getState() === "connected" && activeProviderId !== "lmStudio") {
+      return {
+        connectionState: "connected",
+        settings: currentSettings,
+        statusMessage: { kind: lmStudioFailure.kind, text: `${lmStudioFailure.text} 現在の${PROVIDER_LABELS[activeProviderId]}接続は維持しました。` }
+      };
     }
 
-    const connectionState = this.connectionService.getState();
-    const copilotConnected =
-      connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
+    if (activeProviderId === "lmStudio" && this.connectionService.getState() === "connected" &&
+      (lmStudioResult.failureState === "unavailable" || lmStudioResult.failureState === "disconnected")) {
+      this.connectionService.markUnavailable();
+    }
+
+    const canFallback = canFallbackToTestedCopilot(
+      attemptedSettings,
+      this.host.getState().conversationHistory,
+      this.connectionService.getTestedModels(attemptedSettings).some(model => model.providerId === "copilot")
+    );
+    if (canFallback && this.connectionService.activateTestedProvider("copilot", attemptedSettings)) {
+      const settings = await this.saveSettingsWithRevision({ ...attemptedSettings, providerId: "copilot" });
+      return {
+        connectionState: "connected",
+        settings,
+        statusMessage: { kind: "warning", text: `${lmStudioFailure.text} 接続確認済みのCopilotに切り替えました。` }
+      };
+    }
+
     return {
-      connectionState,
-      settings,
+      connectionState: this.connectionService.getState(),
+      settings: currentSettings,
       statusMessage: {
         kind: lmStudioFailure.kind,
-        text: copilotConnected
-          ? `${lmStudioFailure.text} Copilotに戻し、接続先設定もCopilotとして保存しました。`
-          : `${lmStudioFailure.text} 接続先設定はCopilotに戻して保存しましたが、Copilotにも接続できませんでした。`
+        text: `${lmStudioFailure.text} 自動切り替えは行っていません。接続先を確認してください。`,
+        action: "openConnectionSettings"
       }
     };
   }

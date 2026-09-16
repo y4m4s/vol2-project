@@ -23,6 +23,8 @@ interface FloatingToastProps {
   persist?: boolean;
   durationMs?: number;
   progress?: "running" | "done";
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 const DEFAULT_DURATION_MS = 2600;
@@ -37,14 +39,16 @@ export function FloatingToast({
   providerIconId,
   persist = false,
   durationMs = DEFAULT_DURATION_MS,
-  progress
+  progress,
+  actionLabel,
+  onAction
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
   const dismissedSignatureRef = useRef<string | undefined>(undefined);
 
   const signature = useMemo(
-    () => [kind, icon ?? providerIconId ?? "", title ?? "", message, progress ?? "", persist ? "persist" : "auto"].join("\n"),
-    [icon, kind, message, persist, progress, providerIconId, title]
+    () => [kind, icon ?? providerIconId ?? "", title ?? "", message, progress ?? "", actionLabel ?? "", persist ? "persist" : "auto"].join("\n"),
+    [actionLabel, icon, kind, message, persist, progress, providerIconId, title]
   );
 
   useEffect(() => {
@@ -107,6 +111,7 @@ export function FloatingToast({
       <div className="floating-toast-body">
         {title && <div className="floating-toast-title">{title}</div>}
         <div className={title ? "floating-toast-desc" : "floating-toast-message"}>{message}</div>
+        {actionLabel && onAction && <button type="button" className="floating-toast-action" onClick={onAction}>{actionLabel}</button>}
         {progress && (
           <div className="floating-toast-progress" aria-hidden="true">
             <span />

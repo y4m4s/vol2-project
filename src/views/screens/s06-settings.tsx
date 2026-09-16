@@ -232,7 +232,6 @@ export function S06Settings() {
         <RoutingSettings value={routing} onChange={setRouting} tested={viewModel?.testedProviderIds ?? []}
           connection={viewModel?.routingProviderConnection}
           localProvidersWithModels={localProvidersWithModels}
-          learning={viewModel?.routingLearning}
           disabled={viewModel?.isBusy ?? false} />
       </div>
 
@@ -1103,6 +1102,7 @@ function LmStudioServerControl({
 }) {
   const isTransitioning = server.state === "checking" || server.state === "starting" || server.state === "stopping";
   const showStop = server.state === "running" ||
+    server.state === "statusMismatch" ||
     server.state === "portMismatch" ||
     server.state === "authRequired" ||
     (server.state === "error" && server.canStop);
@@ -1126,9 +1126,9 @@ function LmStudioServerControl({
     <div className="setting-item lmstudio-server-card" aria-busy={isTransitioning}>
       <SettingTitle
         icon="dns"
-        help="NaviComからLM Studioのローカルサーバーを起動・停止します。停止すると、同じサーバーを使っているほかのアプリの接続にも影響します。"
+        help="NaviComからLM StudioのLocal Server APIを起動・停止します。GUIアプリとLocal Serverは別の状態です。停止すると、同じサーバーを使っているほかのアプリの接続にも影響します。"
       >
-        LM Studio サーバー
+        LM Studio Local Server
       </SettingTitle>
       <div className={`lmstudio-server-status state-${server.state}`} aria-live="polite">
         <span
@@ -1182,6 +1182,7 @@ function LmStudioServerControl({
 // Keep literal icon properties visible to check-icon-subset.mjs.
 const LM_STUDIO_SERVER_ICONS: Record<LmStudioServerViewData["state"], { icon: string }> = {
   running: { icon: "check_circle" },
+  statusMismatch: { icon: "warning" },
   stopped: { icon: "stop" },
   checking: { icon: "progress_activity" },
   starting: { icon: "progress_activity" },
@@ -1196,7 +1197,9 @@ const LM_STUDIO_SERVER_ICONS: Record<LmStudioServerViewData["state"], { icon: st
 function getLmStudioServerStatusText(server: LmStudioServerViewData): string {
   switch (server.state) {
     case "running":
-      return `起動中${server.port ? ` · localhost:${server.port}` : ""}`;
+      return `Local Server API 応答あり${server.port ? ` · localhost:${server.port}` : ""}`;
+    case "statusMismatch":
+      return "Local Server API と CLI の状態が一致していません。";
     case "stopped":
       return "停止中";
     case "starting":

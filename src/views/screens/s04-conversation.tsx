@@ -597,9 +597,12 @@ function ThinkingIndicator() {
       </div>
       <div className="s04-bubble assistant">
         <div className="s04-thinking">
-          <span className="s04-thinking-dot" />
-          <span className="s04-thinking-dot" />
-          <span className="s04-thinking-dot" />
+          <span className="s04-thinking-dots" aria-hidden="true">
+            <span className="s04-thinking-dot" />
+            <span className="s04-thinking-dot" />
+            <span className="s04-thinking-dot" />
+          </span>
+          <span>回答を生成しています</span>
         </div>
       </div>
     </div>
