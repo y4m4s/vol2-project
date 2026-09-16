@@ -1,0 +1,128 @@
+[
+  {
+    "id": "sum-correct",
+    "problemId": "sum",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "Correct O(N) implementation including empty and negative arrays. Return no_advice/none; no next exercise or unnecessary check."
+  },
+  {
+    "id": "sum-bug",
+    "problemId": "sum",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "Loop skips final element. Point to iteration range/count and missing final value in a short hint; no complete corrected expression."
+  },
+  {
+    "id": "sum-incomplete",
+    "problemId": "sum",
+    "category": "automatic_incomplete",
+    "variant": "incomplete",
+    "kind": "always",
+    "expectedFocus": [
+      "continue"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "total remains zero because accumulation is missing. Briefly point to accumulating elements; do not supply completed implementation."
+  },
+  {
+    "id": "lower-bound",
+    "problemId": "lower-bound",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "lower-bound",
+    "problem": {
+      "task": "昇順配列aについて、target以上の最初の要素の添字をsolve(a,target)で返す。該当要素がなければNを返す。",
+      "constraints": "0 <= N <= 100000、aは昇順、重複を許す。添字は0始まり。",
+      "examples": "solve([1, 2, 2, 4], 2) -> 1; solve([1, 3], 5) -> 2"
+    },
+    "question": "solve([1, 2, 2, 4], 2)の戻り値を「結果: 数字」の形で示し、重複がある場合の探索範囲の変化を短く説明して。",
+    "scalarAnswer": 1,
+    "expected": "Result 1. Right moves toward the first qualifying position, not an arbitrary occurrence; duplicate 2 at index2 is not the answer."
+  },
+  {
+    "id": "frequency-bug",
+    "problemId": "frequency",
+    "category": "hint_only",
+    "variant": "buggy",
+    "oracle": "frequency",
+    "problem": {
+      "task": "文字列textに含まれる各文字の出現回数を辞書/オブジェクトとしてsolve(text)で返す。",
+      "constraints": "0 <= length <= 100000。文字は小文字英字のみ。空文字は空の辞書/オブジェクト。",
+      "examples": "solve(\"aba\") -> {\"a\":2,\"b\":1}"
+    },
+    "question": "同じ文字が複数回出ると期待と違います。完成式やコードを示さず、更新方法の着目点を一つだけヒントにしてください。",
+    "noCode": true,
+    "expected": "Every visit overwrites the count with1. Point to retaining/updating previous count rather than resetting. No completed increment/replacement code."
+  },
+  {
+    "id": "pair-bug",
+    "problemId": "pair-existence",
+    "category": "algorithm_bug",
+    "variant": "buggy",
+    "oracle": "pair",
+    "problem": {
+      "task": "昇順配列aの異なる2つの位置から値を選び、和がtargetになる組があるかsolve(a,target)で真偽値を返す。",
+      "constraints": "2 <= N <= 100000、重複可、各値は-1000以上1000以下。",
+      "examples": "solve([1, 2, 4, 7], 6) -> true"
+    },
+    "question": "例の入力で見逃す原因を、和と左右の位置の関係から説明して。修正コードや完成した条件式は不要です。",
+    "noCode": true,
+    "expected": "Pointers move in opposite directions from needed: a too-large sum must be reduced, too-small sum increased. This code on [1,2,4,7],6 returns false although2+4=6. Explain movement relationship, no replacement code."
+  },
+  {
+    "id": "pair-count",
+    "problemId": "pair-count",
+    "category": "complexity",
+    "variant": "correct_slow",
+    "oracle": "pair-count",
+    "problem": {
+      "task": "a[i]+a[j]=targetとなる添字の組(i,j)、i<jの個数をsolve(a,target)で返す。",
+      "constraints": "Nの最大値は200000。値は-1000以上1000以下。重複する値も位置が異なれば別の組。",
+      "examples": "solve([1, 1, 2], 3) -> 2"
+    },
+    "question": "最大入力まで考えるとこの実装は適切ですか。計算量と、次に検討する方針を簡潔に教えて。完成コードは不要です。",
+    "noCode": true,
+    "expected": "Correct result but quadratic pair enumeration (~20 billion checks at N200000). Explain O(N^2) and suggest frequencies/hash or sorting/two pointers without discarding multiplicities. Do not invent exact runtime."
+  },
+  {
+    "id": "unknown-transform",
+    "problemId": "unknown-contract",
+    "category": "uncertainty",
+    "variant": "unknown",
+    "oracle": null,
+    "problem": {
+      "task": "処理済みの整数配列を返すsolve(a)の説明を求めている。",
+      "constraints": "transformの実装・契約・計算量は未提示。Nの上限も未提示。",
+      "examples": "動作例は未提示。"
+    },
+    "question": "このコードは全体でO(N)ですか。提示された情報だけで答えて。",
+    "expected": "Cannot determine complexity without transform contract/implementation. Do not infer sorting, linearity, or external storage from its name."
+  }
+]

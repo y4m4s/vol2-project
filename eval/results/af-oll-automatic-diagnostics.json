@@ -1,0 +1,298 @@
+{
+  "control": "automatic-policy",
+  "runs": [
+    {
+      "run": "eval/results/af-oll-automatic-baseline",
+      "n": 28,
+      "hardPassRate": 0.5714285714285714,
+      "latencyMedianMs": 5650.332650000011,
+      "latencyP95Ms": 9805.819500000041,
+      "inputTokensMean": 1905.7142857142858,
+      "tokensPerSecondMedian": null,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": null,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 40.42857142857143,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 12,
+        "unnecessaryAdvice": 6
+      },
+      "automaticDefective": {
+        "n": 16,
+        "missedBySilence": 6
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 8192
+        }
+      ]
+    },
+    {
+      "run": "eval/results/af-oll-automatic-candidate",
+      "n": 28,
+      "hardPassRate": 0.5714285714285714,
+      "latencyMedianMs": 5422.6116500000135,
+      "latencyP95Ms": 11373.220399999991,
+      "inputTokensMean": 2126.714285714286,
+      "tokensPerSecondMedian": null,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "thinkingObserved": 0,
+      "reasoningTokensMedian": null,
+      "reasoningCharsMedian": 0,
+      "outputTokensMean": 41.67857142857143,
+      "outputLimited": 0,
+      "timeouts": 0,
+      "automaticCorrect": {
+        "n": 12,
+        "unnecessaryAdvice": 5
+      },
+      "automaticDefective": {
+        "n": 16,
+        "missedBySilence": 7
+      },
+      "requestSettings": [
+        {
+          "thinking": "none",
+          "maxOutputTokens": 8192
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "caseId": "alg-sort-bug-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "26b5c8a98a223013622b60c5f87ba9eaeac6d55bbc02a46ba07aa77e97b4b4e3",
+      "baselineRequestHash": "056ac5d335cf52a3821c3b3feb6e93f359dc6fac5d7463f52e248da1ea0eb09d",
+      "candidateRequestHash": "7e7a9ecd39eb6b5e088cd47893d2430f9145bf15f570c3be009ff9e08aee8384"
+    },
+    {
+      "caseId": "alg-bfs-correct-py",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "86b7be229391ffa534fb088c7b61d54907c27ab4473376aa82ac823131a97815",
+      "baselineRequestHash": "882ebb3c75bc9012c9844670e70e615653a0e96242abb6f5b820ed141b500851",
+      "candidateRequestHash": "055f0dc88048aca1bab7005713168fb6b121cbb57e6cdf63a402a239356c9059"
+    },
+    {
+      "caseId": "alg-sort-bug-js",
+      "repeat": 1,
+      "baselineFirst": true,
+      "inputHash": "1e9dc1aef83f61437ea78d179a12a86c080bdbab7713d806601da6035c1f89d7",
+      "baselineRequestHash": "1c24d476188fcd849b32507024a5e8a2a6aa6d9f12153a50257c7bbd0d581eb0",
+      "candidateRequestHash": "5dc1fedd608967423a9fe0edbeda230e94481096e0edc39c4490d4d9d506d934"
+    },
+    {
+      "caseId": "alg-sum-incomplete-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "c8f4c3dd08188c2a190a91d2d69d7a1e6051dc794742bbf3514c81b438cf72ad",
+      "baselineRequestHash": "ca2bc9ca5181ddcbc7c2a607be97dc8596b5e7b56b76f9a6612abac9f23c7e37",
+      "candidateRequestHash": "fa6e23145a5989b77df3e21b38804a651dc98353426497c83f5e807db3800f56"
+    },
+    {
+      "caseId": "alg-sum-incomplete-py",
+      "repeat": 1,
+      "baselineFirst": true,
+      "inputHash": "cdde75139ca5846df88a2c33014e13037a51dcf8b8cacd9dee3b2f91b7434fad",
+      "baselineRequestHash": "3973d21b5156d719b7e078cf5a4ead4473978fc0fb6aafd98b063dcff4321e88",
+      "candidateRequestHash": "43f565fe7201fd270c80ae3c88337e8337583a2d352028ad0b1fa3cb153c44c8"
+    },
+    {
+      "caseId": "alg-sort-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "1e9dc1aef83f61437ea78d179a12a86c080bdbab7713d806601da6035c1f89d7",
+      "baselineRequestHash": "1c24d476188fcd849b32507024a5e8a2a6aa6d9f12153a50257c7bbd0d581eb0",
+      "candidateRequestHash": "5dc1fedd608967423a9fe0edbeda230e94481096e0edc39c4490d4d9d506d934"
+    },
+    {
+      "caseId": "alg-sum-incomplete-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "cdde75139ca5846df88a2c33014e13037a51dcf8b8cacd9dee3b2f91b7434fad",
+      "baselineRequestHash": "3973d21b5156d719b7e078cf5a4ead4473978fc0fb6aafd98b063dcff4321e88",
+      "candidateRequestHash": "43f565fe7201fd270c80ae3c88337e8337583a2d352028ad0b1fa3cb153c44c8"
+    },
+    {
+      "caseId": "alg-stairs-bug-py",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "2d0d0a97bc668143043f295de7ba5409259925186df56747b775490584a95abe",
+      "baselineRequestHash": "3e00ded730f4da7e601692efdcab3776b8aa07815533e87f38a07acde831f2c5",
+      "candidateRequestHash": "24d7fc11bfe88bc2f76898fc9e2cbc34d08a89de4f2b28036042cf40b77a0405"
+    },
+    {
+      "caseId": "alg-stairs-bug-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "2d0d0a97bc668143043f295de7ba5409259925186df56747b775490584a95abe",
+      "baselineRequestHash": "3e00ded730f4da7e601692efdcab3776b8aa07815533e87f38a07acde831f2c5",
+      "candidateRequestHash": "24d7fc11bfe88bc2f76898fc9e2cbc34d08a89de4f2b28036042cf40b77a0405"
+    },
+    {
+      "caseId": "alg-sum-incomplete-js",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "c8f4c3dd08188c2a190a91d2d69d7a1e6051dc794742bbf3514c81b438cf72ad",
+      "baselineRequestHash": "ca2bc9ca5181ddcbc7c2a607be97dc8596b5e7b56b76f9a6612abac9f23c7e37",
+      "candidateRequestHash": "fa6e23145a5989b77df3e21b38804a651dc98353426497c83f5e807db3800f56"
+    },
+    {
+      "caseId": "alg-sort-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "dba4653b783ed65f0b5a4a392518f5903640fa70b7af6a9e81a18a21a483574f",
+      "baselineRequestHash": "5d95ca312a84a772427c1999e76c6e931e917fe488abfa58661e6d5c8ca5cc02",
+      "candidateRequestHash": "5117d49eb3c02a01687f15e207421d9827aef1c178a7b76f6cdf2cce22e84f43"
+    },
+    {
+      "caseId": "alg-prefix-bug-js",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "fd428a9b48c3ff4575e9f36d343dcb5cf27c6e2f3a3bfbfd9c69bc47f886d797",
+      "baselineRequestHash": "d61289a2c81747592cf9a1b29b7528b61fbfa2798e1d320c3e16ecb336ea85f5",
+      "candidateRequestHash": "934d2e95b83f4dc622d3386d8e0f72b3ca8c34e5f9d6abd22bcb868f3a7ab5ba"
+    },
+    {
+      "caseId": "alg-prefix-correct-js",
+      "repeat": 1,
+      "baselineFirst": true,
+      "inputHash": "3e3b3d9cb4f0b2bf53e89f2d0f5b05604bbd3401d677aefb7f9d4b523bed1582",
+      "baselineRequestHash": "5bc346be11d097f245320056f2f55181493dd0615b4f6613432a656bd1a4ab59",
+      "candidateRequestHash": "309bd8f1bab1f41eef8344ed5490ad74691466cd0497d5ed1cb79811344078f2"
+    },
+    {
+      "caseId": "alg-bfs-correct-js",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "c6c77d190401e796c228ac10f2d097b849fd9941f435b560c81d68ab914dfde8",
+      "baselineRequestHash": "86300091602d4374b33df22e9a30483b741d5a49f7a0612fc402a2294b744bb1",
+      "candidateRequestHash": "c1797ff0bf283b71e533115161c336957dbcf1ce847bf2be55d3adfd8dae9b50"
+    },
+    {
+      "caseId": "alg-prefix-correct-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "3e3b3d9cb4f0b2bf53e89f2d0f5b05604bbd3401d677aefb7f9d4b523bed1582",
+      "baselineRequestHash": "5bc346be11d097f245320056f2f55181493dd0615b4f6613432a656bd1a4ab59",
+      "candidateRequestHash": "309bd8f1bab1f41eef8344ed5490ad74691466cd0497d5ed1cb79811344078f2"
+    },
+    {
+      "caseId": "alg-sort-correct-js",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "783faf4a1869c7a10e0aae0360cdf8c6bf4ad965b5ba788da303b6a096860841",
+      "baselineRequestHash": "0451dc8e9e504c3395425c810822838ff9554b22fb700f488038e85c3ed5ea51",
+      "candidateRequestHash": "c562333098846707adde802af28ee6a69311915e9c6591fb64238d9db26a3b48"
+    },
+    {
+      "caseId": "alg-sort-correct-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "783faf4a1869c7a10e0aae0360cdf8c6bf4ad965b5ba788da303b6a096860841",
+      "baselineRequestHash": "0451dc8e9e504c3395425c810822838ff9554b22fb700f488038e85c3ed5ea51",
+      "candidateRequestHash": "c562333098846707adde802af28ee6a69311915e9c6591fb64238d9db26a3b48"
+    },
+    {
+      "caseId": "alg-prefix-bug-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "fd428a9b48c3ff4575e9f36d343dcb5cf27c6e2f3a3bfbfd9c69bc47f886d797",
+      "baselineRequestHash": "d61289a2c81747592cf9a1b29b7528b61fbfa2798e1d320c3e16ecb336ea85f5",
+      "candidateRequestHash": "934d2e95b83f4dc622d3386d8e0f72b3ca8c34e5f9d6abd22bcb868f3a7ab5ba"
+    },
+    {
+      "caseId": "alg-stairs-bug-js",
+      "repeat": 1,
+      "baselineFirst": true,
+      "inputHash": "baaea32dcb066476eab7e936e4cbb5ef548c75a0481a44a1c0bceb46adb92034",
+      "baselineRequestHash": "e34264052c7e740eba86f5f7c844aa3d29b94275468de80365a9071a6fe4f894",
+      "candidateRequestHash": "710725a7e5c431c59c220daee1fc6448f8975e3a1cfb33af723dfb4b92814691"
+    },
+    {
+      "caseId": "alg-prefix-bug-py",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "3a9c24ce976daded7c3723b0d824dabcac0cf0c7a5e6d1c72d245eb876e0d131",
+      "baselineRequestHash": "ecf478abcd5a8106e0c0bc2a2405c131a957268b27f4db69852048b3e89fd1a4",
+      "candidateRequestHash": "5cd7e178a1486647a7fa87dd0c4712539308bf63646f8307efe898d9ddedf3fb"
+    },
+    {
+      "caseId": "alg-sort-correct-py",
+      "repeat": 1,
+      "baselineFirst": true,
+      "inputHash": "dba4653b783ed65f0b5a4a392518f5903640fa70b7af6a9e81a18a21a483574f",
+      "baselineRequestHash": "5d95ca312a84a772427c1999e76c6e931e917fe488abfa58661e6d5c8ca5cc02",
+      "candidateRequestHash": "5117d49eb3c02a01687f15e207421d9827aef1c178a7b76f6cdf2cce22e84f43"
+    },
+    {
+      "caseId": "alg-prefix-correct-py",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "4b4e45ca972df370f5675f33219f5e0a463dc040a5154c324ce68f4d8eda8566",
+      "baselineRequestHash": "f7055be4ff83df6fc7ad8b6d3c3ef78d599b1468b44aeec55f1879ab82bc3694",
+      "candidateRequestHash": "cc23dd31ea2acf1c22920152abdda43e311e3fc6f6ab49e154cba88b1294e6a9"
+    },
+    {
+      "caseId": "alg-stairs-bug-js",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "baaea32dcb066476eab7e936e4cbb5ef548c75a0481a44a1c0bceb46adb92034",
+      "baselineRequestHash": "e34264052c7e740eba86f5f7c844aa3d29b94275468de80365a9071a6fe4f894",
+      "candidateRequestHash": "710725a7e5c431c59c220daee1fc6448f8975e3a1cfb33af723dfb4b92814691"
+    },
+    {
+      "caseId": "alg-sort-bug-py",
+      "repeat": 1,
+      "baselineFirst": false,
+      "inputHash": "26b5c8a98a223013622b60c5f87ba9eaeac6d55bbc02a46ba07aa77e97b4b4e3",
+      "baselineRequestHash": "056ac5d335cf52a3821c3b3feb6e93f359dc6fac5d7463f52e248da1ea0eb09d",
+      "candidateRequestHash": "7e7a9ecd39eb6b5e088cd47893d2430f9145bf15f570c3be009ff9e08aee8384"
+    },
+    {
+      "caseId": "alg-prefix-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "4b4e45ca972df370f5675f33219f5e0a463dc040a5154c324ce68f4d8eda8566",
+      "baselineRequestHash": "f7055be4ff83df6fc7ad8b6d3c3ef78d599b1468b44aeec55f1879ab82bc3694",
+      "candidateRequestHash": "cc23dd31ea2acf1c22920152abdda43e311e3fc6f6ab49e154cba88b1294e6a9"
+    },
+    {
+      "caseId": "alg-prefix-bug-py",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "3a9c24ce976daded7c3723b0d824dabcac0cf0c7a5e6d1c72d245eb876e0d131",
+      "baselineRequestHash": "ecf478abcd5a8106e0c0bc2a2405c131a957268b27f4db69852048b3e89fd1a4",
+      "candidateRequestHash": "5cd7e178a1486647a7fa87dd0c4712539308bf63646f8307efe898d9ddedf3fb"
+    },
+    {
+      "caseId": "alg-bfs-correct-py",
+      "repeat": 0,
+      "baselineFirst": true,
+      "inputHash": "86b7be229391ffa534fb088c7b61d54907c27ab4473376aa82ac823131a97815",
+      "baselineRequestHash": "882ebb3c75bc9012c9844670e70e615653a0e96242abb6f5b820ed141b500851",
+      "candidateRequestHash": "055f0dc88048aca1bab7005713168fb6b121cbb57e6cdf63a402a239356c9059"
+    },
+    {
+      "caseId": "alg-bfs-correct-js",
+      "repeat": 0,
+      "baselineFirst": false,
+      "inputHash": "c6c77d190401e796c228ac10f2d097b849fd9941f435b560c81d68ab914dfde8",
+      "baselineRequestHash": "86300091602d4374b33df22e9a30483b741d5a49f7a0612fc402a2294b744bb1",
+      "candidateRequestHash": "c1797ff0bf283b71e533115161c336957dbcf1ce847bf2be55d3adfd8dae9b50"
+    }
+  ],
+  "latencyRatio": 0.9596977710683995,
+  "balancedFirstArm": true,
+  "note": "Mechanical diagnostics only. Semantic judgments required. Timeout without received reasoning counters is unknown, not proof Thinking was off."
+}

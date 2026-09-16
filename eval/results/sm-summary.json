@@ -1,0 +1,1178 @@
+{
+  "summaries": [
+    {
+      "name": "sm-context-comparison",
+      "baseline": "eval/results/sm-lm-viewport",
+      "candidate": "eval/results/sm-lm-file",
+      "winRate": 0.6833333333333333,
+      "ci95": {
+        "low": 0.55,
+        "high": 0.8166666666666667,
+        "unit": "case",
+        "cases": 10,
+        "iterations": 5000
+      },
+      "wins": 15,
+      "ties": 11,
+      "losses": 4,
+      "axes": {
+        "correctness": {
+          "baseline": 2.433333333333333,
+          "candidate": 3.066666666666667,
+          "delta": 0.6333333333333333
+        },
+        "groundedness": {
+          "baseline": 3.2,
+          "candidate": 3.3,
+          "delta": 0.1
+        },
+        "context_utilization": {
+          "baseline": 2.6,
+          "candidate": 3.433333333333333,
+          "delta": 0.8333333333333334
+        },
+        "hallucination": {
+          "baseline": 3.6,
+          "candidate": 3.7666666666666666,
+          "delta": 0.16666666666666666
+        },
+        "instruction_following": {
+          "baseline": 3.033333333333333,
+          "candidate": 3.566666666666667,
+          "delta": 0.5333333333333333
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.8,
+          "candidate": 3.1666666666666665,
+          "delta": 0.36666666666666664
+        },
+        "actionability": {
+          "baseline": 3.066666666666667,
+          "candidate": 3.466666666666667,
+          "delta": 0.4
+        },
+        "conciseness": {
+          "baseline": 3.933333333333333,
+          "candidate": 4,
+          "delta": 0.06666666666666667
+        },
+        "japanese_quality": {
+          "baseline": 3.8666666666666667,
+          "candidate": 3.933333333333333,
+          "delta": 0.06666666666666667
+        }
+      },
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": true,
+        "qualityCI": true,
+        "latency": false
+      },
+      "latency": {
+        "baseline": {
+          "n": 30,
+          "hardPassRate": 1,
+          "latencyMedianMs": 4558.759900000001,
+          "latencyP95Ms": 10984.963999999993,
+          "inputTokensMean": 615.4,
+          "tokensPerSecondMedian": 15.72038943387308,
+          "loadMedianMs": null,
+          "loadMaxMs": null,
+          "pipelineFailures": {
+            "missing_context": 9
+          }
+        },
+        "candidate": {
+          "n": 30,
+          "hardPassRate": 1,
+          "latencyMedianMs": 6171.371899999998,
+          "latencyP95Ms": 15855.408500000005,
+          "inputTokensMean": 996.4375,
+          "tokensPerSecondMedian": 15.612321877677124,
+          "loadMedianMs": null,
+          "loadMaxMs": null,
+          "pipelineFailures": {}
+        }
+      },
+      "failures": {
+        "weak_pedagogy": 3,
+        "incorrect_code_reasoning": 10,
+        "ignored_context": 3,
+        "hallucination": 5
+      }
+    },
+    {
+      "name": "sm-temperature-comparison",
+      "baseline": "eval/results/sm-lm-file",
+      "candidate": "eval/results/sm-lm-temp02",
+      "winRate": 0.5333333333333333,
+      "ci95": {
+        "low": 0.3833333333333333,
+        "high": 0.6500000000000001,
+        "unit": "case",
+        "cases": 10,
+        "iterations": 5000
+      },
+      "wins": 8,
+      "ties": 16,
+      "losses": 6,
+      "axes": {
+        "correctness": {
+          "baseline": 3.066666666666667,
+          "candidate": 3.1333333333333333,
+          "delta": 0.06666666666666667
+        },
+        "groundedness": {
+          "baseline": 3.3,
+          "candidate": 3.4,
+          "delta": 0.1
+        },
+        "context_utilization": {
+          "baseline": 3.433333333333333,
+          "candidate": 3.5,
+          "delta": 0.06666666666666667
+        },
+        "hallucination": {
+          "baseline": 3.7666666666666666,
+          "candidate": 3.8,
+          "delta": 0.03333333333333333
+        },
+        "instruction_following": {
+          "baseline": 3.566666666666667,
+          "candidate": 3.3,
+          "delta": -0.26666666666666666
+        },
+        "pedagogical_usefulness": {
+          "baseline": 3.1666666666666665,
+          "candidate": 3.2333333333333334,
+          "delta": 0.06666666666666667
+        },
+        "actionability": {
+          "baseline": 3.466666666666667,
+          "candidate": 3.5,
+          "delta": 0.03333333333333333
+        },
+        "conciseness": {
+          "baseline": 4,
+          "candidate": 4,
+          "delta": 0
+        },
+        "japanese_quality": {
+          "baseline": 3.933333333333333,
+          "candidate": 3.966666666666667,
+          "delta": 0.03333333333333333
+        }
+      },
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": false,
+        "qualityCI": false,
+        "latency": true
+      },
+      "latency": {
+        "baseline": {
+          "n": 30,
+          "hardPassRate": 1,
+          "latencyMedianMs": 6171.371899999998,
+          "latencyP95Ms": 15855.408500000005,
+          "inputTokensMean": 996.4375,
+          "tokensPerSecondMedian": 15.612321877677124,
+          "loadMedianMs": null,
+          "loadMaxMs": null,
+          "pipelineFailures": {}
+        },
+        "candidate": {
+          "n": 30,
+          "hardPassRate": 1,
+          "latencyMedianMs": 6528.88005,
+          "latencyP95Ms": 18618.921100000007,
+          "inputTokensMean": 1005.2903225806451,
+          "tokensPerSecondMedian": 13.994308794499455,
+          "loadMedianMs": null,
+          "loadMaxMs": null,
+          "pipelineFailures": {}
+        }
+      },
+      "failures": {
+        "incorrect_code_reasoning": 9,
+        "ignored_context": 3,
+        "weak_pedagogy": 6,
+        "hallucination": 3
+      }
+    },
+    {
+      "name": "sm-oll-transport-comparison",
+      "baseline": "eval/results/sm-oll-file-openai",
+      "candidate": "eval/results/sm-oll-file4",
+      "winRate": 0.4444444444444444,
+      "ci95": {
+        "low": 0.3333333333333333,
+        "high": 0.5,
+        "unit": "case",
+        "cases": 3,
+        "iterations": 5000
+      },
+      "wins": 1,
+      "ties": 6,
+      "losses": 2,
+      "axes": {
+        "correctness": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.111111111111111,
+          "delta": -0.2222222222222222
+        },
+        "groundedness": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.3333333333333335,
+          "delta": 0
+        },
+        "context_utilization": {
+          "baseline": 3.6666666666666665,
+          "candidate": 3.6666666666666665,
+          "delta": 0
+        },
+        "hallucination": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.3333333333333335,
+          "delta": 0
+        },
+        "instruction_following": {
+          "baseline": 4,
+          "candidate": 4,
+          "delta": 0
+        },
+        "pedagogical_usefulness": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.111111111111111,
+          "delta": -0.2222222222222222
+        },
+        "actionability": {
+          "baseline": 3.5555555555555554,
+          "candidate": 3.5555555555555554,
+          "delta": 0
+        },
+        "conciseness": {
+          "baseline": 3.7777777777777777,
+          "candidate": 3.7777777777777777,
+          "delta": 0
+        },
+        "japanese_quality": {
+          "baseline": 4,
+          "candidate": 3.7777777777777777,
+          "delta": -0.2222222222222222
+        }
+      },
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": true,
+        "qualityCI": false,
+        "latency": true
+      },
+      "latency": {
+        "baseline": {
+          "n": 9,
+          "hardPassRate": 1,
+          "latencyMedianMs": 7804.795900000001,
+          "latencyP95Ms": 28008.329500000007,
+          "inputTokensMean": 1557.6666666666667,
+          "tokensPerSecondMedian": null,
+          "loadMedianMs": null,
+          "loadMaxMs": null,
+          "pipelineFailures": {}
+        },
+        "candidate": {
+          "n": 9,
+          "hardPassRate": 1,
+          "latencyMedianMs": 8613.085599999995,
+          "latencyP95Ms": 19455.406799999997,
+          "inputTokensMean": 1557.6666666666667,
+          "tokensPerSecondMedian": 14.516019904169665,
+          "loadMedianMs": 3.4545,
+          "loadMaxMs": 4.4882,
+          "pipelineFailures": {}
+        }
+      },
+      "failures": {
+        "incorrect_code_reasoning": 4,
+        "japanese": 1,
+        "excessive_verbosity": 1
+      }
+    },
+    {
+      "name": "sm-oll-context-comparison",
+      "baseline": "eval/results/sm-oll-file4",
+      "candidate": "eval/results/sm-oll-file8",
+      "winRate": 0.5555555555555556,
+      "ci95": {
+        "low": 0.5,
+        "high": 0.6666666666666666,
+        "unit": "case",
+        "cases": 3,
+        "iterations": 5000
+      },
+      "wins": 2,
+      "ties": 6,
+      "losses": 1,
+      "axes": {
+        "correctness": {
+          "baseline": 3.111111111111111,
+          "candidate": 3.3333333333333335,
+          "delta": 0.2222222222222222
+        },
+        "groundedness": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.3333333333333335,
+          "delta": 0
+        },
+        "context_utilization": {
+          "baseline": 3.6666666666666665,
+          "candidate": 3.6666666666666665,
+          "delta": 0
+        },
+        "hallucination": {
+          "baseline": 3.3333333333333335,
+          "candidate": 3.3333333333333335,
+          "delta": 0
+        },
+        "instruction_following": {
+          "baseline": 4,
+          "candidate": 4,
+          "delta": 0
+        },
+        "pedagogical_usefulness": {
+          "baseline": 3.111111111111111,
+          "candidate": 3.3333333333333335,
+          "delta": 0.2222222222222222
+        },
+        "actionability": {
+          "baseline": 3.5555555555555554,
+          "candidate": 3.6666666666666665,
+          "delta": 0.1111111111111111
+        },
+        "conciseness": {
+          "baseline": 3.7777777777777777,
+          "candidate": 3.7777777777777777,
+          "delta": 0
+        },
+        "japanese_quality": {
+          "baseline": 3.7777777777777777,
+          "candidate": 4,
+          "delta": 0.2222222222222222
+        }
+      },
+      "gates": {
+        "noNewHardFailures": true,
+        "criticalAxes": true,
+        "qualityCI": false,
+        "latency": true
+      },
+      "latency": {
+        "baseline": {
+          "n": 9,
+          "hardPassRate": 1,
+          "latencyMedianMs": 8613.085599999995,
+          "latencyP95Ms": 19455.406799999997,
+          "inputTokensMean": 1557.6666666666667,
+          "tokensPerSecondMedian": 14.516019904169665,
+          "loadMedianMs": 3.4545,
+          "loadMaxMs": 4.4882,
+          "pipelineFailures": {}
+        },
+        "candidate": {
+          "n": 9,
+          "hardPassRate": 1,
+          "latencyMedianMs": 9514.819300000003,
+          "latencyP95Ms": 39062.5423,
+          "inputTokensMean": 1557.6666666666667,
+          "tokensPerSecondMedian": 12.233145138169066,
+          "loadMedianMs": 6.0861,
+          "loadMaxMs": 8959.0705,
+          "pipelineFailures": {}
+        }
+      },
+      "failures": {
+        "incorrect_code_reasoning": 3,
+        "excessive_verbosity": 1
+      }
+    }
+  ],
+  "context": {
+    "runs": [
+      {
+        "name": "sm-oll-file-openai",
+        "allocation": 4096,
+        "n": 9,
+        "hardPassRate": 1,
+        "latencyMedianMs": 7804.795900000001,
+        "latencyP95Ms": 28008.329500000007,
+        "inputTokensMean": 1557.6666666666667,
+        "tokensPerSecondMedian": null,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {},
+        "meanCorrectness": 3.3333333333333335,
+        "promptObservations": [
+          {
+            "caseId": "sm-additional",
+            "repeat": 1,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 79,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 0,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 127,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 2,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 46,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 2,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 76,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 1,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 181,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 0,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 49,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 2,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 96,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 0,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 95,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 1,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 50,
+            "evidencePresent": null
+          }
+        ]
+      },
+      {
+        "name": "sm-oll-file4",
+        "allocation": 4096,
+        "n": 9,
+        "hardPassRate": 1,
+        "latencyMedianMs": 8613.085599999995,
+        "latencyP95Ms": 19455.406799999997,
+        "inputTokensMean": 1557.6666666666667,
+        "tokensPerSecondMedian": 14.516019904169665,
+        "loadMedianMs": 3.4545,
+        "loadMaxMs": 4.4882,
+        "pipelineFailures": {},
+        "meanCorrectness": 3.111111111111111,
+        "promptObservations": [
+          {
+            "caseId": "sm-format",
+            "repeat": 0,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 95,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 0,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 46,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 2,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 46,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 1,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 46,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 0,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 118,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 1,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 93,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 1,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 101,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 2,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 165,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 2,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 179,
+            "evidencePresent": null
+          }
+        ]
+      },
+      {
+        "name": "sm-oll-file8",
+        "allocation": 8192,
+        "n": 9,
+        "hardPassRate": 1,
+        "latencyMedianMs": 9514.819300000003,
+        "latencyP95Ms": 39062.5423,
+        "inputTokensMean": 1557.6666666666667,
+        "tokensPerSecondMedian": 12.233145138169066,
+        "loadMedianMs": 6.0861,
+        "loadMaxMs": 8959.0705,
+        "pipelineFailures": {},
+        "meanCorrectness": 3.3333333333333335,
+        "promptObservations": [
+          {
+            "caseId": "sm-format",
+            "repeat": 0,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 199,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 1,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 71,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 2,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 97,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 0,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 79,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 2,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 46,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 1,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 47,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-format",
+            "repeat": 1,
+            "promptHash": "47ea8b901868101654efd2be89b88b24af713b448f3274256a7f0f08bd907072",
+            "estimate": 3119,
+            "processed": 3385,
+            "output": 103,
+            "evidencePresent": true
+          },
+          {
+            "caseId": "sm-explain",
+            "repeat": 0,
+            "promptHash": "25b466fe5fe22a9ffe8122107f3ccd09330f93d611d350250680bfca4f5aead5",
+            "estimate": 959,
+            "processed": 631,
+            "output": 59,
+            "evidencePresent": null
+          },
+          {
+            "caseId": "sm-additional",
+            "repeat": 2,
+            "promptHash": "10dd395933d46f39680cacecc3dfebe1f8beb622d7fe9b708be0abf0333d607b",
+            "estimate": 966,
+            "processed": 657,
+            "output": 71,
+            "evidencePresent": null
+          }
+        ]
+      }
+    ],
+    "identicalPromptAndProcessedTokens": true,
+    "observedCorrectnessLatencyFrontier": [
+      "sm-oll-file-openai"
+    ],
+    "limitations": "3 cases x3, serial blocks; cache/cold load/order not counterbalanced. Processed tokens are not a tokenizer proof of no truncation. Frontier uses mean correctness, not every rubric axis."
+  },
+  "groups": {
+    "sm-lm-viewport": {
+      "changedInputs": {
+        "n": 9,
+        "medianMs": 5739.514300000003,
+        "p95Ms": 10984.963999999993,
+        "evidenceRate": 0
+      },
+      "identicalInputs": {
+        "n": 21,
+        "medianMs": 4502.2427000000025,
+        "p95Ms": 10874.66380000001,
+        "evidenceRate": null
+      }
+    },
+    "sm-lm-file": {
+      "changedInputs": {
+        "n": 9,
+        "medianMs": 10991.989899999986,
+        "p95Ms": 15855.408500000005,
+        "evidenceRate": 1
+      },
+      "identicalInputs": {
+        "n": 21,
+        "medianMs": 4328.560500000021,
+        "p95Ms": 10202.411200000002,
+        "evidenceRate": null
+      }
+    }
+  },
+  "holdout": [
+    {
+      "name": "sm-lm-file-holdout",
+      "judge": {
+        "id": "Codex-manual",
+        "candidateModel": false,
+        "independent": false,
+        "limitations": "同じCodexが設計・評価。候補固定後に一度確認、holdout内容への再チューニングなし。"
+      },
+      "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+      "scores": {
+        "correctness": 3.3333333333333335,
+        "groundedness": 3.5,
+        "context_utilization": 3.6666666666666665,
+        "hallucination": 3.6666666666666665,
+        "instruction_following": 3.6666666666666665,
+        "pedagogical_usefulness": 3.3333333333333335,
+        "actionability": 3.5,
+        "conciseness": 3.8333333333333335,
+        "japanese_quality": 3.8333333333333335
+      },
+      "cases": [
+        {
+          "caseId": "smh-hint",
+          "repeat": 0,
+          "caseHash": "683433036339bf236d28691010aaa5e800b6a77d6730dd66f2147399bb24be6f",
+          "answerHash": "cd84af99e553224d4ec3178e03acff11b390a9362e67d422a3ac9168f607a5c2",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "groundedness": "提示コードとの整合 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "context_utilization": "必要文脈の利用 3/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "hallucination": "未提示の事実の追加 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "instruction_following": "質問の条件の遵守 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "pedagogical_usefulness": "学習への助け 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "actionability": "質問に対する具体性 3/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "conciseness": "長さと関連性 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+            "japanese_quality": "日本語の明瞭さ 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ],
+          "meetsTask": false
+        },
+        {
+          "caseId": "smh-order",
+          "repeat": 0,
+          "caseHash": "29d4634745a23be52156c7ec32bab1204a0a59346135dd45d19dd55ec33c2b8c",
+          "answerHash": "2ff502bfb42ad4f58803508b64d77942fa5b74511102cad2fa10205f683406ac",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 3,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "groundedness": "提示コードとの整合 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "context_utilization": "必要文脈の利用 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "hallucination": "未提示の事実の追加 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "instruction_following": "質問の条件の遵守 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "pedagogical_usefulness": "学習への助け 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "actionability": "質問に対する具体性 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "conciseness": "長さと関連性 3/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-spec",
+          "repeat": 0,
+          "caseHash": "5d11f811b4dd66ff5e5bd937c45a7c9073bfac86b238d28d65208a9400844b79",
+          "answerHash": "bc586f25b310658bce5d31cf8ff0155d5f295180dac9e9cafdd61fb5a0e62dad",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 2,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 2,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "groundedness": "提示コードとの整合 3/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "context_utilization": "必要文脈の利用 3/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "hallucination": "未提示の事実の追加 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "instruction_following": "質問の条件の遵守 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "pedagogical_usefulness": "学習への助け 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "actionability": "質問に対する具体性 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "conciseness": "長さと関連性 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+            "japanese_quality": "日本語の明瞭さ 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。"
+          },
+          "failures": [
+            "ignored_context",
+            "weak_pedagogy"
+          ],
+          "meetsTask": false
+        },
+        {
+          "caseId": "smh-tag",
+          "repeat": 0,
+          "caseHash": "2636c00a93d9b592901e9f5d1fc984e6668c0e06ef8acef16cf6a0774144f541",
+          "answerHash": "61e1b6c6375d10cc04ad329395a263126e558b705576fe0f335e3a047dd464fd",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "groundedness": "提示コードとの整合 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "context_utilization": "必要文脈の利用 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "hallucination": "未提示の事実の追加 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "instruction_following": "質問の条件の遵守 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "actionability": "質問に対する具体性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "conciseness": "長さと関連性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-range",
+          "repeat": 0,
+          "caseHash": "964e304ea9776fe35d0017df0fd6e58cb30a66fb17fed39ad8fb8e305abc2683",
+          "answerHash": "090bcb606f2d4811b79f251e4005f91bc3eb076d4946efff0bdc360ae2d9b276",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "groundedness": "提示コードとの整合 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "context_utilization": "必要文脈の利用 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "hallucination": "未提示の事実の追加 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "instruction_following": "質問の条件の遵守 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "pedagogical_usefulness": "学習への助け 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "actionability": "質問に対する具体性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "conciseness": "長さと関連性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+            "japanese_quality": "日本語の明瞭さ 3/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-contract",
+          "repeat": 0,
+          "caseHash": "e791629b9b3ad2d3ff1ca465960001a6177c451e238e95bbea06d839967a75a3",
+          "answerHash": "120ad1457574c2d2ab0bd9553f4cb6856a0ee1e78de799b1ae0b7d279b050d0f",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "groundedness": "提示コードとの整合 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "context_utilization": "必要文脈の利用 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "hallucination": "未提示の事実の追加 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "instruction_following": "質問の条件の遵守 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "pedagogical_usefulness": "学習への助け 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "actionability": "質問に対する具体性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "conciseness": "長さと関連性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。"
+          },
+          "failures": [],
+          "meetsTask": true
+        }
+      ],
+      "meetsTask": 4,
+      "n": 6,
+      "hardPassRate": 1,
+      "latencyMedianMs": 7062.2931499999995,
+      "latencyP95Ms": 14215.840800000002,
+      "inputTokensMean": 905,
+      "tokensPerSecondMedian": 13.902056174477643,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {}
+    },
+    {
+      "name": "sm-oll-file-openai-holdout",
+      "judge": {
+        "id": "Codex-manual",
+        "candidateModel": false,
+        "independent": false,
+        "limitations": "同じCodexが設計・評価。候補固定後に一度確認、holdout内容への再チューニングなし。"
+      },
+      "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+      "scores": {
+        "correctness": 3.3333333333333335,
+        "groundedness": 3.3333333333333335,
+        "context_utilization": 3.6666666666666665,
+        "hallucination": 3.3333333333333335,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 3.3333333333333335,
+        "actionability": 3.6666666666666665,
+        "conciseness": 3.8333333333333335,
+        "japanese_quality": 3.8333333333333335
+      },
+      "cases": [
+        {
+          "caseId": "smh-tag",
+          "repeat": 0,
+          "caseHash": "2636c00a93d9b592901e9f5d1fc984e6668c0e06ef8acef16cf6a0774144f541",
+          "answerHash": "10ba7a0cd68e6f30a0c9c3723c683ffbd4fafaeab12cdc5bfbda09fe7227bce2",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "groundedness": "提示コードとの整合 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "context_utilization": "必要文脈の利用 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "hallucination": "未提示の事実の追加 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "instruction_following": "質問の条件の遵守 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "actionability": "質問に対する具体性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "conciseness": "長さと関連性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-contract",
+          "repeat": 0,
+          "caseHash": "e791629b9b3ad2d3ff1ca465960001a6177c451e238e95bbea06d839967a75a3",
+          "answerHash": "5bb8ba0dece4935b8156295b8662860feba6ff9dead09bc24ec246c8e3c722ae",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "groundedness": "提示コードとの整合 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "context_utilization": "必要文脈の利用 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "hallucination": "未提示の事実の追加 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "instruction_following": "質問の条件の遵守 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "pedagogical_usefulness": "学習への助け 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "actionability": "質問に対する具体性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "conciseness": "長さと関連性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+            "japanese_quality": "日本語の明瞭さ 3/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-order",
+          "repeat": 0,
+          "caseHash": "29d4634745a23be52156c7ec32bab1204a0a59346135dd45d19dd55ec33c2b8c",
+          "answerHash": "1f47fd68c10dec8dae1506147a0cc9502393cae667fd47311bfc3d49a3c46ab3",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 3,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "groundedness": "提示コードとの整合 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "context_utilization": "必要文脈の利用 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "hallucination": "未提示の事実の追加 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "instruction_following": "質問の条件の遵守 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "actionability": "質問に対する具体性 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "conciseness": "長さと関連性 3/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-range",
+          "repeat": 0,
+          "caseHash": "964e304ea9776fe35d0017df0fd6e58cb30a66fb17fed39ad8fb8e305abc2683",
+          "answerHash": "b22eae12ddded89f08d37a8b6935db2bacf9de9c0e892ff86de47e29e29970aa",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "actionability": "質問に対する具体性 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "conciseness": "長さと関連性 4/4。score=10を正答し、関数の境界も正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。score=10を正答し、関数の境界も正しく説明。"
+          },
+          "failures": [],
+          "meetsTask": true
+        },
+        {
+          "caseId": "smh-hint",
+          "repeat": 0,
+          "caseHash": "683433036339bf236d28691010aaa5e800b6a77d6730dd66f2147399bb24be6f",
+          "answerHash": "3fe64cbf599bf8c4c6991607cd7edb2f5021d691144014acbd96b5dd1ceb86a3",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "groundedness": "提示コードとの整合 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "context_utilization": "必要文脈の利用 3/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "hallucination": "未提示の事実の追加 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "instruction_following": "質問の条件の遵守 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "pedagogical_usefulness": "学習への助け 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "actionability": "質問に対する具体性 3/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "conciseness": "長さと関連性 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+            "japanese_quality": "日本語の明瞭さ 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ],
+          "meetsTask": false
+        },
+        {
+          "caseId": "smh-spec",
+          "repeat": 0,
+          "caseHash": "5d11f811b4dd66ff5e5bd937c45a7c9073bfac86b238d28d65208a9400844b79",
+          "answerHash": "63353a6749e979b6b8775cbc21bc31fadc8ffadd17d00b1744b16cb5ab912ffc",
+          "hardPassed": true,
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "groundedness": "提示コードとの整合 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "context_utilization": "必要文脈の利用 3/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "hallucination": "未提示の事実の追加 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "instruction_following": "質問の条件の遵守 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "pedagogical_usefulness": "学習への助け 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "actionability": "質問に対する具体性 3/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "conciseness": "長さと関連性 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+            "japanese_quality": "日本語の明瞭さ 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ],
+          "meetsTask": false
+        }
+      ],
+      "meetsTask": 4,
+      "n": 6,
+      "hardPassRate": 1,
+      "latencyMedianMs": 8786.664149999999,
+      "latencyP95Ms": 22322.8537,
+      "inputTokensMean": 915,
+      "tokensPerSecondMedian": null,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {}
+    }
+  ]
+}

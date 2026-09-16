@@ -1,0 +1,7 @@
+[
+{"pairId":"7878810614379a87","verdict":"tie","reason":"両方ともSetの挿入順を誤説明。","B":{"scores":[1,1,2,1,3,1,1,3,4],"reasons":["Setの順序が誤り","言語仕様に反する","比較対象は使用","順序喪失を断定","比較の形式遵守","誤学習","誤方針へ誘導","やや長い","自然"],"failures":["incorrect_code_reasoning","hallucination"]}},
+{"pairId":"fcae8442d80ef3ef","verdict":"tie","reason":"両方とも縦横の見逃し。"},
+{"pairId":"35dc6c2f4957d9be","verdict":"A_clear","reason":"Aは配列範囲を超えるアクセスとundefinedの加算を正しく説明。","A":{"scores":[4,4,4,4,4,4,3,3,2],"reasons":["NaNの原因が正しい","条件に根拠","iとlengthを使用","創作なし","修正式を漏らさない","境界への導線あり","具体的な実行確認は薄い","比較的短い","HTML露出"],"failures":["japanese"]}},
+{"pairId":"bffc5112ce63ed96","verdict":"tie","reason":"同じく合計と初期値を2文で説明。","B":{"scores":[4,4,4,4,4,3,4,4,4],"reasons":["合計と初期値が正しい","式に根拠","0を使用","創作なし","2文以内","空配列の補足なし","処理を追える","短い","自然"],"failures":[]}},
+{"pairId":"06695104263123aa","verdict":"tie","reason":"Bは正しいPromiseの話だがthen/awaitの答えを漏らし、Aは本質に届かないヒント。","B":{"scores":[4,4,4,4,0,2,3,4,4],"reasons":["Promise処理は正しい","fetchに根拠","非同期に着目","創作なし","2つの解答手段を漏らす","発見を奪う","方向は正しい","短い","自然"],"failures":["hint_leakage"]}}
+]

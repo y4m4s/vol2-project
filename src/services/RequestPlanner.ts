@@ -25,7 +25,6 @@ export interface PreparedGuidanceRequest {
 // docs/11 §11.1: 推論強度が低 = アクティブファイル・選択範囲・Diagnostics・最近の編集 /
 // 推論強度が高 = 上記に加えて関連ファイル・ディレクトリ構造
 const LOW_DEPTH_CONTEXT_LIMITS = {
-  excerptChars: 2000,
   diagnostics: 5,
   recentEdits: 5,
   relatedSymbols: 8
@@ -124,9 +123,8 @@ export class RequestPlanner {
   }
 
   private applyLowDepthContextLimits(context: GuidanceContext): void {
-    if (context.activeFileExcerpt && context.activeFileExcerpt.length > LOW_DEPTH_CONTEXT_LIMITS.excerptChars) {
-      context.activeFileExcerpt = context.activeFileExcerpt.slice(0, LOW_DEPTH_CONTEXT_LIMITS.excerptChars);
-    }
+    // Collector already bounds the viewport. Let PromptBuilder allocate the actual
+    // model budget instead of silently discarding its evidence a second time.
 
     context.diagnosticsSummary = context.diagnosticsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.diagnostics);
     context.recentEditsSummary = context.recentEditsSummary.slice(0, LOW_DEPTH_CONTEXT_LIMITS.recentEdits);

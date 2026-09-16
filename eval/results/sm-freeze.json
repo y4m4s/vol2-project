@@ -1,0 +1,32 @@
+{
+  "at": "2026-09-16T00:28:39.437Z",
+  "scope": "bounded active file collection only; no sampling/transport/context changes",
+  "provenance": {
+    "git": "79a895055b758ee68ee752a91e87f44825068304",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "files": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "6a0c993a4847ed6aa2ae5c1a50207dc9d31f952a739740bf391492101f1c1699",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "51c60724ce4f2c4a9e0bca3abd39e69b1f804889846cc73e6f64a35ee5c06eb7"
+  },
+  "holdoutHash": "2c666d64929a580368c26425e66ae2f2f619145cd4386f989c65723c1b3c3c87",
+  "tuningHash": "0cd8ae5741e1ede68403045c92e7aad8bed2ed19bc70fd794a6e427775f144a3",
+  "candidates": [
+    "sm-lm-file",
+    "sm-oll-file-openai"
+  ],
+  "limitation": "Latency gate failed (+35.4%). Limited deterministic missing-input fix, not an unconditional quality/latency champion."
+}

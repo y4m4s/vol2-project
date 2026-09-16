@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "af-lm-evidence",
+  "config": {
+    "id": "af-lm-evidence",
+    "provider": "lmStudio",
+    "model": "qwen/qwen3-8b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "automatic-evidence-v1",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": null,
+    "collectorContext": "bounded-file",
+    "problemLayout": "plain"
+  },
+  "suite": "algorithms-v2",
+  "split": "tuning",
+  "repeats": 2,
+  "caseIds": [
+    "alg-sum-incomplete-py",
+    "alg-sum-incomplete-js",
+    "alg-prefix-correct-py",
+    "alg-prefix-correct-js",
+    "alg-prefix-bug-py",
+    "alg-prefix-bug-js",
+    "alg-bfs-correct-py",
+    "alg-bfs-correct-js",
+    "alg-stairs-bug-py",
+    "alg-stairs-bug-js",
+    "alg-sort-correct-py",
+    "alg-sort-correct-js",
+    "alg-sort-bug-py",
+    "alg-sort-bug-js"
+  ],
+  "caseSetHash": "771e3edbdba92e9cae932df0c34aad1aaf2d4b498416f1959035f0ce809e2663",
+  "provenance": {
+    "git": "f802a49feb967b69fd28afc3f228c6546dd2f7c2",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "files": {
+      "PromptBuilder": "cac3c67fac7915530607bc6ff7cc2ed8bc904fbf41faaa9e40911c13d6b6ddc3",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "896c7530fd37ee564f6c9f5476fdc13dc353f6958d1b69f3f50dddbb88a3627c"
+  },
+  "algorithmProvenance": {
+    "algorithms.mjs": "164d5252de9aa134065a8db8f9d0c30cc3e000fa3ad1435958970eb045002d59",
+    "algorithm-worker.py": "10943d8c5eb3622c0a5f0e59134af295a868ca8613258171e40857258b519a5c",
+    "algorithm-worker.mjs": "23b7a5041801ff7f00a7676dc71fc44e5a07f903b52db90f0e3546bb3a557f1e",
+    "algorithm-rubric.md": "3aed8d6f1a4788de890b01fac1113b5940bf2ebdf595e06b2a60850fe91d4e51",
+    "algorithm-followup-oracles.mjs": "ac1f95ea24c23cadb0e22ef7f87846ff90a81e52091b60f4675c2f0bca49e73e",
+    "intervention-policy.mjs": "11beca0854428723f1b80cc7ae27a3985d763d9b8642917c293ff2e5f3e345cd"
+  },
+  "rubricHash": "85bc44678435caa403383c291d20e4926b695e3894417d8b8c5974ac18d0a9cd",
+  "startedAt": "2026-09-16T07:45:43.247Z",
+  "orderSeed": "3701e00311af6e255d00780b0d796ac2",
+  "dry": false,
+  "paired": {
+    "partner": "eval/results/af-lm-automatic-baseline",
+    "runnerHash": "2b00f5f87d3b6059c23b7b9534dbda5fc56090e3a24902a57a4c6dbe9a859e30",
+    "order": "Shuffled case-repeat pairs; alternating first arm. Serial inference."
+  },
+  "finishedAt": "2026-09-16T07:52:16.254Z",
+  "status": "completed"
+}

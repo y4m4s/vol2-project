@@ -8,6 +8,7 @@ import type { GuidanceRequestResult } from "../src/services/AdviceService";
 import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/RequestPlanner";
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
 import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
+import { classifyRoutingTask } from "../src/shared/adaptiveProviderRouting";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
@@ -176,6 +177,77 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
     restrict: () => { connection = "restricted"; },
     dispose: () => { scheduler.dispose(); store.dispose(); } };
 }
+
+for (const [initial, target] of [["lmStudio", "copilot"], ["ollama", "orcaRouter"], ["copilot", "lmStudio"], ["orcaRouter", "ollama"]] as const) {
+  test(`routing ${initial} → ${target} uses the destination's active-file context`, async (t) => {
+    const received: GuidanceRequestInput[] = [];
+    const h = await lifecycleHarness(async input => { received.push(input); return { ok: true, text: "確認", focus: "review" }; });
+    t.after(h.dispose);
+    const internals = h.driver as unknown as {
+      settingsService: { getSettings(): NavigatorSettings };
+      connectionService: { getProviderId(): AiProviderId };
+      contextCollector: { collectGuidanceContext(provider?: AiProviderId): GuidanceContext };
+    };
+    internals.settingsService.getSettings().providerId = initial;
+    const whole = "function helper() { return 1; }\nconst x = helper();";
+    const viewport = "const x = helper();";
+    const excerpt = (provider?: AiProviderId) => provider === "lmStudio" || provider === "ollama" ? whole : viewport;
+    h.context.activeFileExcerpt = excerpt(initial);
+    const collections: AiProviderId[] = [];
+    internals.contextCollector.collectGuidanceContext = provider => {
+      if (provider) collections.push(provider);
+      return { ...h.context, activeFileExcerpt: excerpt(provider) };
+    };
+    let active: AiProviderId = initial;
+    internals.connectionService.getProviderId = () => active;
+    Object.assign(h.driver, { providerRoutingCoordinator: { prepare: async () => { active = target; return { ok: true, taskProfile: classifyRoutingTask({ question: "" }) }; } } });
+    await h.driver.handleAutomaticGuidance({ signals: [{ reason: "text_edit", occurredAt: 1 }], idleDurationMs: 1000 });
+    assert.equal(received.length, 1);
+    assert.equal(received[0].context.activeFileExcerpt, excerpt(target));
+    assert.deepEqual(collections, [initial, target]);
+  });
+}
+
+test("routing does not replace an explicit selection or restore excluded active-file content", async (t) => {
+  for (const selected of [true, false]) {
+    const received: GuidanceRequestInput[] = [];
+    const h = await lifecycleHarness(async input => { received.push(input); return { ok: true, text: "確認", focus: "review" }; });
+    t.after(h.dispose);
+    const internals = h.driver as unknown as {
+      settingsService: { getSettings(): NavigatorSettings };
+      connectionService: { getProviderId(): AiProviderId };
+      contextCollector: { collectGuidanceContext(): GuidanceContext };
+    };
+    const settings = internals.settingsService.getSettings();
+    settings.providerId = "lmStudio";
+    if (selected) h.context.selectedText = "chosen()";
+    else { settings.excludedGlobs = ["**/app.ts"]; h.state.pendingAdditionalContext = "課題の説明"; }
+    let active: AiProviderId = "lmStudio";
+    internals.connectionService.getProviderId = () => active;
+    let collections = 0;
+    internals.contextCollector.collectGuidanceContext = () => { collections++; return h.context; };
+    Object.assign(h.driver, { providerRoutingCoordinator: { prepare: async () => { active = "copilot"; return { ok: true, taskProfile: classifyRoutingTask({ question: "" }) }; } } });
+    await h.driver.handleAutomaticGuidance();
+    assert.equal(received.length, 1);
+    assert.equal(received[0].context.selectedText, selected ? "chosen()" : undefined);
+    assert.equal(received[0].context.activeFileExcerpt, selected ? h.context.activeFileExcerpt : undefined);
+    assert.equal(collections, 1);
+  }
+});
+
+test("an editor change during provider routing cancels instead of mixing file versions", async (t) => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "確認" }; });
+  t.after(h.dispose);
+  const internals = h.driver as unknown as { connectionService: { getProviderId(): AiProviderId } };
+  let active: AiProviderId = "copilot";
+  internals.connectionService.getProviderId = () => active;
+  Object.assign(h.driver, { providerRoutingCoordinator: { prepare: async () => { active = "lmStudio"; h.changeEditor(); return { ok: true }; } } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(requests, 0);
+  assert.equal(h.state.requestState, "idle");
+  assert.match(h.state.statusMessage?.text ?? "", /編集対象が変わった/);
+});
 
 for (const phase of ["preparing", "requesting"] as const) {
   test(`カーソルだけ移動した${phase}中の自動助言を再予約する`, async (t) => {

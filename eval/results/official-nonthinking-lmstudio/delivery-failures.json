@@ -1,0 +1,97 @@
+{
+  "scoringScope": "pipeline_delivery_only",
+  "eligibleForModelQuality": false,
+  "reason": "Server unreachable, no answer generated. Excluded from semantic quality comparison.",
+  "rows": [
+    {
+      "caseId": "bug-boundary",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 0,
+        "japanese_quality": 0
+      },
+      "failureCategories": [
+        "infrastructure"
+      ],
+      "reason": "LM Studio server is unreachable."
+    },
+    {
+      "caseId": "compare-approaches",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 0,
+        "japanese_quality": 0
+      },
+      "failureCategories": [
+        "infrastructure"
+      ],
+      "reason": "LM Studio server is unreachable."
+    },
+    {
+      "caseId": "explain-reduce",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 0,
+        "japanese_quality": 0
+      },
+      "failureCategories": [
+        "infrastructure"
+      ],
+      "reason": "LM Studio server is unreachable."
+    },
+    {
+      "caseId": "auto-layout",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 0,
+        "japanese_quality": 0
+      },
+      "failureCategories": [
+        "infrastructure"
+      ],
+      "reason": "LM Studio server is unreachable."
+    },
+    {
+      "caseId": "hint-only",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 0,
+        "japanese_quality": 0
+      },
+      "failureCategories": [
+        "infrastructure"
+      ],
+      "reason": "LM Studio server is unreachable."
+    }
+  ]
+}

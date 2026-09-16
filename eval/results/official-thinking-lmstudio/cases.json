@@ -1,0 +1,136 @@
+[
+  {
+    "id": "bug-boundary",
+    "category": "code_reasoning",
+    "code": "function sum(xs) { let total = 0; for (let i = 0; i <= xs.length; i++) total += xs[i]; return total; }",
+    "question": "合計がNaNになる理由を、着目する箇所と確認方法だけで教えて。完成コードは不要。",
+    "expected": "i <= xs.length reaches xs[xs.length] = undefined; adding yields NaN. Point to last iteration, no replacement expression.",
+    "noCode": true,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "合計がNaNになる理由を、着目する箇所と確認方法だけで教えて。完成コードは不要。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "function sum(xs) { let total = 0; for (let i = 0; i <= xs.length; i++) total += xs[i]; return total; }",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "explain-reduce",
+    "category": "explanation",
+    "code": "const total = prices.reduce((sum, price) => sum + price, 0);",
+    "question": "この処理と末尾の0の意味を2文以内で説明して。",
+    "expected": "Sums prices; 0 initial accumulator and empty-array result. Japanese <=2 sentences.",
+    "maxChars": 240,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "この処理と末尾の0の意味を2文以内で説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const total = prices.reduce((sum, price) => sum + price, 0);",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "hint-only",
+    "category": "instruction",
+    "code": "async function load() { const response = fetch('/users'); return response.json(); }",
+    "question": "答えや修正コードを出さず、ヒントを1つだけください。",
+    "expected": "Direct attention to value/type returned by fetch and when response is available; do not reveal await as the fix.",
+    "forbidden": [
+      "await fetch",
+      "awaitを追加",
+      "await を追加"
+    ],
+    "noCode": true,
+    "maxChars": 240,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "答えや修正コードを出さず、ヒントを1つだけください。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "async function load() { const response = fetch('/users'); return response.json(); }",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "compare-approaches",
+    "category": "comparison",
+    "code": "const ids = ['a', 'b', 'a'];",
+    "question": "重複を消すのにSetとfilterを使う方針を、順序と計算量の観点で簡潔に比較して。コードは不要。",
+    "expected": "Set preserves insertion order; filter+indexOf preserves first occurrence but O(n²), Set usually O(n) expected, not absolute guarantee for all implementations.",
+    "noCode": true,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "重複を消すのにSetとfilterを使う方針を、順序と計算量の観点で簡潔に比較して。コードは不要。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const ids = ['a', 'b', 'a'];",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "auto-layout",
+    "category": "automatic",
+    "existing": "task-completion-layout-v-h",
+    "expected": "Current output horizontal, requirement vertical; one discovery hint without replacement code.",
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "print(\"■\" * 5)",
+        "additionalContext": "■を縦並びに5つ表示するコードを書いてください。",
+        "referencedFiles": [],
+        "diagnosticsSummary": [],
+        "relatedSymbols": [],
+        "recentEditsSummary": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "editor_change"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 1,
+          "column": 15
+        },
+        "cursorExcerpt": "print(\"■\" * 5)<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    },
+    "expectedFocus": [
+      "continue"
+    ]
+  }
+]

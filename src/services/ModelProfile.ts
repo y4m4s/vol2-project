@@ -5,6 +5,8 @@ export interface ModelProfile {
   /** Approximate budget for the complete guidance prompt, including instructions. */
   contextBudget: number;
   terse: boolean;
+  /** Use bounded standard-library reference notes for local inference. */
+  languageReference?: boolean;
 }
 
 export interface ModelProfileSource {
@@ -34,6 +36,7 @@ export function deriveModelProfile(model?: ModelProfileSource): ModelProfile {
   return {
     delimiter: deriveDelimiter(searchable),
     contextBudget,
+    languageReference: /^(?:lmstudio|ollama)$/i.test(model?.vendor ?? ""),
     terse: isSmallOrCheapModel(searchable) || contextBudget <= DEFAULT_CONTEXT_BUDGET
   };
 }

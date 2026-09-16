@@ -1,0 +1,13 @@
+{
+  "id": "r3-thinking",
+  "provider": "lmStudio",
+  "model": "qwen/qwen3-8b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "high",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": null
+}

@@ -18,6 +18,10 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/ActiveFileContext.test.ts",
+    "test/ActiveFileCollector.test.ts",
+    "test/ContextExcerpt.test.ts",
+    "test/LanguageReference.test.ts",
     "test/AdaptiveProviderRouting.test.ts",
     "test/ProviderEvaluationStore.test.ts",
     "test/ProviderRoutingCoordinator.test.ts",

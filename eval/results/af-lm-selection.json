@@ -1,0 +1,44 @@
+{
+  "at": "2026-09-16T07:55:40.610Z",
+  "candidateConfig": {
+    "id": "af-lm-evidence",
+    "provider": "lmStudio",
+    "model": "qwen/qwen3-8b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "automatic-evidence-v1",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": null,
+    "collectorContext": "bounded-file",
+    "problemLayout": "plain"
+  },
+  "summaryHash": "8b871a5976f38bb9cc4fbb0e5217a9d254cf154c2259c8e5dfc56426e5df481e",
+  "diagnosticsHash": "17cdb939f4c03c645ca993628c5922113a53ffbfb9474d973a9cfc6f69a25180",
+  "holdoutCaseSetHash": "abdc357fc826e759a3eff7d4d4ba6a181ddddfb51137510c8a841972e7c3f9da",
+  "decision": "Proceed to frozen holdout once; no production adoption yet.",
+  "quantitativeGates": {
+    "noNewHardFailures": true,
+    "criticalAxes": true,
+    "qualityCI": true,
+    "latency": true
+  },
+  "automaticGuards": {
+    "unnecessaryAdvice": [
+      8,
+      7
+    ],
+    "missedBySilence": [
+      5,
+      4
+    ],
+    "defectiveTaskSuccess": [
+      5,
+      6
+    ]
+  },
+  "criticalRegression": "Correct BFS JavaScript #0 gains a false same-start diagnosis and a harmful completed condition. Python sort #1 changes a valid hint to an explicit key argument. Retain and inspect in final decision; do not conceal behind aggregate gain.",
+  "confirmation": "Unchanged candidate, all16 fresh cases once per arm. Require no new hard failures or defective misses, no critical-axis regression >0.25, no worse semantic task success, latency <=1.25. Manual requests are unchanged controls; do not attribute their random variation to policy."
+}

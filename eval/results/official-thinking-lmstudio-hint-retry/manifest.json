@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "official-thinking-lmstudio",
+  "config": {
+    "id": "official-thinking-lmstudio",
+    "provider": "lmStudio",
+    "model": "qwen/qwen3-8b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "high",
+    "sampling": {
+      "temperature": 0.6,
+      "top_p": 0.95,
+      "top_k": 20,
+      "min_p": 0
+    },
+    "contextLength": null,
+    "maxOutputTokens": null
+  },
+  "split": "tuning",
+  "repeats": 1,
+  "caseIds": [
+    "hint-only"
+  ],
+  "caseSetHash": "c122ea31b7674fdbb26506a21580f4550b28eebd9942b6a617c272bd32a1e0f6",
+  "provenance": {
+    "git": "90924d3129e88d553f0c57a8e8246755abf84ce2",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-11-task-comparison-v1",
+    "files": {
+      "PromptBuilder": "b150613dad17a6f40d381dc21880d5283b0f32134c1a583b87f213e2653cf962",
+      "RequestPlanner": "e1a9b76b8b497817787f1fa92c7c527ee07a0d1d57835587b0462c8b607fd37e",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "891bd95790b23959a39fa68f07a6703bc8d92dfe1baa4de54987aafec2d4a880",
+      "GuidanceResponsePolicy": "6c51a80e2bdc0998eb834dccf5c54fae1002de7445aae14b8c7c2a9698a93fcc",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "2daf6f0c70f83aecda0743de112b5b313af07ae07b98e665f4a22d671c62fd93",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "a8e2b6f3d54332f42aa1c059fcad794ad312d94dc7d32ae4ed2e1d5a6a597147"
+  },
+  "startedAt": "2026-09-15T05:38:16.392Z",
+  "orderSeed": "682dded672db4c36c04a17d7abfa3076",
+  "dry": false,
+  "finishedAt": "2026-09-15T05:38:37.441Z",
+  "status": "completed"
+}

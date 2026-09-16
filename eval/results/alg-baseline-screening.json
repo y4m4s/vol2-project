@@ -1,0 +1,1531 @@
+{
+  "runs": [
+    {
+      "run": "eval/results/alg-lm-baseline-v2",
+      "experimentId": "alg-lm-baseline",
+      "split": "tuning",
+      "provider": "lmStudio",
+      "config": {
+        "id": "alg-lm-baseline",
+        "provider": "lmStudio",
+        "model": "qwen/qwen3-8b",
+        "baseUrl": "http://127.0.0.1:1234",
+        "transport": "production",
+        "promptVersion": "production",
+        "contextStrategy": "production",
+        "thinking": "production",
+        "sampling": {},
+        "contextLength": null,
+        "maxOutputTokens": null,
+        "collectorContext": "bounded-file",
+        "problemLayout": "plain"
+      },
+      "n": 48,
+      "hardPassRate": 1,
+      "latencyMedianMs": 8475.591100000005,
+      "latencyP95Ms": 13880.535700000002,
+      "inputTokensMean": 1139.1,
+      "tokensPerSecondMedian": 10.713713873841442,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "problemGroups": 6,
+      "automaticCorrect": {
+        "n": 6,
+        "unnecessaryAdvice": 0,
+        "deliveryFailures": 0
+      },
+      "automaticDefective": {
+        "n": 12,
+        "missedBySilence": 0,
+        "deliveryFailures": 0
+      },
+      "reviewed": 0,
+      "meetsTask": null,
+      "axes": null,
+      "semanticFailures": {},
+      "by": {
+        "language": {
+          "python": {
+            "n": 24,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8910.738699999987,
+            "latencyP95Ms": 22156.959100000007,
+            "inputTokensMean": 1135.64,
+            "tokensPerSecondMedian": 10.626278543318744,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 3,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "javascript": {
+            "n": 24,
+            "hardPassRate": 1,
+            "latencyMedianMs": 6973.891749999999,
+            "latencyP95Ms": 12151.311699999998,
+            "inputTokensMean": 1142.56,
+            "tokensPerSecondMedian": 10.955715498750877,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 3,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          }
+        },
+        "category": {
+          "uncertainty": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8041.796700000006,
+            "latencyP95Ms": 11790.199300000037,
+            "inputTokensMean": 646,
+            "tokensPerSecondMedian": 11.042061506759389,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "algorithm_bug": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 11732.1947,
+            "latencyP95Ms": 27502.709200000012,
+            "inputTokensMean": 773.4285714285714,
+            "tokensPerSecondMedian": 10.626278543318744,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "complexity": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9468.34915000001,
+            "latencyP95Ms": 13880.535700000002,
+            "inputTokensMean": 767.2857142857143,
+            "tokensPerSecondMedian": 11.40423822110131,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "automatic_correct": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 3955.4700999999914,
+            "latencyP95Ms": 5747.737399999998,
+            "inputTokensMean": 1847,
+            "tokensPerSecondMedian": 11.107303418161912,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 6,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "automatic_incomplete": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9240.804099999994,
+            "latencyP95Ms": 11582.650199999996,
+            "inputTokensMean": 1840,
+            "tokensPerSecondMedian": 10.458154548026727,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "algorithm_explanation": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 6401.964550000004,
+            "latencyP95Ms": 10226.025899999993,
+            "inputTokensMean": 789,
+            "tokensPerSecondMedian": 10.932276674432629,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "automatic_bug": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8812.003349999999,
+            "latencyP95Ms": 9755.412599999981,
+            "inputTokensMean": 1866,
+            "tokensPerSecondMedian": 10.399589235305289,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "hint_only": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 5877.722999999998,
+            "latencyP95Ms": 11056.840200000006,
+            "inputTokensMean": 707,
+            "tokensPerSecondMedian": 10.637521428501174,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          }
+        },
+        "variant": {
+          "unknown": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8041.796700000006,
+            "latencyP95Ms": 11790.199300000037,
+            "inputTokensMean": 646,
+            "tokensPerSecondMedian": 11.042061506759389,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "buggy": {
+            "n": 18,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8910.738699999987,
+            "latencyP95Ms": 27502.709200000012,
+            "inputTokensMean": 1097.4736842105262,
+            "tokensPerSecondMedian": 10.436884933650573,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "correct_slow": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9468.34915000001,
+            "latencyP95Ms": 13880.535700000002,
+            "inputTokensMean": 767.2857142857143,
+            "tokensPerSecondMedian": 11.40423822110131,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "correct": {
+            "n": 12,
+            "hardPassRate": 1,
+            "latencyMedianMs": 5881.591399999983,
+            "latencyP95Ms": 10226.025899999993,
+            "inputTokensMean": 1318,
+            "tokensPerSecondMedian": 10.932276674432629,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 2,
+            "automaticCorrect": {
+              "n": 6,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "incomplete": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9240.804099999994,
+            "latencyP95Ms": 11582.650199999996,
+            "inputTokensMean": 1840,
+            "tokensPerSecondMedian": 10.458154548026727,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          }
+        },
+        "problemId": {
+          "unknown-contract": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8041.796700000006,
+            "latencyP95Ms": 11790.199300000037,
+            "inputTokensMean": 646,
+            "tokensPerSecondMedian": 11.042061506759389,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "pair-existence": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 11732.1947,
+            "latencyP95Ms": 27502.709200000012,
+            "inputTokensMean": 773.4285714285714,
+            "tokensPerSecondMedian": 10.626278543318744,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "pair-count": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9468.34915000001,
+            "latencyP95Ms": 13880.535700000002,
+            "inputTokensMean": 767.2857142857143,
+            "tokensPerSecondMedian": 11.40423822110131,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "sum": {
+            "n": 18,
+            "hardPassRate": 1,
+            "latencyMedianMs": 8475.591100000005,
+            "latencyP95Ms": 11582.650199999996,
+            "inputTokensMean": 1851,
+            "tokensPerSecondMedian": 10.424605930426205,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 6,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 12,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "lower-bound": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 6401.964550000004,
+            "latencyP95Ms": 10226.025899999993,
+            "inputTokensMean": 789,
+            "tokensPerSecondMedian": 10.932276674432629,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          },
+          "frequency": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 5877.722999999998,
+            "latencyP95Ms": 11056.840200000006,
+            "inputTokensMean": 707,
+            "tokensPerSecondMedian": 10.637521428501174,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 0,
+            "meetsTask": null,
+            "axes": null,
+            "semanticFailures": {}
+          }
+        }
+      },
+      "promptTokens": [
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 1,
+          "approximate": 972,
+          "processed": 645,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 1,
+          "approximate": 1065,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-js",
+          "repeat": 0,
+          "approximate": 1048,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 2,
+          "approximate": 1587,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-js",
+          "repeat": 2,
+          "approximate": 1048,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-js",
+          "repeat": 1,
+          "approximate": 1048,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-js",
+          "repeat": 2,
+          "approximate": 1588,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-py",
+          "repeat": 0,
+          "approximate": 1581,
+          "processed": 1837,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 0,
+          "approximate": 1073,
+          "processed": 764,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-js",
+          "repeat": 0,
+          "approximate": 1588,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 0,
+          "approximate": 1072,
+          "processed": 785,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 1,
+          "approximate": 1603,
+          "processed": 1875,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 2,
+          "approximate": 1073,
+          "processed": 764,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 2,
+          "approximate": 1065,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-js",
+          "repeat": 1,
+          "approximate": 1588,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-py",
+          "repeat": 0,
+          "approximate": 1046,
+          "processed": 750,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 0,
+          "approximate": 1593,
+          "processed": 1851,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 0,
+          "approximate": 972,
+          "processed": 645,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 0,
+          "approximate": 1074,
+          "processed": 793,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 2,
+          "approximate": 972,
+          "processed": 645,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 0,
+          "approximate": 1603,
+          "processed": 1875,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 0,
+          "approximate": 1594,
+          "processed": 1857,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-py",
+          "repeat": 0,
+          "approximate": 1017,
+          "processed": 705,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 0,
+          "approximate": 1587,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 1,
+          "approximate": 1073,
+          "processed": 764,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 1,
+          "approximate": 1594,
+          "processed": 1857,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 1,
+          "approximate": 1587,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 2,
+          "approximate": 1603,
+          "processed": 1875,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-py",
+          "repeat": 1,
+          "approximate": 1017,
+          "processed": 705,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 1,
+          "approximate": 976,
+          "processed": 647,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 1,
+          "approximate": 1072,
+          "processed": 785,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-py",
+          "repeat": 1,
+          "approximate": 1581,
+          "processed": 1837,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 1,
+          "approximate": 1593,
+          "processed": 1851,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 2,
+          "approximate": 976,
+          "processed": 647,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-js",
+          "repeat": 1,
+          "approximate": 1022,
+          "processed": 709,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-js",
+          "repeat": 2,
+          "approximate": 1022,
+          "processed": 709,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-py",
+          "repeat": 1,
+          "approximate": 1046,
+          "processed": 750,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 2,
+          "approximate": 1594,
+          "processed": 1857,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 0,
+          "approximate": 976,
+          "processed": 647,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 0,
+          "approximate": 1065,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-js",
+          "repeat": 0,
+          "approximate": 1022,
+          "processed": 709,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 2,
+          "approximate": 1072,
+          "processed": 785,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-frequency-bug-py",
+          "repeat": 2,
+          "approximate": 1017,
+          "processed": 705,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 1,
+          "approximate": 1074,
+          "processed": 793,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 2,
+          "approximate": 1593,
+          "processed": 1851,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 2,
+          "approximate": 1074,
+          "processed": 793,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-count-py",
+          "repeat": 2,
+          "approximate": 1046,
+          "processed": 750,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-incomplete-py",
+          "repeat": 2,
+          "approximate": 1581,
+          "processed": 1837,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        }
+      ],
+      "oracle": [
+        {
+          "caseId": "alg-sum-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "23ea95b0cf8d492c1b47f965b056fe3887529a5a09cfe52a5fc71cb7caa6a164",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "d7b325d497900105327b6653034d1df994a171719000c7651b235c04b458a448",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-incomplete-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "612d43e93097d6d69fe7579227195704569ac2ddc9555aea2f1f67d3f0b47ae6",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 670,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "119501802bcdfe31e83b65e3eb9a2c50d71d34049b2d1e15230d24e393014828",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-incomplete-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "2913d7cd0cb10f48d17e680328b78b7e25a48d75db7194599311224d194c8ea7",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 670,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "119501802bcdfe31e83b65e3eb9a2c50d71d34049b2d1e15230d24e393014828",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "90feebb04eed9f4c3fe5b6113d6a973fb8b192b8a0121759602bc5c6855d6cf9",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-frequency-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "ba58e198ac28ae92b402eadc5f696caf26051fc9d4bb65cd1204e74b04d8f44c",
+          "scope": "all strings length0..5 over a,b,c",
+          "testCount": 364,
+          "mismatches": 348,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                "aa"
+              ],
+              "expected": {
+                "a": 2
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                "aaa"
+              ],
+              "expected": {
+                "a": 3
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                "aaaa"
+              ],
+              "expected": {
+                "a": 4
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "c1f23f17510fcebfd8b9dd80eddc41ed33938b77c2da1b8c2364d7650e23dae6",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-frequency-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "6ffc0fcd52aa3d5adbc347f8b6d0c83abc02a67180768493e4526e63ae79330f",
+          "scope": "all strings length0..5 over a,b,c",
+          "testCount": 364,
+          "mismatches": 348,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                "aa"
+              ],
+              "expected": {
+                "a": 2
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                "aaa"
+              ],
+              "expected": {
+                "a": 3
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                "aaaa"
+              ],
+              "expected": {
+                "a": 4
+              },
+              "actual": {
+                "value": {
+                  "a": 1
+                },
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "c1f23f17510fcebfd8b9dd80eddc41ed33938b77c2da1b8c2364d7650e23dae6",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "6c58d3ba5377dd1e0494877a6eea0e17216d6e726bd4b9d9d67775eb539cee68",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-count-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "cc8811ce2b1c4fcc6bc1327cf2faf16fcafd3cf8f93b300970875997a981be25",
+          "scope": "all arrays length0..4 over -1,0,1; targets -2..2; does not certify asymptotic performance",
+          "testCount": 605,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "c043dc4e209abac274a0272c313b351aeb34f73870a552fc65fcf554a94604df",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-count-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "e521610f11e4661cb9a19caa46f18791ca04eb3a0b556574cee2f3db5f5a57f1",
+          "scope": "all arrays length0..4 over -1,0,1; targets -2..2; does not certify asymptotic performance",
+          "testCount": 605,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "c043dc4e209abac274a0272c313b351aeb34f73870a552fc65fcf554a94604df",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        }
+      ]
+    }
+  ],
+  "comparisons": [],
+  "limitations": "Synthetic original problems. Language/variant/repeat samples share problem groups. Execution covers stated finite domains only. Hard checks are not semantic correctness. Null semantic scores mean unreviewed."
+}

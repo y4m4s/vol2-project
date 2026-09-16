@@ -169,6 +169,10 @@ NaviComはOrcaRouterのGuardrail／Firewallを自動的に有効化・設定し�
 
 機能設計書は `docs/01`〜`docs/15` の連番で管理し、プロバイダー文書は `docs/provider` に分離しています。
 
+## プライバシーとライセンス
+
+[Privacy Policy](PRIVACY.md) / [License](LICENSE)
+
 ## 商標について
 
 GitHubおよびGitHub CopilotはGitHub, Inc.の商標です。LM StudioはElement Labs, Inc.の商標です。OrcaRouterは各権利者に帰属する商標です。NaviComはこれら各社が開発、承認、後援する公式製品ではありません。プロバイダーのブランドアセットは、対応する接続先を識別する目的に限って使用しています。

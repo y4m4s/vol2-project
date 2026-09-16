@@ -1,0 +1,328 @@
+[
+  {
+    "id": "alg-sum-correct-py",
+    "problemId": "sum",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "Correct O(N) implementation including empty and negative arrays. Return no_advice/none; no next exercise or unnecessary check.",
+    "language": "python",
+    "code": "def solve(a):\n    total = 0\n    for value in a:\n        total += value\n    return total\n",
+    "fixturePath": "eval/fixtures/algorithms/sum-correct.py",
+    "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+      "scope": "all arrays length0..4 over -2..2",
+      "testCount": 781,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a):\n    total = 0\n    for value in a:\n        total += value\n    return total\n",
+        "additionalContext": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。\n0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。\nsolve([3, -1, 4]) -> 6; solve([]) -> 0",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "def solve(a):\n    total = 0\n    for value in a:\n        total += value\n    return total\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-sum-bug-js",
+    "problemId": "sum",
+    "category": "automatic_bug",
+    "variant": "buggy",
+    "kind": "always",
+    "expectedFocus": [
+      "continue",
+      "review"
+    ],
+    "oracle": "sum",
+    "problem": {
+      "task": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。",
+      "constraints": "0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。",
+      "examples": "solve([3, -1, 4]) -> 6; solve([]) -> 0"
+    },
+    "expected": "Loop skips final element. Point to iteration range/count and missing final value in a short hint; no complete corrected expression.",
+    "language": "javascript",
+    "code": "function solve(a) {\n  let total = 0;\n  for (let i = 0; i < a.length - 1; i++) total += a[i];\n  return total;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/sum-bug.js",
+    "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+      "scope": "all arrays length0..4 over -2..2",
+      "testCount": 781,
+      "mismatches": 624,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -2
+            ]
+          ],
+          "expected": -2,
+          "actual": {
+            "value": 0,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2
+            ]
+          ],
+          "expected": -4,
+          "actual": {
+            "value": -2,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -2,
+              -2,
+              -2
+            ]
+          ],
+          "expected": -6,
+          "actual": {
+            "value": -4,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  let total = 0;\n  for (let i = 0; i < a.length - 1; i++) total += a[i];\n  return total;\n}\n",
+        "additionalContext": "整数配列aの全要素の総和をsolve(a)の戻り値で返す。\n0 <= N <= 100000、各要素は-1000以上1000以下の整数。空配列の総和は0。\nsolve([3, -1, 4]) -> 6; solve([]) -> 0",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 5,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  let total = 0;\n  for (let i = 0; i < a.length - 1; i++) total += a[i];\n  return total;\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 5,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "alg-lower-bound-py",
+    "problemId": "lower-bound",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "lower-bound",
+    "problem": {
+      "task": "昇順配列aについて、target以上の最初の要素の添字をsolve(a,target)で返す。該当要素がなければNを返す。",
+      "constraints": "0 <= N <= 100000、aは昇順、重複を許す。添字は0始まり。",
+      "examples": "solve([1, 2, 2, 4], 2) -> 1; solve([1, 3], 5) -> 2"
+    },
+    "question": "solve([1, 2, 2, 4], 2)の戻り値を「結果: 数字」の形で示し、重複がある場合の探索範囲の変化を短く説明して。",
+    "scalarAnswer": 1,
+    "expected": "Result 1. Right moves toward the first qualifying position, not an arbitrary occurrence; duplicate 2 at index2 is not the answer.",
+    "language": "python",
+    "code": "def solve(a, target):\n    left, right = 0, len(a)\n    while left < right:\n        middle = (left + right) // 2\n        if a[middle] < target:\n            left = middle + 1\n        else:\n            right = middle\n    return left\n",
+    "fixturePath": "eval/fixtures/algorithms/lower-bound.py",
+    "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+      "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+      "testCount": 420,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve([1, 2, 2, 4], 2)の戻り値を「結果: 数字」の形で示し、重複がある場合の探索範囲の変化を短く説明して。",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, target):\n    left, right = 0, len(a)\n    while left < right:\n        middle = (left + right) // 2\n        if a[middle] < target:\n            left = middle + 1\n        else:\n            right = middle\n    return left\n",
+        "additionalContext": "昇順配列aについて、target以上の最初の要素の添字をsolve(a,target)で返す。該当要素がなければNを返す。\n0 <= N <= 100000、aは昇順、重複を許す。添字は0始まり。\nsolve([1, 2, 2, 4], 2) -> 1; solve([1, 3], 5) -> 2",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-pair-bug-js",
+    "problemId": "pair-existence",
+    "category": "algorithm_bug",
+    "variant": "buggy",
+    "oracle": "pair",
+    "problem": {
+      "task": "昇順配列aの異なる2つの位置から値を選び、和がtargetになる組があるかsolve(a,target)で真偽値を返す。",
+      "constraints": "2 <= N <= 100000、重複可、各値は-1000以上1000以下。",
+      "examples": "solve([1, 2, 4, 7], 6) -> true"
+    },
+    "question": "例の入力で見逃す原因を、和と左右の位置の関係から説明して。修正コードや完成した条件式は不要です。",
+    "noCode": true,
+    "expected": "Pointers move in opposite directions from needed: a too-large sum must be reduced, too-small sum increased. This code on [1,2,4,7],6 returns false although2+4=6. Explain movement relationship, no replacement code.",
+    "language": "javascript",
+    "code": "function solve(a, target) {\n  let left = 0, right = a.length - 1;\n  while (left < right) {\n    const value = a[left] + a[right];\n    if (value === target) return true;\n    if (value < target) right--;\n    else left++;\n  }\n  return false;\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/pair-bug.js",
+    "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+      "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+      "testCount": 1218,
+      "mismatches": 204,
+      "correctOnTestDomain": false,
+      "counterexamples": [
+        {
+          "input": [
+            [
+              -1,
+              -1,
+              -1,
+              0
+            ],
+            -2
+          ],
+          "expected": true,
+          "actual": {
+            "value": false,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1,
+              -1,
+              1
+            ],
+            -2
+          ],
+          "expected": true,
+          "actual": {
+            "value": false,
+            "mutated": false
+          }
+        },
+        {
+          "input": [
+            [
+              -1,
+              -1,
+              -1,
+              2
+            ],
+            -2
+          ],
+          "expected": true,
+          "actual": {
+            "value": false,
+            "mutated": false
+          }
+        }
+      ],
+      "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "例の入力で見逃す原因を、和と左右の位置の関係から説明して。修正コードや完成した条件式は不要です。",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a, target) {\n  let left = 0, right = a.length - 1;\n  while (left < right) {\n    const value = a[left] + a[right];\n    if (value === target) return true;\n    if (value < target) right--;\n    else left++;\n  }\n  return false;\n}\n",
+        "additionalContext": "昇順配列aの異なる2つの位置から値を選び、和がtargetになる組があるかsolve(a,target)で真偽値を返す。\n2 <= N <= 100000、重複可、各値は-1000以上1000以下。\nsolve([1, 2, 4, 7], 6) -> true",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  }
+]

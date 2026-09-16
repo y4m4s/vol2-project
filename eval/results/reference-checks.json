@@ -1,0 +1,13 @@
+{
+  "node": "v24.15.0",
+  "truth": {
+    "numberEmpty": 0,
+    "setOrder": [
+      "a",
+      "b"
+    ],
+    "sumBoundary": "NaN",
+    "allowed12": true,
+    "allowed13": false
+  }
+}

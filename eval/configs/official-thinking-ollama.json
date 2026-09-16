@@ -1,0 +1,18 @@
+{
+  "id": "official-thinking-ollama",
+  "provider": "ollama",
+  "model": "qwen3:8b",
+  "baseUrl": "http://127.0.0.1:11434",
+  "transport": "ollama-native",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "high",
+  "sampling": {
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "top_k": 20,
+    "min_p": 0
+  },
+  "contextLength": null,
+  "maxOutputTokens": null
+}

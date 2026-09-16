@@ -1,0 +1,20 @@
+{
+  "ids": [
+    "alg-sum-incomplete-py",
+    "alg-sum-incomplete-js",
+    "alg-prefix-correct-py",
+    "alg-prefix-correct-js",
+    "alg-prefix-bug-py",
+    "alg-prefix-bug-js",
+    "alg-bfs-correct-py",
+    "alg-bfs-correct-js",
+    "alg-stairs-bug-py",
+    "alg-stairs-bug-js",
+    "alg-sort-correct-py",
+    "alg-sort-correct-js",
+    "alg-sort-bug-py",
+    "alg-sort-bug-js"
+  ],
+  "repeats": 2,
+  "origin": "Previously observed fixtures explicitly promoted to tuning; new holdout remains unobserved."
+}

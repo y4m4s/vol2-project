@@ -1,0 +1,67 @@
+[
+  {
+    "pairId": "a3a88f337158c7fd",
+    "verdict": "B_clear",
+    "reason": "Bは境界条件を特定し、Aの入力型の推測より有用。"
+  },
+  {
+    "pairId": "6a7d24a817256714",
+    "verdict": "B_clear",
+    "reason": "末尾の最新仕様が届き17秒に回答できた。"
+  },
+  {
+    "pairId": "83b6f6ec67f54cf6",
+    "verdict": "B_slight",
+    "reason": "双方新事項なしだがAのpractice混在とログ実装例が余分。"
+  },
+  {
+    "pairId": "60d047ec133a73c8",
+    "verdict": "tie",
+    "reason": "値と改行の説明は同じ。"
+  },
+  {
+    "pairId": "e32ad59156df03e3",
+    "verdict": "B_clear",
+    "reason": "Bは定義を参照し0と正答。Aは欠落した定義を推測。"
+  },
+  {
+    "pairId": "f9fe68524912e196",
+    "verdict": "tie",
+    "reason": "同じ自動判定結果。"
+  },
+  {
+    "pairId": "2c29f21c3c26c8e6",
+    "verdict": "tie",
+    "reason": "同じ自動判定結果。"
+  },
+  {
+    "pairId": "5fd2d62add4f89ea",
+    "verdict": "A_slight",
+    "reason": "AはSet順序を改善するがfilter+Setの計算量は誤る。"
+  },
+  {
+    "pairId": "cf8fa599af1ae5e1",
+    "verdict": "B_clear",
+    "reason": "Bは許容されるawaitヒントで主因を示す。AはJSON形式とstatusを混同。"
+  },
+  {
+    "pairId": "01e9cbabe07855c3",
+    "verdict": "A_slight",
+    "reason": "Aは比較案を求める説明にまとまる。"
+  },
+  {
+    "pairId": "4793fe8aead4123e",
+    "verdict": "A_slight",
+    "reason": "Aは値と根拠に集中しBの余分な検証提案がない。"
+  },
+  {
+    "pairId": "b7bdcad6183ab32c",
+    "verdict": "tie",
+    "reason": "回答が同一。"
+  },
+  {
+    "pairId": "83184a4aeade5683",
+    "verdict": "tie",
+    "reason": "双方未提示のDB検索を前提とする。"
+  }
+]

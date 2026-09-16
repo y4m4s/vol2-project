@@ -1,0 +1,3904 @@
+{
+  "judge": {
+    "id": "Codex-manual",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同じCodexが設計・採点。匿名packetのみからA/B採点したが、先行文脈から条件を推測できるため完全盲検ではない。"
+  },
+  "split": "tuning",
+  "baselineRun": "eval/results/sm-lm-file",
+  "candidateRun": "eval/results/sm-lm-temp02",
+  "baseline": {
+    "n": 30,
+    "hardPassRate": 1,
+    "latencyMedianMs": 6171.371899999998,
+    "latencyP95Ms": 15855.408500000005,
+    "inputTokensMean": 996.4375,
+    "tokensPerSecondMedian": 15.612321877677124,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {}
+  },
+  "candidate": {
+    "n": 30,
+    "hardPassRate": 1,
+    "latencyMedianMs": 6528.88005,
+    "latencyP95Ms": 18618.921100000007,
+    "inputTokensMean": 1005.2903225806451,
+    "tokensPerSecondMedian": 13.994308794499455,
+    "loadMedianMs": null,
+    "loadMaxMs": null,
+    "pipelineFailures": {}
+  },
+  "pairwiseWinRate": 0.5333333333333333,
+  "decisiveWinRate": 0.5714285714285714,
+  "ties": 16,
+  "ci95": {
+    "low": 0.3833333333333333,
+    "high": 0.6500000000000001,
+    "unit": "case",
+    "cases": 10,
+    "iterations": 5000
+  },
+  "axes": {
+    "correctness": {
+      "baseline": 3.066666666666667,
+      "candidate": 3.1333333333333333,
+      "delta": 0.06666666666666667
+    },
+    "groundedness": {
+      "baseline": 3.3,
+      "candidate": 3.4,
+      "delta": 0.1
+    },
+    "context_utilization": {
+      "baseline": 3.433333333333333,
+      "candidate": 3.5,
+      "delta": 0.06666666666666667
+    },
+    "hallucination": {
+      "baseline": 3.7666666666666666,
+      "candidate": 3.8,
+      "delta": 0.03333333333333333
+    },
+    "instruction_following": {
+      "baseline": 3.566666666666667,
+      "candidate": 3.3,
+      "delta": -0.26666666666666666
+    },
+    "pedagogical_usefulness": {
+      "baseline": 3.1666666666666665,
+      "candidate": 3.2333333333333334,
+      "delta": 0.06666666666666667
+    },
+    "actionability": {
+      "baseline": 3.466666666666667,
+      "candidate": 3.5,
+      "delta": 0.03333333333333333
+    },
+    "conciseness": {
+      "baseline": 4,
+      "candidate": 4,
+      "delta": 0
+    },
+    "japanese_quality": {
+      "baseline": 3.933333333333333,
+      "candidate": 3.966666666666667,
+      "delta": 0.03333333333333333
+    }
+  },
+  "rows": [
+    {
+      "pairId": "9bce0d76291bd106",
+      "caseId": "sm-additional",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "6db07b95a89a190fd7ef30128732b804019f7c298c5ed33ab6e762ab80b2144d",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。3回・1500msを端的に回答。 B: 正確性 4/4。3回・1500ミリ秒を正しく端的に回答。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "groundedness": "提示コードとの整合 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "context_utilization": "必要文脈の利用 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "hallucination": "未提示の事実の追加 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "instruction_following": "質問の条件の遵守 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "pedagogical_usefulness": "学習への助け 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "actionability": "質問に対する具体性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "conciseness": "長さと関連性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+          "japanese_quality": "日本語の明瞭さ 4/4。3回・1500ミリ秒を正しく端的に回答。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。3回・1500msを端的に回答。",
+          "groundedness": "提示コードとの整合 4/4。3回・1500msを端的に回答。",
+          "context_utilization": "必要文脈の利用 4/4。3回・1500msを端的に回答。",
+          "hallucination": "未提示の事実の追加 4/4。3回・1500msを端的に回答。",
+          "instruction_following": "質問の条件の遵守 4/4。3回・1500msを端的に回答。",
+          "pedagogical_usefulness": "学習への助け 4/4。3回・1500msを端的に回答。",
+          "actionability": "質問に対する具体性 4/4。3回・1500msを端的に回答。",
+          "conciseness": "長さと関連性 4/4。3回・1500msを端的に回答。",
+          "japanese_quality": "日本語の明瞭さ 4/4。3回・1500msを端的に回答。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "722fe546d63b2446",
+      "caseId": "sm-explain",
+      "repeat": 2,
+      "candidateSide": "A",
+      "pairHash": "f8030c6ac6a0f3f1b7137082b11eadc6bc28ede83bacbe5c61795514ac0e79c1",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。 B: 正確性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "groundedness": "提示コードとの整合 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "context_utilization": "必要文脈の利用 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "hallucination": "未提示の事実の追加 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "instruction_following": "質問の条件の遵守 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "actionability": "質問に対する具体性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "conciseness": "長さと関連性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "groundedness": "提示コードとの整合 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "context_utilization": "必要文脈の利用 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "hallucination": "未提示の事実の追加 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "instruction_following": "質問の条件の遵守 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "actionability": "質問に対する具体性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "conciseness": "長さと関連性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "12e4e061756c5627",
+      "caseId": "sm-compare",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "4c6827b94fe39f519de7b954d916a2f079d405020424d3604b06bedfdb253eba",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。 B: 正確性 2/4。findと配列mapの比較へ逸れMapを説明しない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "groundedness": "提示コードとの整合 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "context_utilization": "必要文脈の利用 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "hallucination": "未提示の事実の追加 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "instruction_following": "質問の条件の遵守 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "pedagogical_usefulness": "学習への助け 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "actionability": "質問に対する具体性 3/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "conciseness": "長さと関連性 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+          "japanese_quality": "日本語の明瞭さ 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "groundedness": "提示コードとの整合 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "context_utilization": "必要文脈の利用 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "hallucination": "未提示の事実の追加 4/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "instruction_following": "質問の条件の遵守 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "pedagogical_usefulness": "学習への助け 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "actionability": "質問に対する具体性 3/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "conciseness": "長さと関連性 4/4。findと配列mapの比較へ逸れMapを説明しない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。findと配列mapの比較へ逸れMapを説明しない。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      }
+    },
+    {
+      "pairId": "d785c0ffc54b4e30",
+      "caseId": "sm-format",
+      "repeat": 2,
+      "candidateSide": "A",
+      "pairHash": "6755dfbeaefed9d5104c5c43705468f85c448f81acef994250e9fc412a9f7114",
+      "win": 1,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 4/4。4桁パディングとSKU-0027を正答。 B: 正確性 4/4。SKU-0027は正答。「前接辞」はやや不自然。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁パディングとSKU-0027を正答。",
+          "groundedness": "提示コードとの整合 4/4。4桁パディングとSKU-0027を正答。",
+          "context_utilization": "必要文脈の利用 4/4。4桁パディングとSKU-0027を正答。",
+          "hallucination": "未提示の事実の追加 4/4。4桁パディングとSKU-0027を正答。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁パディングとSKU-0027を正答。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁パディングとSKU-0027を正答。",
+          "actionability": "質問に対する具体性 4/4。4桁パディングとSKU-0027を正答。",
+          "conciseness": "長さと関連性 4/4。4桁パディングとSKU-0027を正答。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁パディングとSKU-0027を正答。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "groundedness": "提示コードとの整合 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "context_utilization": "必要文脈の利用 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "hallucination": "未提示の事実の追加 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "instruction_following": "質問の条件の遵守 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "pedagogical_usefulness": "学習への助け 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "actionability": "質問に対する具体性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "conciseness": "長さと関連性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+          "japanese_quality": "日本語の明瞭さ 3/4。SKU-0027は正答。「前接辞」はやや不自然。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "37782ee4b2b2ad3b",
+      "caseId": "sm-additional",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "52e8c16ea8e10637b0fb1b13cfd547b3b545eecc7c40f683ed7f6fc7a7d3493f",
+      "win": 1,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 4/4。初回を含む3回、750×2=1500msを正答。 B: 正確性 3/4。3回と750ms×2は正しいが合計1500msを書かない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回を含む3回、750×2=1500msを正答。",
+          "groundedness": "提示コードとの整合 4/4。初回を含む3回、750×2=1500msを正答。",
+          "context_utilization": "必要文脈の利用 4/4。初回を含む3回、750×2=1500msを正答。",
+          "hallucination": "未提示の事実の追加 4/4。初回を含む3回、750×2=1500msを正答。",
+          "instruction_following": "質問の条件の遵守 4/4。初回を含む3回、750×2=1500msを正答。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回、750×2=1500msを正答。",
+          "actionability": "質問に対する具体性 4/4。初回を含む3回、750×2=1500msを正答。",
+          "conciseness": "長さと関連性 4/4。初回を含む3回、750×2=1500msを正答。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回、750×2=1500msを正答。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "groundedness": "提示コードとの整合 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "context_utilization": "必要文脈の利用 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "hallucination": "未提示の事実の追加 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "instruction_following": "質問の条件の遵守 3/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "pedagogical_usefulness": "学習への助け 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "actionability": "質問に対する具体性 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "conciseness": "長さと関連性 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。3回と750ms×2は正しいが合計1500msを書かない。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "69a7c6fc2aad4471",
+      "caseId": "sm-price",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c270b358299364e9831d1be445c659483825c0c32682d9b0e1404a0d6e724cfa",
+      "win": 1,
+      "verdict": "B_slight",
+      "reason": "A: 正確性 3/4。170は正しいが税抜価格・円という未提示の意味を付加。 B: 正確性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "groundedness": "提示コードとの整合 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "context_utilization": "必要文脈の利用 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "hallucination": "未提示の事実の追加 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "instruction_following": "質問の条件の遵守 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "pedagogical_usefulness": "学習への助け 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "actionability": "質問に対する具体性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "conciseness": "長さと関連性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+          "japanese_quality": "日本語の明瞭さ 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 3,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "groundedness": "提示コードとの整合 2/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "context_utilization": "必要文脈の利用 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "hallucination": "未提示の事実の追加 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "instruction_following": "質問の条件の遵守 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "pedagogical_usefulness": "学習への助け 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "actionability": "質問に対する具体性 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "conciseness": "長さと関連性 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。170は正しいが税抜価格・円という未提示の意味を付加。"
+        },
+        "failures": [
+          "hallucination"
+        ]
+      }
+    },
+    {
+      "pairId": "36a765c90cdfaf1c",
+      "caseId": "sm-boundary",
+      "repeat": 2,
+      "candidateSide": "A",
+      "pairHash": "030ffbdb35476559aebf2d51c9ac8fd74a88db910c135c75dd54b7669a296659",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。 B: 正確性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "groundedness": "提示コードとの整合 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "context_utilization": "必要文脈の利用 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "hallucination": "未提示の事実の追加 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "actionability": "質問に対する具体性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "conciseness": "長さと関連性 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+          "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "groundedness": "提示コードとの整合 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "context_utilization": "必要文脈の利用 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "hallucination": "未提示の事実の追加 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "actionability": "質問に対する具体性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "conciseness": "長さと関連性 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+          "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "688463c271e847ad",
+      "caseId": "sm-learn",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "993f96d02cecd141f705ea2b13cafc4e55a23d8320dfc0608740292093d68f37",
+      "win": 0,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。 B: 正確性 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "groundedness": "提示コードとの整合 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "context_utilization": "必要文脈の利用 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "hallucination": "未提示の事実の追加 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "instruction_following": "質問の条件の遵守 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "pedagogical_usefulness": "学習への助け 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "actionability": "質問に対する具体性 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "conciseness": "長さと関連性 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+          "japanese_quality": "日本語の明瞭さ 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "groundedness": "提示コードとの整合 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "context_utilization": "必要文脈の利用 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "hallucination": "未提示の事実の追加 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "instruction_following": "質問の条件の遵守 2/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "pedagogical_usefulness": "学習への助け 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "actionability": "質問に対する具体性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "conciseness": "長さと関連性 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+          "japanese_quality": "日本語の明瞭さ 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      }
+    },
+    {
+      "pairId": "2464d149b1ef95f5",
+      "caseId": "sm-explain",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "1506fba805b16eaebbd8be5769e098a358e6d31763c4c7b7939458da15ce571b",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。inputとoutput[4,16]、処理順が正しい。 B: 正確性 4/4。inputとoutput[4,16]を正しく説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。inputとoutput[4,16]を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。inputとoutput[4,16]を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。inputとoutput[4,16]を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。inputとoutput[4,16]を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。inputとoutput[4,16]を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。inputとoutput[4,16]を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。inputとoutput[4,16]を正しく説明。",
+          "conciseness": "長さと関連性 4/4。inputとoutput[4,16]を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。inputとoutput[4,16]を正しく説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "groundedness": "提示コードとの整合 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "context_utilization": "必要文脈の利用 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "hallucination": "未提示の事実の追加 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "instruction_following": "質問の条件の遵守 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "pedagogical_usefulness": "学習への助け 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "actionability": "質問に対する具体性 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "conciseness": "長さと関連性 4/4。inputとoutput[4,16]、処理順が正しい。",
+          "japanese_quality": "日本語の明瞭さ 4/4。inputとoutput[4,16]、処理順が正しい。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "11b64239ab89c7f9",
+      "caseId": "sm-boundary",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "5fc1d49eafa97897883d36c24154d7206a6bb3a6aa69c54daba557e3d6ab06f7",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。 B: 正確性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "groundedness": "提示コードとの整合 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "context_utilization": "必要文脈の利用 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "hallucination": "未提示の事実の追加 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "instruction_following": "質問の条件の遵守 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "pedagogical_usefulness": "学習への助け 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "actionability": "質問に対する具体性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "conciseness": "長さと関連性 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+          "japanese_quality": "日本語の明瞭さ 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "groundedness": "提示コードとの整合 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "context_utilization": "必要文脈の利用 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "hallucination": "未提示の事実の追加 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "instruction_following": "質問の条件の遵守 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "pedagogical_usefulness": "学習への助け 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "actionability": "質問に対する具体性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "conciseness": "長さと関連性 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "e27b14eacf9bdb2b",
+      "caseId": "sm-tail-helper",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "4f1455f6024d529237a9469196e866e5f8d4860f71a3177aaa51d6219dd3b01f",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 2/4。filter→mapは正しいが存在しない14を結果に追加。 B: 正確性 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "groundedness": "提示コードとの整合 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "context_utilization": "必要文脈の利用 3/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "hallucination": "未提示の事実の追加 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "instruction_following": "質問の条件の遵守 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "pedagogical_usefulness": "学習への助け 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "actionability": "質問に対する具体性 3/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "conciseness": "長さと関連性 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hallucination"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "actionability": "質問に対する具体性 3/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "conciseness": "長さと関連性 4/4。filter→mapは正しいが存在しない14を結果に追加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapは正しいが存在しない14を結果に追加。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hallucination"
+        ]
+      }
+    },
+    {
+      "pairId": "76df89e9b712b79a",
+      "caseId": "sm-learn",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "b05d7a9e7f6a971000fdae6e5aabf7b2343716d6a9c2ba495bded1fa2fc78a05",
+      "win": 0,
+      "verdict": "A_clear",
+      "reason": "A: 正確性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。 B: 正確性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "groundedness": "提示コードとの整合 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "context_utilization": "必要文脈の利用 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "hallucination": "未提示の事実の追加 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "instruction_following": "質問の条件の遵守 2/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "pedagogical_usefulness": "学習への助け 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "actionability": "質問に対する具体性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "conciseness": "長さと関連性 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+          "japanese_quality": "日本語の明瞭さ 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "groundedness": "提示コードとの整合 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "context_utilization": "必要文脈の利用 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "hallucination": "未提示の事実の追加 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "instruction_following": "質問の条件の遵守 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "pedagogical_usefulness": "学習への助け 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "actionability": "質問に対する具体性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "conciseness": "長さと関連性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+          "japanese_quality": "日本語の明瞭さ 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "324773f166c29096",
+      "caseId": "sm-unknown",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "acfbb4630423b71e20a9aa53da3325af600aa714163830d92cfd7a10e503974b",
+      "win": 1,
+      "verdict": "B_slight",
+      "reason": "A: 正確性 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。 B: 正確性 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "groundedness": "提示コードとの整合 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "context_utilization": "必要文脈の利用 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "pedagogical_usefulness": "学習への助け 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "conciseness": "長さと関連性 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 3,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "groundedness": "提示コードとの整合 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "context_utilization": "必要文脈の利用 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "hallucination": "未提示の事実の追加 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "pedagogical_usefulness": "学習への助け 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "actionability": "質問に対する具体性 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "conciseness": "長さと関連性 4/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+          "japanese_quality": "日本語の明瞭さ 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。"
+        },
+        "failures": [
+          "hallucination"
+        ]
+      }
+    },
+    {
+      "pairId": "cd29078b8ff62c8d",
+      "caseId": "sm-additional",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "d592cc773a325bce2bede2f32202a4511bdc62a147b86a3eb288b161a9bf64a7",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。初回込み3回と1500msの算術が正しい。 B: 正確性 4/4。3回と1500msを正答。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。3回と1500msを正答。",
+          "groundedness": "提示コードとの整合 4/4。3回と1500msを正答。",
+          "context_utilization": "必要文脈の利用 4/4。3回と1500msを正答。",
+          "hallucination": "未提示の事実の追加 4/4。3回と1500msを正答。",
+          "instruction_following": "質問の条件の遵守 4/4。3回と1500msを正答。",
+          "pedagogical_usefulness": "学習への助け 4/4。3回と1500msを正答。",
+          "actionability": "質問に対する具体性 4/4。3回と1500msを正答。",
+          "conciseness": "長さと関連性 4/4。3回と1500msを正答。",
+          "japanese_quality": "日本語の明瞭さ 4/4。3回と1500msを正答。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。初回込み3回と1500msの算術が正しい。",
+          "groundedness": "提示コードとの整合 4/4。初回込み3回と1500msの算術が正しい。",
+          "context_utilization": "必要文脈の利用 4/4。初回込み3回と1500msの算術が正しい。",
+          "hallucination": "未提示の事実の追加 4/4。初回込み3回と1500msの算術が正しい。",
+          "instruction_following": "質問の条件の遵守 4/4。初回込み3回と1500msの算術が正しい。",
+          "pedagogical_usefulness": "学習への助け 4/4。初回込み3回と1500msの算術が正しい。",
+          "actionability": "質問に対する具体性 4/4。初回込み3回と1500msの算術が正しい。",
+          "conciseness": "長さと関連性 4/4。初回込み3回と1500msの算術が正しい。",
+          "japanese_quality": "日本語の明瞭さ 4/4。初回込み3回と1500msの算術が正しい。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "0e0ccdd8782be0bc",
+      "caseId": "sm-compare",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "b43786897ca16273bd00988897a1192521a077de402885fe330da5233d1ee108",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。 B: 正確性 2/4。Mapを配列mapと混同する。findの選択だけは妥当。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "groundedness": "提示コードとの整合 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "context_utilization": "必要文脈の利用 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "hallucination": "未提示の事実の追加 4/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "instruction_following": "質問の条件の遵守 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "pedagogical_usefulness": "学習への助け 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "actionability": "質問に対する具体性 3/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "conciseness": "長さと関連性 4/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+          "japanese_quality": "日本語の明瞭さ 4/4。Mapを配列mapと混同する。findの選択だけは妥当。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "groundedness": "提示コードとの整合 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "context_utilization": "必要文脈の利用 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "hallucination": "未提示の事実の追加 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "instruction_following": "質問の条件の遵守 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "pedagogical_usefulness": "学習への助け 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "actionability": "質問に対する具体性 3/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "conciseness": "長さと関連性 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      }
+    },
+    {
+      "pairId": "a7a80ee1636318e4",
+      "caseId": "sm-tail-helper",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "cd4c1d276e00732c7d1d485217b29d5482ce07fcb706bb9f1cb14badd6be2a36",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 2/4。filter→mapは正しいが入力にない9に対応する18を追加。 B: 正確性 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "groundedness": "提示コードとの整合 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "context_utilization": "必要文脈の利用 3/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "hallucination": "未提示の事実の追加 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "instruction_following": "質問の条件の遵守 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "pedagogical_usefulness": "学習への助け 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "actionability": "質問に対する具体性 3/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "conciseness": "長さと関連性 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hallucination"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "groundedness": "提示コードとの整合 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "context_utilization": "必要文脈の利用 3/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "hallucination": "未提示の事実の追加 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "instruction_following": "質問の条件の遵守 4/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "pedagogical_usefulness": "学習への助け 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "actionability": "質問に対する具体性 3/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "conciseness": "長さと関連性 4/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。filter→mapは正しいが入力にない9に対応する18を追加。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hallucination"
+        ]
+      }
+    },
+    {
+      "pairId": "7ac58d50527f1744",
+      "caseId": "sm-boundary",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "cf116faa0ee71acb4c4707264bfa1fd634db4cacb56bddb5de8b13a34ba1808b",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。 B: 正確性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "groundedness": "提示コードとの整合 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "context_utilization": "必要文脈の利用 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "hallucination": "未提示の事実の追加 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "instruction_following": "質問の条件の遵守 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "pedagogical_usefulness": "学習への助け 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "actionability": "質問に対する具体性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "conciseness": "長さと関連性 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+          "japanese_quality": "日本語の明瞭さ 4/4。範囲外の指摘は正しいがNaNの説明を欠く。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "groundedness": "提示コードとの整合 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "context_utilization": "必要文脈の利用 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "hallucination": "未提示の事実の追加 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "actionability": "質問に対する具体性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "conciseness": "長さと関連性 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+          "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。"
+        },
+        "failures": [
+          "incorrect_code_reasoning"
+        ]
+      }
+    },
+    {
+      "pairId": "384f0ac3569c6deb",
+      "caseId": "sm-hint",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "12a45cdc3b834e2491b00a4608c0acd2bf36db3689f23f58bdda6be4d4b39468",
+      "win": 1,
+      "verdict": "B_slight",
+      "reason": "A: 正確性 1/4。必要なawaitでなく既存asyncだけを提案。 B: 正確性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "groundedness": "提示コードとの整合 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "context_utilization": "必要文脈の利用 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "hallucination": "未提示の事実の追加 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "instruction_following": "質問の条件の遵守 2/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "pedagogical_usefulness": "学習への助け 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "actionability": "質問に対する具体性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "conciseness": "長さと関連性 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+          "japanese_quality": "日本語の明瞭さ 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 1/4。必要なawaitでなく既存asyncだけを提案。",
+          "groundedness": "提示コードとの整合 2/4。必要なawaitでなく既存asyncだけを提案。",
+          "context_utilization": "必要文脈の利用 2/4。必要なawaitでなく既存asyncだけを提案。",
+          "hallucination": "未提示の事実の追加 4/4。必要なawaitでなく既存asyncだけを提案。",
+          "instruction_following": "質問の条件の遵守 4/4。必要なawaitでなく既存asyncだけを提案。",
+          "pedagogical_usefulness": "学習への助け 1/4。必要なawaitでなく既存asyncだけを提案。",
+          "actionability": "質問に対する具体性 1/4。必要なawaitでなく既存asyncだけを提案。",
+          "conciseness": "長さと関連性 4/4。必要なawaitでなく既存asyncだけを提案。",
+          "japanese_quality": "日本語の明瞭さ 4/4。必要なawaitでなく既存asyncだけを提案。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "weak_pedagogy"
+        ]
+      }
+    },
+    {
+      "pairId": "f3e453ad5c2a06a4",
+      "caseId": "sm-format",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "cc093ee1f26581e03ccfe24cb52bb19f4004e86dee61933578805678374c914d",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。SKU-0027とゼロ埋めの説明が正しい。 B: 正確性 4/4。4桁パディングとSKU-0027が正しい。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "groundedness": "提示コードとの整合 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "context_utilization": "必要文脈の利用 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "hallucination": "未提示の事実の追加 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "instruction_following": "質問の条件の遵守 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "pedagogical_usefulness": "学習への助け 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "actionability": "質問に対する具体性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "conciseness": "長さと関連性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+          "japanese_quality": "日本語の明瞭さ 4/4。SKU-0027とゼロ埋めの説明が正しい。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。4桁パディングとSKU-0027が正しい。",
+          "groundedness": "提示コードとの整合 4/4。4桁パディングとSKU-0027が正しい。",
+          "context_utilization": "必要文脈の利用 4/4。4桁パディングとSKU-0027が正しい。",
+          "hallucination": "未提示の事実の追加 4/4。4桁パディングとSKU-0027が正しい。",
+          "instruction_following": "質問の条件の遵守 4/4。4桁パディングとSKU-0027が正しい。",
+          "pedagogical_usefulness": "学習への助け 4/4。4桁パディングとSKU-0027が正しい。",
+          "actionability": "質問に対する具体性 4/4。4桁パディングとSKU-0027が正しい。",
+          "conciseness": "長さと関連性 4/4。4桁パディングとSKU-0027が正しい。",
+          "japanese_quality": "日本語の明瞭さ 4/4。4桁パディングとSKU-0027が正しい。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "5a1e12990eece80a",
+      "caseId": "sm-tail-helper",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "9d0f4a8ed52d46506dcf340abf38382d33df02c6a486dc7458cc12bc0b267ed9",
+      "win": 0,
+      "verdict": "B_clear",
+      "reason": "A: 正確性 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。 B: 正確性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 2,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "groundedness": "提示コードとの整合 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "context_utilization": "必要文脈の利用 3/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "hallucination": "未提示の事実の追加 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "instruction_following": "質問の条件の遵守 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "pedagogical_usefulness": "学習への助け 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "actionability": "質問に対する具体性 3/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "conciseness": "長さと関連性 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "hallucination"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "groundedness": "提示コードとの整合 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "context_utilization": "必要文脈の利用 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "hallucination": "未提示の事実の追加 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "instruction_following": "質問の条件の遵守 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "pedagogical_usefulness": "学習への助け 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "actionability": "質問に対する具体性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "conciseness": "長さと関連性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+          "japanese_quality": "日本語の明瞭さ 4/4。5,8を抽出し10,16へ倍化する流れが正しい。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "134b077b48bd5982",
+      "caseId": "sm-hint",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "2ddb164a6155da0abbb4e3dd5a04d7882edf0a4667b2bf288b318a88556f7cb8",
+      "win": 0,
+      "verdict": "A_clear",
+      "reason": "A: 正確性 4/4。await一語は求められた適切なヒント。 B: 正確性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "groundedness": "提示コードとの整合 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "context_utilization": "必要文脈の利用 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "hallucination": "未提示の事実の追加 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "instruction_following": "質問の条件の遵守 2/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "pedagogical_usefulness": "学習への助け 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "actionability": "質問に対する具体性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "conciseness": "長さと関連性 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。await一語は求められた適切なヒント。",
+          "groundedness": "提示コードとの整合 4/4。await一語は求められた適切なヒント。",
+          "context_utilization": "必要文脈の利用 4/4。await一語は求められた適切なヒント。",
+          "hallucination": "未提示の事実の追加 4/4。await一語は求められた適切なヒント。",
+          "instruction_following": "質問の条件の遵守 4/4。await一語は求められた適切なヒント。",
+          "pedagogical_usefulness": "学習への助け 4/4。await一語は求められた適切なヒント。",
+          "actionability": "質問に対する具体性 4/4。await一語は求められた適切なヒント。",
+          "conciseness": "長さと関連性 4/4。await一語は求められた適切なヒント。",
+          "japanese_quality": "日本語の明瞭さ 4/4。await一語は求められた適切なヒント。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "85253053f51e5c19",
+      "caseId": "sm-price",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "b05800234cc4eee86bf1170c8d79d279cbc2ede574b38c9d2ad09d8ca22dbf65",
+      "win": 1,
+      "verdict": "B_slight",
+      "reason": "A: 正確性 3/4。170は正しいが未提示の税抜価格という意味を追加。 B: 正確性 4/4。200×0.85=170を未提示の税制解釈なく説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "groundedness": "提示コードとの整合 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "context_utilization": "必要文脈の利用 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "hallucination": "未提示の事実の追加 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "actionability": "質問に対する具体性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "conciseness": "長さと関連性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。200×0.85=170を未提示の税制解釈なく説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 2,
+          "context_utilization": 3,
+          "hallucination": 3,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "groundedness": "提示コードとの整合 2/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "context_utilization": "必要文脈の利用 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "hallucination": "未提示の事実の追加 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "instruction_following": "質問の条件の遵守 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "pedagogical_usefulness": "学習への助け 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "actionability": "質問に対する具体性 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "conciseness": "長さと関連性 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+          "japanese_quality": "日本語の明瞭さ 4/4。170は正しいが未提示の税抜価格という意味を追加。"
+        },
+        "failures": [
+          "hallucination"
+        ]
+      }
+    },
+    {
+      "pairId": "09344bfbc6a1de10",
+      "caseId": "sm-learn",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "290b3c5265c34efe42abbf411108c44ca7e5b71f8f8b2c04b780996b8151a64e",
+      "win": 0,
+      "verdict": "B_slight",
+      "reason": "A: 正確性 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。 B: 正確性 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 3
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "groundedness": "提示コードとの整合 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "context_utilization": "必要文脈の利用 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "hallucination": "未提示の事実の追加 4/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "instruction_following": "質問の条件の遵守 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "pedagogical_usefulness": "学習への助け 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "actionability": "質問に対する具体性 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "conciseness": "長さと関連性 4/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+          "japanese_quality": "日本語の明瞭さ 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "groundedness": "提示コードとの整合 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "context_utilization": "必要文脈の利用 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "hallucination": "未提示の事実の追加 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "instruction_following": "質問の条件の遵守 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "pedagogical_usefulness": "学習への助け 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "actionability": "質問に対する具体性 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "conciseness": "長さと関連性 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+          "japanese_quality": "日本語の明瞭さ 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "e8f9e65d4d83b77f",
+      "caseId": "sm-price",
+      "repeat": 2,
+      "candidateSide": "A",
+      "pairHash": "40a3bda3910391ec45ded05be000b8e62c0b65b9f5fa5728d4e4465f99ca28ac",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。170と85%への変換を正しく説明。 B: 正確性 4/4。200×0.85=170をコードの計算として直接説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。170と85%への変換を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。170と85%への変換を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。170と85%への変換を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。170と85%への変換を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。170と85%への変換を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。170と85%への変換を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。170と85%への変換を正しく説明。",
+          "conciseness": "長さと関連性 4/4。170と85%への変換を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。170と85%への変換を正しく説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。200×0.85=170をコードの計算として直接説明。",
+          "groundedness": "提示コードとの整合 4/4。200×0.85=170をコードの計算として直接説明。",
+          "context_utilization": "必要文脈の利用 4/4。200×0.85=170をコードの計算として直接説明。",
+          "hallucination": "未提示の事実の追加 4/4。200×0.85=170をコードの計算として直接説明。",
+          "instruction_following": "質問の条件の遵守 4/4。200×0.85=170をコードの計算として直接説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。200×0.85=170をコードの計算として直接説明。",
+          "actionability": "質問に対する具体性 4/4。200×0.85=170をコードの計算として直接説明。",
+          "conciseness": "長さと関連性 4/4。200×0.85=170をコードの計算として直接説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。200×0.85=170をコードの計算として直接説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "505d1f7217befd56",
+      "caseId": "sm-compare",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "60a33d91936a5fb08c0a70d6e4bcf1bfc5e4e70308e0df09ccf7e80394222c1c",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。 B: 正確性 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "groundedness": "提示コードとの整合 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "context_utilization": "必要文脈の利用 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "hallucination": "未提示の事実の追加 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "instruction_following": "質問の条件の遵守 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "pedagogical_usefulness": "学習への助け 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "actionability": "質問に対する具体性 3/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "conciseness": "長さと関連性 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+          "japanese_quality": "日本語の明瞭さ 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 2,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 2,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "groundedness": "提示コードとの整合 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "context_utilization": "必要文脈の利用 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "hallucination": "未提示の事実の追加 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "instruction_following": "質問の条件の遵守 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "pedagogical_usefulness": "学習への助け 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "actionability": "質問に対する具体性 3/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "conciseness": "長さと関連性 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+          "japanese_quality": "日本語の明瞭さ 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "ignored_context"
+        ]
+      }
+    },
+    {
+      "pairId": "944e82f755e47532",
+      "caseId": "sm-unknown",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "a8b0f88f999041785c38704b1af03b96bf2b8bd44076ce8e48ff2196b15dfd85",
+      "win": 1,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。 B: 正確性 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "groundedness": "提示コードとの整合 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "context_utilization": "必要文脈の利用 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "pedagogical_usefulness": "学習への助け 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "conciseness": "長さと関連性 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "groundedness": "提示コードとの整合 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "context_utilization": "必要文脈の利用 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "pedagogical_usefulness": "学習への助け 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "conciseness": "長さと関連性 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+          "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "20e4d1c3da8ec29f",
+      "caseId": "sm-explain",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "8316faab5053fc1cb053fab07da8b531d16fdb66a9b7a944940f8408852f319e",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。inputと最終outputを正確に二文で説明。 B: 正確性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。inputと最終outputを正確に二文で説明。",
+          "groundedness": "提示コードとの整合 4/4。inputと最終outputを正確に二文で説明。",
+          "context_utilization": "必要文脈の利用 4/4。inputと最終outputを正確に二文で説明。",
+          "hallucination": "未提示の事実の追加 4/4。inputと最終outputを正確に二文で説明。",
+          "instruction_following": "質問の条件の遵守 4/4。inputと最終outputを正確に二文で説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。inputと最終outputを正確に二文で説明。",
+          "actionability": "質問に対する具体性 4/4。inputと最終outputを正確に二文で説明。",
+          "conciseness": "長さと関連性 4/4。inputと最終outputを正確に二文で説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。inputと最終outputを正確に二文で説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "conciseness": "長さと関連性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "86ebeb3794217fe5",
+      "caseId": "sm-hint",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "73d0e3a52a387d1dec980c99085ab7948e2ff600da3e406d65925a72eab4a0df",
+      "win": 1,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。 B: 正確性 1/4。既存のasyncのみで必要なawaitを示さない。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 2,
+          "pedagogical_usefulness": 3,
+          "actionability": 3,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "groundedness": "提示コードとの整合 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "context_utilization": "必要文脈の利用 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "hallucination": "未提示の事実の追加 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "instruction_following": "質問の条件の遵守 2/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "pedagogical_usefulness": "学習への助け 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "actionability": "質問に対する具体性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "conciseness": "長さと関連性 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。"
+        },
+        "failures": [
+          "weak_pedagogy"
+        ]
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 1,
+          "groundedness": 2,
+          "context_utilization": 2,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 1,
+          "actionability": 1,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 1/4。既存のasyncのみで必要なawaitを示さない。",
+          "groundedness": "提示コードとの整合 2/4。既存のasyncのみで必要なawaitを示さない。",
+          "context_utilization": "必要文脈の利用 2/4。既存のasyncのみで必要なawaitを示さない。",
+          "hallucination": "未提示の事実の追加 4/4。既存のasyncのみで必要なawaitを示さない。",
+          "instruction_following": "質問の条件の遵守 4/4。既存のasyncのみで必要なawaitを示さない。",
+          "pedagogical_usefulness": "学習への助け 1/4。既存のasyncのみで必要なawaitを示さない。",
+          "actionability": "質問に対する具体性 1/4。既存のasyncのみで必要なawaitを示さない。",
+          "conciseness": "長さと関連性 4/4。既存のasyncのみで必要なawaitを示さない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。既存のasyncのみで必要なawaitを示さない。"
+        },
+        "failures": [
+          "incorrect_code_reasoning",
+          "weak_pedagogy"
+        ]
+      }
+    },
+    {
+      "pairId": "71a1e84d87c765ca",
+      "caseId": "sm-unknown",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "d85d6af429769a45e3fb343c04b90f53704bf79a7cbc0f26a0cc73a60de97cd1",
+      "win": 0,
+      "verdict": "A_slight",
+      "reason": "A: 正確性 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。 B: 正確性 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 3,
+          "context_utilization": 3,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 3,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "groundedness": "提示コードとの整合 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "context_utilization": "必要文脈の利用 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "hallucination": "未提示の事実の追加 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "instruction_following": "質問の条件の遵守 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "pedagogical_usefulness": "学習への助け 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "actionability": "質問に対する具体性 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "conciseness": "長さと関連性 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+          "japanese_quality": "日本語の明瞭さ 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 3,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 3,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "groundedness": "提示コードとの整合 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "context_utilization": "必要文脈の利用 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "hallucination": "未提示の事実の追加 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "instruction_following": "質問の条件の遵守 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "pedagogical_usefulness": "学習への助け 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "actionability": "質問に対する具体性 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "conciseness": "長さと関連性 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+          "japanese_quality": "日本語の明瞭さ 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。"
+        },
+        "failures": []
+      }
+    },
+    {
+      "pairId": "8ccbd866f1914c96",
+      "caseId": "sm-format",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "7e56ab6fa3ac75ba5a9dbcbded23328cc2ef1bb7c75ad7dc4eb11de8f08beaa9",
+      "win": 0.5,
+      "verdict": "tie",
+      "reason": "A: 正確性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。 B: 正確性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。。正確さと指示遵守を優先して比較。",
+      "candidate": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "actionability": "質問に対する具体性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "conciseness": "長さと関連性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。"
+        },
+        "failures": []
+      },
+      "baseline": {
+        "scores": {
+          "correctness": 4,
+          "groundedness": 4,
+          "context_utilization": 4,
+          "hallucination": 4,
+          "instruction_following": 4,
+          "pedagogical_usefulness": 4,
+          "actionability": 4,
+          "conciseness": 4,
+          "japanese_quality": 4
+        },
+        "reasons": {
+          "correctness": "正確性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "groundedness": "提示コードとの整合 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "context_utilization": "必要文脈の利用 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "hallucination": "未提示の事実の追加 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "instruction_following": "質問の条件の遵守 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "pedagogical_usefulness": "学習への助け 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "actionability": "質問に対する具体性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "conciseness": "長さと関連性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+          "japanese_quality": "日本語の明瞭さ 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。"
+        },
+        "failures": []
+      }
+    }
+  ],
+  "scoringScope": "end_to_end_delivery",
+  "semanticOnly": {
+    "pairwiseWinRate": 0.5333333333333333,
+    "decisiveWinRate": 0.5714285714285714,
+    "ties": 16,
+    "ci95": {
+      "low": 0.3833333333333333,
+      "high": 0.6500000000000001,
+      "unit": "case",
+      "cases": 10,
+      "iterations": 5000
+    },
+    "axes": {
+      "correctness": {
+        "baseline": 3.066666666666667,
+        "candidate": 3.1333333333333333,
+        "delta": 0.06666666666666667
+      },
+      "groundedness": {
+        "baseline": 3.3,
+        "candidate": 3.4,
+        "delta": 0.1
+      },
+      "context_utilization": {
+        "baseline": 3.433333333333333,
+        "candidate": 3.5,
+        "delta": 0.06666666666666667
+      },
+      "hallucination": {
+        "baseline": 3.7666666666666666,
+        "candidate": 3.8,
+        "delta": 0.03333333333333333
+      },
+      "instruction_following": {
+        "baseline": 3.566666666666667,
+        "candidate": 3.3,
+        "delta": -0.26666666666666666
+      },
+      "pedagogical_usefulness": {
+        "baseline": 3.1666666666666665,
+        "candidate": 3.2333333333333334,
+        "delta": 0.06666666666666667
+      },
+      "actionability": {
+        "baseline": 3.466666666666667,
+        "candidate": 3.5,
+        "delta": 0.03333333333333333
+      },
+      "conciseness": {
+        "baseline": 4,
+        "candidate": 4,
+        "delta": 0
+      },
+      "japanese_quality": {
+        "baseline": 3.933333333333333,
+        "candidate": 3.966666666666667,
+        "delta": 0.03333333333333333
+      }
+    },
+    "rows": [
+      {
+        "pairId": "9bce0d76291bd106",
+        "caseId": "sm-additional",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "6db07b95a89a190fd7ef30128732b804019f7c298c5ed33ab6e762ab80b2144d",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。3回・1500msを端的に回答。 B: 正確性 4/4。3回・1500ミリ秒を正しく端的に回答。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "groundedness": "提示コードとの整合 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "context_utilization": "必要文脈の利用 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "hallucination": "未提示の事実の追加 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "instruction_following": "質問の条件の遵守 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "pedagogical_usefulness": "学習への助け 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "actionability": "質問に対する具体性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "conciseness": "長さと関連性 4/4。3回・1500ミリ秒を正しく端的に回答。",
+            "japanese_quality": "日本語の明瞭さ 4/4。3回・1500ミリ秒を正しく端的に回答。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。3回・1500msを端的に回答。",
+            "groundedness": "提示コードとの整合 4/4。3回・1500msを端的に回答。",
+            "context_utilization": "必要文脈の利用 4/4。3回・1500msを端的に回答。",
+            "hallucination": "未提示の事実の追加 4/4。3回・1500msを端的に回答。",
+            "instruction_following": "質問の条件の遵守 4/4。3回・1500msを端的に回答。",
+            "pedagogical_usefulness": "学習への助け 4/4。3回・1500msを端的に回答。",
+            "actionability": "質問に対する具体性 4/4。3回・1500msを端的に回答。",
+            "conciseness": "長さと関連性 4/4。3回・1500msを端的に回答。",
+            "japanese_quality": "日本語の明瞭さ 4/4。3回・1500msを端的に回答。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "722fe546d63b2446",
+        "caseId": "sm-explain",
+        "repeat": 2,
+        "candidateSide": "A",
+        "pairHash": "f8030c6ac6a0f3f1b7137082b11eadc6bc28ede83bacbe5c61795514ac0e79c1",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。 B: 正確性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "groundedness": "提示コードとの整合 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "context_utilization": "必要文脈の利用 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "hallucination": "未提示の事実の追加 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "instruction_following": "質問の条件の遵守 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "actionability": "質問に対する具体性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "conciseness": "長さと関連性 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。input[1,2,3,4]とoutput[4,16]を二文で説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "groundedness": "提示コードとの整合 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "context_utilization": "必要文脈の利用 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "hallucination": "未提示の事実の追加 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "instruction_following": "質問の条件の遵守 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "actionability": "質問に対する具体性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "conciseness": "長さと関連性 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。inputと最終outputを区別し、filter→mapを簡潔に説明。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "12e4e061756c5627",
+        "caseId": "sm-compare",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "4c6827b94fe39f519de7b954d916a2f079d405020424d3604b06bedfdb253eba",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。 B: 正確性 2/4。findと配列mapの比較へ逸れMapを説明しない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "groundedness": "提示コードとの整合 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "context_utilization": "必要文脈の利用 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "hallucination": "未提示の事実の追加 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "instruction_following": "質問の条件の遵守 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "pedagogical_usefulness": "学習への助け 2/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "actionability": "質問に対する具体性 3/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "conciseness": "長さと関連性 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。",
+            "japanese_quality": "日本語の明瞭さ 4/4。Mapでなく配列mapの説明へ逸れる。findを選ぶ結論だけは適切。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "groundedness": "提示コードとの整合 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "context_utilization": "必要文脈の利用 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "hallucination": "未提示の事実の追加 4/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "instruction_following": "質問の条件の遵守 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "pedagogical_usefulness": "学習への助け 2/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "actionability": "質問に対する具体性 3/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "conciseness": "長さと関連性 4/4。findと配列mapの比較へ逸れMapを説明しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。findと配列mapの比較へ逸れMapを説明しない。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        }
+      },
+      {
+        "pairId": "d785c0ffc54b4e30",
+        "caseId": "sm-format",
+        "repeat": 2,
+        "candidateSide": "A",
+        "pairHash": "6755dfbeaefed9d5104c5c43705468f85c448f81acef994250e9fc412a9f7114",
+        "win": 1,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 4/4。4桁パディングとSKU-0027を正答。 B: 正確性 4/4。SKU-0027は正答。「前接辞」はやや不自然。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。4桁パディングとSKU-0027を正答。",
+            "groundedness": "提示コードとの整合 4/4。4桁パディングとSKU-0027を正答。",
+            "context_utilization": "必要文脈の利用 4/4。4桁パディングとSKU-0027を正答。",
+            "hallucination": "未提示の事実の追加 4/4。4桁パディングとSKU-0027を正答。",
+            "instruction_following": "質問の条件の遵守 4/4。4桁パディングとSKU-0027を正答。",
+            "pedagogical_usefulness": "学習への助け 4/4。4桁パディングとSKU-0027を正答。",
+            "actionability": "質問に対する具体性 4/4。4桁パディングとSKU-0027を正答。",
+            "conciseness": "長さと関連性 4/4。4桁パディングとSKU-0027を正答。",
+            "japanese_quality": "日本語の明瞭さ 4/4。4桁パディングとSKU-0027を正答。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "groundedness": "提示コードとの整合 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "context_utilization": "必要文脈の利用 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "hallucination": "未提示の事実の追加 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "instruction_following": "質問の条件の遵守 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "pedagogical_usefulness": "学習への助け 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "actionability": "質問に対する具体性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "conciseness": "長さと関連性 4/4。SKU-0027は正答。「前接辞」はやや不自然。",
+            "japanese_quality": "日本語の明瞭さ 3/4。SKU-0027は正答。「前接辞」はやや不自然。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "37782ee4b2b2ad3b",
+        "caseId": "sm-additional",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "52e8c16ea8e10637b0fb1b13cfd547b3b545eecc7c40f683ed7f6fc7a7d3493f",
+        "win": 1,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 4/4。初回を含む3回、750×2=1500msを正答。 B: 正確性 3/4。3回と750ms×2は正しいが合計1500msを書かない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。初回を含む3回、750×2=1500msを正答。",
+            "groundedness": "提示コードとの整合 4/4。初回を含む3回、750×2=1500msを正答。",
+            "context_utilization": "必要文脈の利用 4/4。初回を含む3回、750×2=1500msを正答。",
+            "hallucination": "未提示の事実の追加 4/4。初回を含む3回、750×2=1500msを正答。",
+            "instruction_following": "質問の条件の遵守 4/4。初回を含む3回、750×2=1500msを正答。",
+            "pedagogical_usefulness": "学習への助け 4/4。初回を含む3回、750×2=1500msを正答。",
+            "actionability": "質問に対する具体性 4/4。初回を含む3回、750×2=1500msを正答。",
+            "conciseness": "長さと関連性 4/4。初回を含む3回、750×2=1500msを正答。",
+            "japanese_quality": "日本語の明瞭さ 4/4。初回を含む3回、750×2=1500msを正答。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "groundedness": "提示コードとの整合 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "context_utilization": "必要文脈の利用 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "hallucination": "未提示の事実の追加 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "instruction_following": "質問の条件の遵守 3/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "pedagogical_usefulness": "学習への助け 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "actionability": "質問に対する具体性 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "conciseness": "長さと関連性 4/4。3回と750ms×2は正しいが合計1500msを書かない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。3回と750ms×2は正しいが合計1500msを書かない。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "69a7c6fc2aad4471",
+        "caseId": "sm-price",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "c270b358299364e9831d1be445c659483825c0c32682d9b0e1404a0d6e724cfa",
+        "win": 1,
+        "verdict": "B_slight",
+        "reason": "A: 正確性 3/4。170は正しいが税抜価格・円という未提示の意味を付加。 B: 正確性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "groundedness": "提示コードとの整合 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "context_utilization": "必要文脈の利用 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "hallucination": "未提示の事実の追加 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "instruction_following": "質問の条件の遵守 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "pedagogical_usefulness": "学習への助け 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "actionability": "質問に対する具体性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "conciseness": "長さと関連性 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。",
+            "japanese_quality": "日本語の明瞭さ 4/4。170と0.85倍を説明。15%減は数式に沿った言い換え。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 3,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "groundedness": "提示コードとの整合 2/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "context_utilization": "必要文脈の利用 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "hallucination": "未提示の事実の追加 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "instruction_following": "質問の条件の遵守 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "pedagogical_usefulness": "学習への助け 3/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "actionability": "質問に対する具体性 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "conciseness": "長さと関連性 4/4。170は正しいが税抜価格・円という未提示の意味を付加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。170は正しいが税抜価格・円という未提示の意味を付加。"
+          },
+          "failures": [
+            "hallucination"
+          ]
+        }
+      },
+      {
+        "pairId": "36a765c90cdfaf1c",
+        "caseId": "sm-boundary",
+        "repeat": 2,
+        "candidateSide": "A",
+        "pairHash": "030ffbdb35476559aebf2d51c9ac8fd74a88db910c135c75dd54b7669a296659",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。 B: 正確性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "groundedness": "提示コードとの整合 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "context_utilization": "必要文脈の利用 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "hallucination": "未提示の事実の追加 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "actionability": "質問に対する具体性 3/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "conciseness": "長さと関連性 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。",
+            "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスは正しいがNaNへ至る説明は不足。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "groundedness": "提示コードとの整合 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "context_utilization": "必要文脈の利用 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "hallucination": "未提示の事実の追加 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "actionability": "質問に対する具体性 3/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "conciseness": "長さと関連性 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。",
+            "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスの指摘は正しい。NaNまでの説明は不足。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "688463c271e847ad",
+        "caseId": "sm-learn",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "993f96d02cecd141f705ea2b13cafc4e55a23d8320dfc0608740292093d68f37",
+        "win": 0,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。 B: 正確性 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "groundedness": "提示コードとの整合 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "context_utilization": "必要文脈の利用 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "hallucination": "未提示の事実の追加 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "instruction_following": "質問の条件の遵守 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "pedagogical_usefulness": "学習への助け 2/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "actionability": "質問に対する具体性 3/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "conciseness": "長さと関連性 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。",
+            "japanese_quality": "日本語の明瞭さ 4/4。型推論とジェネリクスの二つを挙げ、文字列挨拶関数に汎用型を持たせる理由が弱い。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "groundedness": "提示コードとの整合 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "context_utilization": "必要文脈の利用 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "hallucination": "未提示の事実の追加 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "instruction_following": "質問の条件の遵守 2/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "pedagogical_usefulness": "学習への助け 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "actionability": "質問に対する具体性 3/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "conciseness": "長さと関連性 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。",
+            "japanese_quality": "日本語の明瞭さ 4/4。再利用とエラー処理の二つを提示し、一つという依頼を外す。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        }
+      },
+      {
+        "pairId": "2464d149b1ef95f5",
+        "caseId": "sm-explain",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "1506fba805b16eaebbd8be5769e098a358e6d31763c4c7b7939458da15ce571b",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。inputとoutput[4,16]、処理順が正しい。 B: 正確性 4/4。inputとoutput[4,16]を正しく説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。inputとoutput[4,16]を正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。inputとoutput[4,16]を正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。inputとoutput[4,16]を正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。inputとoutput[4,16]を正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。inputとoutput[4,16]を正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。inputとoutput[4,16]を正しく説明。",
+            "actionability": "質問に対する具体性 4/4。inputとoutput[4,16]を正しく説明。",
+            "conciseness": "長さと関連性 4/4。inputとoutput[4,16]を正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。inputとoutput[4,16]を正しく説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "groundedness": "提示コードとの整合 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "context_utilization": "必要文脈の利用 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "hallucination": "未提示の事実の追加 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "instruction_following": "質問の条件の遵守 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "pedagogical_usefulness": "学習への助け 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "actionability": "質問に対する具体性 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "conciseness": "長さと関連性 4/4。inputとoutput[4,16]、処理順が正しい。",
+            "japanese_quality": "日本語の明瞭さ 4/4。inputとoutput[4,16]、処理順が正しい。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "11b64239ab89c7f9",
+        "caseId": "sm-boundary",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "5fc1d49eafa97897883d36c24154d7206a6bb3a6aa69c54daba557e3d6ab06f7",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。 B: 正確性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "groundedness": "提示コードとの整合 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "context_utilization": "必要文脈の利用 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "hallucination": "未提示の事実の追加 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "instruction_following": "質問の条件の遵守 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "pedagogical_usefulness": "学習への助け 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "actionability": "質問に対する具体性 3/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "conciseness": "長さと関連性 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。",
+            "japanese_quality": "日本語の明瞭さ 4/4。i<=lengthによる範囲外を指摘。undefined/NaNの説明は不足。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "groundedness": "提示コードとの整合 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "context_utilization": "必要文脈の利用 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "hallucination": "未提示の事実の追加 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "instruction_following": "質問の条件の遵守 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "pedagogical_usefulness": "学習への助け 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "actionability": "質問に対する具体性 3/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "conciseness": "長さと関連性 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。添字範囲は正しいがundefined加算によるNaNは説明していない。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "e27b14eacf9bdb2b",
+        "caseId": "sm-tail-helper",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "4f1455f6024d529237a9469196e866e5f8d4860f71a3177aaa51d6219dd3b01f",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 2/4。filter→mapは正しいが存在しない14を結果に追加。 B: 正確性 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "groundedness": "提示コードとの整合 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "context_utilization": "必要文脈の利用 3/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "hallucination": "未提示の事実の追加 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "instruction_following": "質問の条件の遵守 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "pedagogical_usefulness": "学習への助け 2/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "actionability": "質問に対する具体性 3/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "conciseness": "長さと関連性 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。冒頭の[10,14,16]は誤答。後段の[10,16]と自己矛盾し、結論として使えない。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "hallucination"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "groundedness": "提示コードとの整合 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "context_utilization": "必要文脈の利用 3/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "hallucination": "未提示の事実の追加 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "instruction_following": "質問の条件の遵守 4/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "pedagogical_usefulness": "学習への助け 2/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "actionability": "質問に対する具体性 3/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "conciseness": "長さと関連性 4/4。filter→mapは正しいが存在しない14を結果に追加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。filter→mapは正しいが存在しない14を結果に追加。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "hallucination"
+          ]
+        }
+      },
+      {
+        "pairId": "76df89e9b712b79a",
+        "caseId": "sm-learn",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "b05d7a9e7f6a971000fdae6e5aabf7b2343716d6a9c2ba495bded1fa2fc78a05",
+        "win": 0,
+        "verdict": "A_clear",
+        "reason": "A: 正確性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。 B: 正確性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "groundedness": "提示コードとの整合 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "context_utilization": "必要文脈の利用 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "hallucination": "未提示の事実の追加 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "instruction_following": "質問の条件の遵守 2/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "pedagogical_usefulness": "学習への助け 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "actionability": "質問に対する具体性 3/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "conciseness": "長さと関連性 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。",
+            "japanese_quality": "日本語の明瞭さ 4/4。再利用と型明示の二つで、一つの次の学びという依頼を外す。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "groundedness": "提示コードとの整合 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "context_utilization": "必要文脈の利用 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "hallucination": "未提示の事実の追加 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "instruction_following": "質問の条件の遵守 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "pedagogical_usefulness": "学習への助け 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "actionability": "質問に対する具体性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "conciseness": "長さと関連性 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。",
+            "japanese_quality": "日本語の明瞭さ 4/4。デフォルト引数を一つ提案し、理由と小さな練習を提示。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "324773f166c29096",
+        "caseId": "sm-unknown",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "acfbb4630423b71e20a9aa53da3325af600aa714163830d92cfd7a10e503974b",
+        "win": 1,
+        "verdict": "B_slight",
+        "reason": "A: 正確性 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。 B: 正確性 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "groundedness": "提示コードとの整合 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "context_utilization": "必要文脈の利用 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "pedagogical_usefulness": "学習への助け 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "conciseness": "長さと関連性 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを一つだけ挙げ、件数を捏造しない。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 3,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "groundedness": "提示コードとの整合 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "context_utilization": "必要文脈の利用 2/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "hallucination": "未提示の事実の追加 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "pedagogical_usefulness": "学習への助け 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "actionability": "質問に対する具体性 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "conciseness": "長さと関連性 4/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。",
+            "japanese_quality": "日本語の明瞭さ 3/4。必要な戻り値の長さには触れるが、存在しない追加文脈にあると述べる。"
+          },
+          "failures": [
+            "hallucination"
+          ]
+        }
+      },
+      {
+        "pairId": "cd29078b8ff62c8d",
+        "caseId": "sm-additional",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "d592cc773a325bce2bede2f32202a4511bdc62a147b86a3eb288b161a9bf64a7",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。初回込み3回と1500msの算術が正しい。 B: 正確性 4/4。3回と1500msを正答。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。3回と1500msを正答。",
+            "groundedness": "提示コードとの整合 4/4。3回と1500msを正答。",
+            "context_utilization": "必要文脈の利用 4/4。3回と1500msを正答。",
+            "hallucination": "未提示の事実の追加 4/4。3回と1500msを正答。",
+            "instruction_following": "質問の条件の遵守 4/4。3回と1500msを正答。",
+            "pedagogical_usefulness": "学習への助け 4/4。3回と1500msを正答。",
+            "actionability": "質問に対する具体性 4/4。3回と1500msを正答。",
+            "conciseness": "長さと関連性 4/4。3回と1500msを正答。",
+            "japanese_quality": "日本語の明瞭さ 4/4。3回と1500msを正答。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。初回込み3回と1500msの算術が正しい。",
+            "groundedness": "提示コードとの整合 4/4。初回込み3回と1500msの算術が正しい。",
+            "context_utilization": "必要文脈の利用 4/4。初回込み3回と1500msの算術が正しい。",
+            "hallucination": "未提示の事実の追加 4/4。初回込み3回と1500msの算術が正しい。",
+            "instruction_following": "質問の条件の遵守 4/4。初回込み3回と1500msの算術が正しい。",
+            "pedagogical_usefulness": "学習への助け 4/4。初回込み3回と1500msの算術が正しい。",
+            "actionability": "質問に対する具体性 4/4。初回込み3回と1500msの算術が正しい。",
+            "conciseness": "長さと関連性 4/4。初回込み3回と1500msの算術が正しい。",
+            "japanese_quality": "日本語の明瞭さ 4/4。初回込み3回と1500msの算術が正しい。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "0e0ccdd8782be0bc",
+        "caseId": "sm-compare",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "b43786897ca16273bd00988897a1192521a077de402885fe330da5233d1ee108",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。 B: 正確性 2/4。Mapを配列mapと混同する。findの選択だけは妥当。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "groundedness": "提示コードとの整合 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "context_utilization": "必要文脈の利用 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "hallucination": "未提示の事実の追加 4/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "instruction_following": "質問の条件の遵守 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "pedagogical_usefulness": "学習への助け 2/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "actionability": "質問に対する具体性 3/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "conciseness": "長さと関連性 4/4。Mapを配列mapと混同する。findの選択だけは妥当。",
+            "japanese_quality": "日本語の明瞭さ 4/4。Mapを配列mapと混同する。findの選択だけは妥当。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "groundedness": "提示コードとの整合 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "context_utilization": "必要文脈の利用 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "hallucination": "未提示の事実の追加 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "instruction_following": "質問の条件の遵守 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "pedagogical_usefulness": "学習への助け 2/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "actionability": "質問に対する具体性 3/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "conciseness": "長さと関連性 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。Mapを配列mapと取り違え、依頼した比較になっていない。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        }
+      },
+      {
+        "pairId": "a7a80ee1636318e4",
+        "caseId": "sm-tail-helper",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "cd4c1d276e00732c7d1d485217b29d5482ce07fcb706bb9f1cb14badd6be2a36",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 2/4。filter→mapは正しいが入力にない9に対応する18を追加。 B: 正確性 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "groundedness": "提示コードとの整合 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "context_utilization": "必要文脈の利用 3/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "hallucination": "未提示の事実の追加 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "instruction_following": "質問の条件の遵守 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "pedagogical_usefulness": "学習への助け 2/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "actionability": "質問に対する具体性 3/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "conciseness": "長さと関連性 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。filterと倍化の説明は正しいが、存在しない18を結果に追加。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "hallucination"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "groundedness": "提示コードとの整合 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "context_utilization": "必要文脈の利用 3/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "hallucination": "未提示の事実の追加 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "instruction_following": "質問の条件の遵守 4/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "pedagogical_usefulness": "学習への助け 2/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "actionability": "質問に対する具体性 3/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "conciseness": "長さと関連性 4/4。filter→mapは正しいが入力にない9に対応する18を追加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。filter→mapは正しいが入力にない9に対応する18を追加。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "hallucination"
+          ]
+        }
+      },
+      {
+        "pairId": "7ac58d50527f1744",
+        "caseId": "sm-boundary",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "cf116faa0ee71acb4c4707264bfa1fd634db4cacb56bddb5de8b13a34ba1808b",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。 B: 正確性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "groundedness": "提示コードとの整合 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "context_utilization": "必要文脈の利用 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "hallucination": "未提示の事実の追加 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "instruction_following": "質問の条件の遵守 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "pedagogical_usefulness": "学習への助け 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "actionability": "質問に対する具体性 3/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "conciseness": "長さと関連性 4/4。範囲外の指摘は正しいがNaNの説明を欠く。",
+            "japanese_quality": "日本語の明瞭さ 4/4。範囲外の指摘は正しいがNaNの説明を欠く。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "groundedness": "提示コードとの整合 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "context_utilization": "必要文脈の利用 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "hallucination": "未提示の事実の追加 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "instruction_following": "質問の条件の遵守 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "pedagogical_usefulness": "学習への助け 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "actionability": "質問に対する具体性 3/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "conciseness": "長さと関連性 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。",
+            "japanese_quality": "日本語の明瞭さ 4/4。範囲外アクセスは正しいがundefined/NaNへの言及が不足。"
+          },
+          "failures": [
+            "incorrect_code_reasoning"
+          ]
+        }
+      },
+      {
+        "pairId": "384f0ac3569c6deb",
+        "caseId": "sm-hint",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "12a45cdc3b834e2491b00a4608c0acd2bf36db3689f23f58bdda6be4d4b39468",
+        "win": 1,
+        "verdict": "B_slight",
+        "reason": "A: 正確性 1/4。必要なawaitでなく既存asyncだけを提案。 B: 正確性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "groundedness": "提示コードとの整合 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "context_utilization": "必要文脈の利用 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "hallucination": "未提示の事実の追加 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "instruction_following": "質問の条件の遵守 2/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "pedagogical_usefulness": "学習への助け 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "actionability": "質問に対する具体性 3/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "conciseness": "長さと関連性 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。",
+            "japanese_quality": "日本語の明瞭さ 4/4。awaitを含むがasyncも挙げ、キーワード一つの条件を外す。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 1,
+            "actionability": 1,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 1/4。必要なawaitでなく既存asyncだけを提案。",
+            "groundedness": "提示コードとの整合 2/4。必要なawaitでなく既存asyncだけを提案。",
+            "context_utilization": "必要文脈の利用 2/4。必要なawaitでなく既存asyncだけを提案。",
+            "hallucination": "未提示の事実の追加 4/4。必要なawaitでなく既存asyncだけを提案。",
+            "instruction_following": "質問の条件の遵守 4/4。必要なawaitでなく既存asyncだけを提案。",
+            "pedagogical_usefulness": "学習への助け 1/4。必要なawaitでなく既存asyncだけを提案。",
+            "actionability": "質問に対する具体性 1/4。必要なawaitでなく既存asyncだけを提案。",
+            "conciseness": "長さと関連性 4/4。必要なawaitでなく既存asyncだけを提案。",
+            "japanese_quality": "日本語の明瞭さ 4/4。必要なawaitでなく既存asyncだけを提案。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "weak_pedagogy"
+          ]
+        }
+      },
+      {
+        "pairId": "f3e453ad5c2a06a4",
+        "caseId": "sm-format",
+        "repeat": 1,
+        "candidateSide": "A",
+        "pairHash": "cc093ee1f26581e03ccfe24cb52bb19f4004e86dee61933578805678374c914d",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。SKU-0027とゼロ埋めの説明が正しい。 B: 正確性 4/4。4桁パディングとSKU-0027が正しい。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "groundedness": "提示コードとの整合 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "context_utilization": "必要文脈の利用 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "hallucination": "未提示の事実の追加 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "instruction_following": "質問の条件の遵守 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "pedagogical_usefulness": "学習への助け 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "actionability": "質問に対する具体性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "conciseness": "長さと関連性 4/4。SKU-0027とゼロ埋めの説明が正しい。",
+            "japanese_quality": "日本語の明瞭さ 4/4。SKU-0027とゼロ埋めの説明が正しい。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。4桁パディングとSKU-0027が正しい。",
+            "groundedness": "提示コードとの整合 4/4。4桁パディングとSKU-0027が正しい。",
+            "context_utilization": "必要文脈の利用 4/4。4桁パディングとSKU-0027が正しい。",
+            "hallucination": "未提示の事実の追加 4/4。4桁パディングとSKU-0027が正しい。",
+            "instruction_following": "質問の条件の遵守 4/4。4桁パディングとSKU-0027が正しい。",
+            "pedagogical_usefulness": "学習への助け 4/4。4桁パディングとSKU-0027が正しい。",
+            "actionability": "質問に対する具体性 4/4。4桁パディングとSKU-0027が正しい。",
+            "conciseness": "長さと関連性 4/4。4桁パディングとSKU-0027が正しい。",
+            "japanese_quality": "日本語の明瞭さ 4/4。4桁パディングとSKU-0027が正しい。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "5a1e12990eece80a",
+        "caseId": "sm-tail-helper",
+        "repeat": 1,
+        "candidateSide": "A",
+        "pairHash": "9d0f4a8ed52d46506dcf340abf38382d33df02c6a486dc7458cc12bc0b267ed9",
+        "win": 0,
+        "verdict": "B_clear",
+        "reason": "A: 正確性 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。 B: 正確性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 2,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "groundedness": "提示コードとの整合 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "context_utilization": "必要文脈の利用 3/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "hallucination": "未提示の事実の追加 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "instruction_following": "質問の条件の遵守 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "pedagogical_usefulness": "学習への助け 2/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "actionability": "質問に対する具体性 3/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "conciseness": "長さと関連性 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。冒頭の[10,16,18]と後段の[10,16]が矛盾。配列に余計な18を追加。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "hallucination"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "groundedness": "提示コードとの整合 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "context_utilization": "必要文脈の利用 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "hallucination": "未提示の事実の追加 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "instruction_following": "質問の条件の遵守 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "pedagogical_usefulness": "学習への助け 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "actionability": "質問に対する具体性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "conciseness": "長さと関連性 4/4。5,8を抽出し10,16へ倍化する流れが正しい。",
+            "japanese_quality": "日本語の明瞭さ 4/4。5,8を抽出し10,16へ倍化する流れが正しい。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "134b077b48bd5982",
+        "caseId": "sm-hint",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "2ddb164a6155da0abbb4e3dd5a04d7882edf0a4667b2bf288b318a88556f7cb8",
+        "win": 0,
+        "verdict": "A_clear",
+        "reason": "A: 正確性 4/4。await一語は求められた適切なヒント。 B: 正確性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "groundedness": "提示コードとの整合 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "context_utilization": "必要文脈の利用 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "hallucination": "未提示の事実の追加 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "instruction_following": "質問の条件の遵守 2/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "pedagogical_usefulness": "学習への助け 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "actionability": "質問に対する具体性 3/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "conciseness": "長さと関連性 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。awaitは関連するがasyncも提示し一語の依頼を守らない。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。await一語は求められた適切なヒント。",
+            "groundedness": "提示コードとの整合 4/4。await一語は求められた適切なヒント。",
+            "context_utilization": "必要文脈の利用 4/4。await一語は求められた適切なヒント。",
+            "hallucination": "未提示の事実の追加 4/4。await一語は求められた適切なヒント。",
+            "instruction_following": "質問の条件の遵守 4/4。await一語は求められた適切なヒント。",
+            "pedagogical_usefulness": "学習への助け 4/4。await一語は求められた適切なヒント。",
+            "actionability": "質問に対する具体性 4/4。await一語は求められた適切なヒント。",
+            "conciseness": "長さと関連性 4/4。await一語は求められた適切なヒント。",
+            "japanese_quality": "日本語の明瞭さ 4/4。await一語は求められた適切なヒント。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "85253053f51e5c19",
+        "caseId": "sm-price",
+        "repeat": 1,
+        "candidateSide": "B",
+        "pairHash": "b05800234cc4eee86bf1170c8d79d279cbc2ede574b38c9d2ad09d8ca22dbf65",
+        "win": 1,
+        "verdict": "B_slight",
+        "reason": "A: 正確性 3/4。170は正しいが未提示の税抜価格という意味を追加。 B: 正確性 4/4。200×0.85=170を未提示の税制解釈なく説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "groundedness": "提示コードとの整合 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "context_utilization": "必要文脈の利用 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "hallucination": "未提示の事実の追加 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "actionability": "質問に対する具体性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "conciseness": "長さと関連性 4/4。200×0.85=170を未提示の税制解釈なく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。200×0.85=170を未提示の税制解釈なく説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 2,
+            "context_utilization": 3,
+            "hallucination": 3,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 3,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "groundedness": "提示コードとの整合 2/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "context_utilization": "必要文脈の利用 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "hallucination": "未提示の事実の追加 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "instruction_following": "質問の条件の遵守 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "pedagogical_usefulness": "学習への助け 3/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "actionability": "質問に対する具体性 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "conciseness": "長さと関連性 4/4。170は正しいが未提示の税抜価格という意味を追加。",
+            "japanese_quality": "日本語の明瞭さ 4/4。170は正しいが未提示の税抜価格という意味を追加。"
+          },
+          "failures": [
+            "hallucination"
+          ]
+        }
+      },
+      {
+        "pairId": "09344bfbc6a1de10",
+        "caseId": "sm-learn",
+        "repeat": 1,
+        "candidateSide": "A",
+        "pairHash": "290b3c5265c34efe42abbf411108c44ca7e5b71f8f8b2c04b780996b8151a64e",
+        "win": 0,
+        "verdict": "B_slight",
+        "reason": "A: 正確性 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。 B: 正確性 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 3
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "groundedness": "提示コードとの整合 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "context_utilization": "必要文脈の利用 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "hallucination": "未提示の事実の追加 4/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "instruction_following": "質問の条件の遵守 2/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "pedagogical_usefulness": "学習への助け 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "actionability": "質問に対する具体性 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "conciseness": "長さと関連性 4/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。",
+            "japanese_quality": "日本語の明瞭さ 3/4。再利用と型の強制を挙げ、理解済み内容からの発展と練習との対応が弱い。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 3,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "groundedness": "提示コードとの整合 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "context_utilization": "必要文脈の利用 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "hallucination": "未提示の事実の追加 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "instruction_following": "質問の条件の遵守 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "pedagogical_usefulness": "学習への助け 3/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "actionability": "質問に対する具体性 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "conciseness": "長さと関連性 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。",
+            "japanese_quality": "日本語の明瞭さ 4/4。制御フローの理由と条件分岐の練習は適切。条件分岐とループを併記。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "e8f9e65d4d83b77f",
+        "caseId": "sm-price",
+        "repeat": 2,
+        "candidateSide": "A",
+        "pairHash": "40a3bda3910391ec45ded05be000b8e62c0b65b9f5fa5728d4e4465f99ca28ac",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。170と85%への変換を正しく説明。 B: 正確性 4/4。200×0.85=170をコードの計算として直接説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。170と85%への変換を正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。170と85%への変換を正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。170と85%への変換を正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。170と85%への変換を正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。170と85%への変換を正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。170と85%への変換を正しく説明。",
+            "actionability": "質問に対する具体性 4/4。170と85%への変換を正しく説明。",
+            "conciseness": "長さと関連性 4/4。170と85%への変換を正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。170と85%への変換を正しく説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。200×0.85=170をコードの計算として直接説明。",
+            "groundedness": "提示コードとの整合 4/4。200×0.85=170をコードの計算として直接説明。",
+            "context_utilization": "必要文脈の利用 4/4。200×0.85=170をコードの計算として直接説明。",
+            "hallucination": "未提示の事実の追加 4/4。200×0.85=170をコードの計算として直接説明。",
+            "instruction_following": "質問の条件の遵守 4/4。200×0.85=170をコードの計算として直接説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。200×0.85=170をコードの計算として直接説明。",
+            "actionability": "質問に対する具体性 4/4。200×0.85=170をコードの計算として直接説明。",
+            "conciseness": "長さと関連性 4/4。200×0.85=170をコードの計算として直接説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。200×0.85=170をコードの計算として直接説明。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "505d1f7217befd56",
+        "caseId": "sm-compare",
+        "repeat": 2,
+        "candidateSide": "B",
+        "pairHash": "60a33d91936a5fb08c0a70d6e4bcf1bfc5e4e70308e0df09ccf7e80394222c1c",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。 B: 正確性 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "groundedness": "提示コードとの整合 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "context_utilization": "必要文脈の利用 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "hallucination": "未提示の事実の追加 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "instruction_following": "質問の条件の遵守 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "pedagogical_usefulness": "学習への助け 2/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "actionability": "質問に対する具体性 3/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "conciseness": "長さと関連性 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。",
+            "japanese_quality": "日本語の明瞭さ 4/4。Mapではなく配列mapを後で使うと説明し比較を外す。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 2,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 2,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "groundedness": "提示コードとの整合 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "context_utilization": "必要文脈の利用 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "hallucination": "未提示の事実の追加 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "instruction_following": "質問の条件の遵守 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "pedagogical_usefulness": "学習への助け 2/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "actionability": "質問に対する具体性 3/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "conciseness": "長さと関連性 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。",
+            "japanese_quality": "日本語の明瞭さ 4/4。find選択は妥当だがMapとmapを混同し、配列操作が必要とも余計に断定。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "ignored_context"
+          ]
+        }
+      },
+      {
+        "pairId": "944e82f755e47532",
+        "caseId": "sm-unknown",
+        "repeat": 1,
+        "candidateSide": "A",
+        "pairHash": "a8b0f88f999041785c38704b1af03b96bf2b8bd44076ce8e48ff2196b15dfd85",
+        "win": 1,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。 B: 正確性 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "groundedness": "提示コードとの整合 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "context_utilization": "必要文脈の利用 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "pedagogical_usefulness": "学習への助け 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "conciseness": "長さと関連性 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを一つ挙げ、件数は推測しない。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 3,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "groundedness": "提示コードとの整合 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "context_utilization": "必要文脈の利用 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "hallucination": "未提示の事実の追加 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "instruction_following": "質問の条件の遵守 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "pedagogical_usefulness": "学習への助け 3/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "actionability": "質問に対する具体性 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "conciseness": "長さと関連性 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。",
+            "japanese_quality": "日本語の明瞭さ 4/4。必要な戻り値の長さを挙げるが表示件数との対応は未確認。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "20e4d1c3da8ec29f",
+        "caseId": "sm-explain",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "8316faab5053fc1cb053fab07da8b531d16fdb66a9b7a944940f8408852f319e",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。inputと最終outputを正確に二文で説明。 B: 正確性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。inputと最終outputを正確に二文で説明。",
+            "groundedness": "提示コードとの整合 4/4。inputと最終outputを正確に二文で説明。",
+            "context_utilization": "必要文脈の利用 4/4。inputと最終outputを正確に二文で説明。",
+            "hallucination": "未提示の事実の追加 4/4。inputと最終outputを正確に二文で説明。",
+            "instruction_following": "質問の条件の遵守 4/4。inputと最終outputを正確に二文で説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。inputと最終outputを正確に二文で説明。",
+            "actionability": "質問に対する具体性 4/4。inputと最終outputを正確に二文で説明。",
+            "conciseness": "長さと関連性 4/4。inputと最終outputを正確に二文で説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。inputと最終outputを正確に二文で説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "actionability": "質問に対する具体性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "conciseness": "長さと関連性 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。inputの値とfilter→mapによる[4,16]を正しく説明。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "86ebeb3794217fe5",
+        "caseId": "sm-hint",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "73d0e3a52a387d1dec980c99085ab7948e2ff600da3e406d65925a72eab4a0df",
+        "win": 1,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。 B: 正確性 1/4。既存のasyncのみで必要なawaitを示さない。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 2,
+            "pedagogical_usefulness": 3,
+            "actionability": 3,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "groundedness": "提示コードとの整合 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "context_utilization": "必要文脈の利用 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "hallucination": "未提示の事実の追加 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "instruction_following": "質問の条件の遵守 2/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "pedagogical_usefulness": "学習への助け 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "actionability": "質問に対する具体性 3/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "conciseness": "長さと関連性 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。awaitに触れるがasyncも挙げて一つのキーワードに絞らない。"
+          },
+          "failures": [
+            "weak_pedagogy"
+          ]
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 1,
+            "groundedness": 2,
+            "context_utilization": 2,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 1,
+            "actionability": 1,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 1/4。既存のasyncのみで必要なawaitを示さない。",
+            "groundedness": "提示コードとの整合 2/4。既存のasyncのみで必要なawaitを示さない。",
+            "context_utilization": "必要文脈の利用 2/4。既存のasyncのみで必要なawaitを示さない。",
+            "hallucination": "未提示の事実の追加 4/4。既存のasyncのみで必要なawaitを示さない。",
+            "instruction_following": "質問の条件の遵守 4/4。既存のasyncのみで必要なawaitを示さない。",
+            "pedagogical_usefulness": "学習への助け 1/4。既存のasyncのみで必要なawaitを示さない。",
+            "actionability": "質問に対する具体性 1/4。既存のasyncのみで必要なawaitを示さない。",
+            "conciseness": "長さと関連性 4/4。既存のasyncのみで必要なawaitを示さない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。既存のasyncのみで必要なawaitを示さない。"
+          },
+          "failures": [
+            "incorrect_code_reasoning",
+            "weak_pedagogy"
+          ]
+        }
+      },
+      {
+        "pairId": "71a1e84d87c765ca",
+        "caseId": "sm-unknown",
+        "repeat": 0,
+        "candidateSide": "B",
+        "pairHash": "d85d6af429769a45e3fb343c04b90f53704bf79a7cbc0f26a0cc73a60de97cd1",
+        "win": 0,
+        "verdict": "A_slight",
+        "reason": "A: 正確性 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。 B: 正確性 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 3,
+            "context_utilization": 3,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 3,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "groundedness": "提示コードとの整合 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "context_utilization": "必要文脈の利用 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "hallucination": "未提示の事実の追加 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "instruction_following": "質問の条件の遵守 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "pedagogical_usefulness": "学習への助け 3/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "actionability": "質問に対する具体性 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "conciseness": "長さと関連性 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。",
+            "japanese_quality": "日本語の明瞭さ 4/4。戻り値の長さを求める点は適切だが、readRecordsと表示件数の関係は未確認。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 3,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 3,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "groundedness": "提示コードとの整合 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "context_utilization": "必要文脈の利用 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "hallucination": "未提示の事実の追加 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "instruction_following": "質問の条件の遵守 3/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "pedagogical_usefulness": "学習への助け 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "actionability": "質問に対する具体性 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "conciseness": "長さと関連性 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。",
+            "japanese_quality": "日本語の明瞭さ 4/4。データ内容が必要と認め、件数や特定の保存先を断定しない。"
+          },
+          "failures": []
+        }
+      },
+      {
+        "pairId": "8ccbd866f1914c96",
+        "caseId": "sm-format",
+        "repeat": 0,
+        "candidateSide": "A",
+        "pairHash": "7e56ab6fa3ac75ba5a9dbcbded23328cc2ef1bb7c75ad7dc4eb11de8f08beaa9",
+        "win": 0.5,
+        "verdict": "tie",
+        "reason": "A: 正確性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。 B: 正確性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。。正確さと指示遵守を優先して比較。",
+        "candidate": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "actionability": "質問に対する具体性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "conciseness": "長さと関連性 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。ゼロ埋めと接頭辞、SKU-0027を正しく説明。"
+          },
+          "failures": []
+        },
+        "baseline": {
+          "scores": {
+            "correctness": 4,
+            "groundedness": 4,
+            "context_utilization": 4,
+            "hallucination": 4,
+            "instruction_following": 4,
+            "pedagogical_usefulness": 4,
+            "actionability": 4,
+            "conciseness": 4,
+            "japanese_quality": 4
+          },
+          "reasons": {
+            "correctness": "正確性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "groundedness": "提示コードとの整合 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "context_utilization": "必要文脈の利用 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "hallucination": "未提示の事実の追加 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "instruction_following": "質問の条件の遵守 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "pedagogical_usefulness": "学習への助け 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "actionability": "質問に対する具体性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "conciseness": "長さと関連性 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。",
+            "japanese_quality": "日本語の明瞭さ 4/4。SKU-0027と4桁のゼロ埋めを正しく説明。"
+          },
+          "failures": []
+        }
+      }
+    ]
+  },
+  "infrastructureExcludedPairs": 0,
+  "gates": {
+    "noNewHardFailures": true,
+    "criticalAxes": false,
+    "qualityCI": false,
+    "latency": true
+  },
+  "decision": "Review gates and qualitative regressions; no automatic champion promotion. Holdout required for adoption."
+}

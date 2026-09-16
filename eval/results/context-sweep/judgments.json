@@ -1,0 +1,548 @@
+{
+  "judge": {
+    "id": "Codex / GPT-6 (session model)",
+    "independent": false,
+    "limitations": "同一agentによる表示回答の手動評価。context identityを見ておりブラインドではない。特性測定で採用判断は行わない。"
+  },
+  "rows": [
+    {
+      "contextLength": 4096,
+      "caseId": "long-additional-tail",
+      "repeat": 0,
+      "answerHash": "c05205cc0ac41d5efeb41e0fa47bbb22a7cf7834345ac2ca1701947ad429f74d",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒に誤答",
+        "groundedness": "30秒に根拠なし",
+        "context_utilization": "最新情報欠落",
+        "hallucination": "旧値を最新と断定",
+        "instruction_following": "JSON形式違反",
+        "pedagogical_usefulness": "誤学習",
+        "actionability": "誤設定へ誘導",
+        "conciseness": "rawは短い",
+        "japanese_quality": "rawは自然"
+      },
+      "failures": [
+        "missing_context",
+        "hallucination",
+        "invalid_format"
+      ]
+    },
+    {
+      "contextLength": 4096,
+      "caseId": "context-noise",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 4096,
+      "caseId": "context-short",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 4096,
+      "caseId": "long-additional-tail",
+      "repeat": 1,
+      "answerHash": "0f41d6d6849d02aca4e02c17447f9d848142c6abfcac58eb3fa41151f30e4966",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 0,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒に誤答",
+        "groundedness": "30秒に根拠なし",
+        "context_utilization": "最新情報欠落",
+        "hallucination": "旧値を最新と断定",
+        "instruction_following": "JSON形式違反",
+        "pedagogical_usefulness": "誤学習",
+        "actionability": "誤設定へ誘導",
+        "conciseness": "rawは短い",
+        "japanese_quality": "rawは自然"
+      },
+      "failures": [
+        "missing_context",
+        "hallucination",
+        "invalid_format"
+      ]
+    },
+    {
+      "contextLength": 4096,
+      "caseId": "context-noise",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 4096,
+      "caseId": "context-short",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "context-noise",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "context-short",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "long-additional-tail",
+      "repeat": 0,
+      "answerHash": "5d2a1a38d7f809719d6c9b6564698adb2aa015f7162e37148b9bf1db1e0809c9",
+      "scores": {
+        "correctness": 2,
+        "groundedness": 4,
+        "context_utilization": 0,
+        "hallucination": 4,
+        "instruction_following": 2,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "数値の回答はできない",
+        "groundedness": "見える範囲の不足を認める",
+        "context_utilization": "最新仕様が送信前に失われる",
+        "hallucination": "推測しない",
+        "instruction_following": "直接回答は不可",
+        "pedagogical_usefulness": "旧版と最新の差を認識",
+        "actionability": "仕様の確認へ進める",
+        "conciseness": "少し重複",
+        "japanese_quality": "参照タグ露出"
+      },
+      "failures": [
+        "missing_context"
+      ]
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "context-short",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "context-noise",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 16384,
+      "caseId": "long-additional-tail",
+      "repeat": 1,
+      "answerHash": "145547d325b2586f12eefb2d0f0d629292ff0e96c2c5d23517889a4be51491ab",
+      "scores": {
+        "correctness": 0,
+        "groundedness": 0,
+        "context_utilization": 0,
+        "hallucination": 0,
+        "instruction_following": 2,
+        "pedagogical_usefulness": 0,
+        "actionability": 0,
+        "conciseness": 2,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "最新値に誤答",
+        "groundedness": "コードの30秒を新仕様と断定",
+        "context_utilization": "最新情報欠落",
+        "hallucination": "新旧を取り違える",
+        "instruction_following": "形式のみ遵守",
+        "pedagogical_usefulness": "誤学習",
+        "actionability": "誤設定へ誘導",
+        "conciseness": "長い推測",
+        "japanese_quality": "タグ露出"
+      },
+      "failures": [
+        "missing_context",
+        "hallucination"
+      ]
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "long-additional-tail",
+      "repeat": 0,
+      "answerHash": "1f7e7e63f148402995b78681d0ec3cecb71eab0728b1593ee542880847add972",
+      "scores": {
+        "correctness": 2,
+        "groundedness": 4,
+        "context_utilization": 0,
+        "hallucination": 4,
+        "instruction_following": 2,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "数値の回答はできない",
+        "groundedness": "見える範囲の不足を認める",
+        "context_utilization": "最新仕様が送信前に失われる",
+        "hallucination": "推測しない",
+        "instruction_following": "直接回答は不可",
+        "pedagogical_usefulness": "旧版と最新の差を認識",
+        "actionability": "仕様の確認へ進める",
+        "conciseness": "少し重複",
+        "japanese_quality": "参照タグ露出"
+      },
+      "failures": [
+        "missing_context"
+      ]
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "context-short",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "context-noise",
+      "repeat": 0,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "context-noise",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "long-additional-tail",
+      "repeat": 1,
+      "answerHash": "c5fb3cb4d9d862b43e2a4c7d9e3833c343e1abd225becc8cb0db3f186e7b4994",
+      "scores": {
+        "correctness": 2,
+        "groundedness": 4,
+        "context_utilization": 0,
+        "hallucination": 4,
+        "instruction_following": 2,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 3,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "数値の回答はできない",
+        "groundedness": "見える範囲の不足を認める",
+        "context_utilization": "最新仕様が送信前に失われる",
+        "hallucination": "推測しない",
+        "instruction_following": "直接回答は不可",
+        "pedagogical_usefulness": "旧版と最新の差を認識",
+        "actionability": "仕様の確認へ進める",
+        "conciseness": "少し重複",
+        "japanese_quality": "参照タグ露出"
+      },
+      "failures": [
+        "missing_context"
+      ]
+    },
+    {
+      "contextLength": 8192,
+      "caseId": "context-short",
+      "repeat": 1,
+      "answerHash": "4ad41f4a06b45a2840d4bbe5a36dd7a1a028d354443d5a4a57e6924f6839f200",
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "最新17秒が正しい",
+        "groundedness": "提示仕様に根拠",
+        "context_utilization": "新旧の仕様を区別",
+        "hallucination": "創作なし",
+        "instruction_following": "秒数を直接回答",
+        "pedagogical_usefulness": "短い要求の理解に十分",
+        "actionability": "設定値を確認できる",
+        "conciseness": "一文で簡潔",
+        "japanese_quality": "自然な日本語"
+      },
+      "failures": []
+    }
+  ]
+}

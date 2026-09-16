@@ -820,7 +820,7 @@ export class NavigatorController implements vscode.Disposable {
       const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
       const additionalContext = this.getGuidanceAdditionalContext(state);
       const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
-      const baseContext = this.contextCollector.collectGuidanceContext();
+      const baseContext = this.contextCollector.collectGuidanceContext(settings.providerId);
       const automaticEditorSnapshot = this.contextCollector.automaticEditorSnapshot();
       const automaticDocumentSnapshot = this.contextCollector.automaticDocumentSnapshot();
       const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
@@ -930,7 +930,7 @@ export class NavigatorController implements vscode.Disposable {
       ? normalizeAdditionalContext(additionalContext)
       : resolveAdditionalContext(undefined, this.getStreamAdditionalContext(state));
     const livePreview = this.rememberSelectionContext(this.contextCollector.collectPreview());
-    const liveContext = this.contextCollector.collectGuidanceContext();
+    const liveContext = this.contextCollector.collectGuidanceContext(settings.providerId);
     const stickySelectionAvailable = Boolean(
       state.contextPreview.selectedTextPreview &&
         this.pendingSelectionContext?.selectedText &&
@@ -1142,7 +1142,7 @@ export class NavigatorController implements vscode.Disposable {
             resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), options.slashCommandScope)
           )
         : await this.collectGuidanceContextForDepth(settings, assistanceDepth);
-    const prepared =
+    let prepared =
       options.prepared ??
       this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
         withAdditionalContext(
@@ -1166,6 +1166,7 @@ export class NavigatorController implements vscode.Disposable {
     const requestId = this.nextGuidanceRequestId++;
     const tokenSource = new vscode.CancellationTokenSource();
     this.activeGuidanceRequest = { id: requestId, tokenSource };
+    const editorSnapshotBeforeRoute = this.contextCollector.automaticEditorSnapshot();
     const route = await this.providerRoutingCoordinator.prepare(
       settings,
       history,
@@ -1186,6 +1187,27 @@ export class NavigatorController implements vscode.Disposable {
     if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
       this.patchSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
       return { ok: false };
+    }
+    // Routing can select a different provider after context collection. Apply
+    // the selected provider's active-file policy before sending: bounded whole
+    // files are local-only, while explicit selections remain unchanged.
+    const routedProviderId = this.connectionService.getProviderId();
+    if (routedProviderId !== settings.providerId && prepared.context.activeFileExcerpt && !prepared.context.selectedText) {
+      if (!editorSnapshotBeforeRoute || editorSnapshotBeforeRoute !== this.contextCollector.automaticEditorSnapshot()) {
+        if (options.kind === "always") this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
+        this.patchSession({ statusMessage: { kind: "warning", text: "接続先の切り替え中に編集対象が変わったため、送信を中止しました。" } });
+        return { ok: false };
+      }
+      const routedContext = this.contextCollector.collectGuidanceContext(routedProviderId);
+      const refreshed = this.requestPlanCoordinator.externalize({
+        ...prepared,
+        context: { ...prepared.context, activeFilePath: routedContext.activeFilePath, activeFileExcerpt: routedContext.activeFileExcerpt }
+      }, options.userPrompt);
+      if (refreshed.context.activeFilePath !== prepared.context.activeFilePath) {
+        this.patchSession({ statusMessage: { kind: "warning", text: "編集対象が変わったため、送信を中止しました。" } });
+        return { ok: false };
+      }
+      prepared = refreshed;
     }
     let conversationMemory: string;
     try {
@@ -1608,7 +1630,7 @@ export class NavigatorController implements vscode.Disposable {
     baseContext?: GuidanceContext
   ): Promise<GuidanceContext> {
     if (guidanceContentDepth(settings.providerId, assistanceDepth) !== "high") {
-      return baseContext ?? this.contextCollector.collectGuidanceContext();
+      return baseContext ?? this.contextCollector.collectGuidanceContext(settings.providerId);
     }
 
     return this.contextCollector.collectGuidanceContextWithWorkspace(settings, baseContext);
@@ -1638,7 +1660,7 @@ export class NavigatorController implements vscode.Disposable {
       return preview;
     }
 
-    const context = this.contextCollector.collectGuidanceContext();
+    const context = this.contextCollector.collectGuidanceContext(this.settingsService.getSettings().providerId);
     if (context.selectedText) {
       this.pendingSelectionContext = context;
       this.pendingSelectionPreview = preview;

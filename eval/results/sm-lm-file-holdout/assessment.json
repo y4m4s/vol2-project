@@ -1,0 +1,223 @@
+{
+  "judge": {
+    "id": "Codex-manual",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同じCodexが設計・評価。候補固定後に一度確認、holdout内容への再チューニングなし。"
+  },
+  "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+  "scores": {
+    "correctness": 3.3333333333333335,
+    "groundedness": 3.5,
+    "context_utilization": 3.6666666666666665,
+    "hallucination": 3.6666666666666665,
+    "instruction_following": 3.6666666666666665,
+    "pedagogical_usefulness": 3.3333333333333335,
+    "actionability": 3.5,
+    "conciseness": 3.8333333333333335,
+    "japanese_quality": 3.8333333333333335
+  },
+  "cases": [
+    {
+      "caseId": "smh-hint",
+      "repeat": 0,
+      "caseHash": "683433036339bf236d28691010aaa5e800b6a77d6730dd66f2147399bb24be6f",
+      "answerHash": "cd84af99e553224d4ec3178e03acff11b390a9362e67d422a3ac9168f607a5c2",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "groundedness": "提示コードとの整合 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "context_utilization": "必要文脈の利用 3/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "hallucination": "未提示の事実の追加 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "instruction_following": "質問の条件の遵守 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "pedagogical_usefulness": "学習への助け 2/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "actionability": "質問に対する具体性 3/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "conciseness": "長さと関連性 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。",
+        "japanese_quality": "日本語の明瞭さ 4/4。文字列falseが偽でない点は正しいが、if判定がboolean型を前提とするという説明は誤り。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "smh-order",
+      "repeat": 0,
+      "caseHash": "29d4634745a23be52156c7ec32bab1204a0a59346135dd45d19dd55ec33c2b8c",
+      "answerHash": "2ff502bfb42ad4f58803508b64d77942fa5b74511102cad2fa10205f683406ac",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "groundedness": "提示コードとの整合 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "context_utilization": "必要文脈の利用 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "hallucination": "未提示の事実の追加 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "instruction_following": "質問の条件の遵守 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "pedagogical_usefulness": "学習への助け 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "actionability": "質問に対する具体性 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "conciseness": "長さと関連性 3/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。kiwi,pearを正答し、最初の出現を保持すると説明。少し冗長だが元配列変更は主張しない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-spec",
+      "repeat": 0,
+      "caseHash": "5d11f811b4dd66ff5e5bd937c45a7c9073bfac86b238d28d65208a9400844b79",
+      "answerHash": "bc586f25b310658bce5d31cf8ff0155d5f295180dac9e9cafdd61fb5a0e62dad",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 3,
+        "context_utilization": 3,
+        "hallucination": 4,
+        "instruction_following": 2,
+        "pedagogical_usefulness": 2,
+        "actionability": 2,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "groundedness": "提示コードとの整合 3/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "context_utilization": "必要文脈の利用 3/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "hallucination": "未提示の事実の追加 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "instruction_following": "質問の条件の遵守 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "pedagogical_usefulness": "学習への助け 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "actionability": "質問に対する具体性 2/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "conciseness": "長さと関連性 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。",
+        "japanese_quality": "日本語の明瞭さ 4/4。割り算と余りに誘導するだけで、要求した3ページ・最終1件を回答しない。商の切り上げの表現も不明瞭。"
+      },
+      "failures": [
+        "ignored_context",
+        "weak_pedagogy"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "smh-tag",
+      "repeat": 0,
+      "caseHash": "2636c00a93d9b592901e9f5d1fc984e6668c0e06ef8acef16cf6a0774144f541",
+      "answerHash": "61e1b6c6375d10cc04ad329395a263126e558b705576fe0f335e3a047dd464fd",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "groundedness": "提示コードとの整合 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "context_utilization": "必要文脈の利用 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "hallucination": "未提示の事実の追加 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "instruction_following": "質問の条件の遵守 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "pedagogical_usefulness": "学習への助け 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "actionability": "質問に対する具体性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "conciseness": "長さと関連性 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。",
+        "japanese_quality": "日本語の明瞭さ 4/4。#abcを正答し、trim→小文字→接頭辞の順序を説明。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-range",
+      "repeat": 0,
+      "caseHash": "964e304ea9776fe35d0017df0fd6e58cb30a66fb17fed39ad8fb8e305abc2683",
+      "answerHash": "090bcb606f2d4811b79f251e4005f91bc3eb076d4946efff0bdc360ae2d9b276",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "groundedness": "提示コードとの整合 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "context_utilization": "必要文脈の利用 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "hallucination": "未提示の事実の追加 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "instruction_following": "質問の条件の遵守 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "pedagogical_usefulness": "学習への助け 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "actionability": "質問に対する具体性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "conciseness": "長さと関連性 4/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。",
+        "japanese_quality": "日本語の明瞭さ 3/4。score=10と0〜10への制限を正答。最後の比較表現のみやや不自然。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-contract",
+      "repeat": 0,
+      "caseHash": "e791629b9b3ad2d3ff1ca465960001a6177c451e238e95bbea06d839967a75a3",
+      "answerHash": "120ad1457574c2d2ab0bd9553f4cb6856a0ee1e78de799b1ae0b7d279b050d0f",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "groundedness": "提示コードとの整合 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "context_utilization": "必要文脈の利用 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "hallucination": "未提示の事実の追加 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "instruction_following": "質問の条件の遵守 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "pedagogical_usefulness": "学習への助け 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "actionability": "質問に対する具体性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "conciseness": "長さと関連性 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。",
+        "japanese_quality": "日本語の明瞭さ 4/4。未提示のexportReport実装が必要とし、CSVとは断定しない。"
+      },
+      "failures": [],
+      "meetsTask": true
+    }
+  ],
+  "meetsTask": 4,
+  "n": 6,
+  "hardPassRate": 1,
+  "latencyMedianMs": 7062.2931499999995,
+  "latencyP95Ms": 14215.840800000002,
+  "inputTokensMean": 905,
+  "tokensPerSecondMedian": 13.902056174477643,
+  "loadMedianMs": null,
+  "loadMaxMs": null,
+  "pipelineFailures": {}
+}

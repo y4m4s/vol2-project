@@ -1,0 +1,151 @@
+[
+  {
+    "id": "smh-range",
+    "category": "missing_context",
+    "editor": {
+      "before": "function clampScore(value: number) { return Math.min(10, Math.max(0, value)); }",
+      "catalog": 19,
+      "visible": "const score = clampScore(14);"
+    },
+    "question": "scoreの値を、関数の定義に基づいて短く説明して。",
+    "expected": "10, inner max returns14 then min clamps to10.",
+    "evidence": "Math.min(10",
+    "maxChars": 350,
+    "code": "function clampScore(value: number) { return Math.min(10, Math.max(0, value)); }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n];\nconst score = clampScore(14);\n",
+    "viewport": "const score = clampScore(14);",
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "scoreの値を、関数の定義に基づいて短く説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "function clampScore(value: number) { return Math.min(10, Math.max(0, value)); }\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n];\nconst score = clampScore(14);\n",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "smh-tag",
+    "category": "missing_context",
+    "editor": {
+      "visible": "const result = tag('  AbC  ');",
+      "catalog": 72,
+      "after": "function tag(text: string) { return '#' + text.trim().toLowerCase(); }"
+    },
+    "question": "resultの文字列は何ですか。処理の順序も短く説明して。",
+    "expected": "#abc. trim whitespace, lower-case, prefix #.",
+    "evidence": "text.trim().toLowerCase()",
+    "maxChars": 350,
+    "code": "\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n  { id: 49, label: \"item-49\", enabled: false },\n  { id: 50, label: \"item-50\", enabled: true },\n  { id: 51, label: \"item-51\", enabled: true },\n  { id: 52, label: \"item-52\", enabled: false },\n  { id: 53, label: \"item-53\", enabled: true },\n  { id: 54, label: \"item-54\", enabled: true },\n  { id: 55, label: \"item-55\", enabled: false },\n  { id: 56, label: \"item-56\", enabled: true },\n  { id: 57, label: \"item-57\", enabled: true },\n  { id: 58, label: \"item-58\", enabled: false },\n  { id: 59, label: \"item-59\", enabled: true },\n  { id: 60, label: \"item-60\", enabled: true },\n  { id: 61, label: \"item-61\", enabled: false },\n  { id: 62, label: \"item-62\", enabled: true },\n  { id: 63, label: \"item-63\", enabled: true },\n  { id: 64, label: \"item-64\", enabled: false },\n  { id: 65, label: \"item-65\", enabled: true },\n  { id: 66, label: \"item-66\", enabled: true },\n  { id: 67, label: \"item-67\", enabled: false },\n  { id: 68, label: \"item-68\", enabled: true },\n  { id: 69, label: \"item-69\", enabled: true },\n  { id: 70, label: \"item-70\", enabled: false },\n  { id: 71, label: \"item-71\", enabled: true },\n  { id: 72, label: \"item-72\", enabled: true },\n];\nconst result = tag('  AbC  ');\nfunction tag(text: string) { return '#' + text.trim().toLowerCase(); }",
+    "viewport": "const result = tag('  AbC  ');",
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "resultの文字列は何ですか。処理の順序も短く説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "\nconst catalog = [\n  { id: 1, label: \"item-1\", enabled: false },\n  { id: 2, label: \"item-2\", enabled: true },\n  { id: 3, label: \"item-3\", enabled: true },\n  { id: 4, label: \"item-4\", enabled: false },\n  { id: 5, label: \"item-5\", enabled: true },\n  { id: 6, label: \"item-6\", enabled: true },\n  { id: 7, label: \"item-7\", enabled: false },\n  { id: 8, label: \"item-8\", enabled: true },\n  { id: 9, label: \"item-9\", enabled: true },\n  { id: 10, label: \"item-10\", enabled: false },\n  { id: 11, label: \"item-11\", enabled: true },\n  { id: 12, label: \"item-12\", enabled: true },\n  { id: 13, label: \"item-13\", enabled: false },\n  { id: 14, label: \"item-14\", enabled: true },\n  { id: 15, label: \"item-15\", enabled: true },\n  { id: 16, label: \"item-16\", enabled: false },\n  { id: 17, label: \"item-17\", enabled: true },\n  { id: 18, label: \"item-18\", enabled: true },\n  { id: 19, label: \"item-19\", enabled: false },\n  { id: 20, label: \"item-20\", enabled: true },\n  { id: 21, label: \"item-21\", enabled: true },\n  { id: 22, label: \"item-22\", enabled: false },\n  { id: 23, label: \"item-23\", enabled: true },\n  { id: 24, label: \"item-24\", enabled: true },\n  { id: 25, label: \"item-25\", enabled: false },\n  { id: 26, label: \"item-26\", enabled: true },\n  { id: 27, label: \"item-27\", enabled: true },\n  { id: 28, label: \"item-28\", enabled: false },\n  { id: 29, label: \"item-29\", enabled: true },\n  { id: 30, label: \"item-30\", enabled: true },\n  { id: 31, label: \"item-31\", enabled: false },\n  { id: 32, label: \"item-32\", enabled: true },\n  { id: 33, label: \"item-33\", enabled: true },\n  { id: 34, label: \"item-34\", enabled: false },\n  { id: 35, label: \"item-35\", enabled: true },\n  { id: 36, label: \"item-36\", enabled: true },\n  { id: 37, label: \"item-37\", enabled: false },\n  { id: 38, label: \"item-38\", enabled: true },\n  { id: 39, label: \"item-39\", enabled: true },\n  { id: 40, label: \"item-40\", enabled: false },\n  { id: 41, label: \"item-41\", enabled: true },\n  { id: 42, label: \"item-42\", enabled: true },\n  { id: 43, label: \"item-43\", enabled: false },\n  { id: 44, label: \"item-44\", enabled: true },\n  { id: 45, label: \"item-45\", enabled: true },\n  { id: 46, label: \"item-46\", enabled: false },\n  { id: 47, label: \"item-47\", enabled: true },\n  { id: 48, label: \"item-48\", enabled: true },\n  { id: 49, label: \"item-49\", enabled: false },\n  { id: 50, label: \"item-50\", enabled: true },\n  { id: 51, label: \"item-51\", enabled: true },\n  { id: 52, label: \"item-52\", enabled: false },\n  { id: 53, label: \"item-53\", enabled: true },\n  { id: 54, label: \"item-54\", enabled: true },\n  { id: 55, label: \"item-55\", enabled: false },\n  { id: 56, label: \"item-56\", enabled: true },\n  { id: 57, label: \"item-57\", enabled: true },\n  { id: 58, label: \"item-58\", enabled: false },\n  { id: 59, label: \"item-59\", enabled: true },\n  { id: 60, label: \"item-60\", enabled: true },\n  { id: 61, label: \"item-61\", enabled: false },\n  { id: 62, label: \"item-62\", enabled: true },\n  { id: 63, label: \"item-63\", enabled: true },\n  { id: 64, label: \"item-64\", enabled: false },\n  { id: 65, label: \"item-65\", enabled: true },\n  { id: 66, label: \"item-66\", enabled: true },\n  { id: 67, label: \"item-67\", enabled: false },\n  { id: 68, label: \"item-68\", enabled: true },\n  { id: 69, label: \"item-69\", enabled: true },\n  { id: 70, label: \"item-70\", enabled: false },\n  { id: 71, label: \"item-71\", enabled: true },\n  { id: 72, label: \"item-72\", enabled: true },\n];\nconst result = tag('  AbC  ');\nfunction tag(text: string) { return '#' + text.trim().toLowerCase(); }",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "smh-order",
+    "category": "code_reasoning",
+    "code": "const words = ['kiwi', 'pear', 'kiwi'];\nconst result = words.filter((word, index) => words.indexOf(word) === index);",
+    "question": "resultの値と、重複がどう扱われるかを説明して。",
+    "expected": "['kiwi','pear']. first occurrence retained in input order.",
+    "maxChars": 350,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "resultの値と、重複がどう扱われるかを説明して。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const words = ['kiwi', 'pear', 'kiwi'];\nconst result = words.filter((word, index) => words.indexOf(word) === index);",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "smh-hint",
+    "category": "hint_only",
+    "code": "const raw = 'false';\nif (raw) console.log('enabled');",
+    "question": "なぜenabledが表示されますか。修正コードなしで、原因と考えるヒントを一つだけ。",
+    "expected": "Nonempty string 'false' is truthy; differentiate text from boolean. No completed comparison/conversion replacement.",
+    "noCode": true,
+    "maxChars": 350,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "なぜenabledが表示されますか。修正コードなしで、原因と考えるヒントを一つだけ。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const raw = 'false';\nif (raw) console.log('enabled');",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "smh-contract",
+    "category": "uncertainty",
+    "code": "const file = exportReport(rows);",
+    "question": "出力ファイルはCSVですか。コードで確認できる範囲だけで答えて。",
+    "expected": "Cannot establish CSV from name/call; implementation or contract of exportReport needed. No invented file type.",
+    "maxChars": 250,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "出力ファイルはCSVですか。コードで確認できる範囲だけで答えて。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const file = exportReport(rows);",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "smh-spec",
+    "category": "context_utilization",
+    "code": "const pageSize = 12;",
+    "additional": "注文は25件。1ページに最大12件。件数が0の場合だけ空の1ページを表示する。",
+    "question": "今回は何ページ必要で、最終ページには何件ありますか。",
+    "expected": "3 pages, 1 item on last page. Empty case irrelevant.",
+    "maxChars": 250,
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "今回は何ページ必要で、最終ページには何件ありますか。",
+      "context": {
+        "activeFilePath": "main.ts",
+        "activeFileLanguage": "typescript",
+        "activeFileExcerpt": "const pageSize = 12;",
+        "additionalContext": "注文は25件。1ページに最大12件。件数が0の場合だけ空の1ページを表示する。",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  }
+]

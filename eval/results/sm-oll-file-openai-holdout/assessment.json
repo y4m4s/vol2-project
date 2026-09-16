@@ -1,0 +1,222 @@
+{
+  "judge": {
+    "id": "Codex-manual",
+    "candidateModel": false,
+    "independent": false,
+    "limitations": "同じCodexが設計・評価。候補固定後に一度確認、holdout内容への再チューニングなし。"
+  },
+  "rubricHash": "568bf634adeda31881c0e61fa27a21c311f2e8eba17012eb87a0a810aa2ccff3",
+  "scores": {
+    "correctness": 3.3333333333333335,
+    "groundedness": 3.3333333333333335,
+    "context_utilization": 3.6666666666666665,
+    "hallucination": 3.3333333333333335,
+    "instruction_following": 4,
+    "pedagogical_usefulness": 3.3333333333333335,
+    "actionability": 3.6666666666666665,
+    "conciseness": 3.8333333333333335,
+    "japanese_quality": 3.8333333333333335
+  },
+  "cases": [
+    {
+      "caseId": "smh-tag",
+      "repeat": 0,
+      "caseHash": "2636c00a93d9b592901e9f5d1fc984e6668c0e06ef8acef16cf6a0774144f541",
+      "answerHash": "10ba7a0cd68e6f30a0c9c3723c683ffbd4fafaeab12cdc5bfbda09fe7227bce2",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "groundedness": "提示コードとの整合 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "context_utilization": "必要文脈の利用 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "hallucination": "未提示の事実の追加 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "instruction_following": "質問の条件の遵守 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "pedagogical_usefulness": "学習への助け 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "actionability": "質問に対する具体性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "conciseness": "長さと関連性 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。",
+        "japanese_quality": "日本語の明瞭さ 4/4。#abcを正答し、空白除去と小文字化と接頭辞の順序を説明。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-contract",
+      "repeat": 0,
+      "caseHash": "e791629b9b3ad2d3ff1ca465960001a6177c451e238e95bbea06d839967a75a3",
+      "answerHash": "5bb8ba0dece4935b8156295b8662860feba6ff9dead09bc24ec246c8e3c722ae",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 3
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "groundedness": "提示コードとの整合 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "context_utilization": "必要文脈の利用 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "hallucination": "未提示の事実の追加 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "instruction_following": "質問の条件の遵守 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "pedagogical_usefulness": "学習への助け 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "actionability": "質問に対する具体性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "conciseness": "長さと関連性 4/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。",
+        "japanese_quality": "日本語の明瞭さ 3/4。CSVかどうか不明と明言し、実装を確認する必要性を示す。内部タグへの言及は余分。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-order",
+      "repeat": 0,
+      "caseHash": "29d4634745a23be52156c7ec32bab1204a0a59346135dd45d19dd55ec33c2b8c",
+      "answerHash": "1f47fd68c10dec8dae1506147a0cc9502393cae667fd47311bfc3d49a3c46ab3",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 3,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "groundedness": "提示コードとの整合 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "context_utilization": "必要文脈の利用 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "hallucination": "未提示の事実の追加 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "instruction_following": "質問の条件の遵守 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "pedagogical_usefulness": "学習への助け 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "actionability": "質問に対する具体性 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "conciseness": "長さと関連性 3/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。",
+        "japanese_quality": "日本語の明瞭さ 4/4。kiwi,pearを正答し、indexOfで最初の出現だけを残すと説明。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-range",
+      "repeat": 0,
+      "caseHash": "964e304ea9776fe35d0017df0fd6e58cb30a66fb17fed39ad8fb8e305abc2683",
+      "answerHash": "b22eae12ddded89f08d37a8b6935db2bacf9de9c0e892ff86de47e29e29970aa",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 4,
+        "groundedness": 4,
+        "context_utilization": 4,
+        "hallucination": 4,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 4,
+        "actionability": 4,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "groundedness": "提示コードとの整合 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "context_utilization": "必要文脈の利用 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "hallucination": "未提示の事実の追加 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "instruction_following": "質問の条件の遵守 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "pedagogical_usefulness": "学習への助け 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "actionability": "質問に対する具体性 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "conciseness": "長さと関連性 4/4。score=10を正答し、関数の境界も正しく説明。",
+        "japanese_quality": "日本語の明瞭さ 4/4。score=10を正答し、関数の境界も正しく説明。"
+      },
+      "failures": [],
+      "meetsTask": true
+    },
+    {
+      "caseId": "smh-hint",
+      "repeat": 0,
+      "caseHash": "683433036339bf236d28691010aaa5e800b6a77d6730dd66f2147399bb24be6f",
+      "answerHash": "3fe64cbf599bf8c4c6991607cd7edb2f5021d691144014acbd96b5dd1ceb86a3",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "groundedness": "提示コードとの整合 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "context_utilization": "必要文脈の利用 3/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "hallucination": "未提示の事実の追加 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "instruction_following": "質問の条件の遵守 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "pedagogical_usefulness": "学習への助け 2/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "actionability": "質問に対する具体性 3/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "conciseness": "長さと関連性 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。",
+        "japanese_quality": "日本語の明瞭さ 4/4。この非空文字列の挙動は合うが「文字列は常に真」は誤り。空文字は偽であり、基本仕様を誤って一般化。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    },
+    {
+      "caseId": "smh-spec",
+      "repeat": 0,
+      "caseHash": "5d11f811b4dd66ff5e5bd937c45a7c9073bfac86b238d28d65208a9400844b79",
+      "answerHash": "63353a6749e979b6b8775cbc21bc31fadc8ffadd17d00b1744b16cb5ab912ffc",
+      "hardPassed": true,
+      "scores": {
+        "correctness": 2,
+        "groundedness": 2,
+        "context_utilization": 3,
+        "hallucination": 2,
+        "instruction_following": 4,
+        "pedagogical_usefulness": 2,
+        "actionability": 3,
+        "conciseness": 4,
+        "japanese_quality": 4
+      },
+      "reasons": {
+        "correctness": "正確性 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "groundedness": "提示コードとの整合 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "context_utilization": "必要文脈の利用 3/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "hallucination": "未提示の事実の追加 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "instruction_following": "質問の条件の遵守 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "pedagogical_usefulness": "学習への助け 2/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "actionability": "質問に対する具体性 3/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "conciseness": "長さと関連性 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。",
+        "japanese_quality": "日本語の明瞭さ 4/4。25/12の余り1は合うが、必要ページ数を2と誤算。最終1件の説明とも矛盾。"
+      },
+      "failures": [
+        "incorrect_code_reasoning"
+      ],
+      "meetsTask": false
+    }
+  ],
+  "meetsTask": 4,
+  "n": 6,
+  "hardPassRate": 1,
+  "latencyMedianMs": 8786.664149999999,
+  "latencyP95Ms": 22322.8537,
+  "inputTokensMean": 915,
+  "tokensPerSecondMedian": null,
+  "loadMedianMs": null,
+  "loadMaxMs": null,
+  "pipelineFailures": {}
+}

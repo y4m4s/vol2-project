@@ -1,0 +1,72 @@
+{
+  "baseline": "eval/results/sm-oll-file4",
+  "candidate": "eval/results/sm-oll-file8",
+  "split": "tuning",
+  "seed": "16d2d87dda6ed41a5006c28c839ad17a",
+  "packetHash": "ac95e384dac824ab841a33d7bb7160c56dc1b4521eb48e0cb32839e5a9456227",
+  "pairs": [
+    {
+      "pairId": "f7815da8256c44e7",
+      "caseId": "sm-format",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "87a6d890537bfe6e19e5e434eec67d82ea2394fe4ab2397787a3f142da2e7e0b"
+    },
+    {
+      "pairId": "7c1b618fdfadc2a4",
+      "caseId": "sm-explain",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c1db265f08ef8b511bac7a7d33515d6c03867da9e57f9422699c8a5707a6d5d8"
+    },
+    {
+      "pairId": "c02d662d55ed0724",
+      "caseId": "sm-explain",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "6abca47082016af3d3a8af103f6fdb9f0161ea99b351c6b4d37361bc65b3ca11"
+    },
+    {
+      "pairId": "cfdffeb5d0f1524b",
+      "caseId": "sm-explain",
+      "repeat": 1,
+      "candidateSide": "A",
+      "pairHash": "4dfb848bf170ec4f87292f49a5f4041d541797feb2d729a569bd71d10d9fa91c"
+    },
+    {
+      "pairId": "a5ac42437fc49947",
+      "caseId": "sm-additional",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "a5d49d4adaeb3a3967e6f6b540f9c8e30cea80d68043644f78a47e331ded13c5"
+    },
+    {
+      "pairId": "ae517c043bfbd46d",
+      "caseId": "sm-additional",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "b056736c50ce65b038380a11bf418f3746745bfbea4ac054e5ba3494fd375aa7"
+    },
+    {
+      "pairId": "57182b4e7407a8bb",
+      "caseId": "sm-format",
+      "repeat": 1,
+      "candidateSide": "B",
+      "pairHash": "72cfc07c02bcfc2399179abdea3a633ddc643fbdc6388b947ea32f8f8fa5e975"
+    },
+    {
+      "pairId": "52bf4fff24d24124",
+      "caseId": "sm-format",
+      "repeat": 2,
+      "candidateSide": "A",
+      "pairHash": "c639cbbf895031281bfe13b87c486177c0e03d6276e9101c877e30236c25e75a"
+    },
+    {
+      "pairId": "69181e41184bfb73",
+      "caseId": "sm-additional",
+      "repeat": 2,
+      "candidateSide": "B",
+      "pairHash": "6baf76c2eaf55de78e1fe3beeb7a07e987c1f4c6f60dc87a2e8c68813b756320"
+    }
+  ]
+}

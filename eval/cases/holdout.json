@@ -1,0 +1,8 @@
+[
+  {"id":"holdout-null","category":"code_reasoning","code":"function city(user) { return user.address.city; }","question":"addressがないユーザーで止まります。調べる場所をヒントで教えて。","expected":"Address may be undefined; inspect before accessing city; do not invent actual user data.","noCode":true},
+  {"id":"holdout-explain","category":"explanation","code":"const names = people.map(p => p.name).join(', ');","question":"この1行は何を作りますか。短く説明して。","expected":"Extracts names into array then joins into comma-space separated string.","maxChars":240},
+  {"id":"holdout-task","category":"additional_context","code":"print(1)","additional":"入力は整数A,B。出力は大きい方だけ。等しい場合はその値を1回出力する。","question":"同じ数が入力された場合の出力を教えて。実装は不要。","expected":"Output the same value once; no extra implementation advice.","maxChars":200},
+  {"id":"holdout-promise","category":"uncertainty","code":"await save(record);","question":"これで必ず永続保存されますか？","expected":"Cannot guarantee without save implementation and durability/transaction contract. Await only observes completion/rejection.","noCode":true},
+  {"id":"holdout-long","category":"long_context","fixture":"long-holdout","question":"末尾のisReadyで、countが0のときの戻り値と型を教えて。","expected":"Boolean false from count > 0, if omitted acknowledge unavailable.","evidence":"return count > 0"},
+  {"id":"holdout-learn","category":"pedagogy","code":"const doubled = numbers.map(n => n * 2);","question":"次に学ぶことを1つだけ、このコードを使う小さな練習と一緒に示して。解答コードは不要。","expected":"One connected topic/exercise (e.g. filter doubled); no completed implementation.","noCode":true,"maxChars":380}
+]
