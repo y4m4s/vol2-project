@@ -57,6 +57,10 @@ export class ProviderRoutingCoordinator {
     if (value.providerId) this.pins.set(stream, value.providerId); else this.pins.delete(stream);
   }
   public selectOnce(stream: string, provider: AiProviderId): void { this.once.set(stream, provider); }
+  public applyExplicitSelection(stream: string, provider: AiProviderId): void {
+    this.selected.set(stream, provider);
+    this.turnsSinceSwitch.set(stream, 0);
+  }
   public async pin(stream: string, provider?: AiProviderId): Promise<void> {
     if (provider) this.pins.set(stream, provider); else this.pins.delete(stream);
     await this.setPreference(stream, { ...this.preference(stream), providerId: provider });
