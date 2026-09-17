@@ -612,6 +612,80 @@ test("長い初回生成中の同一診断通知は画面遷移後に再送せ�
   assert.equal(h.state.conversationHistory.length, 2);
 });
 
+test("追加コンテキストの削除・変更後の自動生成は会話メモリを組み立てず、現在の要件だけを送る", async (t) => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => {
+    sent.push(input);
+    return { ok: true, text: "OLD_TASK_REQUIREMENT", focus: "continue" };
+  });
+  t.after(h.dispose);
+  h.state.pendingAdditionalContext = "OLD_TASK_REQUIREMENT";
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(h.state.conversationHistory.length, 1);
+  Object.assign(h.driver, { conversationMemoryCoordinator: {
+    assemble: async () => { assert.fail("自動生成で履歴や要約を組み立てない"); }
+  } });
+  await h.driver.setAdditionalContext("");
+  h.context.activeFileExcerpt = "const x = 2;";
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent[1].conversationMemory, "");
+  assert.equal(sent[1].context.additionalContext, undefined);
+  await h.driver.setAdditionalContext("NEW_TASK_REQUIREMENT");
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent[2].conversationMemory, "");
+  assert.equal(sent[2].context.additionalContext, "NEW_TASK_REQUIREMENT");
+  assert.equal(h.state.conversationHistory.length, 3, "表示・保存する履歴は削除しない");
+});
+
+test("s02で開始した生成は別画面で完了しても新しい履歴に保存し、完了先のs04を開ける", async (t) => {
+  for (const withExisting of [false, true]) {
+    let destination: "settings" | "history" | undefined;
+    const h = await lifecycleHarness(async () => {
+      if (destination) h.state.screen = destination;
+      return { ok: true, text: "保存される回答", focus: "continue" };
+    });
+    t.after(h.dispose);
+    if (withExisting) await h.driver.handleAutomaticGuidance();
+    const previousId = h.state.activeConversationStreamId;
+    h.state.screen = "main";
+    h.context.activeFileExcerpt = "const x = 42;";
+    destination = withExisting ? "history" : "settings";
+    await h.driver.handleAutomaticGuidance();
+    assert.equal(h.state.screen, destination, "完了だけでは表示中の画面を奪わない");
+    const target = h.state.guidanceCompletedStreamId!;
+    assert.ok(target);
+    assert.notEqual(target, previousId);
+    assert.equal(h.store.list().length, withExisting ? 2 : 1);
+    assert.equal(h.store.get(target)?.entries.length, 1);
+    assert.equal(h.store.get(target)?.entries[0].text, "保存される回答");
+    await (h.driver as unknown as { selectConversationStream(id: string): Promise<void> }).selectConversationStream(target);
+    assert.equal(h.state.screen, "conversation");
+    assert.equal(h.state.activeConversationStreamId, target);
+    assert.equal(h.state.conversationHistory[0].text, "保存される回答");
+  }
+});
+
+test("別画面の生成成功を通知し、次の失敗・停止では完了表示を再利用しない", async (t) => {
+  for (const cancelled of [false, true]) {
+    let calls = 0;
+    const h = await lifecycleHarness(async () => ++calls === 1
+      ? { ok: true, text: "助言", focus: "continue" }
+      : { ok: false, cancelled, connectionState: "connected", message: "回答を表示できませんでした。" });
+    t.after(h.dispose);
+    h.state.screen = "settings";
+    await h.driver.handleAutomaticGuidance();
+    assert.equal(h.state.screen, "settings");
+    assert.equal(h.state.guidanceCompleted, true);
+    assert.equal(h.state.guidanceCompletionRevision, 1);
+    h.context.activeFileExcerpt = "const x = 2;";
+    await h.driver.handleAutomaticGuidance();
+    assert.equal(h.state.guidanceCompleted, false);
+    assert.equal(h.state.guidanceCompletionRevision, 1);
+    assert.equal(h.state.statusMessage?.scope, "guidance");
+    assert.match(h.state.statusMessage?.text ?? "", cancelled ? /中断/ : /表示できません/);
+  }
+});
+
 test("初回概要の既出情報を実際の履歴作成後も保持し、次の判定へ渡す", async (t) => {
   const sent: GuidanceRequestInput[] = [];
   const h = await lifecycleHarness(async (input) => {

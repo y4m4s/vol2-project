@@ -163,7 +163,7 @@ export class NavigatorController implements vscode.Disposable {
         getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
         getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
         getPromptExtras: (context, plan) => ({
-          conversationMemory: this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
+          conversationMemory: plan.kind === "always" || this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
             this.settingsService.getSettings(), this.sessionStore.getState().conversationHistory, this.sessionStore.getState().activeConversationStreamId),
           knowledgeItems: this.knowledgeStore.findReusable(context),
           feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
@@ -387,6 +387,9 @@ export class NavigatorController implements vscode.Disposable {
       conversationRoutingPreference: this.providerRoutingCoordinator.preference(state.activeConversationStreamId),
       routingLearning: this.providerRoutingCoordinator.learningView(settings),
       statusMessage: state.statusMessage,
+      guidanceCompletionRevision: state.guidanceCompletionRevision,
+      guidanceCompleted: state.guidanceCompleted,
+      guidanceCompletedStreamId: state.guidanceCompletedStreamId,
       contextPreview: state.contextPreview,
       conversationStreams: state.conversationStreams,
       activeConversationStreamId: state.activeConversationStreamId,
@@ -1057,7 +1060,7 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
 
-    this.patchGuidanceSession({ requestState: "preparing_guidance" });
+    this.patchGuidanceSession({ requestState: "preparing_guidance", guidanceCompleted: false, guidanceCompletedStreamId: undefined });
 
     try {
       const options = typeof optionsOrFactory === "function"
@@ -1087,7 +1090,10 @@ export class NavigatorController implements vscode.Disposable {
       const result = await this.runGuidanceRequest(options, latestState);
       // Commit duplicate suppression before finally returns to idle and dispatches
       // any events accumulated during a slow response.
-      if (result.ok) onSuccess?.();
+      if (result.ok) {
+        onSuccess?.();
+        this.patchSession({ guidanceCompleted: true, guidanceCompletionRevision: (this.sessionStore.getState().guidanceCompletionRevision ?? 0) + 1 });
+      }
       return result;
     } finally {
       const activeRequest = this.activeGuidanceRequest;
@@ -1110,6 +1116,7 @@ export class NavigatorController implements vscode.Disposable {
     options: GuidanceExecutionOptions,
     initialState: NavigatorSessionState
   ): Promise<{ ok: boolean }> {
+    const startsNewAutomaticConversation = options.kind === "always" && initialState.screen === "main";
     let state = await this.prepareConversationForGuidance(initialState, options.kind);
 
     const fallbackAdditionalContext = this.getGuidanceAdditionalContext(state);
@@ -1217,7 +1224,9 @@ export class NavigatorController implements vscode.Disposable {
     }
     let conversationMemory: string;
     try {
-      conversationMemory = await this.conversationMemoryCoordinator.assemble(settings, history, state.activeConversationStreamId, tokenSource.token);
+      // Automatic observations concern the current code and explicit current task.
+      // Old answers and summaries can retain requirements removed from the editor.
+      conversationMemory = options.kind === "always" ? "" : await this.conversationMemoryCoordinator.assemble(settings, history, state.activeConversationStreamId, tokenSource.token);
     } catch (error) {
       this.patchGuidanceSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "会話を引き継げません。" } });
       return { ok: false };
@@ -1357,8 +1366,8 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     if (result.ok) {
-      if (options.kind === "always" && latestState.screen === "main") {
-        latestState = await this.conversationCoordinator.ensureStreamForAutomaticResult(latestState);
+      if (options.kind === "always") {
+        latestState = await this.conversationCoordinator.ensureStreamForAutomaticResult(latestState, startsNewAutomaticConversation);
       }
       const resolvedModelId = result.responseMetadata?.resolvedModelIds?.at(-1);
       const persistedModelLabel = resolvedModelId
@@ -1418,6 +1427,7 @@ export class NavigatorController implements vscode.Disposable {
           : isNoAdvice ? { kind: "info", text: noAdviceText } : route.reason ? { kind: "info", text: route.reason } : undefined
       });
       await this.persistActiveConversationState();
+      this.patchSession({ guidanceCompletedStreamId: this.sessionStore.getState().activeConversationStreamId });
       if (responseModel) {
         try {
           const learningUpdated = await this.providerRoutingCoordinator.recordSuccess({

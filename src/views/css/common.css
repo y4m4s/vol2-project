@@ -1352,6 +1352,51 @@ ul.bullet-list li {
   align-items: center;
 }
 
+.floating-toast.corner {
+  left: 12px;
+  bottom: 12px;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 8px 12px;
+  transform: none;
+  animation: none;
+  pointer-events: none;
+}
+
+.floating-toast.corner.leaving {
+  transform: translateY(8px);
+}
+
+.floating-toast.corner.actionable { pointer-events: auto; }
+
+.floating-toast-open {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.floating-toast-open:hover { background: var(--vscode-toolbar-hoverBackground); }
+.floating-toast-open:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+.guidance-result-above-completion > .floating-toast {
+  bottom: 64px;
+}
+
+.floating-toast-icon.spinning {
+  animation: connection-activity-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-toast-icon.spinning { animation: none; }
+}
+
 .confirming-delete {
   color: #fff !important;
   background: #dc2626 !important;
