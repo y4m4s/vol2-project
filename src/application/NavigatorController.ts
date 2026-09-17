@@ -414,18 +414,22 @@ export class NavigatorController implements vscode.Disposable {
     const selectedProviderConnected = providerId !== undefined &&
       this.connectionService.getState() === "connected" &&
       this.connectionService.getProviderId() === providerId;
-    if (!restoreAutomaticRouting || !selectedProviderConnected) return;
+    if (!selectedProviderConnected) return;
+
+    const state = this.sessionStore.getState();
+    if (state.activeConversationStreamId) {
+      this.providerRoutingCoordinator.applyExplicitSelection(state.activeConversationStreamId, providerId);
+    }
 
     let settings = this.settingsService.getSettings();
     let routing = normalizeRoutingSettings(settings.routing);
+    if (routing.mode === "automatic" && !routing.allowedProviderIds.includes(providerId)) {
+      routing = { ...routing, allowedProviderIds: [...routing.allowedProviderIds, providerId] };
+      settings = await this.connectionSettingsCoordinator.saveSettingsWithRevision({ ...settings, routing });
+    }
+    if (!restoreAutomaticRouting) return;
     if (routing.mode === "automatic" && routing.preferredProviderId !== providerId) {
-      routing = {
-        ...routing,
-        allowedProviderIds: routing.allowedProviderIds.includes(providerId)
-          ? routing.allowedProviderIds
-          : [...routing.allowedProviderIds, providerId],
-        preferredProviderId: providerId
-      };
+      routing = { ...routing, preferredProviderId: providerId };
       settings = await this.connectionSettingsCoordinator.saveSettingsWithRevision({ ...settings, routing });
     }
     if (routing.mode === "automatic" && routing.allowedProviderIds.length > 0) {
