@@ -306,6 +306,8 @@ export class NavigatorController implements vscode.Disposable {
         }
       }),
       vscode.workspace.onDidChangeTextDocument((event) => {
+        // Saving/dirty-state notifications can have no actual content changes.
+        if (event.contentChanges.length === 0) return;
         this.contextCollector.captureDocumentChange(event);
 
         if (this.isActiveDocument(event.document.uri)) {
@@ -805,7 +807,7 @@ export class NavigatorController implements vscode.Disposable {
 
   private async handleAutomaticGuidance(event: AutoAdviceTriggerEvent = { signals: [], idleDurationMs: 0 }): Promise<void> {
     let fingerprint: string | undefined;
-    const result = await this.executeGuidanceRequest(async () => {
+    await this.executeGuidanceRequest(async () => {
       const state = this.sessionStore.getState();
       const settings = this.settingsService.getSettings();
 
@@ -874,13 +876,12 @@ export class NavigatorController implements vscode.Disposable {
         additionalContext,
         assistanceDepth
       };
-    }, true);
-
-    if (result.ok && fingerprint) {
+    }, true, () => {
+      if (!fingerprint) return;
       this.lastAutomaticContextFingerprint = fingerprint;
       this.automaticFingerprints.add(fingerprint);
       if (this.automaticFingerprints.size > 50) this.automaticFingerprints.delete(this.automaticFingerprints.values().next().value!);
-    }
+    });
   }
 
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
@@ -1014,7 +1015,8 @@ export class NavigatorController implements vscode.Disposable {
    */
   private async executeGuidanceRequest(
     optionsOrFactory: GuidanceExecutionOptions | GuidanceExecutionOptionsFactory,
-    automatic = false
+    automatic = false,
+    onSuccess?: () => void
   ): Promise<{ ok: boolean }> {
     const state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
@@ -1082,7 +1084,11 @@ export class NavigatorController implements vscode.Disposable {
         return { ok: false };
       }
 
-      return await this.runGuidanceRequest(options, latestState);
+      const result = await this.runGuidanceRequest(options, latestState);
+      // Commit duplicate suppression before finally returns to idle and dispatches
+      // any events accumulated during a slow response.
+      if (result.ok) onSuccess?.();
+      return result;
     } finally {
       const activeRequest = this.activeGuidanceRequest;
       if (activeRequest) {

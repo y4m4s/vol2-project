@@ -125,12 +125,12 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
 export function createAutomaticFingerprint(context: GuidanceContext, assistanceDepth: AssistanceDepth = "low", observation?: AutomaticGuidanceObservation): string {
   return JSON.stringify({
     observation: observation ? {
-      triggerReasons: [...observation.triggerReasons].sort(),
       cursor: observation.cursor,
       cursorExcerpt: observation.cursorExcerpt,
       selectionPresent: observation.selectionPresent,
       lastEdit: observation.lastEdit
-      // Exclude time, previousFocus and changing diagnostic deltas. Current diagnostics are below.
+      // Event reasons are not input changes: repeated diagnostics/editor events
+      // can describe exactly the same context. Also exclude time and previousFocus.
     } : undefined,
     assistanceDepth,
     file: context.activeFilePath,

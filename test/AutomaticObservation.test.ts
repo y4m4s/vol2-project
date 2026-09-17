@@ -196,6 +196,8 @@ test("指紋は時間と前回focusに依存せず、カーソル位置の変化
   const observation = { triggerReasons: ["text_edit" as const], idleDurationMs: 10000, selectionPresent: false, cursor: { line: 1, column: 1 } };
   const first = createAutomaticFingerprint(context, "low", observation);
   assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, idleDurationMs: 20000, previousFocus: "continue" }));
+  assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, triggerReasons: ["diagnostics_change"] }));
+  assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, triggerReasons: ["editor_change", "selection_change"] }));
   assert.notEqual(first, createAutomaticFingerprint(context, "low", { ...observation, cursor: { line: 2, column: 1 } }));
 });
 

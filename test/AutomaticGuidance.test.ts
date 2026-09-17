@@ -574,6 +574,44 @@ test("編集後の利用制限エラーも表示して接続状態を反映し�
   assert.equal(h.state.conversationHistory.length, 0);
 });
 
+test("長い初回生成中の同一診断通知は画面遷移後に再送せず、新しいコード変更は送信する", async (t) => {
+  let calls = 0;
+  const h = await lifecycleHarness(async () => {
+    calls++;
+    if (calls === 1) {
+      h.scheduler.handleActivity("diagnostics_change");
+      t.mock.timers.tick(500); // Both the idle wait and request interval expire.
+    }
+    return { ok: true, text: "助言", focus: "continue" };
+  });
+  t.after(h.dispose);
+  t.mock.timers.enable({ apis: ["Date", "setTimeout", "setInterval"], now: 1000 });
+  const pending: Promise<void>[] = [];
+  const fingerprintCounts: number[] = [];
+  h.scheduler.onDidTriggerAdvice(event => {
+    fingerprintCounts.push(h.driver.automaticFingerprints.size);
+    pending.push(h.driver.handleAutomaticGuidance(event));
+  });
+  h.scheduler.handleActivity("editor_change");
+  t.mock.timers.tick(100);
+  await pending[0];
+  await pending[1];
+  assert.equal(pending.length, 2, "生成中に届いた通知も重複判定を通る");
+  assert.equal(fingerprintCounts[1], 1, "待機状態に戻す前に成功した入力を記録する");
+  assert.equal(calls, 1);
+  assert.equal(h.state.screen, "conversation");
+  assert.equal(h.state.conversationHistory.length, 1);
+  t.mock.timers.tick(1000);
+  assert.equal(pending.length, 2, "インターバルだけでは再生成しない");
+
+  h.context.activeFileExcerpt = "const x = 2;";
+  h.scheduler.handleActivity("text_edit");
+  t.mock.timers.tick(100);
+  await pending[2];
+  assert.equal(calls, 2);
+  assert.equal(h.state.conversationHistory.length, 2);
+});
+
 test("初回概要の既出情報を実際の履歴作成後も保持し、次の判定へ渡す", async (t) => {
   const sent: GuidanceRequestInput[] = [];
   const h = await lifecycleHarness(async (input) => {
@@ -585,6 +623,7 @@ test("初回概要の既出情報を実際の履歴作成後も保持し、次�
   await h.driver.handleAutomaticGuidance({ signals: [{ reason: "editor_change", occurredAt: 1 }], idleDurationMs: 100 });
   assert.equal(h.store.list().length, 1);
   assert.equal(h.driver.automaticOverviewByFile.get("/repo/app.ts"), "v1");
+  h.context.selectedText = "const x = 1;";
   await h.driver.handleAutomaticGuidance({ signals: [{ reason: "selection_change", occurredAt: 2 }], idleDurationMs: 100 });
   assert.equal(sent[1].automaticObservation?.previousFocus, "overview");
   assert.equal(sent[1].automaticObservation?.overviewAlreadyShown, true);
@@ -754,9 +793,11 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
         collected.push(depth);
         return context;
       },
-      executeGuidanceRequest: async (factory: () => Promise<Options | undefined>) => {
+      executeGuidanceRequest: async (factory: () => Promise<Options | undefined>, _automatic: boolean, onSuccess?: () => void) => {
         const options = await factory();
-        return options ? driver.runGuidanceRequest(options, state) : { ok: false };
+        const result = options ? await driver.runGuidanceRequest(options, state) : { ok: false };
+        if (result.ok) onSuccess?.();
+        return result;
       },
       prepareConversationForGuidance: async () => state,
       persistActiveConversationState: async () => {}
