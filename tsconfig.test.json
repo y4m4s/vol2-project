@@ -18,6 +18,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/NavigatorViewProvider.test.ts",
     "test/ActiveFileContext.test.ts",
     "test/ActiveFileCollector.test.ts",
     "test/ContextExcerpt.test.ts",

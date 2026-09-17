@@ -203,8 +203,10 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
 
   private scheduleViewModelUpdate(): void {
     if (this.updateTimer) {
-      clearTimeout(this.updateTimer);
+      return;
     }
+    // Coalesce from the first change rather than waiting for changes to stop.
+    // Editor/stream updates must not indefinitely postpone status notifications.
     this.updateTimer = setTimeout(() => {
       this.updateTimer = undefined;
       void this.postViewModel().catch((error) => {
