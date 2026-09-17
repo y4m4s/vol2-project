@@ -1,0 +1,50 @@
+[
+  {
+    "id":"contract-active-count-correct", "problemId":"active-count", "category":"automatic_correct", "kind":"always", "language":"python", "file":"users.py",
+    "code":"def active_count(users):\n    return sum(1 for user in users if user['active'])\n",
+    "additional":"管理画面用の関数active_count(users)はactiveがTrueのユーザー件数を整数で返す。usersはactiveキーとbool値を持つ辞書のリスト。空なら0。表示やログは呼び出し側の責務。",
+    "expected":"Correct count including empty list; do not demand display, logs, or a call site. Return no_advice/none.", "expectedFocus":["none"]
+  },
+  {
+    "id":"contract-active-count-bug", "problemId":"active-count", "category":"automatic_bug", "kind":"always", "language":"python", "file":"users.py",
+    "code":"def active_count(users):\n    return len(users)\n",
+    "additional":"管理画面用の関数active_count(users)はactiveがTrueのユーザー件数を整数で返す。usersはactiveキーとbool値を持つ辞書のリスト。空なら0。表示やログは呼び出し側の責務。",
+    "expected":"Counts inactive users too. Hint at active filtering/condition, not output or logging; do not supply replacement code.", "expectedFocus":["continue","review"], "noCode":true
+  },
+  {
+    "id":"contract-cart-correct", "problemId":"cart", "category":"automatic_correct", "kind":"always", "language":"typescript", "file":"cart.ts",
+    "code":"type Line = { price: number; quantity: number };\nfunction subtotal(lines: Line[]): number {\n  return lines.reduce((total, line) => total + line.price * line.quantity, 0);\n}\n",
+    "additional":"subtotalはカートの小計を返す。価格と個数は0以上の整数で、計算は安全な整数範囲内。小計は各商品の価格×個数の合計。空のカートは0。入力は変更しない。この関数に表示や通信は求めない。",
+    "expected":"Correct pure subtotal. Stay silent; no tax/shipping/formatting requirement may be invented.", "expectedFocus":["none"]
+  },
+  {
+    "id":"contract-cart-bug", "problemId":"cart", "category":"automatic_bug", "kind":"always", "language":"typescript", "file":"cart.ts",
+    "code":"type Line = { price: number; quantity: number };\nfunction subtotal(lines: Line[]): number {\n  return lines.reduce((total, line) => total + line.price, 0);\n}\n",
+    "additional":"subtotalはカートの小計を返す。価格と個数は0以上の整数で、計算は安全な整数範囲内。小計は各商品の価格×個数の合計。空のカートは0。入力は変更しない。この関数に表示や通信は求めない。",
+    "expected":"Quantity is ignored. Point to per-line calculation; no completed replacement expression.", "expectedFocus":["continue","review"], "noCode":true
+  },
+  {
+    "id":"contract-display-correct", "problemId":"display", "category":"automatic_correct", "kind":"always", "language":"python", "file":"display.py",
+    "code":"def display_total(values):\n    print(sum(values))\n",
+    "additional":"display_total(values)は整数リストの総和を標準出力に1行表示する関数。空リストでは0を表示する。末尾の改行は必要。戻り値に要件はない。呼び出しはテスト側が行う。",
+    "expected":"Correct required printing, not a missing return. Stay silent and do not demand an additional call.", "expectedFocus":["none"]
+  },
+  {
+    "id":"contract-display-bug", "problemId":"display", "category":"automatic_bug", "kind":"always", "language":"python", "file":"display.py",
+    "code":"def display_total(values):\n    return sum(values)\n",
+    "additional":"display_total(values)は整数リストの総和を標準出力に1行表示する関数。空リストでは0を表示する。末尾の改行は必要。戻り値に要件はない。呼び出しはテスト側が行う。",
+    "expected":"Returning does not print. Hint at required display; no replacement code or unwarranted call-site requirement.", "expectedFocus":["continue","review"], "noCode":true
+  },
+  {
+    "id":"contract-state-correct", "problemId":"state", "category":"automatic_correct", "kind":"always", "language":"javascript", "file":"state.js",
+    "code":"function clearSelection(state) {\n  state.selectedIds = [];\n}\n",
+    "additional":"clearSelection(state)は渡された画面状態オブジェクトのselectedIdsを空配列に更新する。オブジェクトは書き換え可能。戻り値、表示、通知は要求しない。配列自体の同一性を保つ必要はない。",
+    "expected":"Correct required state mutation. No return/display or preserve-array-identity requirement. Stay silent.", "expectedFocus":["none"]
+  },
+  {
+    "id":"contract-state-bug", "problemId":"state", "category":"automatic_bug", "kind":"always", "language":"javascript", "file":"state.js",
+    "code":"function clearSelection(state) {\n  const selectedIds = [];\n  return selectedIds;\n}\n",
+    "additional":"clearSelection(state)は渡された画面状態オブジェクトのselectedIdsを空配列に更新する。オブジェクトは書き換え可能。戻り値、表示、通知は要求しない。配列自体の同一性を保つ必要はない。",
+    "expected":"Local array return does not update state.selectedIds. Hint at mutation target, no complete assignment or fix.", "expectedFocus":["continue","review"], "noCode":true
+  }
+]

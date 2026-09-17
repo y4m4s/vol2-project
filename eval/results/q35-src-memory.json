@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-09-17T04:05:20.0539721Z",
+  "scope": "during baseline inference; process working sets are not total shared GPU/system memory",
+  "processes": [
+    {
+      "privateBytes": 8209625088,
+      "name": "llama-server",
+      "workingSetBytes": 13146193920
+    },
+    {
+      "privateBytes": 259375104,
+      "name": "LM Studio",
+      "workingSetBytes": 125120512
+    },
+    {
+      "privateBytes": 11522048,
+      "name": "LM Studio",
+      "workingSetBytes": 11186176
+    },
+    {
+      "privateBytes": 155021312,
+      "name": "LM Studio",
+      "workingSetBytes": 109883392
+    },
+    {
+      "privateBytes": 13668352,
+      "name": "LM Studio",
+      "workingSetBytes": 11788288
+    },
+    {
+      "privateBytes": 42766336,
+      "name": "LM Studio",
+      "workingSetBytes": 36413440
+    },
+    {
+      "privateBytes": 16912384,
+      "name": "LM Studio",
+      "workingSetBytes": 13840384
+    },
+    {
+      "privateBytes": 160759808,
+      "name": "LM Studio",
+      "workingSetBytes": 211918848
+    }
+  ]
+}

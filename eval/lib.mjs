@@ -51,7 +51,8 @@ export function validateConfig(c) {
 }
 export function loadCases(split, caseFile, suite) {
   if (!['tuning','holdout'].includes(split)) throw Error('Invalid split');
-  if (suite !== undefined && !['small-medium','algorithms','algorithms-v2'].includes(suite)) throw Error('Unknown suite');
+  if (suite !== undefined && !['small-medium','algorithms','algorithms-v2','local-contract'].includes(suite)) throw Error('Unknown suite');
+  if (suite === 'local-contract' && split !== 'holdout') throw Error('local-contract is a frozen holdout-only suite');
   if (suite && caseFile) throw Error('Suite cannot be combined with custom cases');
   if (caseFile && split !== 'tuning') throw Error('Custom cases cannot replace frozen holdout');
   const data=readJson(caseFile ?? `eval/cases/${suite ? suite+'-' : ''}${split}.json`);
@@ -68,8 +69,8 @@ export function loadCases(split, caseFile, suite) {
     if (item.fixture === 'long-active') code = '// unrelated declarations\n'.repeat(210) + '\nexport function parsePort(value) { return Number(value); }';
     if (item.fixture === 'long-holdout') code = '// helper declarations\n'.repeat(220) + '\nexport function isReady(count) { return count > 0; }';
     if (item.fixture === 'long-additional') additional = '旧仕様: タイムアウトは30秒。\n' + '旧版メモ: 画面の背景色は白。ログの形式は変更しない。\n'.repeat(500) + '\n最新仕様: タイムアウトは17秒。旧仕様を置き換える。';
-    return {...item, input:{kind:'manual', assistanceDepth:item.depth ?? 'low', userPrompt:item.question,
-      context:{activeFilePath:'main.ts',activeFileLanguage:'typescript',activeFileExcerpt:code, additionalContext:additional,
+    return {...item, input:{kind:item.kind ?? 'manual', assistanceDepth:item.depth ?? 'low', userPrompt:item.question,
+      context:{activeFilePath:item.file ?? 'main.ts',activeFileLanguage:item.language ?? 'typescript',activeFileExcerpt:code, additionalContext:additional,
         diagnosticsSummary:[], recentEditsSummary:[],relatedSymbols:[],referencedFiles:(item.references ?? []).map(ref => ({...ref,reason:'open',score:1,diagnosticsSummary:[],recentEditsSummary:[]}))}}};
   });
 }

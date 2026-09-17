@@ -36,6 +36,9 @@ r3-thinking	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	unknown	unk
 official-thinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	0.6	0.95	20	0	unknown	8192	2.7777777777777777	0.2	0.6	27740.0801	30383.844699999994	12.265042881300065
 official-thinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	0.6	0.95	20	0	unknown	8192	2.2222222222222223	unknown	1	20959.4835	20959.4835	12.084883049031586
 ollama-native	ollama	qwen3:8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	4096	3.051282051282051	0.5384615384615384	0.8461538461538461	10490.680099999998	23515.868599999994	13.89419992109118
+m917-lm-q35-9b	lmStudio	qwen3.5-9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	2.8333333333333335	unknown	0.75	14434.2664	44913.17559999999	14.557254343024495
+q35-src-contract	lmStudio	qwen3.5-9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	2.763888888888889	0.5	0.75	12524.948900000003	29952.47960000002	15.321186006535024
+q35-src-factual	lmStudio	qwen3.5-9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	3.066666666666667	0.65625	0.8125	12081.233650000024	120024.63759999999	12.49046969278873
 r1-head-tail	lmStudio	qwen/qwen3-8b	Q4_K_M	production	head-tail-v1	production	unknown	unknown	unknown	unknown	unknown	8192	2.8034188034188037	0.5384615384615384	0.9230769230769231	6633.718699999999	20093.826599999993	13.027979757859963
 r2-evidence	lmStudio	qwen/qwen3-8b	Q4_K_M	evidence-v1	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.7179487179487176	0.46153846153846156	0.9230769230769231	6481.2720000000045	33719.49680000001	12.994468178458382
 r3-thinking	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	high	unknown	unknown	unknown	unknown	unknown	8192	2.8547008547008548	0.34615384615384615	1	27561.937600000005	39169.638399999996	12.708482522285632

@@ -1,0 +1,137 @@
+{
+  "baseline": "eval/results/q35-src-baseline",
+  "candidate": "eval/results/q35-src-contract",
+  "split": "tuning",
+  "seed": "1a8048abc2ea4a2cbea3a2fcec8a8dc7",
+  "packetHash": "44ec9222ff4bf0208ed8b7ac3fac3af9a20cb71046977c4a95e7810ac36bd191",
+  "pairs": [
+    {
+      "pairId": "3cba841c4519fcf5",
+      "caseId": "alg-lower-bound-py",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "60956e97b817679a699f07a105883cab51327c93f9bc3f931b0c74fdb8d7361e"
+    },
+    {
+      "pairId": "2f8f2c46ea138127",
+      "caseId": "alg-stairs-bug-js",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "fd0a17a2a3f15a9b09a76ddc5a3e750d4637bb5868d6e2c529c0ea04faee1ee0"
+    },
+    {
+      "pairId": "f86db0da77a817a0",
+      "caseId": "alg-sum-correct-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "06f2d2caf69e687ba08139d319d964e368600497faab32c5ac2695f4ac0e4838"
+    },
+    {
+      "pairId": "a00642608ff7ccb4",
+      "caseId": "alg-sort-correct-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "4d8495eea8ed1c98654dd0cd44bb6826931c9617fa2a048f50bc7643784acd70"
+    },
+    {
+      "pairId": "fee6a6a9d2256b49",
+      "caseId": "alg-unknown-transform-py",
+      "problemId": "unknown-contract",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "5a7012dd8ba1027718eacfb094a3170c41e05df1d4a157800d77abfc67616f5e"
+    },
+    {
+      "pairId": "1843ca71b482d199",
+      "caseId": "alg-lower-bound-js",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "91bbe455d7141e41f8dd85bcfaa166f1a23e715aefdd87179f3ffb551dd3b3bb"
+    },
+    {
+      "pairId": "2503dcbc6f8567c0",
+      "caseId": "alg-sum-bug-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "83119020b77ec309513c84a083b519c6178a4c1cbdd1fcb6e633f3c2b84d4e42"
+    },
+    {
+      "pairId": "154fd934aa69942f",
+      "caseId": "alg-sort-correct-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "b1f48df6c8e48d704d1b25ab261aee67763b7060926fe52175194b9d4a671bb5"
+    },
+    {
+      "pairId": "4d6fa5b138f6a4bb",
+      "caseId": "alg-pair-bug-py",
+      "problemId": "pair-existence",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "ad1478b4e1d3526806fb5ad523a5bdedebdade7f2306b90030302508044820b9"
+    },
+    {
+      "pairId": "faa267b4bfba5bdc",
+      "caseId": "alg-unknown-transform-js",
+      "problemId": "unknown-contract",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "cac06624d80b9a603e1b3c506def9552c4ce2a92cd32c41414333adddeee555f"
+    },
+    {
+      "pairId": "d3a9b9bde31cd665",
+      "caseId": "alg-sort-bug-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "a5899b9583e07a21cfb067416616ab25ad4924386bd8c8fdca9d9bf0cb049ac4"
+    },
+    {
+      "pairId": "7e12567359589039",
+      "caseId": "alg-pair-bug-js",
+      "problemId": "pair-existence",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c4484ec7996169ad05665b70bfab3745404accdac294b431868c56ae2753acb3"
+    },
+    {
+      "pairId": "5bcefc9968df3ea4",
+      "caseId": "alg-sum-correct-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "1a7ef52c5959f769cae43efd59bcf1912e458e5ebf42192ecb561ab177080cc9"
+    },
+    {
+      "pairId": "864f6517bc7382d9",
+      "caseId": "alg-sum-bug-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "c2f7659ad5d631e2ce63036d1256a0692eca854a7f6642a5471d264664af7e64"
+    },
+    {
+      "pairId": "227a9ed958ce86d9",
+      "caseId": "alg-sort-bug-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "704f1029b0d80fa2f0b6dd14c83385fc1e9ab7d2dcfe22b8cedf7063971876fb"
+    },
+    {
+      "pairId": "41d4c84623eb1f89",
+      "caseId": "alg-stairs-bug-py",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "20f7bb509ecde08a1e842493d14691c9289d9681770f52f0f8f553426d7f063c"
+    }
+  ]
+}
