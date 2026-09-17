@@ -600,7 +600,7 @@ export class NavigatorController implements vscode.Disposable {
 
     activeRequest.tokenSource.cancel();
     this.activeGuidanceRequest = undefined;
-    this.patchSession({
+    this.patchGuidanceSession({
       requestState: "idle",
       statusMessage: {
         kind: "info",
@@ -846,13 +846,13 @@ export class NavigatorController implements vscode.Disposable {
       ));
 
       if (!hasMeaningfulContext(prepared.context)) {
-        this.patchSession({ contextPreview: preview });
+        this.patchGuidanceSession({ contextPreview: preview });
         return undefined;
       }
 
       fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation);
       if (SUPPRESS_DUPLICATE_AUTO_ADVICE && (fingerprint === this.lastAutomaticContextFingerprint || this.automaticFingerprints.has(fingerprint))) {
-        this.patchSession({
+        this.patchGuidanceSession({
           contextPreview: preview,
           statusMessage: {
             kind: "info",
@@ -908,7 +908,7 @@ export class NavigatorController implements vscode.Disposable {
       this.adviceScheduler.togglePaused();
     }
 
-    this.patchSession({
+    this.patchGuidanceSession({
       statusMessage: {
         kind: "warning",
         text: "NaviCom内の本日の概算トークン数が上限に達したため、自動助言を一時停止しました。設定から上限を変更できます。"
@@ -1019,7 +1019,7 @@ export class NavigatorController implements vscode.Disposable {
     const state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
       if (!automatic) {
-        this.patchSession({
+        this.patchGuidanceSession({
           statusMessage: {
             kind: "info",
             text: "別の助言を処理中です。完了してからもう一度送信してください。"
@@ -1031,7 +1031,7 @@ export class NavigatorController implements vscode.Disposable {
 
     if (this.connectionService.getState() !== "connected" && normalizeRoutingSettings(this.settingsService.getSettings().routing).mode === "manual") {
       if (!automatic) {
-        this.patchSession({
+        this.patchGuidanceSession({
           connectionState: this.connectionService.getState(),
           statusMessage: {
             kind: "warning",
@@ -1045,7 +1045,7 @@ export class NavigatorController implements vscode.Disposable {
     const release = this.guidanceRequestGate.tryAcquire();
     if (!release) {
       if (!automatic) {
-        this.patchSession({
+        this.patchGuidanceSession({
           statusMessage: {
             kind: "info",
             text: "別の助言を処理中です。完了してからもう一度送信してください。"
@@ -1055,7 +1055,7 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
 
-    this.patchSession({ requestState: "preparing_guidance" });
+    this.patchGuidanceSession({ requestState: "preparing_guidance" });
 
     try {
       const options = typeof optionsOrFactory === "function"
@@ -1071,7 +1071,7 @@ export class NavigatorController implements vscode.Disposable {
       }
       if (this.connectionService.getState() !== "connected" && normalizeRoutingSettings(this.settingsService.getSettings().routing).mode === "manual") {
         if (!automatic) {
-          this.patchSession({
+          this.patchGuidanceSession({
             connectionState: this.connectionService.getState(),
             statusMessage: {
               kind: "warning",
@@ -1095,7 +1095,7 @@ export class NavigatorController implements vscode.Disposable {
       // Release the previous request's gate before allowing that dispatch.
       release();
       if (requestState === "preparing_guidance" || requestState === "requesting_guidance") {
-        this.patchSession({ requestState: "idle" });
+        this.patchGuidanceSession({ requestState: "idle" });
       }
     }
   }
@@ -1185,7 +1185,7 @@ export class NavigatorController implements vscode.Disposable {
       }
     );
     if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
-      this.patchSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
+      this.patchGuidanceSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
       return { ok: false };
     }
     // Routing can select a different provider after context collection. Apply
@@ -1195,7 +1195,7 @@ export class NavigatorController implements vscode.Disposable {
     if (routedProviderId !== settings.providerId && prepared.context.activeFileExcerpt && !prepared.context.selectedText) {
       if (!editorSnapshotBeforeRoute || editorSnapshotBeforeRoute !== this.contextCollector.automaticEditorSnapshot()) {
         if (options.kind === "always") this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
-        this.patchSession({ statusMessage: { kind: "warning", text: "接続先の切り替え中に編集対象が変わったため、送信を中止しました。" } });
+        this.patchGuidanceSession({ statusMessage: { kind: "warning", text: "接続先の切り替え中に編集対象が変わったため、送信を中止しました。" } });
         return { ok: false };
       }
       const routedContext = this.contextCollector.collectGuidanceContext(routedProviderId);
@@ -1204,7 +1204,7 @@ export class NavigatorController implements vscode.Disposable {
         context: { ...prepared.context, activeFilePath: routedContext.activeFilePath, activeFileExcerpt: routedContext.activeFileExcerpt }
       }, options.userPrompt);
       if (refreshed.context.activeFilePath !== prepared.context.activeFilePath) {
-        this.patchSession({ statusMessage: { kind: "warning", text: "編集対象が変わったため、送信を中止しました。" } });
+        this.patchGuidanceSession({ statusMessage: { kind: "warning", text: "編集対象が変わったため、送信を中止しました。" } });
         return { ok: false };
       }
       prepared = refreshed;
@@ -1213,7 +1213,7 @@ export class NavigatorController implements vscode.Disposable {
     try {
       conversationMemory = await this.conversationMemoryCoordinator.assemble(settings, history, state.activeConversationStreamId, tokenSource.token);
     } catch (error) {
-      this.patchSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "会話を引き継げません。" } });
+      this.patchGuidanceSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "会話を引き継げません。" } });
       return { ok: false };
     }
     if (tokenSource.token.isCancellationRequested) { tokenSource.dispose(); return { ok: false }; }
@@ -1254,7 +1254,7 @@ export class NavigatorController implements vscode.Disposable {
       userEntry.transmissionClass = userEntry.providerId === "ollama" || userEntry.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
     }
 
-    this.patchSession({
+    this.patchGuidanceSession({
       requestState: "requesting_guidance",
       connectionState: this.connectionService.getState(),
       screen:
@@ -1303,7 +1303,7 @@ export class NavigatorController implements vscode.Disposable {
 
     if (wasCancelled || !requestIsCurrent) {
       if (requestIsCurrent) {
-        this.patchSession({
+        this.patchGuidanceSession({
           statusMessage: {
             kind: "info",
             text: "回答生成を中断しました。"
@@ -1324,7 +1324,7 @@ export class NavigatorController implements vscode.Disposable {
     // connection state and stop automatic guidance through the normal error path.
     if (result.ok && options.kind === "always" && options.automaticEditorSnapshot !== this.contextCollector.automaticEditorSnapshot()) {
       this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
-      this.patchSession({ contextPreview: refreshedPreview });
+      this.patchGuidanceSession({ contextPreview: refreshedPreview });
       return { ok: false };
     }
 
@@ -1336,7 +1336,7 @@ export class NavigatorController implements vscode.Disposable {
       && !(lastEntry?.kind === "always" && lastEntry.focus === "none");
     if (isNoAdvice && !recordNoAdvice) {
       this.rememberAutomaticFocus(options, result.focus);
-      this.patchSession({
+      this.patchGuidanceSession({
         connectionState: this.connectionService.getState(),
         contextPreview: refreshedPreview,
         ...(state.screen === "main"
@@ -1392,7 +1392,7 @@ export class NavigatorController implements vscode.Disposable {
       assistantEntry.transmissionClass = history.some(e => e.transmissionClass === "localOnly") || responseModel?.providerId === "ollama" || responseModel?.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
       const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
-      this.patchSession({
+      this.patchGuidanceSession({
         connectionState: this.connectionService.getState(),
         screen: resolveScreenAfterSuccess(options.kind, latestState.screen),
         contextPreview: refreshedPreview,
@@ -1440,7 +1440,7 @@ export class NavigatorController implements vscode.Disposable {
     const lmStudioConnectionFailed = responseModel?.providerId === "lmStudio" &&
       (nextConnectionState === "unavailable" || nextConnectionState === "disconnected");
 
-    this.patchSession({
+    this.patchGuidanceSession({
       connectionState: nextConnectionState,
       screen: lmStudioConnectionFailed ? latestState.screen : resolveScreenAfterFailure(
         options.kind,
@@ -1521,6 +1521,13 @@ export class NavigatorController implements vscode.Disposable {
 
   private async persistActiveConversationState(): Promise<void> {
     await this.conversationCoordinator.persist();
+  }
+
+  private patchGuidanceSession(partial: Partial<NavigatorSessionState>): void {
+    this.patchSession({
+      ...partial,
+      ...(partial.statusMessage ? { statusMessage: { ...partial.statusMessage, scope: "guidance" as const } } : {})
+    });
   }
 
   private patchSession(partial: Partial<NavigatorSessionState>): void {

@@ -411,6 +411,8 @@ export interface ConversationStreamListItem {
 }
 
 export interface NavigatorStatusMessage {
+  /** Identifies request notifications without matching their displayed text. */
+  scope?: "guidance";
   kind: "info" | "warning" | "error";
   text: string;
   action?: "openConnectionSettings";

@@ -14,6 +14,7 @@ const DEFAULT_ICONS: Record<FloatingToastKind, { icon: FloatingToastIcon }> = {
 };
 
 interface FloatingToastProps {
+  placement?: "floating" | "anchored";
   open: boolean;
   message: string;
   kind?: FloatingToastKind;
@@ -31,6 +32,7 @@ const DEFAULT_DURATION_MS = 2600;
 const FADE_DURATION_MS = 420;
 
 export function FloatingToast({
+  placement = "floating",
   open,
   message,
   kind = "info",
@@ -101,7 +103,7 @@ export function FloatingToast({
 
   return (
     <div
-      className={`floating-toast ${kind}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}`}
+      className={`floating-toast ${kind}${placement === "anchored" ? " anchored" : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}`}
       role={kind === "error" ? "alert" : "status"}
       aria-live={kind === "error" ? "assertive" : "polite"}
     >

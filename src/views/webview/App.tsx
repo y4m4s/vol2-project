@@ -9,7 +9,7 @@ import { S07Error } from "../screens/s07-error";
 import { S08History } from "../screens/s08-history";
 import { S09FeedbackForm } from "../screens/s09-feedback-form";
 import { FloatingToast } from "./components/FloatingToast";
-import { guidanceProgressState } from "../../shared/uiActivity";
+import { GuidanceProgressToast } from "./components/GuidanceProgressToast";
 import type { NavigatorScreen } from "../../shared/types";
 
 const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレッジ用に整理しています...";
@@ -104,6 +104,7 @@ function StatusMessageToast() {
     viewModel.routingProviderConnection?.state === "connecting";
   const shouldSuppress =
     !statusMessage ||
+    statusMessage.scope === "guidance" ||
     viewModel?.requestState === "preparing_guidance" ||
     viewModel?.requestState === "saving_knowledge" ||
     statusMessage.text === KNOWLEDGE_SAVE_PENDING_TEXT ||
@@ -119,23 +120,6 @@ function StatusMessageToast() {
       onAction={statusMessage?.action === "openConnectionSettings" ? () => send({ type: "navigate", screen: "settings" }) : undefined}
       persist={isCheckingRoutingConnection}
       durationMs={statusMessage?.kind === "error" || statusMessage?.action ? 10_000 : undefined}
-    />
-  );
-}
-
-function GuidanceProgressToast() {
-  const { viewModel } = useApp();
-  const progress = viewModel && guidanceProgressState(viewModel.requestState, viewModel.screen);
-
-  return (
-    <FloatingToast
-      open={Boolean(progress)}
-      kind="info"
-      icon="auto_awesome"
-      title={progress?.title}
-      message={progress?.message ?? ""}
-      persist
-      progress="running"
     />
   );
 }

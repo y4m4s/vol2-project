@@ -1372,6 +1372,23 @@ ul.bullet-list li {
   transform: translateX(-50%) translateY(8px);
 }
 
+/* Positioned by chat-input-overlays above the complete, variable-height composer.
+   Keep both the running notice and its exit animation outside the input controls. */
+.floating-toast.anchored {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 100%;
+  box-sizing: border-box;
+  transform: none;
+  animation: none;
+}
+
+.chat-input-overlays > .floating-toast.anchored:not(:first-child) {
+  margin-top: 6px;
+}
+
 .floating-toast-icon {
   flex-shrink: 0;
   margin-top: 1px;
