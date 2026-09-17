@@ -1,0 +1,15 @@
+{
+  "id": "m917-oll-production-q3-14b",
+  "provider": "ollama",
+  "model": "qwen3:14b",
+  "baseUrl": "http://127.0.0.1:11435",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "none",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": 2048,
+  "collectorContext": "bounded-file",
+  "problemLayout": "plain"
+}

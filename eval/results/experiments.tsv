@@ -21,6 +21,12 @@ champion-context-numeric	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	pro
 champion-context-numeric	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.111111111111111	unknown	1	6241.39005	8929.281799999997	13.541614552229458
 final-numeric-context	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	3.9444444444444446	unknown	1	6749.3162	7233.208200000001	13.812089557211289
 final-numeric-context	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	production	unknown	unknown	unknown	unknown	unknown	8192	2.9145299145299144	0.4230769230769231	0.9230769230769231	7129.362800000003	19769.060199999993	13.186099822156706
+m917-lm-q3-14b	lmStudio	qwen3-14b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	3.076388888888889	unknown	0.8125	11149.663900000007	28192.13519999999	7.1713656496800935
+m917-lm-q35-9b	lmStudio	qwen3.5-9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	8192	2.9027777777777777	0.4375	0.6875	14404.155299999999	39320.379199999996	13.46745355631533
+m917-oll-production-q3-14b	ollama	qwen3:14b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	4096	3.2222222222222223	unknown	1	33257.932499999995	33756.928799999994	unknown
+m917-oll-production-q35-9b	ollama	qwen3.5:9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	unknown	unknown	1.1666666666666667	0	0	34990.18375	37872.6951	unknown
+m917-oll-vulkan-q3-14b	ollama	qwen3:14b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	8192	8192	3.0625	unknown	0.8125	38635.12359999999	62240.73940000002	8.725440971435615
+m917-oll-vulkan-q35-9b	ollama	qwen3.5:9b	Q4_K_M	production	production	none	unknown	unknown	unknown	unknown	8192	unknown	1.6875	0.28125	0.375	34865.27919999996	73458.2965	15.055515225163726
 official-nonthinking-lmstudio	lmStudio	qwen/qwen3-8b	unknown	production	production	none	0.7	0.8	20	0	unknown	unknown	unknown	unknown	0	1.6466000000000065	3.3993999999999858	unknown
 official-nonthinking-lmstudio	lmStudio	qwen/qwen3-8b	Q4_K_M	production	production	none	0.7	0.8	20	0	unknown	8192	2.8222222222222224	0.6	0.8	6228.941200000001	7146.9806	12.362912514397316
 official-nonthinking-ollama	ollama	qwen3:8b	Q4_K_M	production	production	none	0.7	0.8	20	0	unknown	4096	2.5555555555555554	0.4	0.8	6843.0660000000025	17078.0877	15.13199029857838

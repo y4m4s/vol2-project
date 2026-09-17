@@ -1,0 +1,15 @@
+{
+  "id": "m917-oll-q35-9b",
+  "provider": "ollama",
+  "model": "qwen3.5:9b",
+  "baseUrl": "http://127.0.0.1:11434",
+  "transport": "ollama-native",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "none",
+  "sampling": {},
+  "contextLength": 8192,
+  "maxOutputTokens": 2048,
+  "collectorContext": "bounded-file",
+  "problemLayout": "plain"
+}

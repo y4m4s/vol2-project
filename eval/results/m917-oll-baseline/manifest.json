@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "m917-oll-q3-14b",
+  "config": {
+    "id": "m917-oll-q3-14b",
+    "provider": "ollama",
+    "model": "qwen3:14b",
+    "baseUrl": "http://127.0.0.1:11434",
+    "transport": "ollama-native",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {},
+    "contextLength": 8192,
+    "maxOutputTokens": 2048,
+    "collectorContext": "bounded-file",
+    "problemLayout": "plain"
+  },
+  "suite": "algorithms-v2",
+  "split": "tuning",
+  "repeats": 1,
+  "caseIds": [
+    "alg-sum-correct-py",
+    "alg-sum-correct-js",
+    "alg-sum-bug-py",
+    "alg-sum-bug-js",
+    "alg-lower-bound-py",
+    "alg-lower-bound-js",
+    "alg-pair-bug-py",
+    "alg-pair-bug-js",
+    "alg-unknown-transform-py",
+    "alg-unknown-transform-js",
+    "alg-stairs-bug-py",
+    "alg-stairs-bug-js",
+    "alg-sort-correct-py",
+    "alg-sort-correct-js",
+    "alg-sort-bug-py",
+    "alg-sort-bug-js"
+  ],
+  "caseSetHash": "9567b80579f8a7a4f576a626b3a488ff19c56277b06ef64428143f6f1cfde751",
+  "provenance": {
+    "git": "330fe60dcf99eec7e69ca162f44b59b209686d63",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-15-context-numeric-v6",
+    "files": {
+      "PromptBuilder": "7d7f840d22d85b49b5b2579d81bd1cb31cdb83ac7cb78be788ac59b0e603ea29",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "0fc62612d1e18c9e7a751bd5b71f6d88d85b3ea4bd0c0d194388827c6fcaeb1d",
+      "GuidanceResponsePolicy": "81a09850ecef4bbea189ad86c3dd363b9bce3f30224bd14ea0a0cf5699a7fd78",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "1021ca17c4781f33c28541b9a8391d253939c08086a9eda2bbf0ca0df0683ff8",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "11c92ac82bdea8a084424cf557272b374af931d48153191f8dd9f162e7f745ff"
+  },
+  "algorithmProvenance": {
+    "algorithms.mjs": "43f8a805974581f2954fdeeecc62d1b618f5ee6f9e75d9edddb7c45a273ddd4b",
+    "algorithm-worker.py": "2b6f9f016c6eae53224da55a2ac00cfdf137f7b40f2d2dc395ecad952f6da7fc",
+    "algorithm-worker.mjs": "c72be6b10bbda2b942e2c2ed2f8b341728a7b0897e82ac179dc83a670eaa7b92",
+    "algorithm-rubric.md": "eff44f1d36176be1c797684936b508c6fd3b5b5d729966504aff77266e97b2ad",
+    "algorithm-followup-oracles.mjs": "d3f1a6fa234e41aaa8daf1cb4b508326009f354934530f934f3ffbdb6e92cef8",
+    "intervention-policy.mjs": "f1233ec6ea0da504c3ce3340286657fb0ae3e0f013e738b240fb434638a44aed"
+  },
+  "rubricHash": "a7430b8c422782801690545747ac9282dde760bae1867c0252f0e84082b95b05",
+  "startedAt": "2026-09-16T22:47:03.428Z",
+  "orderSeed": "43f822bdd1bb9562e55f18a2dca67e00",
+  "dry": false,
+  "paired": {
+    "partner": "eval/results/m917-oll-candidate",
+    "runnerHash": "e5c41a3ebe5757f11310042e55693679c63d7e9abf3a29dc6c9043f7a4e251f7",
+    "order": "Shuffled case-repeat pairs; alternating first arm. Serial inference."
+  },
+  "status": "interrupted_backend_diagnostic",
+  "interruptionReason": "After user restart Ollama updated to 0.34.1 and reports CPU only (size_vram=0). Interrupted screening to diagnose Vulkan; preserve completed responses and do not mix CPU/GPU measurements.",
+  "interruptedAt": "2026-09-16T22:49:16.960853+00:00"
+}

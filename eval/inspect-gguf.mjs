@@ -19,6 +19,6 @@ function value(type,keep){
 try {
   if(read(4).toString()!=='GGUF')throw Error('Not GGUF');const version=u32();if(![2,3].includes(version))throw Error('Unsupported version');
   const tensors=u64(),count=u64(),metadata={};
-  for(let i=0;i<count;i++){const key=string(),type=u32();const keep=/^(general\.(name|basename|file_type|quantization_version)|qwen3\.(context_length|rope.freq_base)|tokenizer\.chat_template)$/.test(key);const v=value(type,keep);if(keep)metadata[key]=v;}
+  for(let i=0;i<count;i++){const key=string(),type=u32();const keep=/^(general\.(name|basename|file_type|quantization_version)|qwen(?:3|35)\.(context_length|rope.freq_base)|tokenizer\.chat_template)$/.test(key);const v=value(type,keep);if(keep)metadata[key]=v;}
   save(out,{file:modelFileReference(path),size:statSync(path).size,version,tensors,metadata,templateHash:metadata['tokenizer.chat_template']?hash(metadata['tokenizer.chat_template']):null});
 }finally{closeSync(fd);}

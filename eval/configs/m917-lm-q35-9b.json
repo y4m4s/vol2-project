@@ -1,0 +1,15 @@
+{
+  "id": "m917-lm-q35-9b",
+  "provider": "lmStudio",
+  "model": "qwen3.5-9b",
+  "baseUrl": "http://127.0.0.1:1234",
+  "transport": "production",
+  "promptVersion": "production",
+  "contextStrategy": "production",
+  "thinking": "none",
+  "sampling": {},
+  "contextLength": null,
+  "maxOutputTokens": 2048,
+  "collectorContext": "bounded-file",
+  "problemLayout": "plain"
+}

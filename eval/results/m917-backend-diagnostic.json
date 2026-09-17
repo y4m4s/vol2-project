@@ -1,0 +1,36 @@
+{
+  "observedAt": "2026-09-17",
+  "ollamaVersion": "0.34.1",
+  "defaultService": {
+    "port": 11434,
+    "vulkanEnabledInLog": true,
+    "gpuDiscovered": false,
+    "testModel": "qwen3:14b",
+    "contextLength": 8192,
+    "sizeVramBytes": 0,
+    "outcome": "First request interrupted before completion; no CPU quality/throughput result."
+  },
+  "processLocalWorkaround": {
+    "port": 11435,
+    "environment": {
+      "OLLAMA_HOST": "127.0.0.1:11435",
+      "OLLAMA_VULKAN": "1",
+      "OLLAMA_NOPRUNE": "1",
+      "OLLAMA_MAX_LOADED_MODELS": "1",
+      "GGML_BACKEND_PATH": "<OLLAMA_INSTALL>/lib/ollama/vulkan/ggml-vulkan.dll"
+    },
+    "gpuDiscovered": "Intel Arc 140V",
+    "probe": "Installed llama-server.exe --list-devices: no devices without explicit backend path; Vulkan0 with explicit DLL path.",
+    "persistentSettingsChanged": false,
+    "interpretation": "Explicit DLL loading restores Vulkan discovery in this session. Root cause of default-service discovery failure is not proven."
+  },
+  "downloads": {
+    "added": [
+      "qwen3:14b",
+      "qwen3.5:9b"
+    ],
+    "removed": []
+  },
+  "lmStudioCompletedBeforeInterruption": true,
+  "lmStudioRestoreTarget": "qwen3-14b only, following latest user instruction"
+}
