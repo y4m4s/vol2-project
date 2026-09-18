@@ -1,5 +1,5 @@
-import type { AiProviderId } from "../../../shared/types";
 import { PROVIDER_LABELS } from "../../../shared/providerRouting";
+import { connectionActivityState } from "../../../shared/uiActivity";
 import { useApp } from "../state/AppContext";
 import { AutoModeIcon } from "./AutoModeIcon";
 import { ProviderLogo } from "./ProviderLogo";
@@ -17,29 +17,7 @@ export function ConnectionActivity() {
   const routingMode = viewModel.settings.routing?.mode ?? "manual";
   const isAutomatic = routingMode === "automatic";
   const preferredProviderId = viewModel.settings.routing?.preferredProviderId;
-  const preferredLocalProviderHasModels = preferredProviderId === "lmStudio"
-    ? viewModel.lmStudioModelOptions.length > 0
-    : preferredProviderId === "ollama"
-      ? (viewModel.ollamaModelOptions?.length ?? 0) > 0
-      : true;
-  const selectablePreferredProviderId = preferredProviderId &&
-    preferredLocalProviderHasModels
-    ? preferredProviderId
-    : undefined;
-  const basicProviderId: AiProviderId = isAutomatic
-    ? selectablePreferredProviderId ?? viewModel.providerId
-    : viewModel.providerId;
-  const isCurrentProvider = basicProviderId === viewModel.providerId;
-  const isConnected = isCurrentProvider && viewModel.connectionState === "connected";
-  const isAvailable = isConnected || (!isCurrentProvider && (viewModel.testedProviderIds ?? []).includes(basicProviderId));
-  const isChecking = viewModel.requestState === "connecting" &&
-    viewModel.routingProviderConnection?.providerId === basicProviderId &&
-    viewModel.routingProviderConnection.state === "connecting";
-  const stateLabel = isConnected ? "接続中" : isChecking ? "接続確認中" : isAvailable ? "接続可能" : "未接続";
-  const testedModelLabel = viewModel.testedProviderModels?.find(model => model.providerId === basicProviderId)?.modelLabel;
-  const modelLabel = (isCurrentProvider ? viewModel.modelLabel : testedModelLabel)
-    ?.replace(/^(GitHub Copilot|LM Studio|Ollama|OrcaRouter)\s*[·：:]\s*/, "");
-  const stateClass = isConnected || isAvailable && !isChecking ? "connected" : "switching";
+  const { providerId, modelLabel, stateLabel, stateClass, isAvailable, isChecking } = connectionActivityState(viewModel);
 
   return (
     <>
@@ -47,27 +25,29 @@ export function ConnectionActivity() {
       <div className="connection-activity">
         <button
           type="button"
-          className={`connection-activity-provider ${basicProviderId.toLowerCase()} ${stateClass}`}
-          aria-label={`${PROVIDER_LABELS[basicProviderId]} ${stateLabel}${isAutomatic ? "、基本プロバイダー" : ""}。接続設定を開く`}
+          className={`connection-activity-provider ${providerId.toLowerCase()} ${stateClass}`}
+          aria-label={`${PROVIDER_LABELS[providerId]} ${stateLabel}、現在のプロバイダー。接続設定を開く`}
           aria-describedby="connection-activity-tooltip"
           onClick={() => send({ type: "navigate", screen: "settings" })}
         >
-          <ProviderLogo providerId={basicProviderId} className="connection-activity-provider-logo" />
+          <ProviderLogo providerId={providerId} className="connection-activity-provider-logo" />
           {(isAvailable || isChecking) && <span className={`connection-activity-state ${stateClass}`} aria-hidden="true">
-            {isChecking && !isConnected && <span className="material-symbols-outlined">progress_activity</span>}
+            {isChecking && <span className="material-symbols-outlined">progress_activity</span>}
           </span>}
         </button>
 
         <div id="connection-activity-tooltip" className="connection-activity-tooltip" role="tooltip">
           <div className="connection-activity-tooltip-title">
-            <ProviderLogo providerId={basicProviderId} className="connection-activity-provider-logo" />
-            <span>{PROVIDER_LABELS[basicProviderId]}</span>
+            <ProviderLogo providerId={providerId} className="connection-activity-provider-logo" />
+            <span>{PROVIDER_LABELS[providerId]}</span>
           </div>
           <div className="connection-activity-tooltip-status">
             <span className={`connection-activity-tooltip-dot ${stateClass}`} />
             <span>{stateLabel}</span>
           </div>
-          {isAutomatic && <div className="connection-activity-tooltip-role">基本プロバイダー</div>}
+          <div className="connection-activity-tooltip-role">現在のプロバイダー</div>
+          {isAutomatic && preferredProviderId && preferredProviderId !== providerId &&
+            <div className="connection-activity-tooltip-role">基本プロバイダー: {PROVIDER_LABELS[preferredProviderId]}</div>}
           {modelLabel && <div className="connection-activity-tooltip-model">{modelLabel}</div>}
         </div>
       </div>

@@ -109,6 +109,7 @@ export class ContextCollector {
   private readonly diagnosticBaselines = new Map<string, Map<string, DiagnosticSummary>>();
   private readonly recentEditsByDocument = new Map<string, RecentEditRecord[]>();
   private readonly documentSnapshotsByUri = new Map<string, string>();
+  private readonly notifiedDiagnosticSignatures = new Map<string, string>();
 
   public primeDocuments(documents: readonly vscode.TextDocument[]): void {
     for (const document of documents) {
@@ -123,6 +124,10 @@ export class ContextCollector {
 
     const key = document.uri.toString();
     if (!this.diagnosticBaselines.has(key)) this.diagnosticBaselines.set(key, this.diagnosticSnapshot(document.uri));
+    // 起動直後や初回表示の発行を「変化」と数えないよう、現在の内容を既知として控える。
+    if (!this.notifiedDiagnosticSignatures.has(key)) {
+      this.notifiedDiagnosticSignatures.set(key, this.diagnosticSignature(document.uri));
+    }
     const snapshot = this.captureBoundedSnapshot(document);
     if (snapshot === undefined) {
       this.documentSnapshotsByUri.delete(key);
@@ -136,6 +141,27 @@ export class ContextCollector {
     const key = uri.toString();
     this.documentSnapshotsByUri.delete(key);
     this.recentEditsByDocument.delete(key);
+    this.notifiedDiagnosticSignatures.delete(key);
+  }
+
+  /**
+   * 診断の内容が前回の通知から実際に変わったかを返し、変わっていれば新しい内容を控える。
+   *
+   * onDidChangeDiagnostics は、言語サーバーが同じ内容を再発行しただけでも発火する。
+   * プロジェクトの再解析やファイル監視など、ユーザーが何も触っていなくても起きるので、
+   * イベントが来たこと自体を「編集activity」として扱うと自動助言が勝手に動き続ける。
+   */
+  public hasDiagnosticsContentChanged(uri: vscode.Uri): boolean {
+    if (!this.isWorkspaceFile(uri)) return false;
+    const key = uri.toString();
+    const signature = this.diagnosticSignature(uri);
+    if (this.notifiedDiagnosticSignatures.get(key) === signature) return false;
+    this.notifiedDiagnosticSignatures.set(key, signature);
+    return true;
+  }
+
+  private diagnosticSignature(uri: vscode.Uri): string {
+    return JSON.stringify([...this.diagnosticSnapshot(uri).keys()].sort());
   }
 
   public collectPreview(): NavigatorContextPreview {

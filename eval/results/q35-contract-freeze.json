@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-17T04:22:38.307Z",
+  "candidate": {
+    "git": "2ef6bea00ad656e9280be3b81fdb21a4f9be88ed",
+    "node": "v24.15.0",
+    "platform": "win32",
+    "promptRevision": "2026-09-17-local-task-contract-v8",
+    "files": {
+      "PromptBuilder": "d5e6c12e67f30782e41246f20f913445c987a0550a2e0dc0285a7c50dd180db9",
+      "RequestPlanner": "2b66d03419e550a0044ff7ae968db47695fbf0aafa22c93b6948e66dbf106348",
+      "ContextExcerpt": "4094423ba944cf5b2002dfd39f1b28403aa6e7bdf58c3e5181e098596da29d8b",
+      "ActiveFileContext": "d1f72dccf9c4c5d9644ef5286d624574b6fd66c2f92aeb164511fecc6fec84ad",
+      "ContextCollector": "e8e98ac34c4f620ee853a513651458b2a05e9f9fe59ce4f0af56290578504fc2",
+      "LanguageReference": "267343dfcd37eec9329d6654b82be23ce6aed0937865bc32da09047cc8828215",
+      "GuidanceDepthPolicy": "5e084f876b7844e6e48cd7967ab878c9d946baf8859ac810301f8d6090c1b072",
+      "ModelProfile": "4749895ea47313e1495bbcb75e7da41240f75a51f606922c4617fb7456323e52",
+      "GuidanceResponsePolicy": "81a09850ecef4bbea189ad86c3dd363b9bce3f30224bd14ea0a0cf5699a7fd78",
+      "OllamaClient": "e6369422bc599c38137c23bf8f345ca7e080179c7615b1471c5d620b08b2c4fd",
+      "LmStudioClient": "1021ca17c4781f33c28541b9a8391d253939c08086a9eda2bbf0ca0df0683ff8",
+      "OpenAICompatibleClient": "ecbd465feca0cba5550a85e834dc35f8c138fd0b33056cf70f0b6da4ff651002"
+    },
+    "harnessHash": "ab820da8340991a16623b00159b9bf963f3faa89bb1f1af6a0c6e27bfba493a2"
+  },
+  "casesHash": "0849e30c1ec1df7c7ef5955d09ff99aec13d8845df2800194066cb0e1fb5c0e6",
+  "rawCasesHash": "7cd00073741222757b85aa3fe6e699232e3088ef9d5bce17c09601673dad304b",
+  "purpose": "New transfer confirmation, frozen after candidate source and before any inference on these cases. Same-agent authored, no independent judge. No tuning from confirmation outputs."
+}

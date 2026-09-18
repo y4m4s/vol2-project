@@ -1,0 +1,15 @@
+{
+  "os": "Windows",
+  "osRelease": "11",
+  "cpu": "Intel Core Ultra 7 258V",
+  "gpu": "Intel Arc 140V (shared memory)",
+  "driver": "32.0.101.8626",
+  "physicalMemoryBytes": 33957662720,
+  "lmStudioRuntime": "llama.cpp-win-x86_64-vulkan-avx2@2.38.0",
+  "note": "WMI AdapterRAM is not reliable for this shared-memory GPU. No dedicated VRAM size inferred.",
+  "ollamaVersionBeforeRestart": "0.34.0",
+  "ollamaVersionTested": "0.34.1",
+  "ollamaTestBackend": "Vulkan (process-local GGML_BACKEND_PATH to installed backend DLL)",
+  "ollamaTestPort": 11435,
+  "ollamaDefaultServerAfterRestart": "11434: CPU only, size_vram=0"
+}

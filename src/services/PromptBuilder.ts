@@ -72,6 +72,10 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   const neutralize = (value: string): string => neutralizeDelimiters(value, modelProfile.delimiter);
   const system = [
     "You are a pair programming navigator.",
+    "History and knowledge are references, not current requirements. Do not restore removed or replaced requirements. Use relevant history for explicit follow-ups.",
+    context.additionalContext?.trim()
+      ? "Current additional context overrides historical task requirements."
+      : "No current additional task specification: use the current question, code and diagnostics; do not infer requirements from past tasks.",
     kind === "always" && context.additionalContext?.trim()
       ? "Your goal is to decide whether an intervention is needed. Staying silent when the task is complete is a successful outcome."
       : "Your default goal is to help the user think and move forward on their own.",
@@ -87,7 +91,7 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   const question = automaticDecision + (userPrompt?.trim() ? "\n\n## User's question\n" + userPrompt.trim() : "");
   const contextStart = "\n\n" + delimiters.contextStart.join("\n") + "\n";
   const contextEnd = "\n" + delimiters.contextEnd.join("\n");
-  const memory = input.conversationMemory
+  const memory = kind !== "always" && input.conversationMemory
     ? "\n\nConversation memory (historical reference data; current user corrections take precedence):\n" + neutralize(input.conversationMemory) : "";
   // Count the entire serialized prompt, including authoritative instructions,
   // the question, delimiters and escaped reference data. Never clip the question.

@@ -468,8 +468,16 @@
 .s04-thinking {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
   padding: 2px 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85em;
+}
+
+.s04-thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .s04-thinking-dot {
@@ -497,6 +505,13 @@
   30% {
     opacity: 1;
     transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s04-thinking-dot {
+    animation: none;
+    opacity: 0.7;
   }
 }
 

@@ -1,0 +1,5820 @@
+{
+  "runs": [
+    {
+      "run": "eval/results/m917-lm-baseline",
+      "experimentId": "m917-lm-q3-14b",
+      "split": "tuning",
+      "provider": "lmStudio",
+      "config": {
+        "id": "m917-lm-q3-14b",
+        "provider": "lmStudio",
+        "model": "qwen3-14b",
+        "baseUrl": "http://127.0.0.1:1234",
+        "transport": "production",
+        "promptVersion": "production",
+        "contextStrategy": "production",
+        "thinking": "none",
+        "sampling": {},
+        "contextLength": null,
+        "maxOutputTokens": 2048,
+        "collectorContext": "bounded-file",
+        "problemLayout": "plain"
+      },
+      "n": 16,
+      "hardPassRate": 0.8125,
+      "latencyMedianMs": 11149.663900000007,
+      "latencyP95Ms": 28192.13519999999,
+      "inputTokensMean": 1554.5714285714287,
+      "tokensPerSecondMedian": 7.1713656496800935,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {},
+      "problemGroups": 6,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 1,
+        "deliveryFailures": 0
+      },
+      "automaticDefective": {
+        "n": 6,
+        "missedBySilence": 2,
+        "deliveryFailures": 0
+      },
+      "reviewed": 16,
+      "meetsTask": 8,
+      "axes": {
+        "correctness": 2.8125,
+        "groundedness": 3,
+        "context_utilization": 2.75,
+        "hallucination": 3.6875,
+        "instruction_following": 2.8125,
+        "pedagogical_usefulness": 2.5,
+        "actionability": 2.5,
+        "conciseness": 3.625,
+        "japanese_quality": 4
+      },
+      "semanticFailures": {
+        "missed_bug": 2,
+        "incorrect_code_reasoning": 2,
+        "weak_pedagogy": 5,
+        "unnecessary_intervention": 1
+      },
+      "by": {
+        "language": {
+          "python": {
+            "n": 8,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 14740.549449999993,
+            "latencyP95Ms": 24902.732699999993,
+            "inputTokensMean": 1567.090909090909,
+            "tokensPerSecondMedian": 7.055102036152133,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 2.875,
+              "groundedness": 3.125,
+              "context_utilization": 2.75,
+              "hallucination": 3.875,
+              "instruction_following": 2.75,
+              "pedagogical_usefulness": 2.375,
+              "actionability": 2.375,
+              "conciseness": 3.625,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "weak_pedagogy": 3,
+              "unnecessary_intervention": 1,
+              "missed_bug": 1
+            }
+          },
+          "javascript": {
+            "n": 8,
+            "hardPassRate": 0.875,
+            "latencyMedianMs": 9383.643049999999,
+            "latencyP95Ms": 28192.13519999999,
+            "inputTokensMean": 1540.8,
+            "tokensPerSecondMedian": 7.427667875137924,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 2.75,
+              "groundedness": 2.875,
+              "context_utilization": 2.75,
+              "hallucination": 3.5,
+              "instruction_following": 2.875,
+              "pedagogical_usefulness": 2.625,
+              "actionability": 2.625,
+              "conciseness": 3.625,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 1,
+              "incorrect_code_reasoning": 2,
+              "weak_pedagogy": 2
+            }
+          }
+        },
+        "category": {
+          "uncertainty": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 10359.398300000003,
+            "latencyP95Ms": 11964.071,
+            "inputTokensMean": 645,
+            "tokensPerSecondMedian": 7.378703998030888,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 4,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 4,
+              "pedagogical_usefulness": 4,
+              "actionability": 4,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "automatic_correct": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 8362.254200000018,
+            "latencyP95Ms": 22966.921999999962,
+            "inputTokensMean": 1853,
+            "tokensPerSecondMedian": 6.735973712556405,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 2,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 3.75,
+              "groundedness": 3.75,
+              "context_utilization": 3.5,
+              "hallucination": 4,
+              "instruction_following": 3.25,
+              "pedagogical_usefulness": 3.25,
+              "actionability": 3.25,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1
+            }
+          },
+          "automatic_bug": {
+            "n": 6,
+            "hardPassRate": 0.6666666666666666,
+            "latencyMedianMs": 21209.88029999999,
+            "latencyP95Ms": 28192.13519999999,
+            "inputTokensMean": 1899,
+            "tokensPerSecondMedian": 7.311686526819367,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2.1666666666666665,
+              "groundedness": 2.5,
+              "context_utilization": 2.1666666666666665,
+              "hallucination": 3.6666666666666665,
+              "instruction_following": 2.3333333333333335,
+              "pedagogical_usefulness": 1.8333333333333333,
+              "actionability": 1.8333333333333333,
+              "conciseness": 3.6666666666666665,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2,
+              "weak_pedagogy": 2,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "algorithm_bug": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 14964.885800000004,
+            "latencyP95Ms": 18819.320399999997,
+            "inputTokensMean": 762.5,
+            "tokensPerSecondMedian": 6.837329185727821,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1.5,
+              "groundedness": 1.5,
+              "context_utilization": 1.5,
+              "hallucination": 2.5,
+              "instruction_following": 2,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 1.5,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 1,
+              "weak_pedagogy": 2
+            }
+          },
+          "algorithm_explanation": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9728.516799999998,
+            "latencyP95Ms": 10012.560499999992,
+            "inputTokensMean": 788,
+            "tokensPerSecondMedian": 6.721671419303663,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 1,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 3.5,
+              "context_utilization": 3,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "weak_pedagogy": 1
+            }
+          }
+        },
+        "variant": {
+          "unknown": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 10359.398300000003,
+            "latencyP95Ms": 11964.071,
+            "inputTokensMean": 645,
+            "tokensPerSecondMedian": 7.378703998030888,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 4,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 4,
+              "pedagogical_usefulness": 4,
+              "actionability": 4,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "correct": {
+            "n": 6,
+            "hardPassRate": 0.8333333333333334,
+            "latencyMedianMs": 9728.516799999998,
+            "latencyP95Ms": 22966.921999999962,
+            "inputTokensMean": 1548.7142857142858,
+            "tokensPerSecondMedian": 6.735973712556405,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 3.5,
+              "groundedness": 3.6666666666666665,
+              "context_utilization": 3.3333333333333335,
+              "hallucination": 4,
+              "instruction_following": 3.1666666666666665,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 3.6666666666666665,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "weak_pedagogy": 1,
+              "unnecessary_intervention": 1
+            }
+          },
+          "buggy": {
+            "n": 8,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 18168.17414999999,
+            "latencyP95Ms": 28192.13519999999,
+            "inputTokensMean": 1709.5833333333333,
+            "tokensPerSecondMedian": 7.298230922788392,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 4,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2,
+              "groundedness": 2.25,
+              "context_utilization": 2,
+              "hallucination": 3.375,
+              "instruction_following": 2.25,
+              "pedagogical_usefulness": 1.75,
+              "actionability": 1.75,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2,
+              "incorrect_code_reasoning": 2,
+              "weak_pedagogy": 4
+            }
+          }
+        },
+        "problemId": {
+          "unknown-contract": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 10359.398300000003,
+            "latencyP95Ms": 11964.071,
+            "inputTokensMean": 645,
+            "tokensPerSecondMedian": 7.378703998030888,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 4,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 4,
+              "pedagogical_usefulness": 4,
+              "actionability": 4,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "sum": {
+            "n": 4,
+            "hardPassRate": 1,
+            "latencyMedianMs": 14352.952249999995,
+            "latencyP95Ms": 28192.13519999999,
+            "inputTokensMean": 1896,
+            "tokensPerSecondMedian": 7.093990558257522,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 3.75,
+              "groundedness": 3.75,
+              "context_utilization": 3.75,
+              "hallucination": 4,
+              "instruction_following": 3.75,
+              "pedagogical_usefulness": 3.5,
+              "actionability": 3.5,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "weak_pedagogy": 1
+            }
+          },
+          "stair-count": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 5060.907299999984,
+            "latencyP95Ms": 5364.246599999999,
+            "inputTokensMean": 1907,
+            "tokensPerSecondMedian": 7.097075698627819,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 1,
+              "context_utilization": 0,
+              "hallucination": 4,
+              "instruction_following": 1,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2
+            }
+          },
+          "pair-existence": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 14964.885800000004,
+            "latencyP95Ms": 18819.320399999997,
+            "inputTokensMean": 762.5,
+            "tokensPerSecondMedian": 6.837329185727821,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1.5,
+              "groundedness": 1.5,
+              "context_utilization": 1.5,
+              "hallucination": 2.5,
+              "instruction_following": 2,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 1.5,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 1,
+              "weak_pedagogy": 2
+            }
+          },
+          "lower-bound": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 9728.516799999998,
+            "latencyP95Ms": 10012.560499999992,
+            "inputTokensMean": 788,
+            "tokensPerSecondMedian": 6.721671419303663,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 1,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 3.5,
+              "context_utilization": 3,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "weak_pedagogy": 1
+            }
+          },
+          "numeric-sort": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 23934.827349999978,
+            "latencyP95Ms": 25780.22880000004,
+            "inputTokensMean": 1866.4285714285713,
+            "tokensPerSecondMedian": 7.670856339243622,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3.25,
+              "groundedness": 3.25,
+              "context_utilization": 3,
+              "hallucination": 3.5,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "incorrect_code_reasoning": 1,
+              "weak_pedagogy": 1
+            }
+          }
+        }
+      },
+      "promptTokens": [
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 0,
+          "approximate": 968,
+          "processed": 644,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 0,
+          "approximate": 1587,
+          "processed": 1843,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "repeat": 0,
+          "approximate": 1633,
+          "processed": 1911,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 0,
+          "approximate": 1061,
+          "processed": 762,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 0,
+          "approximate": 1593,
+          "processed": 1851,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 0,
+          "approximate": 1070,
+          "processed": 792,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 0,
+          "approximate": 1069,
+          "processed": 763,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 0,
+          "approximate": 1603,
+          "processed": 1875,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 0,
+          "approximate": 1068,
+          "processed": 784,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "repeat": 0,
+          "approximate": 1551,
+          "processed": 1812,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 0,
+          "approximate": 972,
+          "processed": 646,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "repeat": 0,
+          "approximate": 1570,
+          "processed": 1838,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "repeat": 0,
+          "approximate": 1624,
+          "processed": 1903,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 0,
+          "approximate": 1594,
+          "processed": 1857,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "repeat": 0,
+          "approximate": 1560,
+          "processed": 1820,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "repeat": 0,
+          "approximate": 1557,
+          "processed": 1818,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        }
+      ],
+      "oracle": [
+        {
+          "caseId": "alg-sum-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "23ea95b0cf8d492c1b47f965b056fe3887529a5a09cfe52a5fc71cb7caa6a164",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "d7b325d497900105327b6653034d1df994a171719000c7651b235c04b458a448",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "90feebb04eed9f4c3fe5b6113d6a973fb8b192b8a0121759602bc5c6855d6cf9",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "6c58d3ba5377dd1e0494877a6eea0e17216d6e726bd4b9d9d67775eb539cee68",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        }
+      ]
+    },
+    {
+      "run": "eval/results/m917-lm-candidate",
+      "experimentId": "m917-lm-q35-9b",
+      "split": "tuning",
+      "provider": "lmStudio",
+      "config": {
+        "id": "m917-lm-q35-9b",
+        "provider": "lmStudio",
+        "model": "qwen3.5-9b",
+        "baseUrl": "http://127.0.0.1:1234",
+        "transport": "production",
+        "promptVersion": "production",
+        "contextStrategy": "production",
+        "thinking": "none",
+        "sampling": {},
+        "contextLength": null,
+        "maxOutputTokens": 2048,
+        "collectorContext": "bounded-file",
+        "problemLayout": "plain"
+      },
+      "n": 16,
+      "hardPassRate": 0.6875,
+      "latencyMedianMs": 14404.155299999999,
+      "latencyP95Ms": 39320.379199999996,
+      "inputTokensMean": 1331.047619047619,
+      "tokensPerSecondMedian": 13.46745355631533,
+      "loadMedianMs": null,
+      "loadMaxMs": null,
+      "pipelineFailures": {
+        "invalid_format": 2
+      },
+      "problemGroups": 6,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 1,
+        "deliveryFailures": 1
+      },
+      "automaticDefective": {
+        "n": 6,
+        "missedBySilence": 0,
+        "deliveryFailures": 0
+      },
+      "reviewed": 16,
+      "meetsTask": 9,
+      "axes": {
+        "correctness": 2.75,
+        "groundedness": 3.125,
+        "context_utilization": 3,
+        "hallucination": 3.125,
+        "instruction_following": 2.5625,
+        "pedagogical_usefulness": 2.5,
+        "actionability": 2.8125,
+        "conciseness": 2.75,
+        "japanese_quality": 3.5
+      },
+      "semanticFailures": {
+        "invalid_format": 2,
+        "incorrect_code_reasoning": 4,
+        "hint_leakage": 1,
+        "instruction_following": 2,
+        "weak_pedagogy": 2,
+        "unnecessary_intervention": 1,
+        "ignored_context": 1,
+        "hallucination": 1
+      },
+      "by": {
+        "language": {
+          "python": {
+            "n": 8,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 11729.886700000017,
+            "latencyP95Ms": 22654.789999999997,
+            "inputTokensMean": 1361.2222222222222,
+            "tokensPerSecondMedian": 13.563981299791115,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 2.875,
+              "groundedness": 3.25,
+              "context_utilization": 3,
+              "hallucination": 3.25,
+              "instruction_following": 2.625,
+              "pedagogical_usefulness": 2.75,
+              "actionability": 3,
+              "conciseness": 2.875,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 2,
+              "weak_pedagogy": 1,
+              "instruction_following": 1,
+              "unnecessary_intervention": 1,
+              "ignored_context": 1,
+              "hallucination": 1
+            }
+          },
+          "javascript": {
+            "n": 8,
+            "hardPassRate": 0.625,
+            "latencyMedianMs": 17441.231499999994,
+            "latencyP95Ms": 39320.379199999996,
+            "inputTokensMean": 1308.4166666666667,
+            "tokensPerSecondMedian": 12.821594494880049,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 1
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 2.625,
+              "groundedness": 3,
+              "context_utilization": 3,
+              "hallucination": 3,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 2.25,
+              "actionability": 2.625,
+              "conciseness": 2.625,
+              "japanese_quality": 3
+            },
+            "semanticFailures": {
+              "invalid_format": 2,
+              "incorrect_code_reasoning": 2,
+              "hint_leakage": 1,
+              "instruction_following": 1,
+              "weak_pedagogy": 1
+            }
+          }
+        },
+        "category": {
+          "uncertainty": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 21943.88525,
+            "latencyP95Ms": 22654.789999999997,
+            "inputTokensMean": 687.3333333333334,
+            "tokensPerSecondMedian": 14.31229426077,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "automatic_correct": {
+            "n": 4,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 8650.003950000017,
+            "latencyP95Ms": 20459.867499999993,
+            "inputTokensMean": 1659.6,
+            "tokensPerSecondMedian": 12.479179956381596,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 2,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 1
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2.5,
+              "groundedness": 2.75,
+              "context_utilization": 2.5,
+              "hallucination": 2.75,
+              "instruction_following": 2.25,
+              "pedagogical_usefulness": 2.25,
+              "actionability": 2.25,
+              "conciseness": 2.5,
+              "japanese_quality": 3
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "ignored_context": 1,
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "automatic_bug": {
+            "n": 6,
+            "hardPassRate": 1,
+            "latencyMedianMs": 7584.12524999999,
+            "latencyP95Ms": 24334.165999999997,
+            "inputTokensMean": 1694.5,
+            "tokensPerSecondMedian": 14.283119489790375,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 3.3333333333333335,
+              "groundedness": 3.3333333333333335,
+              "context_utilization": 3.3333333333333335,
+              "hallucination": 3.3333333333333335,
+              "instruction_following": 3.5,
+              "pedagogical_usefulness": 2.6666666666666665,
+              "actionability": 3.5,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "hallucination": 1,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "algorithm_bug": {
+            "n": 2,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 26853.04715,
+            "latencyP95Ms": 39320.379199999996,
+            "inputTokensMean": 807.3333333333334,
+            "tokensPerSecondMedian": 12.129162281898378,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1,
+              "groundedness": 1.5,
+              "context_utilization": 1,
+              "hallucination": 1.5,
+              "instruction_following": 1,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 1.5,
+              "conciseness": 1,
+              "japanese_quality": 2
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 2,
+              "hint_leakage": 1,
+              "weak_pedagogy": 1
+            }
+          },
+          "algorithm_explanation": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 16328.346999999994,
+            "latencyP95Ms": 18234.098499999993,
+            "inputTokensMean": 807,
+            "tokensPerSecondMedian": 12.249073589779513,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 1.5,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "instruction_following": 2,
+              "weak_pedagogy": 1
+            }
+          }
+        },
+        "variant": {
+          "unknown": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 21943.88525,
+            "latencyP95Ms": 22654.789999999997,
+            "inputTokensMean": 687.3333333333334,
+            "tokensPerSecondMedian": 14.31229426077,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "correct": {
+            "n": 6,
+            "hardPassRate": 0.3333333333333333,
+            "latencyMedianMs": 11748.326900000015,
+            "latencyP95Ms": 20459.867499999993,
+            "inputTokensMean": 1416,
+            "tokensPerSecondMedian": 12.479179956381596,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 1
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2.6666666666666665,
+              "groundedness": 3.1666666666666665,
+              "context_utilization": 3,
+              "hallucination": 3.1666666666666665,
+              "instruction_following": 2,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 2.6666666666666665,
+              "japanese_quality": 3.3333333333333335
+            },
+            "semanticFailures": {
+              "instruction_following": 2,
+              "weak_pedagogy": 1,
+              "unnecessary_intervention": 1,
+              "ignored_context": 1,
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "buggy": {
+            "n": 8,
+            "hardPassRate": 0.875,
+            "latencyMedianMs": 11222.872149999996,
+            "latencyP95Ms": 39320.379199999996,
+            "inputTokensMean": 1452.5454545454545,
+            "tokensPerSecondMedian": 13.536805905855532,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 4,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 2.75,
+              "groundedness": 2.875,
+              "context_utilization": 2.75,
+              "hallucination": 2.875,
+              "instruction_following": 2.875,
+              "pedagogical_usefulness": 2.375,
+              "actionability": 3,
+              "conciseness": 2.875,
+              "japanese_quality": 3.5
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 3,
+              "hint_leakage": 1,
+              "weak_pedagogy": 1,
+              "hallucination": 1
+            }
+          }
+        },
+        "problemId": {
+          "unknown-contract": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 21943.88525,
+            "latencyP95Ms": 22654.789999999997,
+            "inputTokensMean": 687.3333333333334,
+            "tokensPerSecondMedian": 14.31229426077,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "sum": {
+            "n": 4,
+            "hardPassRate": 1,
+            "latencyMedianMs": 13091.877400000001,
+            "latencyP95Ms": 24334.165999999997,
+            "inputTokensMean": 1697.3333333333333,
+            "tokensPerSecondMedian": 11.68883680886687,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 4,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 4,
+              "pedagogical_usefulness": 3.75,
+              "actionability": 4,
+              "conciseness": 3.75,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "stair-count": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 7584.12524999999,
+            "latencyP95Ms": 8060.02919999999,
+            "inputTokensMean": 1714,
+            "tokensPerSecondMedian": 13.217979605250015,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 1,
+            "axes": {
+              "correctness": 2,
+              "groundedness": 2,
+              "context_utilization": 2,
+              "hallucination": 2,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 2.5,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "hallucination": 1,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "pair-existence": {
+            "n": 2,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 26853.04715,
+            "latencyP95Ms": 39320.379199999996,
+            "inputTokensMean": 807.3333333333334,
+            "tokensPerSecondMedian": 12.129162281898378,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1,
+              "groundedness": 1.5,
+              "context_utilization": 1,
+              "hallucination": 1.5,
+              "instruction_following": 1,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 1.5,
+              "conciseness": 1,
+              "japanese_quality": 2
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 2,
+              "hint_leakage": 1,
+              "weak_pedagogy": 1
+            }
+          },
+          "lower-bound": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 16328.346999999994,
+            "latencyP95Ms": 18234.098499999993,
+            "inputTokensMean": 807,
+            "tokensPerSecondMedian": 12.249073589779513,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 1.5,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 3,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "instruction_following": 2,
+              "weak_pedagogy": 1
+            }
+          },
+          "numeric-sort": {
+            "n": 4,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 7975.85295,
+            "latencyP95Ms": 20459.867499999993,
+            "inputTokensMean": 1648.4,
+            "tokensPerSecondMedian": 14.316857472305726,
+            "loadMedianMs": null,
+            "loadMaxMs": null,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 1
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2.5,
+              "groundedness": 2.75,
+              "context_utilization": 2.5,
+              "hallucination": 2.75,
+              "instruction_following": 2.25,
+              "pedagogical_usefulness": 1.75,
+              "actionability": 2.25,
+              "conciseness": 2.5,
+              "japanese_quality": 3
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "ignored_context": 1,
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 1
+            }
+          }
+        }
+      },
+      "promptTokens": [
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 0,
+          "approximate": 968,
+          "processed": 663,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 0,
+          "approximate": 1587,
+          "processed": 1642,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "repeat": 0,
+          "approximate": 1633,
+          "processed": 1719,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 0,
+          "approximate": 1061,
+          "processed": 786,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 0,
+          "approximate": 1593,
+          "processed": 1656,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 0,
+          "approximate": 1070,
+          "processed": 813,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 0,
+          "approximate": 1069,
+          "processed": 783,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 0,
+          "approximate": 1603,
+          "processed": 1680,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 0,
+          "approximate": 1068,
+          "processed": 801,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "repeat": 0,
+          "approximate": 1551,
+          "processed": 1613,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 0,
+          "approximate": 972,
+          "processed": 666,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "repeat": 0,
+          "approximate": 1570,
+          "processed": 1641,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "repeat": 0,
+          "approximate": 1624,
+          "processed": 1709,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 0,
+          "approximate": 1594,
+          "processed": 1658,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "repeat": 0,
+          "approximate": 1560,
+          "processed": 1623,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "repeat": 0,
+          "approximate": 1557,
+          "processed": 1619,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        }
+      ],
+      "oracle": [
+        {
+          "caseId": "alg-sum-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "23ea95b0cf8d492c1b47f965b056fe3887529a5a09cfe52a5fc71cb7caa6a164",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "d7b325d497900105327b6653034d1df994a171719000c7651b235c04b458a448",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "90feebb04eed9f4c3fe5b6113d6a973fb8b192b8a0121759602bc5c6855d6cf9",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "6c58d3ba5377dd1e0494877a6eea0e17216d6e726bd4b9d9d67775eb539cee68",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        }
+      ]
+    },
+    {
+      "run": "eval/results/m917-oll-vulkan-baseline",
+      "experimentId": "m917-oll-vulkan-q3-14b",
+      "split": "tuning",
+      "provider": "ollama",
+      "config": {
+        "id": "m917-oll-vulkan-q3-14b",
+        "provider": "ollama",
+        "model": "qwen3:14b",
+        "baseUrl": "http://127.0.0.1:11435",
+        "transport": "ollama-native",
+        "promptVersion": "production",
+        "contextStrategy": "production",
+        "thinking": "none",
+        "sampling": {},
+        "contextLength": 8192,
+        "maxOutputTokens": 2048,
+        "collectorContext": "bounded-file",
+        "problemLayout": "plain"
+      },
+      "n": 16,
+      "hardPassRate": 0.8125,
+      "latencyMedianMs": 38635.12359999999,
+      "latencyP95Ms": 62240.73940000002,
+      "inputTokensMean": 1570.2857142857142,
+      "tokensPerSecondMedian": 8.725440971435615,
+      "loadMedianMs": 13.7931,
+      "loadMaxMs": 33449.9989,
+      "pipelineFailures": {},
+      "problemGroups": 6,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 1,
+        "deliveryFailures": 0
+      },
+      "automaticDefective": {
+        "n": 6,
+        "missedBySilence": 2,
+        "deliveryFailures": 0
+      },
+      "reviewed": 16,
+      "meetsTask": 11,
+      "axes": {
+        "correctness": 2.6875,
+        "groundedness": 2.9375,
+        "context_utilization": 2.75,
+        "hallucination": 3.5625,
+        "instruction_following": 2.875,
+        "pedagogical_usefulness": 2.625,
+        "actionability": 2.6875,
+        "conciseness": 3.4375,
+        "japanese_quality": 4
+      },
+      "semanticFailures": {
+        "missed_bug": 2,
+        "incorrect_code_reasoning": 2,
+        "unnecessary_intervention": 1,
+        "ignored_context": 1
+      },
+      "by": {
+        "language": {
+          "python": {
+            "n": 8,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 42596.29359999999,
+            "latencyP95Ms": 62240.73940000002,
+            "inputTokensMean": 1582.909090909091,
+            "tokensPerSecondMedian": 8.466939220411028,
+            "loadMedianMs": 14.0778,
+            "loadMaxMs": 33449.9989,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 2.5,
+              "groundedness": 2.75,
+              "context_utilization": 2.5,
+              "hallucination": 3.5,
+              "instruction_following": 2.625,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 3.375,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 1,
+              "incorrect_code_reasoning": 1,
+              "unnecessary_intervention": 1,
+              "ignored_context": 1
+            }
+          },
+          "javascript": {
+            "n": 8,
+            "hardPassRate": 0.875,
+            "latencyMedianMs": 38388.28039999993,
+            "latencyP95Ms": 59183.22080000001,
+            "inputTokensMean": 1556.4,
+            "tokensPerSecondMedian": 9.065854452693568,
+            "loadMedianMs": 10.804549999999999,
+            "loadMaxMs": 28380.9975,
+            "pipelineFailures": {},
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 6,
+            "axes": {
+              "correctness": 2.875,
+              "groundedness": 3.125,
+              "context_utilization": 3,
+              "hallucination": 3.625,
+              "instruction_following": 3.125,
+              "pedagogical_usefulness": 2.75,
+              "actionability": 2.875,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 1,
+              "missed_bug": 1
+            }
+          }
+        },
+        "category": {
+          "automatic_bug": {
+            "n": 6,
+            "hardPassRate": 0.6666666666666666,
+            "latencyMedianMs": 53086.87324999999,
+            "latencyP95Ms": 62240.73940000002,
+            "inputTokensMean": 1917,
+            "tokensPerSecondMedian": 8.393421217733167,
+            "loadMedianMs": 11608.70635,
+            "loadMaxMs": 33449.9989,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 2.5,
+              "groundedness": 2.8333333333333335,
+              "context_utilization": 2.6666666666666665,
+              "hallucination": 4,
+              "instruction_following": 2.8333333333333335,
+              "pedagogical_usefulness": 2.3333333333333335,
+              "actionability": 2.5,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2
+            }
+          },
+          "algorithm_bug": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 53947.70335000004,
+            "latencyP95Ms": 54547.37720000002,
+            "inputTokensMean": 772.5,
+            "tokensPerSecondMedian": 9.139115840520578,
+            "loadMedianMs": 25249.890099999997,
+            "loadMaxMs": 27968.4007,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0.5,
+              "groundedness": 0.5,
+              "context_utilization": 0.5,
+              "hallucination": 1,
+              "instruction_following": 1.5,
+              "pedagogical_usefulness": 1,
+              "actionability": 1,
+              "conciseness": 2,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 2
+            }
+          },
+          "automatic_correct": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 13159.988299999968,
+            "latencyP95Ms": 33834.03450000007,
+            "inputTokensMean": 1871,
+            "tokensPerSecondMedian": 8.339216813247356,
+            "loadMedianMs": 10.7415,
+            "loadMaxMs": 13.7931,
+            "pipelineFailures": {},
+            "problemGroups": 2,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 3.5,
+              "groundedness": 3.75,
+              "context_utilization": 3.25,
+              "hallucination": 3.75,
+              "instruction_following": 3.25,
+              "pedagogical_usefulness": 3.25,
+              "actionability": 3.25,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "ignored_context": 1
+            }
+          },
+          "algorithm_explanation": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 24498.002599999978,
+            "latencyP95Ms": 34405.299699999974,
+            "inputTokensMean": 798,
+            "tokensPerSecondMedian": 9.230075552905891,
+            "loadMedianMs": 10698.5482,
+            "loadMaxMs": 21389.5801,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 3,
+              "context_utilization": 3,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "uncertainty": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 32835.704499999934,
+            "latencyP95Ms": 50106.14399999997,
+            "inputTokensMean": 655,
+            "tokensPerSecondMedian": 9.863814150292498,
+            "loadMedianMs": 14195.1787,
+            "loadMaxMs": 28380.5016,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3.5,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3.5,
+              "pedagogical_usefulness": 3.5,
+              "actionability": 3.5,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          }
+        },
+        "variant": {
+          "buggy": {
+            "n": 8,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 53947.70335000004,
+            "latencyP95Ms": 62240.73940000002,
+            "inputTokensMean": 1726.25,
+            "tokensPerSecondMedian": 8.596190095923323,
+            "loadMedianMs": 22867.3572,
+            "loadMaxMs": 33449.9989,
+            "pipelineFailures": {},
+            "problemGroups": 4,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 2,
+              "groundedness": 2.25,
+              "context_utilization": 2.125,
+              "hallucination": 3.25,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 2,
+              "actionability": 2.125,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2,
+              "incorrect_code_reasoning": 2
+            }
+          },
+          "correct": {
+            "n": 6,
+            "hardPassRate": 0.8333333333333334,
+            "latencyMedianMs": 14079.688399999955,
+            "latencyP95Ms": 34405.299699999974,
+            "inputTokensMean": 1564.4285714285713,
+            "tokensPerSecondMedian": 8.581918285742445,
+            "loadMedianMs": 10.7415,
+            "loadMaxMs": 21389.5801,
+            "pipelineFailures": {},
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 5,
+            "axes": {
+              "correctness": 3.3333333333333335,
+              "groundedness": 3.5,
+              "context_utilization": 3.1666666666666665,
+              "hallucination": 3.8333333333333335,
+              "instruction_following": 3.1666666666666665,
+              "pedagogical_usefulness": 3.1666666666666665,
+              "actionability": 3.1666666666666665,
+              "conciseness": 3.6666666666666665,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "ignored_context": 1
+            }
+          },
+          "unknown": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 32835.704499999934,
+            "latencyP95Ms": 50106.14399999997,
+            "inputTokensMean": 655,
+            "tokensPerSecondMedian": 9.863814150292498,
+            "loadMedianMs": 14195.1787,
+            "loadMaxMs": 28380.5016,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3.5,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3.5,
+              "pedagogical_usefulness": 3.5,
+              "actionability": 3.5,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          }
+        },
+        "problemId": {
+          "stair-count": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 46826.11750000001,
+            "latencyP95Ms": 50787.287500000006,
+            "inputTokensMean": 1925,
+            "tokensPerSecondMedian": 6.4954203927024325,
+            "loadMedianMs": 30692.08645,
+            "loadMaxMs": 33449.9989,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 2,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 1,
+              "context_utilization": 0,
+              "hallucination": 4,
+              "instruction_following": 1,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "missed_bug": 2
+            }
+          },
+          "pair-existence": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 53947.70335000004,
+            "latencyP95Ms": 54547.37720000002,
+            "inputTokensMean": 772.5,
+            "tokensPerSecondMedian": 9.139115840520578,
+            "loadMedianMs": 25249.890099999997,
+            "loadMaxMs": 27968.4007,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0.5,
+              "groundedness": 0.5,
+              "context_utilization": 0.5,
+              "hallucination": 1,
+              "instruction_following": 1.5,
+              "pedagogical_usefulness": 1,
+              "actionability": 1,
+              "conciseness": 2,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 2
+            }
+          },
+          "sum": {
+            "n": 4,
+            "hardPassRate": 1,
+            "latencyMedianMs": 34477.56514999995,
+            "latencyP95Ms": 59183.22080000001,
+            "inputTokensMean": 1914,
+            "tokensPerSecondMedian": 8.640730187613729,
+            "loadMedianMs": 12.40965,
+            "loadMaxMs": 28380.9975,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 4,
+            "axes": {
+              "correctness": 4,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 4,
+              "pedagogical_usefulness": 3.75,
+              "actionability": 4,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "numeric-sort": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 33872.82389999996,
+            "latencyP95Ms": 62240.73940000002,
+            "inputTokensMean": 1884.4285714285713,
+            "tokensPerSecondMedian": 8.466939220411028,
+            "loadMedianMs": 11.9454,
+            "loadMaxMs": 29645.5675,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 3.25,
+              "groundedness": 3.5,
+              "context_utilization": 3.25,
+              "hallucination": 3.75,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "ignored_context": 1
+            }
+          },
+          "lower-bound": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 24498.002599999978,
+            "latencyP95Ms": 34405.299699999974,
+            "inputTokensMean": 798,
+            "tokensPerSecondMedian": 9.230075552905891,
+            "loadMedianMs": 10698.5482,
+            "loadMaxMs": 21389.5801,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3,
+              "groundedness": 3,
+              "context_utilization": 3,
+              "hallucination": 4,
+              "instruction_following": 3,
+              "pedagogical_usefulness": 3,
+              "actionability": 3,
+              "conciseness": 4,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          },
+          "unknown-contract": {
+            "n": 2,
+            "hardPassRate": 1,
+            "latencyMedianMs": 32835.704499999934,
+            "latencyP95Ms": 50106.14399999997,
+            "inputTokensMean": 655,
+            "tokensPerSecondMedian": 9.863814150292498,
+            "loadMedianMs": 14195.1787,
+            "loadMaxMs": 28380.5016,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 3.5,
+              "groundedness": 4,
+              "context_utilization": 4,
+              "hallucination": 4,
+              "instruction_following": 3.5,
+              "pedagogical_usefulness": 3.5,
+              "actionability": 3.5,
+              "conciseness": 2.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {}
+          }
+        }
+      },
+      "promptTokens": [
+        {
+          "caseId": "alg-stairs-bug-py",
+          "repeat": 0,
+          "approximate": 1648,
+          "processed": 1921,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 0,
+          "approximate": 1067,
+          "processed": 772,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 0,
+          "approximate": 1618,
+          "processed": 1869,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "repeat": 0,
+          "approximate": 1582,
+          "processed": 1836,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 0,
+          "approximate": 1076,
+          "processed": 802,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 0,
+          "approximate": 1618,
+          "processed": 1875,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "repeat": 0,
+          "approximate": 1594,
+          "processed": 1856,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 0,
+          "approximate": 1075,
+          "processed": 773,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "repeat": 0,
+          "approximate": 1576,
+          "processed": 1830,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 0,
+          "approximate": 1074,
+          "processed": 794,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 0,
+          "approximate": 1611,
+          "processed": 1861,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 0,
+          "approximate": 1628,
+          "processed": 1893,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 0,
+          "approximate": 974,
+          "processed": 654,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 0,
+          "approximate": 978,
+          "processed": 656,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "repeat": 0,
+          "approximate": 1584,
+          "processed": 1838,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "repeat": 0,
+          "approximate": 1658,
+          "processed": 1929,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        }
+      ],
+      "oracle": [
+        {
+          "caseId": "alg-sum-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "23ea95b0cf8d492c1b47f965b056fe3887529a5a09cfe52a5fc71cb7caa6a164",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "d7b325d497900105327b6653034d1df994a171719000c7651b235c04b458a448",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "90feebb04eed9f4c3fe5b6113d6a973fb8b192b8a0121759602bc5c6855d6cf9",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "6c58d3ba5377dd1e0494877a6eea0e17216d6e726bd4b9d9d67775eb539cee68",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        }
+      ]
+    },
+    {
+      "run": "eval/results/m917-oll-vulkan-candidate",
+      "experimentId": "m917-oll-vulkan-q35-9b",
+      "split": "tuning",
+      "provider": "ollama",
+      "config": {
+        "id": "m917-oll-vulkan-q35-9b",
+        "provider": "ollama",
+        "model": "qwen3.5:9b",
+        "baseUrl": "http://127.0.0.1:11435",
+        "transport": "ollama-native",
+        "promptVersion": "production",
+        "contextStrategy": "production",
+        "thinking": "none",
+        "sampling": {},
+        "contextLength": 8192,
+        "maxOutputTokens": 2048,
+        "collectorContext": "bounded-file",
+        "problemLayout": "plain"
+      },
+      "n": 16,
+      "hardPassRate": 0.375,
+      "latencyMedianMs": 34865.27919999996,
+      "latencyP95Ms": 73458.2965,
+      "inputTokensMean": 1280.0416666666667,
+      "tokensPerSecondMedian": 15.055515225163726,
+      "loadMedianMs": 8.1492,
+      "loadMaxMs": 23879.8794,
+      "pipelineFailures": {
+        "invalid_format": 6
+      },
+      "problemGroups": 6,
+      "automaticCorrect": {
+        "n": 4,
+        "unnecessaryAdvice": 1,
+        "deliveryFailures": 0
+      },
+      "automaticDefective": {
+        "n": 6,
+        "missedBySilence": 2,
+        "deliveryFailures": 1
+      },
+      "reviewed": 16,
+      "meetsTask": 4,
+      "axes": {
+        "correctness": 1.375,
+        "groundedness": 1.4375,
+        "context_utilization": 1.4375,
+        "hallucination": 1.9375,
+        "instruction_following": 1.5,
+        "pedagogical_usefulness": 1.375,
+        "actionability": 1.5,
+        "conciseness": 2.1875,
+        "japanese_quality": 2.4375
+      },
+      "semanticFailures": {
+        "missed_bug": 2,
+        "invalid_format": 6,
+        "hint_leakage": 1,
+        "incorrect_code_reasoning": 6,
+        "unnecessary_intervention": 1,
+        "instruction_following": 1
+      },
+      "by": {
+        "language": {
+          "python": {
+            "n": 8,
+            "hardPassRate": 0.375,
+            "latencyMedianMs": 32314.008899999957,
+            "latencyP95Ms": 68706.93439999991,
+            "inputTokensMean": 1216.8,
+            "tokensPerSecondMedian": 14.751474387445025,
+            "loadMedianMs": 8.56235,
+            "loadMaxMs": 23879.8794,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 8,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 1.625,
+              "groundedness": 1.625,
+              "context_utilization": 1.625,
+              "hallucination": 2.25,
+              "instruction_following": 1.625,
+              "pedagogical_usefulness": 1.5,
+              "actionability": 1.625,
+              "conciseness": 2.625,
+              "japanese_quality": 3
+            },
+            "semanticFailures": {
+              "missed_bug": 1,
+              "incorrect_code_reasoning": 3,
+              "invalid_format": 2,
+              "unnecessary_intervention": 1,
+              "instruction_following": 1
+            }
+          },
+          "javascript": {
+            "n": 8,
+            "hardPassRate": 0.375,
+            "latencyMedianMs": 37737.95760000005,
+            "latencyP95Ms": 73458.2965,
+            "inputTokensMean": 1325.2142857142858,
+            "tokensPerSecondMedian": 16.264356225835687,
+            "loadMedianMs": 7.5915,
+            "loadMaxMs": 22441.9795,
+            "pipelineFailures": {
+              "invalid_format": 4
+            },
+            "problemGroups": 6,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 3,
+              "missedBySilence": 1,
+              "deliveryFailures": 1
+            },
+            "reviewed": 8,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 1.125,
+              "groundedness": 1.25,
+              "context_utilization": 1.25,
+              "hallucination": 1.625,
+              "instruction_following": 1.375,
+              "pedagogical_usefulness": 1.25,
+              "actionability": 1.375,
+              "conciseness": 1.75,
+              "japanese_quality": 1.875
+            },
+            "semanticFailures": {
+              "invalid_format": 4,
+              "hint_leakage": 1,
+              "incorrect_code_reasoning": 3,
+              "missed_bug": 1
+            }
+          }
+        },
+        "category": {
+          "automatic_bug": {
+            "n": 6,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 22947.198050000065,
+            "latencyP95Ms": 37640.6869,
+            "inputTokensMean": 1716.125,
+            "tokensPerSecondMedian": 16.159171853715254,
+            "loadMedianMs": 9.04585,
+            "loadMaxMs": 23879.8794,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 1
+            },
+            "reviewed": 6,
+            "meetsTask": 1,
+            "axes": {
+              "correctness": 0.8333333333333334,
+              "groundedness": 1.1666666666666667,
+              "context_utilization": 1.1666666666666667,
+              "hallucination": 2.3333333333333335,
+              "instruction_following": 1.6666666666666667,
+              "pedagogical_usefulness": 1.1666666666666667,
+              "actionability": 1.5,
+              "conciseness": 3,
+              "japanese_quality": 3.1666666666666665
+            },
+            "semanticFailures": {
+              "missed_bug": 2,
+              "incorrect_code_reasoning": 3,
+              "invalid_format": 1
+            }
+          },
+          "algorithm_bug": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 60125.84890000004,
+            "latencyP95Ms": 64358.03960000002,
+            "inputTokensMean": 824,
+            "tokensPerSecondMedian": 15.55428163478462,
+            "loadMedianMs": 6.25075,
+            "loadMaxMs": 7.5315,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 0,
+              "context_utilization": 0,
+              "hallucination": 0,
+              "instruction_following": 0,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 0,
+              "japanese_quality": 0
+            },
+            "semanticFailures": {
+              "invalid_format": 2,
+              "hint_leakage": 1,
+              "incorrect_code_reasoning": 2
+            }
+          },
+          "automatic_correct": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 34865.27919999996,
+            "latencyP95Ms": 40866.386499999964,
+            "inputTokensMean": 1673.6,
+            "tokensPerSecondMedian": 8.893955149266507,
+            "loadMedianMs": 21493.6306,
+            "loadMaxMs": 22441.9795,
+            "pipelineFailures": {},
+            "problemGroups": 2,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 3.75,
+              "groundedness": 3.75,
+              "context_utilization": 3.5,
+              "hallucination": 4,
+              "instruction_following": 3.25,
+              "pedagogical_usefulness": 3.25,
+              "actionability": 3.25,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1
+            }
+          },
+          "algorithm_explanation": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 42441.07819999996,
+            "latencyP95Ms": 73458.2965,
+            "inputTokensMean": 837.3333333333334,
+            "tokensPerSecondMedian": 14.314513618309743,
+            "loadMedianMs": 8.1812,
+            "loadMaxMs": 22007.5837,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1,
+              "groundedness": 0.5,
+              "context_utilization": 1,
+              "hallucination": 0.5,
+              "instruction_following": 0.5,
+              "pedagogical_usefulness": 1,
+              "actionability": 1,
+              "conciseness": 1.5,
+              "japanese_quality": 2
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 1,
+              "instruction_following": 1
+            }
+          },
+          "uncertainty": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 54306.913100000005,
+            "latencyP95Ms": 68706.93439999991,
+            "inputTokensMean": 704,
+            "tokensPerSecondMedian": 16.506868795496455,
+            "loadMedianMs": 7.7814,
+            "loadMaxMs": 21720.8788,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 0,
+              "context_utilization": 0,
+              "hallucination": 0,
+              "instruction_following": 0,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 0,
+              "japanese_quality": 0
+            },
+            "semanticFailures": {
+              "invalid_format": 2
+            }
+          }
+        },
+        "variant": {
+          "buggy": {
+            "n": 8,
+            "hardPassRate": 0.375,
+            "latencyMedianMs": 28999.578000000096,
+            "latencyP95Ms": 64358.03960000002,
+            "inputTokensMean": 1418.75,
+            "tokensPerSecondMedian": 16.159171853715254,
+            "loadMedianMs": 7.5915,
+            "loadMaxMs": 23879.8794,
+            "pipelineFailures": {
+              "invalid_format": 3
+            },
+            "problemGroups": 4,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 6,
+              "missedBySilence": 2,
+              "deliveryFailures": 1
+            },
+            "reviewed": 8,
+            "meetsTask": 1,
+            "axes": {
+              "correctness": 0.625,
+              "groundedness": 0.875,
+              "context_utilization": 0.875,
+              "hallucination": 1.75,
+              "instruction_following": 1.25,
+              "pedagogical_usefulness": 0.875,
+              "actionability": 1.125,
+              "conciseness": 2.25,
+              "japanese_quality": 2.375
+            },
+            "semanticFailures": {
+              "missed_bug": 2,
+              "invalid_format": 3,
+              "hint_leakage": 1,
+              "incorrect_code_reasoning": 5
+            }
+          },
+          "correct": {
+            "n": 6,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 34865.27919999996,
+            "latencyP95Ms": 73458.2965,
+            "inputTokensMean": 1360,
+            "tokensPerSecondMedian": 13.515348274033409,
+            "loadMedianMs": 19213.72945,
+            "loadMaxMs": 22441.9795,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 3,
+            "automaticCorrect": {
+              "n": 4,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 6,
+            "meetsTask": 3,
+            "axes": {
+              "correctness": 2.8333333333333335,
+              "groundedness": 2.6666666666666665,
+              "context_utilization": 2.6666666666666665,
+              "hallucination": 2.8333333333333335,
+              "instruction_following": 2.3333333333333335,
+              "pedagogical_usefulness": 2.5,
+              "actionability": 2.5,
+              "conciseness": 2.8333333333333335,
+              "japanese_quality": 3.3333333333333335
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "unnecessary_intervention": 1,
+              "incorrect_code_reasoning": 1,
+              "instruction_following": 1
+            }
+          },
+          "unknown": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 54306.913100000005,
+            "latencyP95Ms": 68706.93439999991,
+            "inputTokensMean": 704,
+            "tokensPerSecondMedian": 16.506868795496455,
+            "loadMedianMs": 7.7814,
+            "loadMaxMs": 21720.8788,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 0,
+              "context_utilization": 0,
+              "hallucination": 0,
+              "instruction_following": 0,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 0,
+              "japanese_quality": 0
+            },
+            "semanticFailures": {
+              "invalid_format": 2
+            }
+          }
+        },
+        "problemId": {
+          "stair-count": {
+            "n": 2,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 30869.00015000005,
+            "latencyP95Ms": 37640.6869,
+            "inputTokensMean": 1764.6666666666667,
+            "tokensPerSecondMedian": 16.083029702928233,
+            "loadMedianMs": 12.2656,
+            "loadMaxMs": 23879.8794,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0.5,
+              "groundedness": 1,
+              "context_utilization": 1,
+              "hallucination": 2.5,
+              "instruction_following": 1.5,
+              "pedagogical_usefulness": 1,
+              "actionability": 1.5,
+              "conciseness": 3,
+              "japanese_quality": 3.5
+            },
+            "semanticFailures": {
+              "missed_bug": 1,
+              "incorrect_code_reasoning": 1
+            }
+          },
+          "pair-existence": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 60125.84890000004,
+            "latencyP95Ms": 64358.03960000002,
+            "inputTokensMean": 824,
+            "tokensPerSecondMedian": 15.55428163478462,
+            "loadMedianMs": 6.25075,
+            "loadMaxMs": 7.5315,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 0,
+              "context_utilization": 0,
+              "hallucination": 0,
+              "instruction_following": 0,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 0,
+              "japanese_quality": 0
+            },
+            "semanticFailures": {
+              "invalid_format": 2,
+              "hint_leakage": 1,
+              "incorrect_code_reasoning": 2
+            }
+          },
+          "sum": {
+            "n": 4,
+            "hardPassRate": 0.75,
+            "latencyMedianMs": 27979.308849999972,
+            "latencyP95Ms": 35569.023400000005,
+            "inputTokensMean": 1698.2,
+            "tokensPerSecondMedian": 12.519561815336463,
+            "loadMedianMs": 9.1482,
+            "loadMaxMs": 22397.4606,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 0,
+              "deliveryFailures": 1
+            },
+            "reviewed": 4,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2,
+              "groundedness": 2,
+              "context_utilization": 2.25,
+              "hallucination": 2.25,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 2.25,
+              "actionability": 2.5,
+              "conciseness": 3,
+              "japanese_quality": 3
+            },
+            "semanticFailures": {
+              "incorrect_code_reasoning": 2,
+              "invalid_format": 1
+            }
+          },
+          "numeric-sort": {
+            "n": 4,
+            "hardPassRate": 0.5,
+            "latencyMedianMs": 32184.162700000044,
+            "latencyP95Ms": 40866.386499999964,
+            "inputTokensMean": 1662.4,
+            "tokensPerSecondMedian": 13.56188234754097,
+            "loadMedianMs": 16933.8283,
+            "loadMaxMs": 22441.9795,
+            "pipelineFailures": {},
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 2,
+              "unnecessaryAdvice": 1,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 2,
+              "missedBySilence": 1,
+              "deliveryFailures": 0
+            },
+            "reviewed": 4,
+            "meetsTask": 2,
+            "axes": {
+              "correctness": 2.75,
+              "groundedness": 3,
+              "context_utilization": 2.5,
+              "hallucination": 4,
+              "instruction_following": 2.5,
+              "pedagogical_usefulness": 2.25,
+              "actionability": 2.25,
+              "conciseness": 3.5,
+              "japanese_quality": 4
+            },
+            "semanticFailures": {
+              "unnecessary_intervention": 1,
+              "missed_bug": 1
+            }
+          },
+          "lower-bound": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 42441.07819999996,
+            "latencyP95Ms": 73458.2965,
+            "inputTokensMean": 837.3333333333334,
+            "tokensPerSecondMedian": 14.314513618309743,
+            "loadMedianMs": 8.1812,
+            "loadMaxMs": 22007.5837,
+            "pipelineFailures": {
+              "invalid_format": 1
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 1,
+              "groundedness": 0.5,
+              "context_utilization": 1,
+              "hallucination": 0.5,
+              "instruction_following": 0.5,
+              "pedagogical_usefulness": 1,
+              "actionability": 1,
+              "conciseness": 1.5,
+              "japanese_quality": 2
+            },
+            "semanticFailures": {
+              "invalid_format": 1,
+              "incorrect_code_reasoning": 1,
+              "instruction_following": 1
+            }
+          },
+          "unknown-contract": {
+            "n": 2,
+            "hardPassRate": 0,
+            "latencyMedianMs": 54306.913100000005,
+            "latencyP95Ms": 68706.93439999991,
+            "inputTokensMean": 704,
+            "tokensPerSecondMedian": 16.506868795496455,
+            "loadMedianMs": 7.7814,
+            "loadMaxMs": 21720.8788,
+            "pipelineFailures": {
+              "invalid_format": 2
+            },
+            "problemGroups": 1,
+            "automaticCorrect": {
+              "n": 0,
+              "unnecessaryAdvice": 0,
+              "deliveryFailures": 0
+            },
+            "automaticDefective": {
+              "n": 0,
+              "missedBySilence": 0,
+              "deliveryFailures": 0
+            },
+            "reviewed": 2,
+            "meetsTask": 0,
+            "axes": {
+              "correctness": 0,
+              "groundedness": 0,
+              "context_utilization": 0,
+              "hallucination": 0,
+              "instruction_following": 0,
+              "pedagogical_usefulness": 0,
+              "actionability": 0,
+              "conciseness": 0,
+              "japanese_quality": 0
+            },
+            "semanticFailures": {
+              "invalid_format": 2
+            }
+          }
+        }
+      },
+      "promptTokens": [
+        {
+          "caseId": "alg-stairs-bug-py",
+          "repeat": 0,
+          "approximate": 1648,
+          "processed": 1723,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "repeat": 0,
+          "approximate": 1067,
+          "processed": 792,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "repeat": 0,
+          "approximate": 1618,
+          "processed": 1670,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "repeat": 0,
+          "approximate": 1582,
+          "processed": 1633,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "repeat": 0,
+          "approximate": 1076,
+          "processed": 819,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "repeat": 0,
+          "approximate": 1618,
+          "processed": 1672,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "repeat": 0,
+          "approximate": 1594,
+          "processed": 1655,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "repeat": 0,
+          "approximate": 1075,
+          "processed": 789,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "repeat": 0,
+          "approximate": 1576,
+          "processed": 1627,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "repeat": 0,
+          "approximate": 1074,
+          "processed": 807,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-correct-py",
+          "repeat": 0,
+          "approximate": 1611,
+          "processed": 1656,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "repeat": 0,
+          "approximate": 1628,
+          "processed": 1694,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "repeat": 0,
+          "approximate": 974,
+          "processed": 669,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "repeat": 0,
+          "approximate": 978,
+          "processed": 672,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "repeat": 0,
+          "approximate": 1584,
+          "processed": 1637,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "repeat": 0,
+          "approximate": 1658,
+          "processed": 1733,
+          "activeFilePreserved": true,
+          "problemPreserved": true
+        }
+      ],
+      "oracle": [
+        {
+          "caseId": "alg-sum-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "bc071a6213892518f11d2b905045256e1c1185dcb32429d007107f4eed4ee692",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "23ea95b0cf8d492c1b47f965b056fe3887529a5a09cfe52a5fc71cb7caa6a164",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "2c7b1d7a5591419a74e1dc7b1e509fb486f9b09255dc2b92f30f954bff710045",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "d7b325d497900105327b6653034d1df994a171719000c7651b235c04b458a448",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sum-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "119cded39361d31aef8a27d15e7799bdc8f1bc9f619270f33dff53180f6e35fe",
+          "scope": "all arrays length0..4 over -2..2",
+          "testCount": 781,
+          "mismatches": 624,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -2
+                ]
+              ],
+              "expected": -2,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -4,
+              "actual": {
+                "value": -2,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -2,
+                  -2,
+                  -2
+                ]
+              ],
+              "expected": -6,
+              "actual": {
+                "value": -4,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "14d55f75fcbc0645948ef19774f23422fbacbb2ae7d59fd78653a57fd2c0fc28",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-lower-bound-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "90feebb04eed9f4c3fe5b6113d6a973fb8b192b8a0121759602bc5c6855d6cf9",
+          "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+          "testCount": 420,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "6c58d3ba5377dd1e0494877a6eea0e17216d6e726bd4b9d9d67775eb539cee68",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-pair-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "abd6e65545f2e54764239558b7f59827449abefa2d7de2ccd6dd95032315b889",
+          "scope": "all sorted arrays length2..4 over -1,0,1,2,4,7; six target values",
+          "testCount": 1218,
+          "mismatches": 204,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  0
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  1
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  -1,
+                  -1,
+                  -1,
+                  2
+                ],
+                -2
+              ],
+              "expected": true,
+              "actual": {
+                "value": false,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "18be11391e5a3af80aff3afadd3855971ad06c8d3d9e2d404932bca6a4af3dc0",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-unknown-transform-py",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-unknown-transform-js",
+          "status": "unavailable",
+          "reason": "Required transform implementation/contract is intentionally absent; no execution attempted."
+        },
+        {
+          "caseId": "alg-stairs-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "120c5f689d999c1b53c1d7d1f28ddda5b97320c73c1d13c46387c10babfff408",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-stairs-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "d72f5cba0aa9e8cdbd7bb8a71965c860ab2e9c7251794b0e3f7f4b5c303a3b26",
+          "scope": "all n0..12 using independent recursive enumeration",
+          "testCount": 13,
+          "mismatches": 12,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                0
+              ],
+              "expected": 1,
+              "actual": {
+                "value": 0,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                2
+              ],
+              "expected": 2,
+              "actual": {
+                "value": 1,
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                3
+              ],
+              "expected": 3,
+              "actual": {
+                "value": 2,
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "b3284c258006b4f34ea58f45e0ffa66d51cd4dd76bce95ae5d2bda6f69ae8d91",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "e4ce4bbd6cc55b2a4265d47458647b057afce10024d3b75e7b04676b07d012cd",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-correct-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 0,
+          "correctOnTestDomain": true,
+          "counterexamples": [],
+          "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-py",
+          "status": "verified",
+          "runtime": "3.12.10",
+          "fixtureHash": "9078195cfc4bbbdaf8418aa995723e7af0442c58fd522d92b2834b34cc574b69",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        },
+        {
+          "caseId": "alg-sort-bug-js",
+          "status": "verified",
+          "runtime": "v24.15.0",
+          "fixtureHash": "b648c6a701e4bc2a92c00015b573a7927831d300d7b0be9c52660f3c78f5ee75",
+          "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+          "testCount": 781,
+          "mismatches": 350,
+          "correctOnTestDomain": false,
+          "counterexamples": [
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  10
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  2,
+                  11
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                11
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  11,
+                  2
+                ],
+                "mutated": false
+              }
+            },
+            {
+              "input": [
+                [
+                  0,
+                  0,
+                  10,
+                  2
+                ]
+              ],
+              "expected": [
+                0,
+                0,
+                2,
+                10
+              ],
+              "actual": {
+                "value": [
+                  0,
+                  0,
+                  10,
+                  2
+                ],
+                "mutated": false
+              }
+            }
+          ],
+          "transcriptHash": "d43795fa822b1fcb5c2a4e171f27e4e219d30b7f882ce7fbb9cfac3db99c3dc1",
+          "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "eval/results/m917-lm-baseline",
+      "candidate": "eval/results/m917-lm-candidate",
+      "winRate": 0.4375,
+      "problemBalancedWinRate": 0.4166666666666667,
+      "ci95": {
+        "low": 0.25,
+        "high": 0.5,
+        "unit": "problem",
+        "cases": 6,
+        "iterations": 5000
+      },
+      "gates": {
+        "noNewHardFailures": false,
+        "criticalAxes": true,
+        "qualityCI": false,
+        "latency": false
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 2.8125,
+          "candidate": 2.75,
+          "delta": -0.0625
+        },
+        "groundedness": {
+          "baseline": 3,
+          "candidate": 3.125,
+          "delta": 0.125
+        },
+        "context_utilization": {
+          "baseline": 2.75,
+          "candidate": 3,
+          "delta": 0.25
+        },
+        "hallucination": {
+          "baseline": 3.6875,
+          "candidate": 3.125,
+          "delta": -0.5625
+        },
+        "instruction_following": {
+          "baseline": 2.8125,
+          "candidate": 2.5625,
+          "delta": -0.25
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.5,
+          "candidate": 2.5,
+          "delta": 0
+        },
+        "actionability": {
+          "baseline": 2.5,
+          "candidate": 2.8125,
+          "delta": 0.3125
+        },
+        "conciseness": {
+          "baseline": 3.625,
+          "candidate": 2.75,
+          "delta": -0.875
+        },
+        "japanese_quality": {
+          "baseline": 4,
+          "candidate": 3.5,
+          "delta": -0.5
+        }
+      }
+    },
+    {
+      "baseline": "eval/results/m917-oll-vulkan-baseline",
+      "candidate": "eval/results/m917-oll-vulkan-candidate",
+      "winRate": 0.28125,
+      "problemBalancedWinRate": 0.25,
+      "ci95": {
+        "low": 0.08333333333333333,
+        "high": 0.4166666666666667,
+        "unit": "problem",
+        "cases": 6,
+        "iterations": 5000
+      },
+      "gates": {
+        "noNewHardFailures": false,
+        "criticalAxes": false,
+        "qualityCI": false,
+        "latency": true
+      },
+      "axes": {
+        "correctness": {
+          "baseline": 2.6875,
+          "candidate": 1.375,
+          "delta": -1.3125
+        },
+        "groundedness": {
+          "baseline": 2.9375,
+          "candidate": 1.4375,
+          "delta": -1.5
+        },
+        "context_utilization": {
+          "baseline": 2.75,
+          "candidate": 1.4375,
+          "delta": -1.3125
+        },
+        "hallucination": {
+          "baseline": 3.5625,
+          "candidate": 1.9375,
+          "delta": -1.625
+        },
+        "instruction_following": {
+          "baseline": 2.875,
+          "candidate": 1.5,
+          "delta": -1.375
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.625,
+          "candidate": 1.375,
+          "delta": -1.25
+        },
+        "actionability": {
+          "baseline": 2.6875,
+          "candidate": 1.5,
+          "delta": -1.1875
+        },
+        "conciseness": {
+          "baseline": 3.4375,
+          "candidate": 2.1875,
+          "delta": -1.25
+        },
+        "japanese_quality": {
+          "baseline": 4,
+          "candidate": 2.4375,
+          "delta": -1.5625
+        }
+      }
+    }
+  ],
+  "limitations": "Synthetic original problems. Language/variant/repeat samples share problem groups. Execution covers stated finite domains only. Hard checks are not semantic correctness. Null semantic scores mean unreviewed."
+}

@@ -166,7 +166,8 @@ test("形式失敗は初回と修復を本文なしの詳細診断へ記録す�
   const h = harness({ responses: ["秘密の通常文", JSON.stringify({ kind: "advice", text: "秘密", extra: true })] });
   const result = await h.service.requestGuidance(input);
   assert.ok(!result.ok);
-  assert.match(result.message, /NaviCom Diagnostics/);
+  assert.doesNotMatch(result.message, /NaviCom Diagnostics|形式契約/);
+  assert.match(result.message, /もう一度お試しください/);
   const failures = h.diagnostics.filter(item => item.event === "validation_failed");
   assert.equal(failures.length, 2);
   assert.deepEqual(failures.map(item => item.attempt), ["initial", "repair"]);

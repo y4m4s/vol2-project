@@ -10,7 +10,13 @@ import {
 export const LOCAL_MODEL_LIST_TIMEOUT_MS = 5_000;
 export const LOCAL_COMPLETION_TIMEOUT_MS = 120_000;
 
-export type OpenAICompatibleFailureKind = "auth" | "unreachable" | "timeout" | "invalidResponse" | "other";
+export type OpenAICompatibleFailureKind =
+  | "auth"
+  | "unreachable"
+  | "timeout"
+  | "invalidResponse"
+  | "unsupportedReasoning"
+  | "other";
 
 export class OpenAICompatibleError extends Error {
   public constructor(

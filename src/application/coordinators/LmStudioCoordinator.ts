@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { canFallbackToTestedCopilot } from "../../shared/copilotFallback";
 import { ConnectionService } from "../../services/ConnectionService";
 import { LmStudioServerService } from "../../services/LmStudioServerService";
 import { SettingsService } from "../../services/SettingsService";
@@ -86,16 +87,19 @@ export class LmStudioCoordinator {
     try {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
       const status = await this.serverService.getStatus(baseUrl);
-      this.updateServer(status);
-      if (status.state === "running") {
+      if (isLmStudioApiReady(status)) {
         await this.connectionService.refreshAvailableLmStudioModels(baseUrl);
       } else {
         this.connectionService.clearLmStudioModelOptions();
       }
+      const connectionStatus = status.state === "stopped"
+        ? await this.reconcileStoppedServer()
+        : undefined;
+      this.updateServer(status);
 
       if (announce) {
         this.host.patchSession({
-          statusMessage: {
+          statusMessage: connectionStatus ?? {
             kind: status.state === "running" ? "info" : status.state === "stopped" ? "warning" : "error",
             text: status.message ?? "LM Studio サーバーの状態を更新しました。"
           }
@@ -103,6 +107,45 @@ export class LmStudioCoordinator {
       } else {
         this.host.notifyStateChanged();
       }
+    } catch (error) {
+      this.updateServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message: toErrorMessage(error, "LM Studio サーバーの状態を取得できませんでした。")
+      });
+    }
+  }
+
+  /**
+   * NaviCom の外で LM Studio を起動・停止されても通知は届かないので、表示を実機の状態に
+   * 追従させるための読み直し。refreshServerStatus と違い、statusMessage の上書きも
+   * 停止時の自動フォールバックも行わないため、保存操作の途中に差し込んでも副作用がない。
+   */
+  public async syncServerStatus(): Promise<void> {
+    if (this.pendingOperation) {
+      await this.pendingOperation;
+      return;
+    }
+    if (!vscode.workspace.isTrusted) return;
+
+    this.updateServer({
+      state: "checking",
+      port: this.server.port,
+      canStart: false,
+      canStop: false,
+      message: "LM Studio サーバーの状態を確認しています…"
+    });
+
+    try {
+      const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
+      const status = await this.serverService.getStatus(baseUrl);
+      if (isLmStudioApiReady(status)) {
+        await this.connectionService.refreshAvailableLmStudioModels(baseUrl);
+      } else {
+        this.connectionService.clearLmStudioModelOptions();
+      }
+      this.updateServer(status);
     } catch (error) {
       this.updateServer({
         state: "error",
@@ -147,19 +190,18 @@ export class LmStudioCoordinator {
     await this.pendingOperation;
   }
 
-  public async ensureServerForRoutingConnection(): Promise<boolean> {
+  public async checkServerForRoutingConnection(): Promise<boolean> {
     if (!vscode.workspace.isTrusted) return false;
     if (this.pendingOperation) await this.pendingOperation;
     try {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
       const current = await this.serverService.getStatus(baseUrl);
+      if (current.state === "stopped") {
+        const connectionStatus = await this.reconcileStoppedServer();
+        if (connectionStatus) this.host.patchSession({ statusMessage: connectionStatus });
+      }
       this.updateServer(current);
-      if (current.state === "running") return true;
-      if (!current.canStart) return false;
-
-      const started = await this.serverService.start(baseUrl);
-      this.updateServer(started);
-      return started.state === "running";
+      return isLmStudioApiReady(current);
     } catch {
       return false;
     }
@@ -280,8 +322,8 @@ export class LmStudioCoordinator {
     try {
       const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
       const status = await this.serverService.stop(baseUrl);
-      this.updateServer(status);
       if (status.state !== "stopped") {
+        this.updateServer(status);
         this.host.patchSession({
           requestState: "idle",
           statusMessage: { kind: "error", text: status.message ?? "LM Studio サーバーを停止できませんでした。" }
@@ -290,35 +332,41 @@ export class LmStudioCoordinator {
       }
 
       this.connectionService.clearLmStudioModelOptions();
-      const currentSettings = this.settingsService.getSettings();
-      const shouldRestoreCopilot =
-        currentSettings.providerId === "lmStudio" || this.connectionService.getProviderId() === "lmStudio";
-      if (!shouldRestoreCopilot) {
-        this.host.patchSession({ requestState: "idle", statusMessage: { kind: "info", text: "LM Studio サーバーを停止しました。" } });
-        return;
-      }
-
-      this.connectionService.resetToDisconnected();
-      const copilotSettings = await this.host.saveSettings({ ...currentSettings, providerId: "copilot" });
-      const connectionResult = await this.connectionService.connectAndActivate(copilotSettings);
-      const copilotConnected =
-        connectionResult.connectionState === "connected" && this.connectionService.getProviderId() === "copilot";
+      const connectionStatus = await this.reconcileStoppedServer();
+      this.updateServer(status);
       this.host.patchSession({
-        connectionState: connectionResult.connectionState,
         requestState: "idle",
-        mode: copilotConnected || copilotSettings.defaultMode !== "always"
-          ? copilotSettings.defaultMode
-          : this.host.getState().mode,
-        assistanceDepth: copilotSettings.defaultAssistanceDepth,
-        statusMessage: copilotConnected
-          ? { kind: "info", text: "LM Studio サーバーを停止し、Copilot に戻しました。" }
-          : { kind: "warning", text: "LM Studio サーバーは停止しましたが、Copilot にも接続できませんでした。" }
+        statusMessage: connectionStatus ?? { kind: "info", text: "LM Studio サーバーを停止しました。" }
       });
     } catch (error) {
       const message = toErrorMessage(error, "LM Studio サーバーを停止できませんでした。");
       this.updateServer({ state: "error", canStart: false, canStop: true, message });
       this.host.patchSession({ requestState: "idle", statusMessage: { kind: "error", text: message } });
     }
+  }
+
+  private async reconcileStoppedServer(): Promise<NavigatorStatusMessage | undefined> {
+    if (this.connectionService.getProviderId() !== "lmStudio") return undefined;
+
+    const settings = this.settingsService.getSettings();
+    this.connectionService.markUnavailable();
+    const canFallback = canFallbackToTestedCopilot(
+      settings,
+      this.host.getState().conversationHistory,
+      this.connectionService.getTestedModels(settings).some(model => model.providerId === "copilot")
+    );
+    if (canFallback && this.connectionService.activateTestedProvider("copilot", settings)) {
+      await this.host.saveSettings({ ...settings, providerId: "copilot" });
+      this.host.patchSession({ connectionState: "connected" });
+      return { kind: "warning", text: "LM Studio サーバーが停止したため、接続確認済みのCopilotに切り替えました。" };
+    }
+
+    this.host.patchSession({ connectionState: "unavailable" });
+    return {
+      kind: "warning",
+      text: "LM Studio サーバーが停止しました。自動切り替えは行っていません。接続先を確認してください。",
+      action: "openConnectionSettings"
+    };
   }
 
   private updateServer(value: LmStudioServerViewData): void {
@@ -329,4 +377,8 @@ export class LmStudioCoordinator {
 
 function toErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function isLmStudioApiReady(status: LmStudioServerViewData): boolean {
+  return status.state === "running" || status.state === "statusMismatch";
 }

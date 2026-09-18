@@ -30,13 +30,25 @@ export class LmStudioServerService implements vscode.Disposable {
 
   public async getStatus(baseUrl: string): Promise<LmStudioServerViewData> {
     const target = parseLmStudioLocalServerUrl(baseUrl);
-    const [cliResult, probe] = await Promise.all([
-      this.readCliStatus(),
-      this.probeHttp(target.origin)
-    ]);
+    // `lms server status` may wake LM Studio's background service. Probe the
+    // configured HTTP endpoint first so a read-only status refresh cannot turn
+    // a stopped server back on. CLI status is only consulted after the API is
+    // already reachable, where it is useful for detecting a disagreement.
+    const probe = await this.probeHttp(target.origin);
 
     if (probe === "lmStudio") {
+      const cliResult = await this.readCliStatus();
       const port = cliResult.status?.port ?? target.port;
+      if (cliResult.available && cliResult.status?.running === false) {
+        this.log(`LM Studio API is reachable on port ${port}, but the CLI reports stopped.`);
+        return {
+          state: "statusMismatch",
+          port,
+          canStart: false,
+          canStop: true,
+          message: `Local Server API は応答していますが、CLI は停止中と報告しています。（localhost:${port}）`
+        };
+      }
       this.log(`Server status: running on port ${port}.`);
       return {
         state: "running",
@@ -44,8 +56,8 @@ export class LmStudioServerService implements vscode.Disposable {
         canStart: false,
         canStop: cliResult.available,
         message: cliResult.available
-          ? `起動中 · localhost:${port}`
-          : `起動中 · localhost:${port}（停止操作には LM Studio CLI が必要です）`
+          ? `Local Server API 応答あり · localhost:${port}`
+          : `Local Server API 応答あり · localhost:${port}（停止操作には LM Studio CLI が必要です）`
       };
     }
 
@@ -55,41 +67,8 @@ export class LmStudioServerService implements vscode.Disposable {
         state: "authRequired",
         port: target.port,
         canStart: false,
-        canStop: cliResult.available,
+        canStop: true,
         message: "起動中ですが、LM Studio 側で API 認証が有効です。"
-      };
-    }
-
-    if (
-      cliResult.available &&
-      cliResult.status?.running &&
-      cliResult.status.port !== undefined &&
-      cliResult.status.port !== target.port
-    ) {
-      this.log(`Server port mismatch: configured ${target.port}, running ${cliResult.status.port}.`);
-      return {
-        state: "portMismatch",
-        port: cliResult.status.port,
-        configuredPort: target.port,
-        canStart: false,
-        canStop: true,
-        message: `設定は localhost:${target.port} ですが、サーバーは localhost:${cliResult.status.port} で起動中です。`
-      };
-    }
-
-    if (
-      probe === "occupied" &&
-      cliResult.available &&
-      cliResult.status?.running &&
-      (cliResult.status.port === undefined || cliResult.status.port === target.port)
-    ) {
-      this.log(`Server process reports running on port ${target.port}, but its API response requires attention.`);
-      return {
-        state: "running",
-        port: target.port,
-        canStart: false,
-        canStop: true,
-        message: `起動中 · localhost:${target.port}（APIの応答を確認してください）`
       };
     }
 
@@ -101,40 +80,6 @@ export class LmStudioServerService implements vscode.Disposable {
         canStart: false,
         canStop: false,
         message: `ポート${target.port}が別のアプリで使用されています。`
-      };
-    }
-
-    if (!cliResult.available) {
-      this.log("Server status: LM Studio CLI is unavailable.");
-      return {
-        state: "cliUnavailable",
-        port: target.port,
-        canStart: false,
-        canStop: false,
-        message: "LM Studio CLI が見つかりません。LM Studio を一度起動してください。"
-      };
-    }
-
-    if (cliResult.error) {
-      this.log(`Server status failed: ${cliResult.error}`);
-      return {
-        state: "error",
-        port: target.port,
-        canStart: true,
-        canStop: false,
-        message: "LM Studio サーバーの状態を取得できませんでした。"
-      };
-    }
-
-    if (cliResult.status?.running) {
-      const port = cliResult.status.port ?? target.port;
-      this.log(`Server process reports running on port ${port}, but its API is not ready.`);
-      return {
-        state: "running",
-        port,
-        canStart: false,
-        canStop: true,
-        message: `起動中 · localhost:${port}（APIの応答待ち）`
       };
     }
 
@@ -151,7 +96,7 @@ export class LmStudioServerService implements vscode.Disposable {
   public async start(baseUrl: string): Promise<LmStudioServerViewData> {
     const target = parseLmStudioLocalServerUrl(baseUrl);
     const current = await this.getStatus(baseUrl);
-    if (current.state === "running" || current.state === "authRequired" || current.state === "portConflict") {
+    if (current.state === "running" || current.state === "statusMismatch" || current.state === "authRequired" || current.state === "portConflict") {
       return current;
     }
     if (current.state === "cliUnavailable") {

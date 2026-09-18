@@ -18,11 +18,15 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/NavigatorViewProvider.test.ts",
     "test/ActiveFileContext.test.ts",
     "test/ActiveFileCollector.test.ts",
     "test/ContextExcerpt.test.ts",
     "test/LanguageReference.test.ts",
     "test/AdaptiveProviderRouting.test.ts",
+    "test/UiActivity.test.ts",
+    "test/CopilotFallback.test.ts",
+    "src/shared/uiActivity.ts",
     "test/ProviderEvaluationStore.test.ts",
     "test/ProviderRoutingCoordinator.test.ts",
     "test/MemoryCompactor.test.ts",

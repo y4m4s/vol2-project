@@ -1,0 +1,25 @@
+{
+  "baseline": "eval/results/m917-oll-production-baseline",
+  "candidate": "eval/results/m917-oll-production-candidate",
+  "split": "tuning",
+  "seed": "7ba79350fc2bfa579b59a72a4e52f266",
+  "packetHash": "be88143b2ac435db0059136310ba4dc75f55be38586b791aefd74131c5ea140d",
+  "pairs": [
+    {
+      "pairId": "33990fc4e9d47aac",
+      "caseId": "alg-sort-correct-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "2e16272bd7f334db859c42d07bf76f05651f116cd389aa5d1a5fbcd26722b756"
+    },
+    {
+      "pairId": "065f555419f7df50",
+      "caseId": "alg-lower-bound-py",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "cbd128082ec741a1dbf46289204b45cbe6aef52af299e88e0ccb518a9af30e9c"
+    }
+  ]
+}

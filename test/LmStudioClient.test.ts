@@ -51,6 +51,47 @@ test("段階式Thinkingにはhighを選び、off非対応なら生成前にエ�
   assert.equal(posts, 1);
 });
 
+test("Thinking対応情報のない通常モデルは低強度で標準チャットを使う", async () => {
+  const urls: string[] = [];
+  globalThis.fetch = async (url, init) => {
+    urls.push(String(url));
+    if (init?.method === "GET") {
+      return Response.json({ models: [{ key: "qwen", display_name: "Qwen" }] });
+    }
+    assert.equal(String(url), "http://localhost:1234/v1/chat/completions");
+    assert.deepEqual(JSON.parse(String(init?.body)), {
+      model: "qwen",
+      messages: [{ role: "system", content: "指示" }, { role: "user", content: "入力" }],
+      stream: false,
+      max_tokens: 2048
+    });
+    return Response.json({ model: "qwen", choices: [{ message: { content: "回答" }, finish_reason: "stop" }],
+      usage: { prompt_tokens: 10, completion_tokens: 2 } });
+  };
+
+  const result = await new LmStudioClient().createCompletion("http://localhost:1234", "qwen", {
+    systemPrompt: "指示", userPrompt: "入力", purpose: "guidance", maxOutputTokens: 2048, reasoningEffort: "none"
+  });
+
+  assert.equal(result.text, "回答");
+  assert.deepEqual(urls, ["http://localhost:1234/api/v1/models", "http://localhost:1234/v1/chat/completions"]);
+});
+
+test("Thinking対応情報のない通常モデルは高強度の入出力条件を維持する", async () => {
+  globalThis.fetch = async (_url, init) => {
+    if (init?.method === "GET") return Response.json({ models: [{ key: "qwen" }] });
+    const body = JSON.parse(String(init?.body));
+    assert.equal(body.max_tokens, 8192);
+    assert.deepEqual(body.messages, [{ role: "system", content: "高強度の指示" }, { role: "user", content: "入力" }]);
+    return Response.json({ choices: [{ message: { content: "回答" }, finish_reason: "stop" }] });
+  };
+
+  const result = await new LmStudioClient().createCompletion("http://localhost:1234", "qwen", {
+    systemPrompt: "高強度の指示", userPrompt: "入力", purpose: "guidance", maxOutputTokens: 8192, reasoningEffort: "high"
+  });
+  assert.equal(result.text, "回答");
+});
+
 test("Thinkingで出力枠を使い切った場合は空の最終回答でもlengthを返す", async () => {
   globalThis.fetch = async (_url, init) => init?.method === "GET"
     ? Response.json({ models: [{ key: "model", capabilities: { reasoning: { allowed_options: ["on"] } } }] })

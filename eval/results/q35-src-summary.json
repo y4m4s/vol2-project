@@ -1,0 +1,424 @@
+{
+  "controls": {
+    "provider": "lmStudio",
+    "model": "qwen3.5-9b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": 2048,
+    "collectorContext": "bounded-file",
+    "problemLayout": "plain"
+  },
+  "limitation": "One sample/case, sequential runs, previously observed tuning cases, same-agent judge. Unchanged requests are negative controls; their output variation is not a source-change effect.",
+  "changedSourceModules": [
+    "PromptBuilder"
+  ],
+  "groups": {
+    "changedRequests": {
+      "n": 6,
+      "baselineMeetsTask": 2,
+      "candidateMeetsTask": 3,
+      "wins": 2,
+      "losses": 2,
+      "ties": 2,
+      "noNewHardFailures": false,
+      "criticalAxesPass": false,
+      "axes": {
+        "correctness": {
+          "baseline": 2.5,
+          "candidate": 2,
+          "delta": -0.5
+        },
+        "groundedness": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2.1666666666666665,
+          "delta": -0.5
+        },
+        "context_utilization": {
+          "baseline": 3,
+          "candidate": 2.3333333333333335,
+          "delta": -0.6666666666666666
+        },
+        "hallucination": {
+          "baseline": 2.8333333333333335,
+          "candidate": 2.3333333333333335,
+          "delta": -0.5
+        },
+        "instruction_following": {
+          "baseline": 2.5,
+          "candidate": 2.6666666666666665,
+          "delta": 0.16666666666666666
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.8333333333333335,
+          "candidate": 2.1666666666666665,
+          "delta": -0.6666666666666666
+        },
+        "actionability": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2.1666666666666665,
+          "delta": -0.5
+        },
+        "conciseness": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2,
+          "delta": -0.6666666666666666
+        },
+        "japanese_quality": {
+          "baseline": 3.8333333333333335,
+          "candidate": 2.8333333333333335,
+          "delta": -1
+        }
+      },
+      "baseline": {
+        "n": 6,
+        "hardPassRate": 0.6666666666666666,
+        "latencyMedianMs": 15839.2042,
+        "latencyP95Ms": 44913.17559999999,
+        "inputTokensMean": 762.25,
+        "tokensPerSecondMedian": 13.641803692593317,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      },
+      "candidate": {
+        "n": 6,
+        "hardPassRate": 0.8333333333333334,
+        "latencyMedianMs": 23546.8612,
+        "latencyP95Ms": 120024.63759999999,
+        "inputTokensMean": 830.2,
+        "tokensPerSecondMedian": 12.361252329800577,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {
+          "infrastructure": 1
+        }
+      }
+    },
+    "identicalRequests": {
+      "n": 10,
+      "baselineMeetsTask": 5,
+      "candidateMeetsTask": 7,
+      "wins": 5,
+      "losses": 0,
+      "ties": 5,
+      "noNewHardFailures": true,
+      "criticalAxesPass": true,
+      "axes": {
+        "correctness": {
+          "baseline": 2.7,
+          "candidate": 3.1,
+          "delta": 0.4
+        },
+        "groundedness": {
+          "baseline": 2.6,
+          "candidate": 3.2,
+          "delta": 0.6
+        },
+        "context_utilization": {
+          "baseline": 2.8,
+          "candidate": 3.3,
+          "delta": 0.5
+        },
+        "hallucination": {
+          "baseline": 2.8,
+          "candidate": 3.4,
+          "delta": 0.6
+        },
+        "instruction_following": {
+          "baseline": 2.4,
+          "candidate": 3.1,
+          "delta": 0.7
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.5,
+          "candidate": 2.8,
+          "delta": 0.3
+        },
+        "actionability": {
+          "baseline": 2.5,
+          "candidate": 2.7,
+          "delta": 0.2
+        },
+        "conciseness": {
+          "baseline": 3.3,
+          "candidate": 3.5,
+          "delta": 0.2
+        },
+        "japanese_quality": {
+          "baseline": 3.9,
+          "candidate": 3.9,
+          "delta": 0
+        }
+      },
+      "baseline": {
+        "n": 10,
+        "hardPassRate": 0.8,
+        "latencyMedianMs": 12797.253100000009,
+        "latencyP95Ms": 26346.449500000017,
+        "inputTokensMean": 1679.6923076923076,
+        "tokensPerSecondMedian": 14.557254343024495,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      },
+      "candidate": {
+        "n": 10,
+        "hardPassRate": 0.8,
+        "latencyMedianMs": 10655.417050000004,
+        "latencyP95Ms": 24915.8891,
+        "inputTokensMean": 1679.6923076923076,
+        "tokensPerSecondMedian": 12.966031590439366,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      }
+    }
+  },
+  "observations": [
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": false,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 1,
+      "reason": "Aは数値の質問に答える分だけ改善。ただし境界の定義が誤っておりタスク達成とは数えない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 15108.250000000002,
+      "candidateLatencyMs": 24608.6637
+    },
+    {
+      "caseId": "alg-stairs-bug-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "どちらも具体的な不一致と初期化へのヒント。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 13760.2828,
+      "candidateLatencyMs": 8941.829999999987
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "両者とも正しい総和関数に沈黙。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 4485.804299999996,
+      "candidateLatencyMs": 5499.279700000014
+    },
+    {
+      "caseId": "alg-sort-correct-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": false,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0.5,
+      "reason": "同じ標準APIの誤認。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 8716.077900000004,
+      "candidateLatencyMs": 10511.015500000009
+    },
+    {
+      "caseId": "alg-unknown-transform-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "双方とも断定不能に回答。Aの余分な断定とBの冗長さを踏まえ決定的差なし。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 10558.182700000005,
+      "candidateLatencyMs": 10401.913
+    },
+    {
+      "caseId": "alg-lower-bound-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": false,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Aは要求された結果と重複時の境界更新を示す。Bは結果を出さない。Aにも表現の不正確さが残る。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 11637.572800000009,
+      "candidateLatencyMs": 23522.497100000008
+    },
+    {
+      "caseId": "alg-sum-bug-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "両者とも末尾欠落に有効なヒント。追加確認の差は小さい。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 22800.456399999995,
+      "candidateLatencyMs": 17867.93299999999
+    },
+    {
+      "caseId": "alg-sort-correct-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": false,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 1,
+      "reason": "双方とも不要介入。Aは既存コードを正しく読み、Bは存在する比較関数を無視。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 17572.867299999998,
+      "candidateLatencyMs": 10799.818599999999
+    },
+    {
+      "caseId": "alg-pair-bug-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Bは単調性の中心部分を正しく説明する点で良いが、最後の総括に誤りが残る。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 16570.1584,
+      "candidateLatencyMs": 23571.22529999999
+    },
+    {
+      "caseId": "alg-unknown-transform-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "両者とも断定不能という中心回答は適切で、仮定の説明に弱さがある。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 33151.414099999995,
+      "candidateLatencyMs": 12972.604900000006
+    },
+    {
+      "caseId": "alg-sort-bug-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Aの比較基準へのヒントがより簡潔で自然。Bの数値変換という実装誘導は余分。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 10641.099499999982,
+      "candidateLatencyMs": 11189.862400000042
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Aは未配信。Bも誤診でタスク失敗だが応答はある。配信込みの比較で僅差B、意味評価ではAを除外。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 0,
+      "baselineLatencyMs": 44913.17559999999,
+      "candidateLatencyMs": 120024.63759999999
+    },
+    {
+      "caseId": "alg-sum-correct-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "両者とも正しい総和関数に沈黙。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 5289.932100000005,
+      "candidateLatencyMs": 4237.5999
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Aは完成条件を漏らす。Bは具体例を保ちヒントの範囲を守る。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 26346.449500000017,
+      "candidateLatencyMs": 24915.8891
+    },
+    {
+      "caseId": "alg-sort-bug-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Bは比較規則を指す。Aは整数要素を変換する不要な方向へ誘導。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 25500.963400000008,
+      "candidateLatencyMs": 22263.807700000005
+    },
+    {
+      "caseId": "alg-stairs-bug-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 1,
+      "reason": "両者とも誤診。Aは不要な完成コードまでは出さない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 11834.223400000017,
+      "candidateLatencyMs": 10106.592499999999
+    }
+  ]
+}
