@@ -27,6 +27,7 @@ interface FloatingToastProps {
   progress?: "running" | "done";
   actionLabel?: string;
   onAction?: () => void;
+  onDismiss?: () => void;
 }
 
 const DEFAULT_DURATION_MS = 2600;
@@ -45,7 +46,8 @@ export function FloatingToast({
   progress,
   actionLabel,
   onAction,
-  onActivate
+  onActivate,
+  onDismiss
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
   const dismissedSignatureRef = useRef<string | undefined>(undefined);
@@ -103,9 +105,16 @@ export function FloatingToast({
   const progressClass = progress ? ` progress-${progress}` : "";
   const layoutClass = title ? "" : " single-line";
 
+  const handleDismiss = () => {
+    dismissedSignatureRef.current = signature;
+    setPhase("leaving");
+    window.setTimeout(() => setPhase("hidden"), FADE_DURATION_MS);
+    onDismiss?.();
+  };
+
   return (
     <div
-      className={`floating-toast ${kind}${placement !== "floating" ? ` ${placement}` : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}${onActivate ? " actionable" : ""}`}
+      className={`floating-toast ${kind}${placement !== "floating" ? ` ${placement}` : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}${onActivate ? " actionable" : ""}${onDismiss ? " dismissible" : ""}`}
       role={kind === "error" ? "alert" : "status"}
       aria-live={kind === "error" ? "assertive" : "polite"}
     >
@@ -123,6 +132,11 @@ export function FloatingToast({
           </div>
         )}
       </div>
+      {onDismiss && (
+        <button type="button" className="floating-toast-close" aria-label="通知を閉じる" onClick={handleDismiss}>
+          <span aria-hidden="true">×</span>
+        </button>
+      )}
     </div>
   );
 }
