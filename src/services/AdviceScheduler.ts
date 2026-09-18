@@ -133,6 +133,19 @@ export class AdviceScheduler implements vscode.Disposable {
     this.didChangeStateEmitter.fire();
   }
 
+  /**
+   * インターバルの起点を助言の完了時刻に更新する。
+   *
+   * 発火時刻のままだと生成にかかった時間だけクールダウンが消費され、生成が
+   * requestIntervalMs より長引いた場合は完了時点で残り0になる。その状態で
+   * 生成中に届いた通知が待機していると、間隔を空けずに次が発火してしまう。
+   */
+  public notifyAdviceCompleted(): void {
+    this.lastAdviceAt = Date.now();
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
+  }
+
   public togglePaused(): void {
     this.paused = !this.paused;
 

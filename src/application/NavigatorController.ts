@@ -78,7 +78,6 @@ const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 
 interface GuidanceExecutionOptions {
   automaticTriggerEvent?: AutoAdviceTriggerEvent;
-  automaticEditorSnapshot?: string;
   automaticDocumentSnapshot?: string;
   automaticFilePath?: string;
   automaticObservation?: AutomaticGuidanceObservation;
@@ -110,6 +109,7 @@ export class NavigatorController implements vscode.Disposable {
   private pendingSelectionContext?: GuidanceContext;
   private pendingSelectionPreview?: NavigatorSessionState["contextPreview"];
   private lastAutomaticContextFingerprint?: string;
+  private lastActiveDocumentKey?: string;
   private readonly automaticFingerprints = new Set<string>();
   private readonly automaticFocusByFile = new Map<string, AutomaticGuidanceFocus>();
   private readonly automaticOverviewByFile = new Map<string, string>();
@@ -276,6 +276,7 @@ export class NavigatorController implements vscode.Disposable {
 
     const settings = this.settingsService.getSettings();
     this.contextCollector.primeDocuments(vscode.workspace.textDocuments);
+    this.lastActiveDocumentKey = vscode.window.activeTextEditor?.document.uri.toString();
 
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -283,9 +284,13 @@ export class NavigatorController implements vscode.Disposable {
           this.contextCollector.primeDocument(editor.document);
         }
         this.refreshContextPreview();
-        if (editor) {
-          this.adviceScheduler.handleActivity("editor_change");
-        }
+        if (!editor) return;
+        // このイベントはフォーカスが戻っただけでも発火する。ウェブビューやターミナルから
+        // エディタへ戻っただけで助言を動かさないよう、対象が実際に変わったときだけ扱う。
+        const activeDocumentKey = editor.document.uri.toString();
+        if (activeDocumentKey === this.lastActiveDocumentKey) return;
+        this.lastActiveDocumentKey = activeDocumentKey;
+        this.adviceScheduler.handleActivity("editor_change");
       }),
       vscode.workspace.onDidOpenTextDocument((document) => {
         this.contextCollector.primeDocument(document);
@@ -319,11 +324,15 @@ export class NavigatorController implements vscode.Disposable {
         }
       }),
       vscode.languages.onDidChangeDiagnostics((event) => {
-        if (this.hasActiveDocumentDiagnosticChange(event.uris)) {
-          this.refreshContextPreview();
-          this.adviceScheduler.handleActivity("diagnostics_change");
-        } else {
+        if (!this.hasActiveDocumentDiagnosticChange(event.uris)) {
           this.invalidateRequestPlan();
+          return;
+        }
+        this.refreshContextPreview();
+        // 同じ内容の再発行では助言を動かさない。ユーザーが何も触らなくても起きるため。
+        const activeUri = vscode.window.activeTextEditor?.document.uri;
+        if (activeUri && this.contextCollector.hasDiagnosticsContentChanged(activeUri)) {
+          this.adviceScheduler.handleActivity("diagnostics_change");
         }
       }),
       vscode.workspace.onDidCreateFiles(() => this.invalidateRequestPlan()),
@@ -825,6 +834,12 @@ export class NavigatorController implements vscode.Disposable {
 
   private async handleAutomaticGuidance(event: AutoAdviceTriggerEvent = { signals: [], idleDurationMs: 0 }): Promise<void> {
     let fingerprint: string | undefined;
+    // 「触っていないのに自動助言が動いた」を後から追えるよう、何が引き金になったかを残す。
+    this.writeDiagnostic({
+      event: "automatic_guidance_triggered",
+      reasons: event.signals.map((signal) => signal.reason),
+      idleDurationMs: event.idleDurationMs
+    });
     await this.executeGuidanceRequest(async () => {
       const state = this.sessionStore.getState();
       const settings = this.settingsService.getSettings();
@@ -870,8 +885,9 @@ export class NavigatorController implements vscode.Disposable {
         return undefined;
       }
 
-      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation);
+      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation, automaticDocumentSnapshot);
       if (SUPPRESS_DUPLICATE_AUTO_ADVICE && (fingerprint === this.lastAutomaticContextFingerprint || this.automaticFingerprints.has(fingerprint))) {
+        this.writeDiagnostic({ event: "automatic_guidance_suppressed", cause: "duplicate_context" });
         this.patchGuidanceSession({
           contextPreview: preview,
           statusMessage: {
@@ -884,7 +900,6 @@ export class NavigatorController implements vscode.Disposable {
 
       return {
         automaticTriggerEvent: event,
-        automaticEditorSnapshot,
         automaticDocumentSnapshot,
         automaticFilePath: baseContext.activeFilePath,
         kind: "always",
@@ -1118,6 +1133,9 @@ export class NavigatorController implements vscode.Disposable {
         this.activeGuidanceRequest = undefined;
       }
       const requestState = this.sessionStore.getState().requestState;
+      // 自動助言の間隔は「前の助言が終わってから」で数える。idle へ戻すと待機中の
+      // 自動助言が同期的に発火しうるので、起点の更新はその前に済ませる。
+      this.adviceScheduler.notifyAdviceCompleted();
       // Returning to idle can synchronously dispatch a pending automatic request.
       // Release the previous request's gate before allowing that dispatch.
       release();
@@ -1352,8 +1370,13 @@ export class NavigatorController implements vscode.Disposable {
 
     // Only successful content can become stale. Failures must still update the
     // connection state and stop automatic guidance through the normal error path.
-    if (result.ok && options.kind === "always" && options.automaticEditorSnapshot !== this.contextCollector.automaticEditorSnapshot()) {
-      this.requeueStaleAutomaticTrigger(options.automaticTriggerEvent, options.automaticDocumentSnapshot);
+    //
+    // 生成済みの回答が古くなるのは、対象のコードが変わったときだけ。カーソル移動や
+    // 選択の変化まで陳腐化に含めると、回答を読むために操作しただけで答えを捨てて
+    // 再送してしまい、コード未変更のまま生成が続く。対象が本当に変わった場合は
+    // text_edit / editor_change が新しいトリガーを立てるので、ここでの再キューは不要。
+    if (result.ok && options.kind === "always" &&
+      options.automaticDocumentSnapshot !== this.contextCollector.automaticDocumentSnapshot()) {
       this.patchGuidanceSession({ contextPreview: refreshedPreview });
       return { ok: false };
     }

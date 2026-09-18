@@ -191,14 +191,67 @@ test("カーソル位置・差分・診断増減を取得し、マーカー衝�
   assert.equal(collector.collectAutomaticObservation(event), undefined);
 });
 
-test("指紋は時間と前回focusに依存せず、カーソル位置の変化を検出する", () => {
+test("指紋は時間・前回focus・カーソル位置に依存せず、入力の変化だけを見る", () => {
   const context = { activeFileExcerpt: "code", referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
-  const observation = { triggerReasons: ["text_edit" as const], idleDurationMs: 10000, selectionPresent: false, cursor: { line: 1, column: 1 } };
+  const observation = { triggerReasons: ["text_edit" as const], idleDurationMs: 10000, selectionPresent: false,
+    cursor: { line: 1, column: 1 }, cursorExcerpt: "co<<<NAVICOM_CURSOR>>>de" };
   const first = createAutomaticFingerprint(context, "low", observation);
   assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, idleDurationMs: 20000, previousFocus: "continue" }));
   assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, triggerReasons: ["diagnostics_change"] }));
   assert.equal(first, createAutomaticFingerprint(context, "low", { ...observation, triggerReasons: ["editor_change", "selection_change"] }));
-  assert.notEqual(first, createAutomaticFingerprint(context, "low", { ...observation, cursor: { line: 2, column: 1 } }));
+  // 回答を読むためにカーソルを動かしただけでは、新しい助言を出す理由にならない。
+  assert.equal(first, createAutomaticFingerprint(context, "low",
+    { ...observation, cursor: { line: 2, column: 1 }, cursorExcerpt: "cod<<<NAVICOM_CURSOR>>>e" }));
+  // relatedSymbols はカーソル位置の単語とその行から作られるので、これも状況の違いではない。
+  assert.equal(first, createAutomaticFingerprint({ ...context, relatedSymbols: ["total", "price"] }, "low", observation));
+  // 最近の編集は5分で期限切れになる。何も操作していなくても消えるので、鍵に含めない。
+  assert.equal(first, createAutomaticFingerprint({ ...context, recentEditsSummary: ["L3: total += 1"] }, "low", observation));
+  assert.equal(first, createAutomaticFingerprint(context, "low",
+    { ...observation, lastEdit: { lineStart: 3, lineEnd: 3, changedLineCount: 1, insertedCharCount: 2, deletedCharCount: 0 } }));
+  assert.notEqual(first, createAutomaticFingerprint(context, "low", { ...observation, selectionPresent: true }));
+  assert.notEqual(first, createAutomaticFingerprint({ ...context, activeFileExcerpt: "code2" }, "low", observation));
+});
+
+test("同じ内容の診断が再発行されただけなら編集activityとして扱わない", () => {
+  const collector = new ContextCollector();
+  const point = { line: 0, character: 0 };
+  const editor = editorFor("const x = 1;", 0, 0);
+  const uri = editor.document.uri;
+  diagnostics = [{ severity: 1, message: "未使用の変数", range: { start: point, end: point } }] as vscode.Diagnostic[];
+  windowMock.activeTextEditor = editor;
+  collector.primeDocument(editor.document);
+
+  // 言語サーバーは無編集でも同じ内容を再発行する。起動直後の内容は既知として扱う。
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), false);
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), false);
+
+  diagnostics = [{ severity: 0, message: "型が合いません", range: { start: point, end: point } }] as vscode.Diagnostic[];
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), true, "内容が変わったときだけ一度数える");
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), false, "同じ内容の再発行は数えない");
+
+  diagnostics = [];
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), true, "診断が解消されたのも変化");
+  assert.equal(collector.hasDiagnosticsContentChanged(uri), false);
+  collector.releaseDocument(uri);
+});
+
+test("同じファイルの同じ版数なら、表示範囲が変わっても同じ指紋になる", () => {
+  const context = { activeFilePath: "/repo/app.ts", activeFileExcerpt: "const x = 1;",
+    referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
+  const observation = { triggerReasons: ["text_edit" as const], idleDurationMs: 10000, selectionPresent: false };
+  const first = createAutomaticFingerprint(context, "low", observation, "file:///repo/app.ts:7");
+  // クラウド系プロバイダーの抜粋は表示範囲そのもの。スクロールで変わっても状況は同じ。
+  assert.equal(first, createAutomaticFingerprint({ ...context, activeFileExcerpt: "const y = 2;" },
+    "low", observation, "file:///repo/app.ts:7"));
+  // 編集すれば版数が進むので、同じ抜粋に見えても別の状況として扱う。
+  assert.notEqual(first, createAutomaticFingerprint(context, "low", observation, "file:///repo/app.ts:8"));
+  // 版数を取れない場合は従来どおり抜粋で判定する。
+  assert.notEqual(createAutomaticFingerprint(context, "low", observation),
+    createAutomaticFingerprint({ ...context, activeFileExcerpt: "const y = 2;" }, "low", observation));
+  // 診断の増減は、コードが同じでも新しい状況。
+  assert.notEqual(first, createAutomaticFingerprint(
+    { ...context, diagnosticsSummary: [{ severity: "Error" as const, message: "型が合いません", line: 3 }] },
+    "low", observation, "file:///repo/app.ts:7"));
 });
 
 test("既存DBにfocus列を追加し、旧履歴と新しいfocusをSQLiteで往復する", async () => {
