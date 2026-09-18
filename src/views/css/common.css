@@ -893,6 +893,8 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-input-footer-right {
+  container-type: inline-size;
+  container-name: composer-actions;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -944,6 +946,25 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Collapse only when the action row itself runs out of room. */
+@container composer-actions (max-width: 280px) {
+  .chat-auto-inline {
+    flex: 0 0 32px;
+    min-width: 32px;
+    border-radius: 9px;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .chat-auto-inline-text,
+  .chat-auto-inline .chat-auto-inline-toggle {
+    display: none;
+  }
 }
 
 .chat-auto-inline-toggle {
@@ -1153,22 +1174,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 
 .chat-send-btn .material-symbols-outlined {
   font-size: 17px;
-}
-
-@media (max-width: 520px) {
-  .chat-auto-inline {
-    flex: 0 0 24px;
-    justify-content: center;
-    min-width: 24px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .chat-auto-inline-text,
-  .chat-auto-inline-toggle {
-    display: none;
-  }
 }
 
 /* --- 追加コンテキスト --- */
