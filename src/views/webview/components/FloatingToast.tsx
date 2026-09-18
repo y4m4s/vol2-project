@@ -51,6 +51,7 @@ export function FloatingToast({
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
   const dismissedSignatureRef = useRef<string | undefined>(undefined);
+  const dismissTimerRef = useRef<number | undefined>(undefined);
 
   const signature = useMemo(
     () => [kind, icon ?? providerIconId ?? "", title ?? "", message, progress ?? "", actionLabel ?? "", persist ? "persist" : "auto"].join("\n"),
@@ -60,6 +61,11 @@ export function FloatingToast({
   useEffect(() => {
     let fadeTimer: number | undefined;
     let hideTimer: number | undefined;
+
+    if (dismissTimerRef.current !== undefined) {
+      window.clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = undefined;
+    }
 
     if (!open || !message) {
       dismissedSignatureRef.current = undefined;
@@ -97,6 +103,14 @@ export function FloatingToast({
     };
   }, [durationMs, message, open, persist, signature]);
 
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current !== undefined) {
+        window.clearTimeout(dismissTimerRef.current);
+      }
+    };
+  }, []);
+
   if (phase === "hidden") {
     return null;
   }
@@ -106,9 +120,15 @@ export function FloatingToast({
   const layoutClass = title ? "" : " single-line";
 
   const handleDismiss = () => {
+    if (dismissTimerRef.current !== undefined) {
+      window.clearTimeout(dismissTimerRef.current);
+    }
     dismissedSignatureRef.current = signature;
     setPhase("leaving");
-    window.setTimeout(() => setPhase("hidden"), FADE_DURATION_MS);
+    dismissTimerRef.current = window.setTimeout(() => {
+      dismissTimerRef.current = undefined;
+      setPhase("hidden");
+    }, FADE_DURATION_MS);
     onDismiss?.();
   };
 

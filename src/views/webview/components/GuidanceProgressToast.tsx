@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { guidanceProgressState } from "../../../shared/uiActivity";
 import { useApp } from "../state/AppContext";
 import { FloatingToast } from "./FloatingToast";
@@ -22,10 +22,12 @@ export function GuidanceProgressToast({ placement = "floating" }: {
   const completed = Boolean(viewModel.guidanceCompleted) && revision > initialCompletion.current;
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const lastBusyRef = useRef(busy);
-  if (busy !== lastBusyRef.current) {
-    lastBusyRef.current = busy;
-    if (busy && completionDismissed) setCompletionDismissed(false);
-  }
+  useEffect(() => {
+    if (busy !== lastBusyRef.current) {
+      lastBusyRef.current = busy;
+      if (busy) setCompletionDismissed(false);
+    }
+  }, [busy]);
   const statusSignature = status ? `${status.kind}\n${status.text}\n${status.action ?? ""}` : undefined;
   const dismissedStatusRef = useRef<string | undefined>(undefined);
   const [, forceRender] = useState(0);
