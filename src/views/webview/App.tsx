@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useApp } from "./state/AppContext";
 import { S01Connection } from "../screens/s01-connection";
 import { S02Main } from "../screens/s02-main";
@@ -16,7 +17,7 @@ const KNOWLEDGE_SAVE_PENDING_TEXT = "接続中の AI でアドバイスをナレ
 const KNOWLEDGE_SAVE_DONE_TEXT = "アドバイスを整理してナレッジとして保存しました。";
 
 export function App() {
-  const { viewModel, operationError, operationErrorRevision } = useApp();
+  const { viewModel, operationError, operationErrorRevision, dismissOperationError } = useApp();
 
   if (!viewModel) {
     return <div style={{ padding: 16, opacity: 0.5 }}>読み込み中...</div>;
@@ -30,7 +31,13 @@ export function App() {
       <StatusMessageToast />
       <KnowledgeSaveToast />
       <GuidanceProgressToast />
-      <FloatingToast key={operationErrorRevision} open={Boolean(operationError)} kind="error" message={operationError ?? ""} />
+      <FloatingToast
+        key={operationErrorRevision}
+        open={Boolean(operationError)}
+        kind="error"
+        message={operationError ?? ""}
+        onDismiss={dismissOperationError}
+      />
     </>
   );
 }
@@ -76,6 +83,11 @@ function KnowledgeSaveToast() {
     viewModel?.statusMessage?.kind === "info" &&
     viewModel.statusMessage.text === KNOWLEDGE_SAVE_DONE_TEXT;
 
+  const dismissedRef = useRef<string | undefined>(undefined);
+  const [, forceRender] = useState(0);
+  const signature = isSaving ? "saving" : saveCompleted ? "done" : undefined;
+  const open = Boolean(signature) && dismissedRef.current !== signature;
+
   const title = isSaving
     ? "ナレッジに整理しています"
     : "ナレッジとして保存しました";
@@ -85,13 +97,17 @@ function KnowledgeSaveToast() {
 
   return (
     <FloatingToast
-      open={Boolean(isSaving || saveCompleted)}
+      open={open}
       kind="success"
       icon={isSaving ? "auto_awesome" : "check_circle"}
       title={title}
       message={description}
       persist={isSaving}
       progress={isSaving ? "running" : "done"}
+      onDismiss={isSaving ? undefined : () => {
+        dismissedRef.current = signature;
+        forceRender((n) => n + 1);
+      }}
     />
   );
 }
@@ -110,9 +126,14 @@ function StatusMessageToast() {
     statusMessage.text === KNOWLEDGE_SAVE_PENDING_TEXT ||
     statusMessage.text === KNOWLEDGE_SAVE_DONE_TEXT;
 
+  const signature = statusMessage ? `${statusMessage.kind}\n${statusMessage.text}\n${statusMessage.action ?? ""}` : undefined;
+  const dismissedRef = useRef<string | undefined>(undefined);
+  const [, forceRender] = useState(0);
+  const open = !shouldSuppress && dismissedRef.current !== signature;
+
   return (
     <FloatingToast
-      open={!shouldSuppress}
+      open={open}
       kind={statusMessage?.kind}
       providerIconId={isCheckingRoutingConnection ? viewModel.routingProviderConnection?.providerId : undefined}
       message={statusMessage?.text ?? ""}
@@ -120,6 +141,10 @@ function StatusMessageToast() {
       onAction={statusMessage?.action === "openConnectionSettings" ? () => send({ type: "navigate", screen: "settings" }) : undefined}
       persist={isCheckingRoutingConnection}
       durationMs={statusMessage?.kind === "error" || statusMessage?.action ? 10_000 : undefined}
+      onDismiss={isCheckingRoutingConnection ? undefined : () => {
+        dismissedRef.current = signature;
+        forceRender((n) => n + 1);
+      }}
     />
   );
 }

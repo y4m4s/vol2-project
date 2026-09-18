@@ -13,6 +13,7 @@ interface AppContextValue {
   setAdditionalContextDraft: (value: string) => void;
   operationError?: string;
   operationErrorRevision: number;
+  dismissOperationError: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -36,9 +37,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const currentScreen = state.viewModel?.screen ?? null;
+  const dismissOperationError = () => dispatch({ type: "CLEAR_OPERATION_ERROR" });
 
   return (
-    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage, additionalContextDraft, setAdditionalContextDraft, operationError: state.operationError, operationErrorRevision: state.operationErrorRevision }}>
+    <AppContext.Provider value={{ viewModel: state.viewModel, currentScreen, send: postMessage, additionalContextDraft, setAdditionalContextDraft, operationError: state.operationError, operationErrorRevision: state.operationErrorRevision, dismissOperationError }}>
       {children}
     </AppContext.Provider>
   );
