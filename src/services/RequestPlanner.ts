@@ -47,6 +47,9 @@ export class RequestPlanner {
     const fileExcluded = context.activeFilePath ? this.isPathExcluded(context.activeFilePath, excludedGlobs) : false;
     const referencedFiles = (context.referencedFiles ?? []).filter((file) => !this.isPathExcluded(file.path, excludedGlobs));
     const effectiveDepth = guidanceContentDepth(settings.providerId, assistanceDepth);
+    // ファイル参照・ワークスペースツリーの送信可否はユーザーが選んだ低/高にそのまま従う。
+    // Ollamaでも「低」なら送らない（guidanceContentDepthはOllamaを常にhigh扱いするため、ここでは使わない）。
+    const referencedFilesDepth = assistanceDepth ?? "low";
     const observation = kind === "always" && !fileExcluded && context.activeFilePath
       ? automaticObservation : undefined;
     const filteredContext: GuidanceContext = {
@@ -54,8 +57,8 @@ export class RequestPlanner {
       activeFileLanguage: context.activeFileLanguage,
       activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,
       selectedText: !fileExcluded ? context.selectedText : undefined,
-      workspaceTree: effectiveDepth === "high" ? context.workspaceTree : undefined,
-      referencedFiles: effectiveDepth === "high" ? referencedFiles : [],
+      workspaceTree: referencedFilesDepth === "high" ? context.workspaceTree : undefined,
+      referencedFiles: referencedFilesDepth === "high" ? referencedFiles : [],
       diagnosticsSummary: !fileExcluded ? context.diagnosticsSummary : [],
       recentEditsSummary: !fileExcluded ? context.recentEditsSummary : [],
       relatedSymbols: !fileExcluded ? context.relatedSymbols : [],
