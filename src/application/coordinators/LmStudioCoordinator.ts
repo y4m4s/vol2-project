@@ -117,6 +117,45 @@ export class LmStudioCoordinator {
     }
   }
 
+  /**
+   * NaviCom の外で LM Studio を起動・停止されても通知は届かないので、表示を実機の状態に
+   * 追従させるための読み直し。refreshServerStatus と違い、statusMessage の上書きも
+   * 停止時の自動フォールバックも行わないため、保存操作の途中に差し込んでも副作用がない。
+   */
+  public async syncServerStatus(): Promise<void> {
+    if (this.pendingOperation) {
+      await this.pendingOperation;
+      return;
+    }
+    if (!vscode.workspace.isTrusted) return;
+
+    this.updateServer({
+      state: "checking",
+      port: this.server.port,
+      canStart: false,
+      canStop: false,
+      message: "LM Studio サーバーの状態を確認しています…"
+    });
+
+    try {
+      const baseUrl = this.settingsService.getSettings().lmStudioBaseUrl;
+      const status = await this.serverService.getStatus(baseUrl);
+      if (isLmStudioApiReady(status)) {
+        await this.connectionService.refreshAvailableLmStudioModels(baseUrl);
+      } else {
+        this.connectionService.clearLmStudioModelOptions();
+      }
+      this.updateServer(status);
+    } catch (error) {
+      this.updateServer({
+        state: "error",
+        canStart: false,
+        canStop: false,
+        message: toErrorMessage(error, "LM Studio サーバーの状態を取得できませんでした。")
+      });
+    }
+  }
+
   public async startServer(): Promise<void> {
     if (this.pendingOperation) {
       await this.pendingOperation;

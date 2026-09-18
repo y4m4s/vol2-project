@@ -625,10 +625,25 @@ export class NavigatorController implements vscode.Disposable {
 
   public async saveSettings(input: SettingsInput): Promise<void> {
     const previousRevision = this.connectionSettingsCoordinator.revision;
+    // 設定画面を開いたあとに LM Studio 側でサーバーを起動されても通知は来ないため、
+    // 保存操作を「状態を読み直す」合図として扱い、接続処理の前に表示を実機へ合わせる。
+    await this.syncLmStudioServerForSettingsSave(input);
     await this.connectionSettingsCoordinator.save(input);
     if (this.connectionSettingsCoordinator.revision !== previousRevision) {
       await this.synchronizeRoutingProviders();
     }
+  }
+
+  private async syncLmStudioServerForSettingsSave(input: SettingsInput): Promise<void> {
+    if (this.sessionStore.getState().requestState !== "idle") return;
+
+    const routing = normalizeRoutingSettings(input.routing ?? this.settingsService.getSettings().routing);
+    const usesLmStudio = routing.mode === "automatic"
+      ? routingConnectionProviderIds(routing).includes("lmStudio")
+      : input.providerId === "lmStudio";
+    if (!usesLmStudio) return;
+
+    await this.lmStudioCoordinator.syncServerStatus();
   }
 
   private async synchronizeRoutingProviders(): Promise<void> {
