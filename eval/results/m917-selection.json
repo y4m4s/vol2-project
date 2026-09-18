@@ -1,0 +1,24 @@
+{
+  "suite": "algorithms-v2",
+  "split": "tuning",
+  "ids": [
+    "alg-sum-correct-py",
+    "alg-sum-correct-js",
+    "alg-sum-bug-py",
+    "alg-sum-bug-js",
+    "alg-lower-bound-py",
+    "alg-lower-bound-js",
+    "alg-pair-bug-py",
+    "alg-pair-bug-js",
+    "alg-unknown-transform-py",
+    "alg-unknown-transform-js",
+    "alg-stairs-bug-py",
+    "alg-stairs-bug-js",
+    "alg-sort-correct-py",
+    "alg-sort-correct-js",
+    "alg-sort-bug-py",
+    "alg-sort-bug-js"
+  ],
+  "repeats": 1,
+  "purpose": "Exploratory replacement-model screen; previously observed cases; no unseen holdout claim."
+}

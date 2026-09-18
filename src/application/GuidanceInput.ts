@@ -122,23 +122,40 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
   return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
 }
 
-export function createAutomaticFingerprint(context: GuidanceContext, assistanceDepth: AssistanceDepth = "low", observation?: AutomaticGuidanceObservation): string {
+/**
+ * 自動助言の重複判定キー。
+ *
+ * 「同じ状況にもう一度助言しない」ための鍵なので、コードや診断など入力そのものの
+ * 変化だけを見て、カーソル位置・表示範囲といった「どこを見ているか」は含めない。
+ * 見ている場所が変わっただけで新しい助言を出す理由にはならず、含めると回答を読む
+ * ための操作だけで自動助言が繰り返される。
+ */
+export function createAutomaticFingerprint(
+  context: GuidanceContext,
+  assistanceDepth: AssistanceDepth = "low",
+  observation?: AutomaticGuidanceObservation,
+  documentSnapshot?: string
+): string {
   return JSON.stringify({
     observation: observation ? {
-      triggerReasons: [...observation.triggerReasons].sort(),
-      cursor: observation.cursor,
-      cursorExcerpt: observation.cursorExcerpt,
-      selectionPresent: observation.selectionPresent,
-      lastEdit: observation.lastEdit
-      // Exclude time, previousFocus and changing diagnostic deltas. Current diagnostics are below.
+      selectionPresent: observation.selectionPresent
+      // Event reasons are not input changes: repeated diagnostics/editor events
+      // can describe exactly the same context. Also exclude time and previousFocus.
+      // カーソル位置・周辺抜粋・lastEdit も除外する。lastEdit は 5 分の TTL で
+      // 勝手に消えるので、含めると何も操作していなくても時間経過だけで鍵が変わる。
     } : undefined,
     assistanceDepth,
     file: context.activeFilePath,
-    excerpt: context.activeFileExcerpt,
+    // activeFileExcerpt は表示範囲から作るため（ローカル推論以外）スクロールだけで変わる。
+    // 同じファイルの同じ版数なら、どこを表示していても状況は同じとみなす。版数を取れない
+    // ときだけ抜粋で代用する。
+    source: documentSnapshot ?? context.activeFileExcerpt,
     selection: context.selectedText,
     diagnostics: context.diagnosticsSummary.map((item) => `${item.severity}:${item.line}:${item.message}`),
-    recentEdits: context.recentEditsSummary,
-    relatedSymbols: context.relatedSymbols,
+    // recentEditsSummary も 5 分の TTL で古い記録が落ちていくため除外する。コードが
+    // 変わったかどうかは上の版数で分かるので、判定力は落ちない。
+    // relatedSymbols はカーソル位置の単語とその行から作られる。別の行をクリックしただけで
+    // 変わるので、これも使わない（どちらも AI への入力としてはそのまま送る）。
     workspaceTree: context.workspaceTree?.treeText,
     referencedFiles: context.referencedFiles.map((file) => ({
       path: file.path,

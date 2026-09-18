@@ -1,0 +1,137 @@
+{
+  "baseline": "eval/results/m917-lm-baseline",
+  "candidate": "eval/results/m917-lm-candidate",
+  "split": "tuning",
+  "seed": "5eec92fcae1ad60d10f38eeff13eef1f",
+  "packetHash": "5a783279cf8e593d32d7f3e0421b873c6292b691707adde644758f17b2b4310d",
+  "pairs": [
+    {
+      "pairId": "a27d791782bb18da",
+      "caseId": "alg-unknown-transform-py",
+      "problemId": "unknown-contract",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "822fc46dada9ee353c165255d2ccbb1765166e4def58dd09c179c6a388c0e541"
+    },
+    {
+      "pairId": "74596d71cd79ddb8",
+      "caseId": "alg-sum-correct-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "616dd34481ae1c415c3a9b4c71a125f4f7ca39c7e126d34705a35396a2544206"
+    },
+    {
+      "pairId": "69f9152aff66b232",
+      "caseId": "alg-stairs-bug-js",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "8bd14b14693efda4df1b172d119501043fb2e8e956c2c3fc7f10421c2a715aff"
+    },
+    {
+      "pairId": "092f0875795cb201",
+      "caseId": "alg-pair-bug-js",
+      "problemId": "pair-existence",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "114bfd5c7578859819301b12c8bd3132b0822b2087942f754e5c6826ac5c78e2"
+    },
+    {
+      "pairId": "d42325640b95c372",
+      "caseId": "alg-sum-correct-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "56bfc2d95995f33208b21849b23ab1c7806c961604dd6e2804639677ac8d55be"
+    },
+    {
+      "pairId": "29bba5a114694eda",
+      "caseId": "alg-lower-bound-js",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "dd0c68dbf09a4e5f8c72e2c89e63e5f07efa0d250beb6a77f71a1664e3c4d8c6"
+    },
+    {
+      "pairId": "11d01801890247b3",
+      "caseId": "alg-pair-bug-py",
+      "problemId": "pair-existence",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "62f9c9723aa64ea2be904915db24384bda33835e0c436687f6459d2b3b589e46"
+    },
+    {
+      "pairId": "70c97e68aea02280",
+      "caseId": "alg-sum-bug-js",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "b7c80de7ce42d126358337f0d39dddabb3f48022cddccd7bb1f19505956aa805"
+    },
+    {
+      "pairId": "77f55d040091acc8",
+      "caseId": "alg-lower-bound-py",
+      "problemId": "lower-bound",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "86eeca3cb64f7e6540137172afad5792b40b8706be7bcacd49d653680195b3db"
+    },
+    {
+      "pairId": "7dbb5ef2f8e0550a",
+      "caseId": "alg-sort-correct-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "7bc04f3cf5f9e4f8458ae7df29466bd6ccd6d1354fcaf9f459795cf1d71246c7"
+    },
+    {
+      "pairId": "d982937363c7c252",
+      "caseId": "alg-unknown-transform-js",
+      "problemId": "unknown-contract",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "7066670d87d96d8c498cc06ba85ff8044b0b391ead2b12603e79c11014cc2bc8"
+    },
+    {
+      "pairId": "4983242906eed681",
+      "caseId": "alg-sort-correct-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "4b92029d51e9f7614b0e4e33e66e4b14293e87ddb93b87397da19dbd25838793"
+    },
+    {
+      "pairId": "9f7be6a9b386a040",
+      "caseId": "alg-stairs-bug-py",
+      "problemId": "stair-count",
+      "repeat": 0,
+      "candidateSide": "A",
+      "pairHash": "6a53027ce1ced90b749c578dbaacea6facd51bbb846395c583ad9083262c0ee5"
+    },
+    {
+      "pairId": "bdad90d0c8442545",
+      "caseId": "alg-sum-bug-py",
+      "problemId": "sum",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "e7f3fd5a81e60061a065f74ba662031583dc829ce1429a8dfac9593690722bb7"
+    },
+    {
+      "pairId": "5772d0565b1d227f",
+      "caseId": "alg-sort-bug-js",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "5685642fce8bbb3638870c94966e18ac9f1390f6f494ca5dd6e2bdc6f67dc816"
+    },
+    {
+      "pairId": "f91fc3ec1b532fe2",
+      "caseId": "alg-sort-bug-py",
+      "problemId": "numeric-sort",
+      "repeat": 0,
+      "candidateSide": "B",
+      "pairHash": "539cfff3788e8a7b3ba6e3c12f9586fe781460abbaa15838934b6fdf8b157686"
+    }
+  ]
+}

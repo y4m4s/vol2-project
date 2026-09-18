@@ -1,0 +1,120 @@
+[
+  {
+    "id": "alg-lower-bound-py",
+    "problemId": "lower-bound",
+    "category": "algorithm_explanation",
+    "variant": "correct",
+    "oracle": "lower-bound",
+    "problem": {
+      "task": "昇順配列aについて、target以上の最初の要素の添字をsolve(a,target)で返す。該当要素がなければNを返す。",
+      "constraints": "0 <= N <= 100000、aは昇順、重複を許す。添字は0始まり。",
+      "examples": "solve([1, 2, 2, 4], 2) -> 1; solve([1, 3], 5) -> 2"
+    },
+    "question": "solve([1, 2, 2, 4], 2)の戻り値を「結果: 数字」の形で示し、重複がある場合の探索範囲の変化を短く説明して。",
+    "scalarAnswer": 1,
+    "expected": "Result 1. Right moves toward the first qualifying position, not an arbitrary occurrence; duplicate 2 at index2 is not the answer.",
+    "language": "python",
+    "code": "def solve(a, target):\n    left, right = 0, len(a)\n    while left < right:\n        middle = (left + right) // 2\n        if a[middle] < target:\n            left = middle + 1\n        else:\n            right = middle\n    return left\n",
+    "fixturePath": "eval/fixtures/algorithms/lower-bound.py",
+    "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "3.12.10",
+      "fixtureHash": "fd2f869f84ac53a64ed70372c4a88e511edcee9b4cc4c392a4d425e781b76fdc",
+      "scope": "all sorted arrays length0..4 over -1..2; targets -2..3",
+      "testCount": 420,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "daa43d90c972d51e5f3f76b26f74c5560eeb66bfc75c7ced4e4d4dc29b1902c7",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "manual",
+      "assistanceDepth": "low",
+      "userPrompt": "solve([1, 2, 2, 4], 2)の戻り値を「結果: 数字」の形で示し、重複がある場合の探索範囲の変化を短く説明して。",
+      "context": {
+        "activeFilePath": "main.py",
+        "activeFileLanguage": "python",
+        "activeFileExcerpt": "def solve(a, target):\n    left, right = 0, len(a)\n    while left < right:\n        middle = (left + right) // 2\n        if a[middle] < target:\n            left = middle + 1\n        else:\n            right = middle\n    return left\n",
+        "additionalContext": "昇順配列aについて、target以上の最初の要素の添字をsolve(a,target)で返す。該当要素がなければNを返す。\n0 <= N <= 100000、aは昇順、重複を許す。添字は0始まり。\nsolve([1, 2, 2, 4], 2) -> 1; solve([1, 3], 5) -> 2",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      }
+    }
+  },
+  {
+    "id": "alg-sort-correct-js",
+    "problemId": "numeric-sort",
+    "category": "automatic_correct",
+    "variant": "correct",
+    "kind": "always",
+    "expectedFocus": [
+      "none"
+    ],
+    "oracle": "sort",
+    "problem": {
+      "task": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。",
+      "constraints": "0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。",
+      "examples": "solve([10, 2, 1]) -> [1, 2, 10]"
+    },
+    "expected": "Correct numeric ascending non-mutating sort; duplicates retained. No needless fixes.",
+    "language": "javascript",
+    "code": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n",
+    "fixturePath": "eval/fixtures/algorithms/sort-correct.js",
+    "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+    "oracleEvidence": {
+      "status": "verified",
+      "runtime": "v24.15.0",
+      "fixtureHash": "58cccabe329a5855ab31ef14ee54360ff25736ae36d293ef677206f88259ebb2",
+      "scope": "all arrays length0..4 over0,1,2,10,11; also checks input immutability",
+      "testCount": 781,
+      "mismatches": 0,
+      "correctOnTestDomain": true,
+      "counterexamples": [],
+      "transcriptHash": "364d4b3d8cc7385b9ecf1595331e9dd86a7ff371302f85898c0353a188a9f6f5",
+      "limitation": "Finite-domain execution evidence, not proof for full constraints. Never sent to candidate model."
+    },
+    "input": {
+      "kind": "always",
+      "assistanceDepth": "low",
+      "context": {
+        "activeFilePath": "main.js",
+        "activeFileLanguage": "javascript",
+        "activeFileExcerpt": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n",
+        "additionalContext": "整数配列aを数値の昇順に並べた新しい配列をsolve(a)で返す。元の配列は変更しない。\n0 <= N <= 100000、各要素は0以上1000以下。重複を保持する。\nsolve([10, 2, 1]) -> [1, 2, 10]",
+        "diagnosticsSummary": [],
+        "recentEditsSummary": [],
+        "relatedSymbols": [],
+        "referencedFiles": []
+      },
+      "automaticObservation": {
+        "triggerReasons": [
+          "text_edit"
+        ],
+        "idleDurationMs": 12000,
+        "cursor": {
+          "line": 3,
+          "column": 1
+        },
+        "cursorExcerpt": "function solve(a) {\n  return [...a].sort((x, y) => x - y);\n}\n<<<NAVICOM_CURSOR>>>",
+        "selectionPresent": false,
+        "lastEdit": {
+          "lineStart": 1,
+          "lineEnd": 3,
+          "cursorDistanceLines": 0,
+          "changedLineCount": 1,
+          "insertedCharCount": 1,
+          "deletedCharCount": 0
+        },
+        "diagnostics": {
+          "added": [],
+          "resolvedCount": 0,
+          "remainingCount": 0
+        }
+      }
+    }
+  }
+]

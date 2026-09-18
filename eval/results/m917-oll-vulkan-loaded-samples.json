@@ -1,0 +1,60 @@
+[
+  {
+    "at": "2026-09-16T22:55:23.361298+00:00",
+    "loaded": {
+      "models": [
+        {
+          "name": "qwen3:14b",
+          "model": "qwen3:14b",
+          "size": 10447476489,
+          "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-09-17T08:00:23.3594567+09:00",
+          "size_vram": 10447476489,
+          "context_length": 8192
+        }
+      ]
+    }
+  },
+  {
+    "at": "2026-09-16T22:57:00.789498+00:00",
+    "loaded": {
+      "models": []
+    }
+  },
+  {
+    "at": "2026-09-16T22:58:14.875891+00:00",
+    "loaded": {
+      "models": [
+        {
+          "name": "qwen3.5:9b",
+          "model": "qwen3.5:9b",
+          "size": 5745944820,
+          "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.7B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-09-17T08:03:14.8071122+09:00",
+          "size_vram": 5745944820,
+          "context_length": 8192
+        }
+      ]
+    }
+  }
+]

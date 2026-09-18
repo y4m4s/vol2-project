@@ -21,6 +21,8 @@ type MarkdownBlock =
   | { type: "bullet" | "ordered"; items: string[] }
   | { type: "code"; text: string; lang?: string };
 
+type ThinkingPhase = "preparing" | "generating";
+
 const AUTO_SCROLL_THRESHOLD_PX = 80;
 
 export function S04Conversation() {
@@ -58,7 +60,12 @@ export function S04Conversation() {
     savedKnowledgeSourceIds
   } = viewModel;
 
-  const isThinking = requestState === "requesting_guidance";
+  // 進行表示はこの会話領域だけが担う（フロート側は guidanceProgressState が抑止する）。
+  const thinkingPhase: ThinkingPhase | undefined = requestState === "preparing_guidance"
+    ? "preparing"
+    : requestState === "requesting_guidance"
+      ? "generating"
+      : undefined;
 
   const activeStream = conversationStreams.find((stream) => stream.id === activeConversationStreamId);
 
@@ -98,7 +105,7 @@ export function S04Conversation() {
           />
         ))}
 
-        {isThinking && <ThinkingIndicator />}
+        {thinkingPhase && <ThinkingIndicator phase={thinkingPhase} />}
 
         <div ref={chatBottomRef} />
       </div>
@@ -588,9 +595,15 @@ function ResponseActions(
 }
 
 
-function ThinkingIndicator() {
+const THINKING_PHASE_TEXT: Record<ThinkingPhase, { label: string; ariaLabel: string }> = {
+  preparing: { label: "送信準備中", ariaLabel: "NaviComが送信の準備をしています" },
+  generating: { label: "回答を生成しています", ariaLabel: "NaviComが回答を生成しています" }
+};
+
+function ThinkingIndicator({ phase }: { phase: ThinkingPhase }) {
+  const { label, ariaLabel } = THINKING_PHASE_TEXT[phase];
   return (
-    <div className="s04-bubble-wrap assistant" role="status" aria-live="polite" aria-label="NaviComが回答を生成しています">
+    <div className="s04-bubble-wrap assistant" role="status" aria-live="polite" aria-label={ariaLabel}>
       <div className="s04-bubble-meta">
         <img src={window.__ICON_URI__} alt="NaviCom" className="s04-bubble-icon s04-bubble-logo" />
         <span className="s04-bubble-role">NaviCom</span>
@@ -602,7 +615,7 @@ function ThinkingIndicator() {
             <span className="s04-thinking-dot" />
             <span className="s04-thinking-dot" />
           </span>
-          <span>回答を生成しています</span>
+          <span>{label}</span>
         </div>
       </div>
     </div>

@@ -161,8 +161,8 @@ export class ConversationCoordinator {
     return this.ensureActiveStream();
   }
 
-  public async ensureStreamForAutomaticResult(state: NavigatorSessionState): Promise<NavigatorSessionState> {
-    return state.screen === "main" ? this.createNewActiveStream() : this.ensureActiveStream();
+  public async ensureStreamForAutomaticResult(state: NavigatorSessionState, startsNewConversation = state.screen === "main"): Promise<NavigatorSessionState> {
+    return startsNewConversation ? this.createNewActiveStream() : this.ensureActiveStream();
   }
 
   public async persist(): Promise<void> {

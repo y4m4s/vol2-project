@@ -4,6 +4,18 @@ import { loadCases,prepare,readJson,validateConfig,createClient,hardChecks,headT
 import { validateJudgments,bootstrapCases,metrics } from './statistics.mjs';
 import { algorithmHardChecks,problemText } from './algorithms.mjs';
 const lm=readJson('eval/configs/baseline-lmstudio.json'),oll=readJson('eval/configs/baseline-ollama.json');
+test('contract confirmation retains automatic kind and source language without replacing existing holdout',()=>{
+  const cases=loadCases('holdout',undefined,'local-contract');
+  assert.equal(cases.length,8);
+  assert.equal(new Set(cases.map(c=>c.id)).size,8);
+  assert.ok(cases.every(c=>c.input.kind==='always'));
+  assert.equal(cases.find(c=>c.id==='contract-active-count-correct').input.context.activeFileLanguage,'python');
+  assert.equal(cases.find(c=>c.id==='contract-state-bug').input.context.activeFileLanguage,'javascript');
+  assert.ok(cases.every(c=>prepare(c,lm).request.userPrompt.includes(c.code)));
+  assert.throws(()=>loadCases('tuning',undefined,'local-contract'),/holdout-only/);
+  assert.throws(()=>loadCases('holdout','eval/cases/local-contract-holdout.json'),/cannot replace frozen holdout/);
+  assert.ok(loadCases('tuning').every(c=>c.existing || c.input.kind==='manual'));
+});
 test('small-medium suite is frozen separately and collector control changes only editor evidence',()=>{
   const cases=loadCases('tuning',undefined,'small-medium');
   assert.equal(cases.length,10);

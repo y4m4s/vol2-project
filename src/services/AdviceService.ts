@@ -197,7 +197,7 @@ export class AdviceService {
       return {
         ok: false,
         connectionState: this.connectionService.getState(),
-        message: "AI は応答しましたが、出力の安全性・形式契約を2回とも満たせませんでした。詳細は「出力」の NaviCom Diagnostics で確認してください。"
+        message: "AIの回答を表示できませんでした。自動で再試行しましたが、回答を整えられませんでした。質問や参照範囲を絞って、もう一度お試しください。改善しない場合は、設定から使用するモデルを変更してください。"
       };
     }
 

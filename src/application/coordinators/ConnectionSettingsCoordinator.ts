@@ -379,7 +379,7 @@ export class ConnectionSettingsCoordinator {
           case "auth":
             return { kind: "error", text: "LM Studio の認証設定を確認してください。" };
           case "unreachable":
-            return { kind: "error", text: "LM Studio Local Server APIに接続できません。APIの応答状態を確認してください。" };
+            return { kind: "error", text: "LM Studioに接続できません。LM Studioアプリを起動し、モデルをロードしてローカルサーバーを開始してから、もう一度接続してください。" };
           case "timeout":
             return { kind: "error", text: "LM Studio の応答がタイムアウトしました。" };
           case "noLoadedModel":
@@ -548,10 +548,12 @@ export class ConnectionSettingsCoordinator {
       };
     }
 
+    const needsAppStartup = this.host.getState().screen === "onboarding"
+      && this.connectionService.getLastLmStudioIssue() === "unreachable";
     return {
       connectionState: this.connectionService.getState(),
       settings: currentSettings,
-      statusMessage: {
+      statusMessage: needsAppStartup ? lmStudioFailure : {
         kind: lmStudioFailure.kind,
         text: `${lmStudioFailure.text} 自動切り替えは行っていません。接続先を確認してください。`,
         action: "openConnectionSettings"

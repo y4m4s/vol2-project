@@ -893,6 +893,8 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .chat-input-footer-right {
+  container-type: inline-size;
+  container-name: composer-actions;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -944,6 +946,25 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Collapse only when the action row itself runs out of room. */
+@container composer-actions (max-width: 280px) {
+  .chat-auto-inline {
+    flex: 0 0 32px;
+    min-width: 32px;
+    border-radius: 9px;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .chat-auto-inline-text,
+  .chat-auto-inline .chat-auto-inline-toggle {
+    display: none;
+  }
 }
 
 .chat-auto-inline-toggle {
@@ -1155,22 +1176,6 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
   font-size: 17px;
 }
 
-@media (max-width: 520px) {
-  .chat-auto-inline {
-    flex: 0 0 24px;
-    justify-content: center;
-    min-width: 24px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .chat-auto-inline-text,
-  .chat-auto-inline-toggle {
-    display: none;
-  }
-}
-
 /* --- 追加コンテキスト --- */
 .additional-context-toggle {
   display: inline-flex;
@@ -1352,6 +1357,51 @@ ul.bullet-list li {
   align-items: center;
 }
 
+.floating-toast.corner {
+  left: 12px;
+  bottom: 12px;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 8px 12px;
+  transform: none;
+  animation: none;
+  pointer-events: none;
+}
+
+.floating-toast.corner.leaving {
+  transform: translateY(8px);
+}
+
+.floating-toast.corner.actionable { pointer-events: auto; }
+
+.floating-toast-open {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.floating-toast-open:hover { background: var(--vscode-toolbar-hoverBackground); }
+.floating-toast-open:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+.guidance-result-above-completion > .floating-toast {
+  bottom: 64px;
+}
+
+.floating-toast-icon.spinning {
+  animation: connection-activity-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-toast-icon.spinning { animation: none; }
+}
+
 .confirming-delete {
   color: #fff !important;
   background: #dc2626 !important;
@@ -1370,6 +1420,23 @@ ul.bullet-list li {
 .floating-toast.leaving {
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
+}
+
+/* Positioned by chat-input-overlays above the complete, variable-height composer.
+   Keep both the running notice and its exit animation outside the input controls. */
+.floating-toast.anchored {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 100%;
+  box-sizing: border-box;
+  transform: none;
+  animation: none;
+}
+
+.chat-input-overlays > .floating-toast.anchored:not(:first-child) {
+  margin-top: 6px;
 }
 
 .floating-toast-icon {

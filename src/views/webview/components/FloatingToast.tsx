@@ -4,7 +4,7 @@ import { ProviderLogo } from "./ProviderLogo";
 
 type FloatingToastKind = NavigatorStatusMessage["kind"] | "success";
 type FloatingToastPhase = "hidden" | "show" | "leaving";
-type FloatingToastIcon = "auto_awesome" | "check_circle" | "crisis_alert" | "warning";
+type FloatingToastIcon = "auto_awesome" | "check_circle" | "crisis_alert" | "warning" | "progress_activity";
 
 const DEFAULT_ICONS: Record<FloatingToastKind, { icon: FloatingToastIcon }> = {
   error: { icon: "crisis_alert" },
@@ -14,6 +14,8 @@ const DEFAULT_ICONS: Record<FloatingToastKind, { icon: FloatingToastIcon }> = {
 };
 
 interface FloatingToastProps {
+  onActivate?: () => void;
+  placement?: "floating" | "anchored" | "corner";
   open: boolean;
   message: string;
   kind?: FloatingToastKind;
@@ -31,6 +33,7 @@ const DEFAULT_DURATION_MS = 2600;
 const FADE_DURATION_MS = 420;
 
 export function FloatingToast({
+  placement = "floating",
   open,
   message,
   kind = "info",
@@ -41,7 +44,8 @@ export function FloatingToast({
   durationMs = DEFAULT_DURATION_MS,
   progress,
   actionLabel,
-  onAction
+  onAction,
+  onActivate
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
   const dismissedSignatureRef = useRef<string | undefined>(undefined);
@@ -101,13 +105,14 @@ export function FloatingToast({
 
   return (
     <div
-      className={`floating-toast ${kind}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}`}
+      className={`floating-toast ${kind}${placement !== "floating" ? ` ${placement}` : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}${onActivate ? " actionable" : ""}`}
       role={kind === "error" ? "alert" : "status"}
       aria-live={kind === "error" ? "assertive" : "polite"}
     >
+      {onActivate && <button type="button" className="floating-toast-open" aria-label={`${message}：回答を開く`} onClick={onActivate} />}
       {providerIconId
         ? <ProviderLogo providerId={providerIconId} className="floating-toast-provider-logo" />
-        : <span className="material-symbols-outlined floating-toast-icon">{resolvedIcon}</span>}
+        : <span className={`material-symbols-outlined floating-toast-icon${resolvedIcon === "progress_activity" ? " spinning" : ""}`} aria-hidden="true">{resolvedIcon}</span>}
       <div className="floating-toast-body">
         {title && <div className="floating-toast-title">{title}</div>}
         <div className={title ? "floating-toast-desc" : "floating-toast-message"}>{message}</div>

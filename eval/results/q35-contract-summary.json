@@ -1,0 +1,425 @@
+{
+  "controls": {
+    "provider": "lmStudio",
+    "model": "qwen3.5-9b",
+    "baseUrl": "http://127.0.0.1:1234",
+    "transport": "production",
+    "promptVersion": "production",
+    "contextStrategy": "production",
+    "thinking": "none",
+    "sampling": {},
+    "contextLength": null,
+    "maxOutputTokens": 2048,
+    "collectorContext": "bounded-file",
+    "problemLayout": "plain"
+  },
+  "limitation": "One sample/case, sequential runs, previously observed tuning cases, same-agent judge. Unchanged requests are negative controls; their output variation is not a source-change effect.",
+  "changedSourceModules": [
+    "PromptBuilder",
+    "ModelProfile"
+  ],
+  "groups": {
+    "changedRequests": {
+      "n": 10,
+      "baselineMeetsTask": 5,
+      "candidateMeetsTask": 5,
+      "wins": 3,
+      "losses": 3,
+      "ties": 4,
+      "noNewHardFailures": false,
+      "criticalAxesPass": false,
+      "axes": {
+        "correctness": {
+          "baseline": 2.7,
+          "candidate": 2.3,
+          "delta": -0.4
+        },
+        "groundedness": {
+          "baseline": 2.6,
+          "candidate": 2.4,
+          "delta": -0.2
+        },
+        "context_utilization": {
+          "baseline": 2.8,
+          "candidate": 2.4,
+          "delta": -0.4
+        },
+        "hallucination": {
+          "baseline": 2.8,
+          "candidate": 2.7,
+          "delta": -0.1
+        },
+        "instruction_following": {
+          "baseline": 2.4,
+          "candidate": 2.6,
+          "delta": 0.2
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.5,
+          "candidate": 2.4,
+          "delta": -0.1
+        },
+        "actionability": {
+          "baseline": 2.5,
+          "candidate": 2.6,
+          "delta": 0.1
+        },
+        "conciseness": {
+          "baseline": 3.3,
+          "candidate": 3.3,
+          "delta": 0
+        },
+        "japanese_quality": {
+          "baseline": 3.9,
+          "candidate": 3.6,
+          "delta": -0.3
+        }
+      },
+      "baseline": {
+        "n": 10,
+        "hardPassRate": 0.8,
+        "latencyMedianMs": 12797.253100000009,
+        "latencyP95Ms": 26346.449500000017,
+        "inputTokensMean": 1679.6923076923076,
+        "tokensPerSecondMedian": 14.557254343024495,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      },
+      "candidate": {
+        "n": 10,
+        "hardPassRate": 0.8,
+        "latencyMedianMs": 11964.077949999992,
+        "latencyP95Ms": 29952.47960000002,
+        "inputTokensMean": 1779.3846153846155,
+        "tokensPerSecondMedian": 15.455299060036813,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {
+          "invalid_format": 1
+        }
+      }
+    },
+    "identicalRequests": {
+      "n": 6,
+      "baselineMeetsTask": 2,
+      "candidateMeetsTask": 3,
+      "wins": 1,
+      "losses": 1,
+      "ties": 4,
+      "noNewHardFailures": true,
+      "criticalAxesPass": true,
+      "axes": {
+        "correctness": {
+          "baseline": 2.5,
+          "candidate": 2.8333333333333335,
+          "delta": 0.3333333333333333
+        },
+        "groundedness": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2.8333333333333335,
+          "delta": 0.16666666666666666
+        },
+        "context_utilization": {
+          "baseline": 3,
+          "candidate": 3,
+          "delta": 0
+        },
+        "hallucination": {
+          "baseline": 2.8333333333333335,
+          "candidate": 3,
+          "delta": 0.16666666666666666
+        },
+        "instruction_following": {
+          "baseline": 2.5,
+          "candidate": 2.5,
+          "delta": 0
+        },
+        "pedagogical_usefulness": {
+          "baseline": 2.8333333333333335,
+          "candidate": 2.8333333333333335,
+          "delta": 0
+        },
+        "actionability": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2.6666666666666665,
+          "delta": 0
+        },
+        "conciseness": {
+          "baseline": 2.6666666666666665,
+          "candidate": 2.3333333333333335,
+          "delta": -0.3333333333333333
+        },
+        "japanese_quality": {
+          "baseline": 3.8333333333333335,
+          "candidate": 3.8333333333333335,
+          "delta": 0
+        }
+      },
+      "baseline": {
+        "n": 6,
+        "hardPassRate": 0.6666666666666666,
+        "latencyMedianMs": 15839.2042,
+        "latencyP95Ms": 44913.17559999999,
+        "inputTokensMean": 762.25,
+        "tokensPerSecondMedian": 13.641803692593317,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      },
+      "candidate": {
+        "n": 6,
+        "hardPassRate": 0.6666666666666666,
+        "latencyMedianMs": 13271.67585,
+        "latencyP95Ms": 15658.626100000001,
+        "inputTokensMean": 752,
+        "tokensPerSecondMedian": 15.09200275911946,
+        "loadMedianMs": null,
+        "loadMaxMs": null,
+        "pipelineFailures": {}
+      }
+    }
+  },
+  "observations": [
+    {
+      "caseId": "alg-lower-bound-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": false,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0.5,
+      "reason": "双方とも直接質問への数値回答がない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 15108.250000000002,
+      "candidateLatencyMs": 13684.722099999999
+    },
+    {
+      "caseId": "alg-stairs-bug-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Aは具体的な不一致を正しく述べ、Bは存在しない配列参照を診断。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 13760.2828,
+      "candidateLatencyMs": 10672.174399999989
+    },
+    {
+      "caseId": "alg-sum-correct-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "正しい総和への沈黙。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 4485.804299999996,
+      "candidateLatencyMs": 6385.9856
+    },
+    {
+      "caseId": "alg-sort-correct-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": false,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Aは適切な沈黙、Bはsortedの誤認。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 8716.077900000004,
+      "candidateLatencyMs": 12168.6428
+    },
+    {
+      "caseId": "alg-unknown-transform-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "中心回答は双方適切、付随する推測の誘導には弱さ。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 10558.182700000005,
+      "candidateLatencyMs": 11596.470700000005
+    },
+    {
+      "caseId": "alg-lower-bound-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": false,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0.5,
+      "reason": "双方とも数値を回答せず、要求を満たさない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 11637.572800000009,
+      "candidateLatencyMs": 12191.268200000006
+    },
+    {
+      "caseId": "alg-sum-bug-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "どちらも正しい短いヒント。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 22800.456399999995,
+      "candidateLatencyMs": 29952.47960000002
+    },
+    {
+      "caseId": "alg-sort-correct-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": false,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Aは正しいコードに沈黙、Bは誤指摘。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 17572.867299999998,
+      "candidateLatencyMs": 5412.648200000003
+    },
+    {
+      "caseId": "alg-pair-bug-py",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Bの増減の説明は有用。どちらも片方だけ動かすこと自体を原因にしてしまう。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 16570.1584,
+      "candidateLatencyMs": 13708.800200000005
+    },
+    {
+      "caseId": "alg-unknown-transform-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "双方とも実装の未提示を理由に断定を避ける。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 33151.414099999995,
+      "candidateLatencyMs": 12858.6296
+    },
+    {
+      "caseId": "alg-sort-bug-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": false,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Aは配信可能。Bは正しい説明を含むが形式不正で利用者へ届かない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 10641.099499999982,
+      "candidateLatencyMs": 24061.4099
+    },
+    {
+      "caseId": "alg-pair-bug-js",
+      "repeat": 0,
+      "requestChanged": false,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": true,
+      "win": 1,
+      "reason": "Bは単調性と具体例の核心を説明。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 44913.17559999999,
+      "candidateLatencyMs": 15658.626100000001
+    },
+    {
+      "caseId": "alg-sum-correct-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": true,
+      "candidateMeetsTask": true,
+      "win": 0.5,
+      "reason": "正しい総和への沈黙。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 5289.932100000005,
+      "candidateLatencyMs": 11759.513099999982
+    },
+    {
+      "caseId": "alg-sum-bug-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0,
+      "reason": "Aにも漏洩があるが、コード挙動の説明は正しい。双方タスク失敗。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 2,
+      "baselineLatencyMs": 26346.449500000017,
+      "candidateLatencyMs": 25242.6011
+    },
+    {
+      "caseId": "alg-sort-bug-js",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": false,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 0.5,
+      "reason": "Aは誤った変換へ誘導、Bは見逃し。いずれも有効なヒントを届けない。",
+      "baselineAttempts": 2,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 25500.963400000008,
+      "candidateLatencyMs": 11138.122000000003
+    },
+    {
+      "caseId": "alg-stairs-bug-py",
+      "repeat": 0,
+      "requestChanged": true,
+      "baselineHard": true,
+      "candidateHard": true,
+      "baselineMeetsTask": false,
+      "candidateMeetsTask": false,
+      "win": 1,
+      "reason": "Bは実際の戻り値の不一致へ進むが原因は誤診。改善しても成功とは数えない。",
+      "baselineAttempts": 1,
+      "candidateAttempts": 1,
+      "baselineLatencyMs": 11834.223400000017,
+      "candidateLatencyMs": 15417.007200000007
+    }
+  ]
+}

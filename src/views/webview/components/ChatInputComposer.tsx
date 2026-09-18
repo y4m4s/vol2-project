@@ -16,6 +16,7 @@ import {
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 import { getSelectionLabel } from "../utils/labelUtils";
 import { RequestPlanDisclosure } from "./RequestPlanDisclosure";
+import { GuidanceProgressToast } from "./GuidanceProgressToast";
 
 interface ChatInputComposerProps {
   resetKey?: string;
@@ -179,7 +180,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   }
 
   function handleCancel() {
-    resetComposer();
+    setEnterSendConfirmation(undefined);
     send({ type: "cancelGuidanceRequest" });
   }
 
@@ -294,6 +295,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
           onActiveIndexChange={setActiveSlashCommandIndex}
           onRunCommand={handleRunSlashCommand}
         />
+        <GuidanceProgressToast placement="composer" />
       </div>
 
       <div className="chat-input-wrap">

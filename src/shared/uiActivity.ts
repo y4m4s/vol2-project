@@ -38,8 +38,18 @@ export function connectionActivityState(viewModel: ConnectionActivityInput): {
   };
 }
 
+// 相談画面は会話領域そのものに進行状況を描くので、同じ内容をフロートで重ねない。
+const CONVERSATION_SCREENS: readonly NavigatorViewModel["screen"][] = [
+  "conversation",
+  "advice_detail",
+  "feedback_form"
+];
+
 export function guidanceProgressState(requestState: RequestState, screen: NavigatorViewModel["screen"]):
   { title: string; message: string } | undefined {
+  if (CONVERSATION_SCREENS.includes(screen)) {
+    return undefined;
+  }
   if (requestState === "preparing_guidance") {
     return {
       title: "送信準備中",

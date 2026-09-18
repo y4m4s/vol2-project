@@ -1,5 +1,7 @@
 # NaviCom local quality loop
 
+現在の実推論対象は **Qwen3 14B / Qwen3.5 9B**。Qwen3 8Bの設定・結果は履歴用で、新しいテストには使用しない。新モデルとWindows GPUの評価手順: [MODEL_REFRESH_20260917.md](MODEL_REFRESH_20260917.md)。
+
 Thinkingと不要な自動介入の検証: [THINKING_INTERVENTION_RESULTS.md](THINKING_INTERVENTION_RESULTS.md)。160回答を比較し、速度・見逃し・新holdoutの結果から今回の候補は本番未採用。再現手順と事前条件: [FOLLOWUP_THINKING_PLAN.md](FOLLOWUP_THINKING_PLAN.md)。
 
 アルゴリズム問題の新しい評価設計: [ALGORITHMS.md](ALGORITHMS.md)。結果: [ALGORITHM_RESULTS.md](ALGORITHM_RESULTS.md)。PythonとJavaScriptの同一問題を評価し、fixtureの実行結果で参照情報を検証する。
@@ -13,8 +15,8 @@ Thinkingと不要な自動介入の検証: [THINKING_INTERVENTION_RESULTS.md](TH
 ```powershell
 npm run compile:ext
 node --test eval/harness.test.mjs
-node eval/run.mjs --config eval/configs/baseline-lmstudio.json --out eval/results/my-baseline --repeat 3
-node eval/run.mjs --config eval/configs/r1-head-tail.json --out eval/results/my-candidate --repeat 3
+node eval/run.mjs --config eval/configs/m917-lm-q3-14b.json --out eval/results/my-baseline --repeat 3
+node eval/run.mjs --config eval/configs/m917-lm-q35-9b.json --out eval/results/my-candidate --repeat 3
 node eval/compare.mjs --baseline eval/results/my-baseline --candidate eval/results/my-candidate --out eval/results/my-comparison
 ```
 

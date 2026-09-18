@@ -411,6 +411,8 @@ export interface ConversationStreamListItem {
 }
 
 export interface NavigatorStatusMessage {
+  /** Identifies request notifications without matching their displayed text. */
+  scope?: "guidance";
   kind: "info" | "warning" | "error";
   text: string;
   action?: "openConnectionSettings";
@@ -445,6 +447,9 @@ export interface KnowledgeDetailViewData extends KnowledgeListItem {
 }
 
 export interface NavigatorSessionState {
+  guidanceCompletedStreamId?: string;
+  guidanceCompleted?: boolean;
+  guidanceCompletionRevision?: number;
   screen: NavigatorScreen;
   screenHistory: NavigatorScreen[];
   connectionState: ConnectionState;
@@ -468,6 +473,9 @@ export interface NavigatorSessionState {
 }
 
 export interface NavigatorViewModel {
+  guidanceCompletedStreamId?: string;
+  guidanceCompleted?: boolean;
+  guidanceCompletionRevision?: number;
   conversationRoutingPreference?: ConversationRoutingPreference;
   routingLearning?: RoutingLearningViewData;
   testedProviderIds?: AiProviderId[];

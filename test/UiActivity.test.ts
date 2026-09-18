@@ -46,13 +46,20 @@ test("LM Studio の起動停止確認中だけアクティブアイコンが黄�
   assert.equal(copilot.stateLabel, "接続中");
 });
 
-test("送信準備中は相談画面でも進行表示を出し、生成開始まで消さない", () => {
-  assert.deepEqual(guidanceProgressState("preparing_guidance", "conversation"), {
+test("相談ホームでは送信準備から生成完了まで進行表示を出し続ける", () => {
+  assert.deepEqual(guidanceProgressState("preparing_guidance", "main"), {
     title: "送信準備中",
     message: "接続先の選択と会話履歴の整理をしています。処理は継続中です。"
   });
-  assert.equal(guidanceProgressState("preparing_guidance", "main")?.title, "送信準備中");
   assert.equal(guidanceProgressState("requesting_guidance", "main")?.title, "回答を生成しています");
-  assert.equal(guidanceProgressState("requesting_guidance", "conversation"), undefined);
-  assert.equal(guidanceProgressState("idle", "conversation"), undefined);
+  assert.equal(guidanceProgressState("preparing_guidance", "settings")?.title, "送信準備中");
+  assert.equal(guidanceProgressState("idle", "main"), undefined);
+});
+
+test("相談画面は会話領域が進行表示を担うので、フロートには一切出さない", () => {
+  for (const screen of ["conversation", "advice_detail", "feedback_form"] as const) {
+    assert.equal(guidanceProgressState("preparing_guidance", screen), undefined);
+    assert.equal(guidanceProgressState("requesting_guidance", screen), undefined);
+    assert.equal(guidanceProgressState("idle", screen), undefined);
+  }
 });

@@ -4,11 +4,16 @@ import assert from 'node:assert/strict';
 import {readJson,save,validateConfig,loadCases,provenance,hash,probe,createClient,generate,shuffle,randomSeed,newDirectory} from './lib.mjs';
 import {algorithmProvenance} from './algorithms.mjs';
 
-const {values:v}=parseArgs({options:{baseline:{type:'string'},candidate:{type:'string'},out:{type:'string'},ids:{type:'string'},repeat:{type:'string',default:'1'},split:{type:'string',default:'tuning'},'confirm-holdout':{type:'boolean'},resume:{type:'boolean'}}});
+const {values:v}=parseArgs({options:{baseline:{type:'string'},candidate:{type:'string'},out:{type:'string'},ids:{type:'string'},repeat:{type:'string',default:'1'},split:{type:'string',default:'tuning'},'confirm-holdout':{type:'boolean'},'model-comparison':{type:'boolean'},resume:{type:'boolean'}}});
 if(!v.baseline||!v.candidate||!v.out)throw Error('Use --baseline CONFIG --candidate CONFIG --out NEW_PREFIX [--ids ID,ID --repeat 2 --resume]');
 if(v.split==='holdout'&&!v['confirm-holdout'])throw Error('Holdout requires explicit confirmation after selection');
 const configs=[v.baseline,v.candidate].map(p=>validateConfig(readJson(p)));
-if(configs[0].provider!==configs[1].provider||configs[0].model!==configs[1].model)throw Error('Pairing requires same provider and model');
+if(configs[0].provider!==configs[1].provider)throw Error('Pairing requires same provider');
+if(v['model-comparison']) {
+  const controls = configs.map(({id,model,...rest})=>rest);
+  assert.deepEqual(controls[0],controls[1],'Model comparison must preserve request controls');
+  assert.notEqual(configs[0].model,configs[1].model,'Model comparison requires different models');
+} else if(configs[0].model!==configs[1].model)throw Error('Pairing requires same model, or explicit --model-comparison');
 const ids=v.ids?.split(','),all=loadCases(v.split,undefined,'algorithms-v2'),cases=all.filter(c=>!ids||ids.includes(c.id));
 if(!cases.length||ids&&(new Set(ids).size!==ids.length||ids.length!==cases.length))throw Error('Unknown/duplicate case ids');
 const repeats=Number(v.repeat);if(!Number.isInteger(repeats)||repeats<1||repeats>3)throw Error('Use 1..3 paired repeats');
