@@ -341,7 +341,8 @@ export const SCENARIOS: EvalScenario[] = [
     },
     promptChecks: [
       includes("Slash command instruction"),
-      maxApproxTokens(950, "lean prompt stays under ~950 tokens")
+      // Includes the current-vs-historical requirements policy added to all prompts.
+      maxApproxTokens(1100, "lean prompt stays under ~1100 tokens")
     ]
   },
   {
@@ -353,7 +354,8 @@ export const SCENARIOS: EvalScenario[] = [
       modelProfile: deriveModelProfile({
         vendor: "copilot",
         family: "gpt-5-mini",
-        maxInputTokens: 2000
+        // Leave room for mandatory instructions while still forcing excerpt truncation.
+        maxInputTokens: 4000
       }),
       context: baseContext({
         activeFilePath: "src/large.ts",
@@ -365,7 +367,8 @@ export const SCENARIOS: EvalScenario[] = [
       includes("## Context", "uses markdown context section"),
       includes("<!-- navicom-context-start -->", "uses markdown start boundary"),
       excludes("<context>", "does not use xml context tag"),
-      includes("truncated to fit model context budget", "applies model context budget")
+      includes("truncated to fit model context budget", "applies model context budget"),
+      maxApproxTokens(2000, "complete prompt stays within the derived context budget")
     ]
   },
   {
