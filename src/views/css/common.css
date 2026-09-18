@@ -1373,7 +1373,8 @@ ul.bullet-list li {
   transform: translateY(8px);
 }
 
-.floating-toast.corner.actionable { pointer-events: auto; }
+.floating-toast.corner.actionable,
+.floating-toast.corner.dismissible { pointer-events: auto; }
 
 .floating-toast-open {
   position: absolute;
@@ -1389,6 +1390,33 @@ ul.bullet-list li {
 
 .floating-toast-open:hover { background: var(--vscode-toolbar-hoverBackground); }
 .floating-toast-open:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+.floating-toast.dismissible { padding-right: 30px; }
+
+button.floating-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  cursor: pointer;
+}
+
+button.floating-toast-close:hover { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
+button.floating-toast-close:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.floating-toast-close span { font-size: 14px; line-height: 1; }
 
 .guidance-result-above-completion > .floating-toast {
   bottom: 64px;

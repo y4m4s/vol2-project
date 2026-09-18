@@ -27,6 +27,7 @@ interface FloatingToastProps {
   progress?: "running" | "done";
   actionLabel?: string;
   onAction?: () => void;
+  onDismiss?: () => void;
 }
 
 const DEFAULT_DURATION_MS = 2600;
@@ -45,10 +46,12 @@ export function FloatingToast({
   progress,
   actionLabel,
   onAction,
-  onActivate
+  onActivate,
+  onDismiss
 }: FloatingToastProps) {
   const [phase, setPhase] = useState<FloatingToastPhase>("hidden");
   const dismissedSignatureRef = useRef<string | undefined>(undefined);
+  const dismissTimerRef = useRef<number | undefined>(undefined);
 
   const signature = useMemo(
     () => [kind, icon ?? providerIconId ?? "", title ?? "", message, progress ?? "", actionLabel ?? "", persist ? "persist" : "auto"].join("\n"),
@@ -58,6 +61,11 @@ export function FloatingToast({
   useEffect(() => {
     let fadeTimer: number | undefined;
     let hideTimer: number | undefined;
+
+    if (dismissTimerRef.current !== undefined) {
+      window.clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = undefined;
+    }
 
     if (!open || !message) {
       dismissedSignatureRef.current = undefined;
@@ -95,6 +103,14 @@ export function FloatingToast({
     };
   }, [durationMs, message, open, persist, signature]);
 
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current !== undefined) {
+        window.clearTimeout(dismissTimerRef.current);
+      }
+    };
+  }, []);
+
   if (phase === "hidden") {
     return null;
   }
@@ -103,9 +119,22 @@ export function FloatingToast({
   const progressClass = progress ? ` progress-${progress}` : "";
   const layoutClass = title ? "" : " single-line";
 
+  const handleDismiss = () => {
+    if (dismissTimerRef.current !== undefined) {
+      window.clearTimeout(dismissTimerRef.current);
+    }
+    dismissedSignatureRef.current = signature;
+    setPhase("leaving");
+    dismissTimerRef.current = window.setTimeout(() => {
+      dismissTimerRef.current = undefined;
+      setPhase("hidden");
+    }, FADE_DURATION_MS);
+    onDismiss?.();
+  };
+
   return (
     <div
-      className={`floating-toast ${kind}${placement !== "floating" ? ` ${placement}` : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}${onActivate ? " actionable" : ""}`}
+      className={`floating-toast ${kind}${placement !== "floating" ? ` ${placement}` : ""}${progressClass}${layoutClass}${phase === "leaving" ? " leaving" : ""}${onActivate ? " actionable" : ""}${onDismiss ? " dismissible" : ""}`}
       role={kind === "error" ? "alert" : "status"}
       aria-live={kind === "error" ? "assertive" : "polite"}
     >
@@ -123,6 +152,11 @@ export function FloatingToast({
           </div>
         )}
       </div>
+      {onDismiss && (
+        <button type="button" className="floating-toast-close" aria-label="通知を閉じる" onClick={handleDismiss}>
+          <span aria-hidden="true">×</span>
+        </button>
+      )}
     </div>
   );
 }
