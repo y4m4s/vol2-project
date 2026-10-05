@@ -157,7 +157,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.3.0",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.71.0"
   },
   "dependencies": {
     "sql.js": "^1.14.2"
