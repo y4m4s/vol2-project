@@ -11,6 +11,7 @@
     "url": "https://github.com/y4m4s/vol2-project.git"
   },
   "engines": {
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1",
     "vscode": "^1.99.0"
   },
   "categories": [
