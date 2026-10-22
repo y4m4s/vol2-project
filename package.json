@@ -154,10 +154,10 @@
     "esbuild": "^0.28.0",
     "eslint": "^10.11.0",
     "mermaid": "^11.17.2",
-    "react": "^19.2.8",
-    "react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "^8.71.2"
   },
   "dependencies": {
     "sql.js": "^1.14.2"
