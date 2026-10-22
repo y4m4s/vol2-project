@@ -83,7 +83,11 @@ src/
   - 認証済みの学生は [Copilot Student](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students) を無料で利用できます
 - LM Studio を利用する場合は、LM Studio と対象モデルをローカルで起動していること
 - OrcaRouter を利用する場合は、[OrcaRouterの紹介リンク](https://www.orcarouter.ai/ref/ref_ca9caab6221888bc490e)から発行した `sk-orca-` 形式のAPIキー
-- Node.js / npm
+- Node.js **22.23.4 以上の 22 系 / 24.22.1 以上の 24 系 / 26.12.1 以上の 26 系** と npm（開発・ビルド用。推奨は `.nvmrc` の **24.22.1**）
+
+2026-10-21 の [Node.js セキュリティ更新](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases)を反映しています。CI は各系列の上記バージョンで検証します。`package.json` の `engines.node` は未対応バージョンに対して npm の警告を表示しますが、Node.js 自体を更新するものではありません。
+
+拡張機能は **VS Code に内蔵された Node.js** で動作します。開発用 Node.js の更新に加えて、VS Code も修正版ランタイムを含むリリースへ更新してください。ターミナルの `node -v` だけでは、拡張機能ホスト側の修正状況は確認できません。
 
 ---
 
@@ -91,8 +95,10 @@ src/
 
 ### 依存パッケージのインストール
 
+先に `node -v` で上記の修正版以降であることを確認してください。nvm を利用する場合は `.nvmrc` のバージョンをインストールして選択します（Windows の nvm-windows では `nvm install 24.22.1` / `nvm use 24.22.1`）。
+
 ```bash
-npm install
+npm ci
 ```
 
 ### ビルドして拡張機能を起動（F5）
