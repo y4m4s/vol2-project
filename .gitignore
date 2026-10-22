@@ -6,3 +6,5 @@ out/
 
 # Machine-specific assistant permissions and local paths.
 .claude/settings.local.json
+output/
+tmp/
