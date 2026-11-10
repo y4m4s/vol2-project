@@ -9,6 +9,7 @@ import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/Re
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
 import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 import { classifyRoutingTask } from "../src/shared/adaptiveProviderRouting";
+import type { ReferenceAction, ReferenceExcerpt } from "../src/shared/referenceContext";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
@@ -44,11 +45,126 @@ loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
 interface Driver {
+  cancelGuidanceRequest(): void;
+  manageReferenceContext(action: ReferenceAction): Promise<void>;
+  askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void>;
   connectCopilot(providerId?: AiProviderId): Promise<void>;
   handleAutomaticGuidance(event?: AutoAdviceTriggerEvent): Promise<void>;
   runGuidanceRequest(options: Options, state: NavigatorSessionState): Promise<{ ok: boolean }>;
   setAdditionalContext(additionalContext: string): Promise<void>;
 }
+
+test("cancellation during reference validation sends nothing and releases the request gate", async t => {
+  let requests = 0, entered!: () => void, release!: () => void;
+  const waiting = new Promise<void>(resolve => { entered = resolve; });
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [], validate: async () => { entered(); await blocked; } } });
+  const pending = h.driver.handleAutomaticGuidance();
+  await waiting;
+  h.driver.cancelGuidanceRequest(); release(); await pending;
+  assert.equal(requests, 0); assert.equal(h.state.requestState, "idle"); assert.equal(h.state.conversationHistory.length, 0);
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(requests, 1, "a later request can use the released gate");
+});
+
+test("reference collection can be cancelled before a provider token is created", async t => {
+  let requests = 0, entered!: () => void, release!: () => void;
+  const waiting = new Promise<void>(resolve => { entered = resolve; });
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言" }; });
+  t.after(h.dispose);
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => { entered(); await blocked; return []; }, validate: async () => {} } });
+  const pending = h.driver.handleAutomaticGuidance();
+  await waiting;
+  h.driver.cancelGuidanceRequest(); release(); await pending;
+  assert.equal(requests, 0); assert.equal(h.state.requestState, "idle");
+});
+
+test("reused knowledge carries its reference IDs into subsequent answer provenance", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  let allowed = true;
+  const knowledge = { id: "knowledge", referenceSourceIds: ["source"], title: "TypeScript", summary: "lesson", body: "lesson", status: "active", createdAt: "", updatedAt: "" };
+  Object.assign(h.driver, { knowledgeStore: { findReusable: (_context: unknown, _limit: number, filter: (item: typeof knowledge) => boolean) => [knowledge].filter(filter) },
+    referenceContext: { revision: 1, canReuseReferenceSources: () => allowed, protectHistory: (entries: unknown) => entries,
+      resolve: async () => [], validate: async () => {} } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent[0].knowledgeItems?.length, 1);
+  assert.deepEqual(h.store.get(h.state.activeConversationStreamId!)?.entries.at(-1)?.requestPlan?.referenceSourceIds, ["source"]);
+  allowed = false;
+  h.editCode("changed"); await h.driver.handleAutomaticGuidance();
+  assert.deepEqual(sent[1].knowledgeItems, []);
+});
+
+test("a reference picker holds the operation gate until its changes finish", async t => {
+  let requests = 0, entered!: () => void, release!: () => void;
+  const waiting = new Promise<void>(resolve => { entered = resolve; });
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [], validate: async () => {}, configure: async () => { entered(); await blocked; } } });
+  const editing = h.driver.manageReferenceContext({ type: "configureContextSource", id: "source" });
+  await waiting;
+  assert.equal(h.state.requestState, "managing_context");
+  await h.driver.handleAutomaticGuidance(); assert.equal(requests, 0);
+  release(); await editing;
+  assert.equal(h.state.requestState, "idle");
+  await h.driver.handleAutomaticGuidance(); assert.equal(requests, 1);
+});
+
+test("registered references enter real requests, persist provenance, and invalidate automatic fingerprints", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  let revision = 1, validations = 0;
+  const reference: ReferenceExcerpt = { id: "doc:1", sourceId: "source", path: "docs/rules.md", title: "規約", kind: "rules", hash: "v1", text: "RULE_BODY",
+    startLine: 1, endLine: 1, reason: "適用範囲", localOnly: false, mode: "reference" };
+  Object.assign(h.driver, { referenceContext: { get revision() { return revision; },
+    protectHistory: (entries: unknown) => entries, resolve: async () => [{ ...reference }], validate: async () => { validations++; } } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent.length, 1); assert.equal(sent[0].context.referenceDocuments?.[0].text, "RULE_BODY");
+  const stream = h.store.get(h.state.activeConversationStreamId!);
+  assert.equal(stream?.entries.at(-1)?.requestPlan?.referenceDocuments?.[0].path, "docs/rules.md");
+  assert.deepEqual(stream?.entries.at(-1)?.requestPlan?.referenceSourceIds, ["source"]);
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent.length, 1, "identical source versions remain suppressed");
+  reference.hash = "v2"; revision++;
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent.length, 2); assert.equal(validations, 2);
+  assert.equal(sent[1].context.referenceDocuments?.[0].hash, "v2");
+});
+
+test("local-only references stop at the routing boundary before any cloud generation", async t => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "unexpected" }; });
+  t.after(h.dispose);
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries, resolve: async () => [{ id: "doc:1", sourceId: "source", path: "docs/rules.md", title: "規約", kind: "rules", hash: "v1", text: "PRIVATE",
+    startLine: 1, endLine: 1, reason: "適用範囲", localOnly: true, mode: "reference" }], validate: async () => {} } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(requests, 0);
+  assert.match(h.state.statusMessage?.text ?? "", /ローカル限定/);
+  assert.equal(h.state.requestState, "idle");
+});
+
+test("manual reference selection receives the current question and hand-entered context", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言" }; });
+  t.after(h.dispose);
+  const queries: { question: string; additional?: string }[] = [];
+  Object.assign(h.driver, { feedbackStore: { getTendencySummary: () => undefined }, referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries, resolve: async (context: GuidanceContext, question: string) => {
+    queries.push({ question, additional: context.additionalContext }); return [];
+  }, validate: async () => {} } });
+  await h.driver.askForGuidanceWithCurrentContext("TypeScriptの命名規約を説明して", "手入力の現在要件");
+  assert.ok(queries.some(query => query.question === "TypeScriptの命名規約を説明して" && query.additional === "手入力の現在要件"));
+  assert.equal(sent.length, 1, h.state.statusMessage?.text);
+  assert.equal(sent[0].context.additionalContext, "手入力の現在要件");
+});
 
 test("オンボーディングで選んだ接続先を基本プロバイダーにして自動候補を再確認する", async () => {
   const connected: AiProviderId[] = [];

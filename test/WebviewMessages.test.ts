@@ -3,6 +3,16 @@ import test from "node:test";
 import { parseWebviewMessage } from "../src/shared/messages";
 import { normalizeRoutingSettings } from "../src/shared/providerRouting";
 
+test("reference operations validate identifiers and enums without accepting client filesystem paths", () => {
+  assert.ok(parseWebviewMessage({ type: "addContextSource", kind: "skill", scope: "workspace", directory: true }));
+  for (const patch of [{ kind: "script" }, { kind: { toString: () => "skill" } }, { scope: "unknown" }, { directory: "yes" }]) {
+    assert.equal(parseWebviewMessage({ type: "addContextSource", kind: "skill", scope: "workspace", directory: true, ...patch }), undefined);
+  }
+  assert.equal(parseWebviewMessage({ type: "setContextSourceEnabled", id: "source", enabled: "yes" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "removeContextSource", id: "x".repeat(201) }), undefined);
+  assert.ok(parseWebviewMessage({ type: "refreshContextSources" }));
+});
+
 test("routing settings reject malformed modes, thresholds and provider ids", () => {
   const payload = { providerId: "copilot", defaultMode: "manual", defaultAssistanceDepth: "low", idleDelaySec: 10, requestIntervalSec: 60, dailyTokenLimit: 100000, excludeGlobs: "", routing: normalizeRoutingSettings({ mode: "automatic", allowedProviderIds: ["copilot"] }) };
   assert.ok(parseWebviewMessage({ type: "saveSettings", payload }));

@@ -53,6 +53,8 @@ export class RequestPlanner {
     const observation = kind === "always" && !fileExcluded && context.activeFilePath
       ? automaticObservation : undefined;
     const filteredContext: GuidanceContext = {
+      referenceDocuments: context.referenceDocuments,
+      referenceRevision: context.referenceRevision,
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,
       activeFileExcerpt: !fileExcluded ? context.activeFileExcerpt : undefined,

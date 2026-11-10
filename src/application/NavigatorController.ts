@@ -16,7 +16,7 @@ import { AdviceScheduler, type AutoAdviceTriggerEvent } from "../services/Advice
 import type { AutomaticGuidanceObservation, AutomaticGuidanceFocus } from "../shared/types";
 import { ConversationStore } from "../services/ConversationStore";
 import { ConnectionService } from "../services/ConnectionService";
-import { KnowledgeStore } from "../services/KnowledgeStore";
+import { KnowledgeStore, type KnowledgeRecord } from "../services/KnowledgeStore";
 import { FeedbackStore } from "../services/FeedbackStore";
 import { RequestPlanner, PreparedGuidanceRequest } from "../services/RequestPlanner";
 import { SettingsService } from "../services/SettingsService";
@@ -54,6 +54,8 @@ import {
 } from "./GuidanceInput";
 import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
+import type { AdditionalContextCoordinator } from "./coordinators/AdditionalContextCoordinator";
+import { isVerifiedReferenceLocalModel, type ReferenceAction } from "../shared/referenceContext";
 import {
   AdviceMode,
   AiProviderId,
@@ -124,6 +126,7 @@ export class NavigatorController implements vscode.Disposable {
   private routingProviderConnection?: NavigatorViewModel["routingProviderConnection"];
   private routingProviderConnectionRevision = 0;
   private initialized = false;
+  private lastReferenceRevision = -1;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -140,7 +143,8 @@ export class NavigatorController implements vscode.Disposable {
     private readonly feedbackStore: FeedbackStore,
     private readonly providerEvaluationStore: ProviderEvaluationStore,
     private readonly usageMeter: UsageMeter,
-    private readonly diagnostic: (entry: Record<string, unknown>) => void = () => {}
+    private readonly diagnostic: (entry: Record<string, unknown>) => void = () => {},
+    private readonly referenceContext?: AdditionalContextCoordinator
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
     this.providerRoutingCoordinator = new ProviderRoutingCoordinator(
@@ -161,11 +165,17 @@ export class NavigatorController implements vscode.Disposable {
           this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext),
         getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state),
         getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
+        getProviderId: () => this.connectionService.getProviderId(),
         getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
+        resolveReferenceContext: async (context, question) => {
+          if (!this.referenceContext) return context;
+          const referenceDocuments = await this.referenceContext.resolve(context, question, context.activeFilePath);
+          return { ...context, referenceDocuments, referenceRevision: this.referenceContext.revision };
+        },
         getPromptExtras: (context, plan) => ({
           conversationMemory: plan.kind === "always" || this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
-            this.settingsService.getSettings(), this.sessionStore.getState().conversationHistory, this.sessionStore.getState().activeConversationStreamId),
-          knowledgeItems: this.knowledgeStore.findReusable(context),
+            this.settingsService.getSettings(), this.protectReferenceHistory(this.sessionStore.getState().conversationHistory), this.sessionStore.getState().activeConversationStreamId),
+          knowledgeItems: this.findReusableKnowledge(context),
           feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
             kind: plan.kind, assistanceDepth: plan.assistanceDepth, slashCommand: plan.slashCommand
           })
@@ -240,7 +250,7 @@ export class NavigatorController implements vscode.Disposable {
       this.connectionService,
       this.adviceService,
       {
-        getState: () => this.sessionStore.getState(),
+        getState: () => { const state = this.sessionStore.getState(); return { ...state, conversationHistory: this.protectReferenceHistory(state.conversationHistory) }; },
         patchSession: (partial) => this.patchSession(partial),
         getCurrentModelLabel: () => this.connectionSettingsCoordinator.getCurrentModelLabel(),
         getGuidanceContext: (entryId) => this.conversationCoordinator.getGuidanceContext(entryId)
@@ -273,6 +283,13 @@ export class NavigatorController implements vscode.Disposable {
     await this.feedbackStore.initialize();
     await this.providerEvaluationStore.initialize();
     await this.conversationCoordinator.restore();
+    if (this.referenceContext) {
+      await this.knowledgeStore.backfillReferenceSources(adviceId => {
+        const stream = this.conversationStore.findStreamByEntryId(adviceId);
+        const entry = stream ? this.conversationStore.get(stream.id)?.entries.find(entry => entry.id === adviceId) : undefined;
+        return entry?.requestPlan?.referenceSourceIds ?? entry?.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? [];
+      });
+    }
 
     const settings = this.settingsService.getSettings();
     this.contextCollector.primeDocuments(vscode.workspace.textDocuments);
@@ -344,6 +361,7 @@ export class NavigatorController implements vscode.Disposable {
     );
 
     this.initialized = true;
+    this.referenceContext?.initialize();
     this.patchSession({
       screen: resolveHomeScreen(this.connectionService.getState()),
       mode: settings.defaultMode,
@@ -382,6 +400,7 @@ export class NavigatorController implements vscode.Disposable {
       ollamaModelsBaseUrl: this.connectionService.getOllamaModelsBaseUrl(),
       ollamaStatus: this.connectionService.getOllamaStatus(),
       providerEndpoint: this.connectionService.getConnectedModel()?.endpoint,
+      providerIsVerifiedLocal: isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel()),
       orcaRouterModelOptions: this.connectionService.getOrcaRouterModelOptions(),
       orcaRouterApiKeyConfigured: this.connectionService.isOrcaRouterApiKeyConfigured(),
       lmStudioServer: this.lmStudioCoordinator.getViewData(state.requestState),
@@ -403,6 +422,7 @@ export class NavigatorController implements vscode.Disposable {
       conversationStreams: state.conversationStreams,
       activeConversationStreamId: state.activeConversationStreamId,
       activeAdditionalContext: this.getVisibleAdditionalContext(state),
+      referenceContext: this.referenceContext?.view(),
       conversationHistory: state.conversationHistory,
       pendingFeedbackEntryId: state.pendingFeedbackEntryId,
       pendingFeedbackRating: state.pendingFeedbackRating,
@@ -516,7 +536,7 @@ export class NavigatorController implements vscode.Disposable {
     try {
       const result = await this.conversationMemoryCoordinator.compactNow(
         this.settingsService.getSettings(),
-        state.conversationHistory,
+        this.protectReferenceHistory(state.conversationHistory),
         state.activeConversationStreamId,
         target,
         cancellation
@@ -612,11 +632,11 @@ export class NavigatorController implements vscode.Disposable {
   public cancelGuidanceRequest(): void {
     this.adviceScheduler.cancelPending();
     const activeRequest = this.activeGuidanceRequest;
-    if (!activeRequest) {
+    if (!activeRequest && this.sessionStore.getState().requestState !== "preparing_guidance") {
       return;
     }
 
-    activeRequest.tokenSource.cancel();
+    activeRequest?.tokenSource.cancel();
     this.activeGuidanceRequest = undefined;
     this.patchGuidanceSession({
       requestState: "idle",
@@ -643,6 +663,7 @@ export class NavigatorController implements vscode.Disposable {
     await this.syncLmStudioServerForSettingsSave(input);
     await this.connectionSettingsCoordinator.save(input);
     if (this.connectionSettingsCoordinator.revision !== previousRevision) {
+      this.referenceContext?.invalidate();
       await this.synchronizeRoutingProviders();
     }
   }
@@ -724,6 +745,7 @@ export class NavigatorController implements vscode.Disposable {
 
   public async resetSettings(): Promise<void> {
     await this.connectionSettingsCoordinator.reset();
+    this.referenceContext?.invalidate();
   }
 
   public async setAssistanceDepth(assistanceDepth: AssistanceDepth): Promise<void> {
@@ -789,6 +811,36 @@ export class NavigatorController implements vscode.Disposable {
     }
   }
 
+  public onReferencesChanged(): void {
+    const revision = this.referenceContext?.revision ?? -1;
+    if (revision !== this.lastReferenceRevision) {
+      this.lastReferenceRevision = revision;
+      this.requestPlanCoordinator.invalidate();
+    }
+    this.didChangeStateEmitter.fire();
+  }
+
+  public async manageReferenceContext(action: ReferenceAction): Promise<void> {
+    if (!this.referenceContext || this.sessionStore.getState().requestState !== "idle") return;
+    const release = this.guidanceRequestGate.tryAcquire();
+    if (!release) return;
+    this.patchSession({ requestState: "managing_context" });
+    try {
+      switch (action.type) {
+        case "addContextSource": await this.referenceContext.add(action.kind, action.directory, action.scope); break;
+        case "removeContextSource": await this.referenceContext.remove(action.id); break;
+        case "setContextSourceEnabled": await this.referenceContext.setEnabled(action.id, action.enabled); break;
+        case "configureContextSource": await this.referenceContext.configure(action.id); break;
+        case "selectContextDocuments": await this.referenceContext.selectDocuments(action.id); break;
+        case "openContextDocument": await this.referenceContext.openDocument(action.id); break;
+        case "refreshContextSources": this.referenceContext.invalidate(); await this.referenceContext.refresh(); break;
+      }
+    } finally {
+      release();
+      if (this.sessionStore.getState().requestState === "managing_context") this.patchSession({ requestState: "idle" });
+    }
+  }
+
   public searchKnowledge(query: string): void {
     this.knowledgeCoordinator.search(query);
   }
@@ -831,6 +883,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public dispose(): void {
+    this.referenceContext?.dispose();
     for (const disposable of this.disposables) {
       disposable.dispose();
     }
@@ -873,7 +926,7 @@ export class NavigatorController implements vscode.Disposable {
         automaticObservation.previousFocus = this.automaticFocusByFile.get(baseContext.activeFilePath);
         automaticObservation.overviewAlreadyShown = automaticDocumentSnapshot !== undefined && this.automaticOverviewByFile.get(baseContext.activeFilePath) === automaticDocumentSnapshot;
       }
-      const prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
+      let prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
         withAdditionalContext(guidanceContext, additionalContext),
         preview,
         settings,
@@ -883,6 +936,12 @@ export class NavigatorController implements vscode.Disposable {
         undefined,
         automaticObservation
       ));
+
+      prepared = await this.attachReferenceContext(prepared, "", preview.activeFilePath);
+      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
+        this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
+        return undefined;
+      }
 
       if (!hasMeaningfulContext(prepared.context)) {
         this.patchGuidanceSession({ contextPreview: preview });
@@ -1129,6 +1188,9 @@ export class NavigatorController implements vscode.Disposable {
         this.patchSession({ guidanceCompleted: true, guidanceCompletionRevision: (this.sessionStore.getState().guidanceCompletionRevision ?? 0) + 1 });
       }
       return result;
+    } catch (error) {
+      this.patchGuidanceSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "参照情報を準備できませんでした。" } });
+      return { ok: false };
     } finally {
       const activeRequest = this.activeGuidanceRequest;
       if (activeRequest) {
@@ -1153,6 +1215,7 @@ export class NavigatorController implements vscode.Disposable {
     options: GuidanceExecutionOptions,
     initialState: NavigatorSessionState
   ): Promise<{ ok: boolean }> {
+    const preparationState = this.sessionStore.getState().requestState;
     const startsNewAutomaticConversation = options.kind === "always" && initialState.screen === "main";
     let state = await this.prepareConversationForGuidance(initialState, options.kind);
 
@@ -1206,13 +1269,24 @@ export class NavigatorController implements vscode.Disposable {
         options.slashCommand,
         options.slashCommandScope
       ), options.userPrompt);
+    if (prepared.context.referenceRevision === undefined) {
+      prepared = await this.attachReferenceContext(prepared, options.userPrompt ?? "", preview.activeFilePath);
+    }
+    if (this.sessionStore.getState().requestState !== preparationState) return { ok: false };
     this.clearSelectionAfterContextCapture(options.kind, prepared.context);
     const contextPreviewAfterCapture =
       options.kind === "context" && prepared.context.selectedText
         ? this.clearSelectionPreview(preview)
         : preview;
 
-    const history = this.sessionStore.getState().conversationHistory;
+    const history = this.protectReferenceHistory(this.sessionStore.getState().conversationHistory);
+    const referenceLocalOnly = Boolean(prepared.context.referenceDocuments?.some(doc => doc.localOnly) ||
+      history.some(entry => entry.requestPlan?.referenceLocalOnly));
+    prepared.requestPlan.referenceLocalOnly = referenceLocalOnly;
+    prepared.requestPlan.referenceSourceIds = [...new Set([
+      ...history.flatMap(entry => entry.requestPlan?.referenceSourceIds ?? entry.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? []),
+      ...(prepared.context.referenceDocuments ?? []).map(doc => doc.sourceId)
+    ])];
     const requestId = this.nextGuidanceRequestId++;
     const tokenSource = new vscode.CancellationTokenSource();
     this.activeGuidanceRequest = { id: requestId, tokenSource };
@@ -1232,7 +1306,8 @@ export class NavigatorController implements vscode.Disposable {
         ]).size,
         diagnostics: prepared.context.diagnosticsSummary,
         changeCount: prepared.context.recentEditsSummary.length
-      }
+      },
+      referenceLocalOnly
     );
     if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
       this.patchGuidanceSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
@@ -1269,6 +1344,22 @@ export class NavigatorController implements vscode.Disposable {
       return { ok: false };
     }
     if (tokenSource.token.isCancellationRequested) { tokenSource.dispose(); return { ok: false }; }
+    if (referenceLocalOnly && !isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel())) {
+      throw new Error("ローカル限定の参照資料・会話を含むため、確認済みのローカルLLMで続けてください。");
+    }
+    await this.referenceContext?.validate(prepared.context.referenceDocuments ?? [], prepared.context.referenceRevision ?? -1);
+    if (tokenSource.token.isCancellationRequested || this.activeGuidanceRequest?.id !== requestId) {
+      tokenSource.dispose();
+      return { ok: false };
+    }
+    if (this.protectReferenceHistory(history).some(entry => entry.requestPlan?.referenceLocalOnly) &&
+      !isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel())) {
+      throw new Error("参照先の送信許可が変更されたため、外部送信を中止しました。");
+    }
+    const knowledgeItems = this.findReusableKnowledge(prepared.context);
+    prepared.requestPlan.referenceSourceIds = [...new Set([
+      ...(prepared.requestPlan.referenceSourceIds ?? []), ...knowledgeItems.flatMap(item => item.referenceSourceIds ?? [])
+    ])];
     prepared.requestPlan.categories = prepared.requestPlan.categories.map(c => c.key === "conversationHistory"
       ? { ...c, enabled: true, included: Boolean(conversationMemory), note: conversationMemory ? "要件の原文と入力予算内の会話メモリを引き継ぎます" : "過去の会話はありません" } : c);
     prepared.requestPlan = reconcileRequestPlan(prepared.requestPlan, {
@@ -1276,13 +1367,13 @@ export class NavigatorController implements vscode.Disposable {
       automaticObservation: prepared.automaticObservation,
       assistanceDepth: guidanceContentDepth(this.connectionService.getProviderId(), assistanceDepth),
       modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
-      knowledgeItems: this.knowledgeStore.findReusable(prepared.context),
+      knowledgeItems,
       feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({ kind: options.kind, assistanceDepth, slashCommand: options.slashCommand })
     });
 
     // 文脈収集の await をまたいでいるので、履歴は積む直前の最新状態から組み直す。
     // 古い state から組むと、その間に入った更新を巻き戻してしまう。
-    const nextHistory = [...this.sessionStore.getState().conversationHistory];
+    const nextHistory = this.protectReferenceHistory(this.sessionStore.getState().conversationHistory);
     const userEntryText = resolveUserEntryText(
       options.kind,
       options.userPrompt,
@@ -1303,7 +1394,8 @@ export class NavigatorController implements vscode.Disposable {
       ));
       const userEntry = nextHistory.at(-1)!;
       userEntry.providerId = this.connectionService.getProviderId();
-      userEntry.transmissionClass = userEntry.providerId === "ollama" || userEntry.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
+      userEntry.transmissionClass = referenceLocalOnly || userEntry.providerId === "ollama" || userEntry.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
+      if (prepared.context.referenceDocuments?.length || referenceLocalOnly || prepared.requestPlan.referenceSourceIds?.length) userEntry.requestPlan = prepared.requestPlan;
     }
 
     this.patchGuidanceSession({
@@ -1334,7 +1426,7 @@ export class NavigatorController implements vscode.Disposable {
         assistanceDepth,
         slashCommand: options.slashCommand,
         slashCommandScope: options.slashCommandScope,
-        knowledgeItems: this.knowledgeStore.findReusable(prepared.context),
+        knowledgeItems,
         feedbackTendency: options.kind === "always"
           ? undefined
           : this.feedbackStore.getTendencySummary({
@@ -1446,7 +1538,7 @@ export class NavigatorController implements vscode.Disposable {
       this.conversationCoordinator.setGuidanceContext(assistantEntry.id, prepared.context);
       assistantEntry.routeReason = route.reason;
       assistantEntry.routingTaskPurpose = route.taskProfile.purpose;
-      assistantEntry.transmissionClass = history.some(e => e.transmissionClass === "localOnly") || responseModel?.providerId === "ollama" || responseModel?.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
+      assistantEntry.transmissionClass = referenceLocalOnly || history.some(e => e.transmissionClass === "localOnly") || responseModel?.providerId === "ollama" || responseModel?.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
       const updatedHistory = [...latestState.conversationHistory, assistantEntry];
 
       this.patchGuidanceSession({
@@ -1702,6 +1794,23 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     return this.contextCollector.collectGuidanceContextWithWorkspace(settings, baseContext);
+  }
+
+  private async attachReferenceContext(prepared: PreparedGuidanceRequest, question: string, activePath?: string): Promise<PreparedGuidanceRequest> {
+    if (!this.referenceContext) return prepared;
+    const referenceDocuments = await this.referenceContext.resolve(prepared.context, question, activePath, true);
+    return this.requestPlanCoordinator.externalize({ ...prepared,
+      context: { ...prepared.context, referenceDocuments, referenceRevision: this.referenceContext.revision }
+    }, question);
+  }
+
+  private protectReferenceHistory(entries: ConversationEntry[]): ConversationEntry[] {
+    return this.referenceContext?.protectHistory(entries) ?? [...entries];
+  }
+
+  private findReusableKnowledge(context: GuidanceContext): KnowledgeRecord[] {
+    return this.knowledgeStore.findReusable(context, 3, record =>
+      !record.referenceSourceIds?.length || Boolean(this.referenceContext?.canReuseReferenceSources(record.referenceSourceIds)));
   }
 
   private clearSelectionAfterContextCapture(kind: GuidanceKind, context: GuidanceContext): void {

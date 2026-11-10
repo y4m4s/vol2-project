@@ -33,7 +33,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
   const isComposingRef = useRef(false);
   const textareaRef = useAutoResizeTextarea(inputText);
   const activeAdditionalContext = viewModel?.activeAdditionalContext ?? "";
-  const hasAdditionalContext = additionalContextDraft.trim().length > 0;
+  const hasAdditionalContext = additionalContextDraft.trim().length > 0 || Boolean(viewModel?.referenceContext?.sources.some(item => item.source.enabled));
 
   useEffect(() => {
     setInputText("");
@@ -133,7 +133,7 @@ export function ChatInputComposer({ resetKey }: ChatInputComposerProps) {
     contextPreview
   } = viewModel;
 
-  const isGuidanceRequesting = viewModel.requestState === "requesting_guidance";
+  const isGuidanceRequesting = viewModel.requestState === "requesting_guidance" || viewModel.requestState === "preparing_guidance";
   const isAlways = mode === "always";
   const isPaused = autoAdvice.paused;
   const isHigh = assistanceDepth === "high";

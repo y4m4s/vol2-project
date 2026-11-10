@@ -6,23 +6,34 @@ import { AiInputLimitError } from "./AiRequestPolicy";
 export function reconcileRequestPlan(plan: RequestPlanSnapshot, input: GuidancePromptInput): RequestPlanSnapshot {
   const categories = new Set<ContextCategoryKey>();
   const files = new Set<string>();
+  const references = new Set<string>();
   let blocked = false;
+  let serialized = "";
   try {
-    buildGuidancePrompt(input, (category, file) => {
+    serialized = buildGuidancePrompt(input, (category, file, referenceId) => {
       categories.add(category);
       if (file) files.add(file);
+      if (referenceId) references.add(referenceId);
     });
   } catch (error) {
     if (!(error instanceof AiInputLimitError)) throw error;
     blocked = true;
     categories.clear();
     files.clear();
+    references.clear();
   }
   const omitted = blocked ? "入力上限を超えているため送信できません" : "選択範囲の優先・モデルの入力予算により送信しません";
   return {
     ...plan,
+    estimatedSizeText: input.context.referenceDocuments?.length
+      ? blocked ? "送信不可" : `約${(new TextEncoder().encode(serialized).byteLength / 1024).toFixed(1)} KB / 登録資料込み`
+      : plan.estimatedSizeText,
+    referenceDocuments: input.context.referenceDocuments?.map(({ text: _text, ...source }) => ({
+      ...source, included: references.has(source.id), note: references.has(source.id) ? undefined : "入力予算内に全文が収まらないため省略しました"
+    })),
     categories: [
-      ...plan.categories.filter((item) => item.key !== "knowledge" && item.key !== "feedback"),
+      ...plan.categories.filter((item) => item.key !== "knowledge" && item.key !== "feedback" && item.key !== "referenceDocuments"),
+      ...(input.context.referenceDocuments?.length ? [{ key: "referenceDocuments" as const, label: "登録資料・Skills", description: "用途・適用範囲・関連語で選択した登録資料", enabled: true, included: true }] : []),
       { key: "knowledge" as const, label: "再利用ナレッジ", description: "保存したナレッジのタイトル・要約", enabled: true, included: Boolean(input.knowledgeItems?.length) },
       { key: "feedback" as const, label: "フィードバック傾向", description: "評価理由から生成した定型の傾向（補足コメントは含みません）", enabled: true, included: input.kind !== "always" && Boolean(input.feedbackTendency?.goodPatterns.length || input.feedbackTendency?.badAvoidPatterns.length) }
     ].map((item) => ({

@@ -5,6 +5,15 @@ import type { AiProviderId, NavigatorSettings } from "../src/shared/types";
 
 const { ProviderRoutingCoordinator } = require("../src/application/coordinators/ProviderRoutingCoordinator") as typeof import("../src/application/coordinators/ProviderRoutingCoordinator");
 
+test("reference-local-only requests reject cloud and remote endpoints even in manual mode", async () => {
+  const settings = { routing: normalizeRoutingSettings({ mode: "manual" }) } as NavigatorSettings;
+  for (const model of [{ providerId: "copilot", modelId: "test" }, { providerId: "lmStudio", modelId: "test", endpoint: "https://remote.example" },
+    { providerId: "lmStudio", modelId: "test", endpoint: "http://127.0.0.1:1234" }]) {
+    const coordinator = new ProviderRoutingCoordinator({ getConnectedModel: () => model, getState: () => "connected", getProviderId: () => model.providerId } as never, {} as never);
+    assert.equal((await coordinator.prepare(settings, [], undefined, "", () => false, {}, true)).ok, model.endpoint === "http://127.0.0.1:1234");
+  }
+});
+
 function harness(used = 95) {
   let current: AiProviderId = "copilot";
   const activations: AiProviderId[] = [];

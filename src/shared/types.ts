@@ -1,3 +1,5 @@
+import type { ReferenceContextView, ReferenceExcerpt, ReferenceProvenance } from "./referenceContext";
+
 export type ConnectionState =
   | "disconnected"
   | "connecting"
@@ -124,6 +126,7 @@ export type NavigatorScreen =
 
 export type RequestState =
   | "idle"
+  | "managing_context"
   | "connecting"
   | "preparing_guidance"
   | "requesting_guidance"
@@ -181,6 +184,7 @@ export type ContextCategoryKey =
   | "knowledge"
   | "feedback"
   | "additionalContext"
+  | "referenceDocuments"
   | "conversationHistory";
 
 export interface DiagnosticSummary {
@@ -230,6 +234,8 @@ export interface ProjectContextSummary {
 }
 
 export interface GuidanceContext {
+  referenceDocuments?: ReferenceExcerpt[];
+  referenceRevision?: number;
   activeFilePath?: string;
   activeFileLanguage?: string;
   activeFileExcerpt?: string;
@@ -333,6 +339,10 @@ export interface RequestPlanFile {
 }
 
 export interface RequestPlanSnapshot {
+  referenceSourceIds?: string[];
+  /** Sticky provenance: derived answers and summaries remain local-only. */
+  referenceLocalOnly?: boolean;
+  referenceDocuments?: ReferenceProvenance[];
   previewInput?: string;
   previewAdditionalContext?: string;
   kind: GuidanceKind;
@@ -473,6 +483,8 @@ export interface NavigatorSessionState {
 }
 
 export interface NavigatorViewModel {
+  providerIsVerifiedLocal?: boolean;
+  referenceContext?: ReferenceContextView;
   guidanceCompletedStreamId?: string;
   guidanceCompleted?: boolean;
   guidanceCompletionRevision?: number;

@@ -9,6 +9,7 @@ import type {
 } from "../../shared/types";
 import type { ConversationStore } from "../../services/ConversationStore";
 import type { ConnectionService } from "../../services/ConnectionService";
+import { isVerifiedReferenceLocalModel } from "../../shared/referenceContext";
 import type { UsageMeter } from "../../services/UsageMeter";
 import type { ProviderEvaluationStore } from "../../services/ProviderEvaluationStore";
 import { deriveModelProfile } from "../../services/ModelProfile";
@@ -92,7 +93,8 @@ export class ProviderRoutingCoordinator {
     stream: string | undefined,
     question = "",
     cancelled: () => boolean = () => false,
-    signals: Omit<RoutingSignals, "question"> = {}
+    signals: Omit<RoutingSignals, "question"> = {},
+    referenceLocalOnly = false
   ): Promise<ProviderRoutingPreparation> {
     const taskProfile = classifyRoutingTask({ ...signals, question });
     const routing = normalizeRoutingSettings(settings.routing);
@@ -100,6 +102,9 @@ export class ProviderRoutingCoordinator {
     if (preference?.mode) routing.mode = preference.mode;
     const oneShot = stream ? this.once.get(stream) : undefined;
     if (routing.mode === "manual" && !oneShot && !preference?.providerId) {
+      if (referenceLocalOnly && !isVerifiedReferenceLocalModel(this.connection.getConnectedModel())) {
+        return { ok: false, taskProfile, reason: "ローカル限定の参照資料・会話を含みます。ローカルLLMへ接続するか、参照先の送信範囲を確認してください。" };
+      }
       const connected = this.connection.getState() === "connected";
       const currentProviderId = this.connection.getProviderId?.();
       this.diagnostic({
@@ -131,7 +136,7 @@ export class ProviderRoutingCoordinator {
         verifiedLocal: Boolean(model && (providerId === "ollama" || providerId === "lmStudio") &&
           /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\/?$/i.test(model.endpoint ?? "") && !/cloud/i.test(model.modelId)) };
     });
-    const localOnly = history.some(e => e.transmissionClass === "localOnly" ||
+    const localOnly = referenceLocalOnly || history.some(e => e.transmissionClass === "localOnly" ||
       (!e.transmissionClass && (e.providerId === "ollama" || e.providerId === "lmStudio")));
     const requiredHistoryChars = history.length ? JSON.stringify(history.filter(e => e.role === "user").map(e => ({ id: e.id, role: e.role, text: e.text }))).length + 250 : 0;
     const estimated = Math.max(Math.ceil(question.length / 3) + 2000, Math.ceil(requiredHistoryChars / (3 * 0.35)) + 2000);

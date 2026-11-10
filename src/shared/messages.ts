@@ -9,8 +9,10 @@ import type {
 } from "./types";
 import { BAD_FEEDBACK_REASONS, GOOD_FEEDBACK_REASONS } from "./feedback";
 import type { AutomaticRoutingSettings } from "./types";
+import type { ReferenceAction } from "./referenceContext";
 
 export type WebviewToExtension =
+  | ReferenceAction
   | { type: "setConversationRouting"; mode?: AutomaticRoutingSettings["mode"]; providerId?: AiProviderId }
   | { type: "testRoutingProvider"; providerId: AiProviderId }
   | { type: "setRoutingPin"; providerId?: AiProviderId }
@@ -108,6 +110,18 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
   if (SIMPLE_MESSAGE_TYPES.has(value.type)) return { type: value.type } as WebviewToExtension;
 
   switch (value.type) {
+    case "addContextSource":
+      return typeof value.kind === "string" && ["rules", "adr", "document", "skill"].includes(value.kind) && typeof value.directory === "boolean" &&
+        (value.scope === "workspace" || value.scope === "global") ? value as WebviewToExtension : undefined;
+    case "removeContextSource":
+    case "configureContextSource":
+    case "selectContextDocuments":
+    case "openContextDocument":
+      return isBoundedString(value.id, 1, 200) ? value as WebviewToExtension : undefined;
+    case "setContextSourceEnabled":
+      return isBoundedString(value.id, 1, 200) && typeof value.enabled === "boolean" ? value as WebviewToExtension : undefined;
+    case "refreshContextSources":
+      return { type: "refreshContextSources" };
     case "setConversationRouting":
       return (value.mode === undefined || ["manual", "automatic"].includes(String(value.mode))) &&
         (value.providerId === undefined || ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId))) ? value as WebviewToExtension : undefined;

@@ -1,4 +1,5 @@
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
+import { ReferenceSourceManager } from "./ReferenceSourceManager";
 
 interface AdditionalContextButtonProps {
   open: boolean;
@@ -67,6 +68,7 @@ export function AdditionalContextPanel({ id, value, disabled = false, onChange, 
       <div className="additional-context-note">
         変更内容は次回の質問・自動助言から反映されます。
       </div>
+      <ReferenceSourceManager disabled={disabled} />
     </div>
   );
 }

@@ -45,6 +45,15 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
         }
         try {
         switch (message.type) {
+          case "addContextSource":
+          case "removeContextSource":
+          case "setContextSourceEnabled":
+          case "configureContextSource":
+          case "selectContextDocuments":
+          case "openContextDocument":
+          case "refreshContextSources":
+            await this.controller.manageReferenceContext(message);
+            return;
           case "ready":
             await this.postViewModel();
             return;

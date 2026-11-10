@@ -18,6 +18,9 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/ReferenceKnowledge.test.ts",
+    "test/AdditionalContextCoordinator.test.ts",
+    "test/ReferenceContext.test.ts",
     "test/NavigatorViewProvider.test.ts",
     "test/ActiveFileContext.test.ts",
     "test/ActiveFileCollector.test.ts",
