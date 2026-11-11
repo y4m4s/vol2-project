@@ -25,8 +25,70 @@ async function rejectLinkedReferencePath(candidate: string, root: string): Promi
   }
 }
 
+
+function isBlockedReferencePath(candidate: string, root: string, blocked: (value: string) => boolean, workspaceRoots: readonly string[]): boolean {
+  return [candidate, path.relative(root, candidate),
+    ...workspaceRoots.filter(folder => isInsideReferenceRoot(candidate, folder)).map(folder => path.relative(folder, candidate))]
+    .some(value => blocked(value) || blocked(`${value}/__reference__`));
+}
+
+/** Read through one handle with a hard cap and confirm the file did not move or change meanwhile. */
+async function readBoundedReferenceFile(candidate: string, real: string, root: string, stat: import("node:fs").Stats): Promise<Buffer> {
+  const handle = await fs.open(real, "r");
+  try {
+    const opened = await handle.stat();
+    if (!opened.isFile() || opened.size > REFERENCE_LIMITS.fileBytes || opened.dev !== stat.dev || opened.ino !== stat.ino) throw new Error("読み込み中にファイルが変わりました。");
+    // Recheck real path after opening; never follow a changed child link outside the root.
+    if (!isInsideReferenceRoot(await fs.realpath(candidate), root)) throw new Error("実体パスが変わりました。");
+    const buffer = Buffer.alloc(REFERENCE_LIMITS.fileBytes + 1);
+    let read = 0;
+    while (read < buffer.length) {
+      const result = await handle.read(buffer, read, buffer.length - read, read);
+      if (!result.bytesRead) break;
+      read += result.bytesRead;
+    }
+    const after = await handle.stat();
+    if (read > REFERENCE_LIMITS.fileBytes || after.size !== opened.size || after.mtimeMs !== opened.mtimeMs) throw new Error("読み込み中にファイルが変更されたか、サイズ上限を超えました。");
+    return buffer.subarray(0, read);
+  } finally { await handle.close(); }
+}
+
+async function referenceRoot(source: ContextSource): Promise<{ input: string; root: string }> {
+  const url = new URL(source.uri);
+  if (url.protocol !== "file:") throw new Error("ローカルファイルのみ対応しています。");
+  const input = fileURLToPath(url);
+  return { input, root: await fs.realpath(source.directory ? input : path.dirname(input)) };
+}
+
 /** Local Node Host only. Bounded handle reads avoid allocating arbitrarily growing files. */
 export class ReferenceDocumentService {
+  /**
+   * Re-read only the given scanned documents with the same boundary checks as scan().
+   * Returns the current content hash, or undefined when the file is gone, blocked or unreadable.
+   */
+  public async verify(source: ContextSource, relativePaths: readonly string[], excluded: readonly string[] = [],
+    workspaceRoots: readonly string[] = []): Promise<Map<string, string | undefined>> {
+    const result = new Map<string, string | undefined>();
+    const blocked = (name: string) => isPathExcluded(name, [...PROTECTED_EXCLUDED_GLOBS, ...excluded]);
+    let root: string;
+    try { ({ root } = await referenceRoot(source)); }
+    catch { for (const relativePath of relativePaths) result.set(relativePath, undefined); return result; }
+    for (const relativePath of new Set(relativePaths)) {
+      try {
+        if (!relativePath || path.isAbsolute(relativePath) || relativePath.split("/").some(part => part === ".." || part === ".")) throw new Error("範囲外");
+        const candidate = path.resolve(root, ...relativePath.split("/"));
+        await rejectLinkedReferencePath(candidate, root);
+        if (isBlockedReferencePath(candidate, root, blocked, workspaceRoots) || !/\.(md|markdown|txt|json)$/i.test(candidate)) throw new Error("保護対象");
+        const stat = await fs.lstat(candidate);
+        const real = await fs.realpath(candidate);
+        if (!stat.isFile() || stat.size > REFERENCE_LIMITS.fileBytes || !isInsideReferenceRoot(real, root)) throw new Error("範囲外");
+        const data = await readBoundedReferenceFile(candidate, real, root, stat);
+        result.set(relativePath, createHash("sha256").update(data).digest("hex"));
+      } catch { result.set(relativePath, undefined); }
+    }
+    return result;
+  }
+
   public async scan(sources: readonly ContextSource[], excluded: readonly string[] = [], workspaceRoots: readonly string[] = []): Promise<ReferenceScanResult> {
     const documents: ReferenceDocument[] = [], errors = new Map<string, string[]>();
     let count = 0, bytes = 0, directories = 0, entries = 0;
@@ -37,12 +99,8 @@ export class ReferenceDocumentService {
       errors.set(source.id, issues);
       const issue = (message: string) => { if (issues.length < 20 && !issues.includes(message)) issues.push(message); };
       try {
-        const url = new URL(source.uri);
-        if (url.protocol !== "file:") throw new Error("ローカルファイルのみ対応しています。");
-        const input = fileURLToPath(url), root = await fs.realpath(source.directory ? input : path.dirname(input));
-        const blockedPath = (candidate: string) => [candidate, path.relative(root, candidate),
-          ...workspaceRoots.filter(folder => isInsideReferenceRoot(candidate, folder)).map(folder => path.relative(folder, candidate))]
-          .some(value => blocked(value) || blocked(`${value}/__reference__`));
+        const { input, root } = await referenceRoot(source);
+        const blockedPath = (candidate: string) => isBlockedReferencePath(candidate, root, blocked, workspaceRoots);
         const walk = async (candidate: string, depth: number): Promise<void> => {
           entries++;
           if (blockedPath(candidate)) return;
@@ -76,24 +134,7 @@ export class ReferenceDocumentService {
           const relativePath = path.relative(root, real).replaceAll("\\", "/");
           if (stat.size > REFERENCE_LIMITS.fileBytes) { issue(`${relativePath}: 256KiBを超えるため除外しました。`); return; }
           if (bytes + stat.size > REFERENCE_LIMITS.bytes) { issue("本文合計20MiBの上限に達しました。"); bytes = REFERENCE_LIMITS.bytes; return; }
-          const handle = await fs.open(real, "r");
-          let data: Buffer;
-          try {
-            const opened = await handle.stat();
-            if (!opened.isFile() || opened.size > REFERENCE_LIMITS.fileBytes || opened.dev !== stat.dev || opened.ino !== stat.ino) throw new Error("読み込み中にファイルが変わりました。");
-            // Recheck real path after opening; never follow a changed child link outside the root.
-            if (!isInsideReferenceRoot(await fs.realpath(candidate), root)) throw new Error("実体パスが変わりました。");
-            const buffer = Buffer.alloc(REFERENCE_LIMITS.fileBytes + 1);
-            let read = 0;
-            while (read < buffer.length) {
-              const result = await handle.read(buffer, read, buffer.length - read, read);
-              if (!result.bytesRead) break;
-              read += result.bytesRead;
-            }
-            const after = await handle.stat();
-            if (read > REFERENCE_LIMITS.fileBytes || after.size !== opened.size || after.mtimeMs !== opened.mtimeMs) throw new Error("読み込み中にファイルが変更されたか、サイズ上限を超えました。");
-            data = buffer.subarray(0, read);
-          } finally { await handle.close(); }
+          const data = await readBoundedReferenceFile(candidate, real, root, stat);
           bytes += data.length;
           if (bytes > REFERENCE_LIMITS.bytes || data.includes(0)) { issue(`${relativePath}: バイナリまたは合計サイズ上限のため除外しました。`); return; }
           let text: string;

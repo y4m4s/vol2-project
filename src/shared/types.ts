@@ -235,6 +235,8 @@ export interface ProjectContextSummary {
 
 export interface GuidanceContext {
   referenceDocuments?: ReferenceExcerpt[];
+  /** Local-only excerpts kept out of this destination. Never carries text. */
+  withheldReferenceDocuments?: ReferenceProvenance[];
   referenceRevision?: number;
   activeFilePath?: string;
   activeFileLanguage?: string;

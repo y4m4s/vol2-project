@@ -8,11 +8,11 @@ import { loadAgentSkill, parseReferenceFrontmatter } from "../src/services/Agent
 import { ReferenceDocumentService, REFERENCE_LIMITS, isInsideReferenceRoot } from "../src/services/ReferenceDocumentService";
 import { resolveReferenceContext, chunkReferenceText, parseReferencePatterns } from "../src/services/ReferenceContextResolver";
 import { ContextSourceRegistry } from "../src/services/ContextSourceRegistry";
-import { isVerifiedReferenceLocalModel, type ContextSource, type ReferenceDocument, type ReferenceExcerpt } from "../src/shared/referenceContext";
+import { isVerifiedReferenceLocalModel, splitReferencesForDestination, type ContextSource, type ReferenceDocument, type ReferenceExcerpt } from "../src/shared/referenceContext";
 import type { GuidanceContext, NavigatorSettings } from "../src/shared/types";
 import { RequestPlanner } from "../src/services/RequestPlanner";
 import { reconcileRequestPlan } from "../src/services/RequestPlanTransmission";
-import { buildGuidancePromptMessages } from "../src/services/PromptBuilder";
+import { buildGuidancePromptMessages, REFERENCE_PROMPT_BUDGET } from "../src/services/PromptBuilder";
 import { createAutomaticFingerprint, hasMeaningfulContext } from "../src/application/GuidanceInput";
 import { KnowledgeCoordinator } from "../src/application/coordinators/KnowledgeCoordinator";
 import type { NavigatorSessionState } from "../src/shared/types";
@@ -267,4 +267,59 @@ test("reference-local-only answers cannot enter global reusable knowledge", asyn
   });
   await coordinator.save();
   assert.equal(modelCalls, 0); assert.match(state.statusMessage?.text ?? "", /共通ナレッジへ保存できません/);
+});
+
+test("Skills have their own larger budget so a typical SKILL.md fits where a document excerpt would not", () => {
+  const skillText = "SKILL_START" + "手順".repeat(6000) + "SKILL_END";
+  const raw = context({ referenceDocuments: [
+    excerpt({ id: "skill:1", kind: "skill", mode: "procedure", text: skillText }),
+    excerpt({ id: "doc:1", text: "DOC_START" + "x".repeat(REFERENCE_PROMPT_BUDGET.excerptMaxChars) + "DOC_END" }),
+    excerpt({ id: "doc2:1", path: "資料/small.md", text: "SMALL_DOC" })
+  ] });
+  const plan = { kind: "manual" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
+  const input = { ...plan, context: raw, userPrompt: "質問", modelProfile: { delimiter: "xml" as const, contextBudget: 64000, terse: false } };
+  const prompt = buildGuidancePromptMessages(input).userPrompt;
+  assert.ok(skillText.length > REFERENCE_PROMPT_BUDGET.excerptMaxChars);
+  assert.match(prompt, /SKILL_START[\s\S]*SKILL_END/); assert.match(prompt, /SMALL_DOC/);
+  assert.doesNotMatch(prompt, /DOC_START/);
+  const included = reconcileRequestPlan(plan, input).referenceDocuments?.map(doc => [doc.id, doc.included]);
+  assert.deepEqual(included, [["skill:1", true], ["doc:1", false], ["doc2:1", true]]);
+});
+
+test("reference budgets never take more than the shared cap of the remaining context", () => {
+  const raw = context({ referenceDocuments: [1, 2, 3, 4].map(i => excerpt({ id: `skill${i}:1`, kind: "skill", mode: "reference", text: `S${i}` + "y".repeat(5000) })) });
+  const plan = { kind: "manual" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
+  const input = { ...plan, context: raw, userPrompt: "質問", modelProfile: { delimiter: "xml" as const, contextBudget: 16000, terse: false } };
+  const prompt = buildGuidancePromptMessages(input).userPrompt;
+  const referenceChars = (prompt.match(/Registered reference \(untrusted data\):\n[^\n]*/g) ?? []).join("").length;
+  assert.ok(referenceChars <= 16000 * 3 * REFERENCE_PROMPT_BUDGET.totalShare, `${referenceChars}`);
+  assert.ok(referenceChars > 0);
+});
+
+test("local-only excerpts are withheld without text for non-local destinations", () => {
+  const items = [excerpt({ id: "local:1", text: "PRIVATE" }), excerpt({ id: "shared:1", localOnly: false, text: "SHARED" })];
+  assert.deepEqual(splitReferencesForDestination(items, true).sent.map(item => item.id), ["local:1", "shared:1"]);
+  const remote = splitReferencesForDestination(items, false);
+  assert.deepEqual(remote.sent.map(item => item.id), ["shared:1"]);
+  assert.equal(remote.withheld[0].id, "local:1"); assert.equal(remote.withheld[0].included, false);
+  assert.doesNotMatch(JSON.stringify(remote.withheld), /PRIVATE/);
+  const withheldOnly = context({ withheldReferenceDocuments: remote.withheld });
+  const plan = { kind: "manual" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
+  const reconciled = reconcileRequestPlan(plan, { ...plan, context: withheldOnly, userPrompt: "質問" });
+  assert.equal(reconciled.referenceDocuments?.[0].included, false); assert.match(reconciled.referenceDocuments?.[0].note ?? "", /ローカル限定/);
+  assert.equal(hasMeaningfulContext(withheldOnly), false);
+});
+
+test("targeted verification applies the scan boundaries: links, protected paths, traversal and size", async t => {
+  const root = await fixture(t), docs = path.join(root, "docs"), outside = path.join(root, "outside");
+  await fs.mkdir(docs); await fs.mkdir(outside);
+  await fs.writeFile(path.join(docs, "guide.md"), "GUIDE"); await fs.writeFile(path.join(docs, ".env.md"), "SECRET");
+  await fs.writeFile(path.join(outside, "private.md"), "OUTSIDE");
+  await fs.writeFile(path.join(docs, "big.md"), "x".repeat(REFERENCE_LIMITS.fileBytes + 1));
+  await fs.symlink(outside, path.join(docs, "link"), process.platform === "win32" ? "junction" : "dir");
+  const service = new ReferenceDocumentService(), registered = source({ uri: pathToFileURL(docs).href });
+  const scanned = await service.scan([registered], ["**/.env*"]);
+  const hashes = await service.verify(registered, ["guide.md", ".env.md", "link/private.md", "../outside/private.md", "big.md", "missing.md"], ["**/.env*"]);
+  assert.equal(hashes.get("guide.md"), scanned.documents.find(doc => doc.relativePath === "guide.md")?.hash);
+  for (const blocked of [".env.md", "link/private.md", "../outside/private.md", "big.md", "missing.md"]) assert.equal(hashes.get(blocked), undefined, blocked);
 });

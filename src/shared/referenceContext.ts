@@ -64,6 +64,27 @@ export interface ReferenceContextView {
   sources: ContextSourceView[];
 }
 
+/** Reference-specific stops that the guidance flow reports as a status instead of an unexpected failure. */
+export class ReferenceContextError extends Error {
+  public override readonly name = "ReferenceContextError";
+}
+
+export const REFERENCE_WITHHELD_LOCAL_NOTE = "ローカル限定の資料のため、この接続先には送信しません";
+
+/**
+ * Local-only excerpts never leave a verified local model. For any other destination they are
+ * withheld from the prompt (provenance only, no text) instead of stopping the whole request.
+ */
+export function splitReferencesForDestination(excerpts: readonly ReferenceExcerpt[], destinationIsVerifiedLocal: boolean): {
+  sent: ReferenceExcerpt[]; withheld: ReferenceProvenance[];
+} {
+  if (destinationIsVerifiedLocal) return { sent: [...excerpts], withheld: [] };
+  return {
+    sent: excerpts.filter(item => !item.localOnly),
+    withheld: excerpts.filter(item => item.localOnly).map(({ text: _text, ...item }) => ({ ...item, included: false, note: REFERENCE_WITHHELD_LOCAL_NOTE }))
+  };
+}
+
 export function isVerifiedReferenceLocalModel(model?: { providerId: string; endpoint?: string; modelId: string }): boolean {
   return Boolean(model && (model.providerId === "lmStudio" || model.providerId === "ollama") &&
     /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\/?$/i.test(model.endpoint ?? "") && !/cloud/i.test(model.modelId));

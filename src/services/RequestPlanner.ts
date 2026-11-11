@@ -54,6 +54,7 @@ export class RequestPlanner {
       ? automaticObservation : undefined;
     const filteredContext: GuidanceContext = {
       referenceDocuments: context.referenceDocuments,
+      withheldReferenceDocuments: context.withheldReferenceDocuments,
       referenceRevision: context.referenceRevision,
       activeFilePath: context.activeFilePath,
       activeFileLanguage: context.activeFileLanguage,

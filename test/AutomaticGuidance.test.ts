@@ -9,7 +9,7 @@ import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/Re
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
 import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 import { classifyRoutingTask } from "../src/shared/adaptiveProviderRouting";
-import type { ReferenceAction, ReferenceExcerpt } from "../src/shared/referenceContext";
+import { ReferenceContextError, type ReferenceAction, type ReferenceExcerpt } from "../src/shared/referenceContext";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
@@ -140,15 +140,74 @@ test("registered references enter real requests, persist provenance, and invalid
   assert.equal(sent[1].context.referenceDocuments?.[0].hash, "v2");
 });
 
-test("local-only references stop at the routing boundary before any cloud generation", async t => {
-  let requests = 0;
-  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "unexpected" }; });
+const localOnlyReference = (): ReferenceExcerpt => ({ id: "doc:1", sourceId: "source", path: "docs/rules.md", title: "規約", kind: "rules", hash: "v1", text: "PRIVATE",
+  startLine: 1, endLine: 1, reason: "適用範囲", localOnly: true, mode: "reference" });
+
+test("local-only references are withheld from cloud providers instead of stopping the request", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言", focus: "review" }; });
   t.after(h.dispose);
-  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries, resolve: async () => [{ id: "doc:1", sourceId: "source", path: "docs/rules.md", title: "規約", kind: "rules", hash: "v1", text: "PRIVATE",
-    startLine: 1, endLine: 1, reason: "適用範囲", localOnly: true, mode: "reference" }], validate: async () => {} } });
+  const shared: ReferenceExcerpt = { ...localOnlyReference(), id: "doc2:1", sourceId: "shared", path: "docs/shared.md", text: "SHARED_BODY", hash: "s1", localOnly: false };
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [localOnlyReference(), shared], validate: async () => {} } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent.length, 1, h.state.statusMessage?.text);
+  assert.doesNotMatch(JSON.stringify(sent[0]), /PRIVATE/);
+  assert.deepEqual(sent[0].context.referenceDocuments?.map(doc => doc.text), ["SHARED_BODY"]);
+  const entry = h.store.get(h.state.activeConversationStreamId!)?.entries.at(-1);
+  assert.equal(entry?.transmissionClass, "cloudAllowed", "withheld excerpts do not make the conversation local-only");
+  assert.equal(entry?.requestPlan?.referenceLocalOnly, false);
+  assert.deepEqual(entry?.requestPlan?.referenceSourceIds, ["shared"]);
+  const withheld = entry?.requestPlan?.referenceDocuments?.find(doc => doc.sourceId === "source");
+  assert.equal(withheld?.included, false); assert.match(withheld?.note ?? "", /ローカル限定/);
+  assert.equal("text" in (withheld ?? {}), false);
+});
+
+test("only local-only references are not meaningful context for cloud automatic guidance", async t => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  h.context.activeFileExcerpt = undefined;
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [localOnlyReference()], validate: async () => {} } });
   await h.driver.handleAutomaticGuidance();
   assert.equal(requests, 0);
-  assert.match(h.state.statusMessage?.text ?? "", /ローカル限定/);
+});
+
+test("a verified local destination receives local-only references and keeps the conversation local", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  const internals = h.driver as unknown as { connectionService: Record<string, unknown> };
+  Object.assign(internals.connectionService, { getProviderId: () => "ollama",
+    getConnectedModel: () => ({ providerId: "ollama", modelId: "qwen", endpoint: "http://127.0.0.1:11434" }) });
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [localOnlyReference()], validate: async () => {} } });
+  await h.driver.handleAutomaticGuidance();
+  assert.equal(sent.length, 1, h.state.statusMessage?.text);
+  assert.equal(sent[0].context.referenceDocuments?.[0].text, "PRIVATE");
+  const entry = h.store.get(h.state.activeConversationStreamId!)?.entries.at(-1);
+  assert.equal(entry?.transmissionClass, "localOnly");
+  assert.equal(entry?.requestPlan?.referenceLocalOnly, true);
+});
+
+test("automatic reference stops are announced once, while unexpected errors still propagate", async t => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言", focus: "review" }; });
+  t.after(h.dispose);
+  let failure: Error = new ReferenceContextError("参照資料または許可設定が更新されました。");
+  const shared: ReferenceExcerpt = { ...localOnlyReference(), localOnly: false };
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    resolve: async () => [{ ...shared }], validate: async () => { throw failure; } } });
+  await h.driver.handleAutomaticGuidance();
+  assert.match(h.state.statusMessage?.text ?? "", /更新/);
+  h.driver.patchSession({ statusMessage: undefined });
+  h.editCode("const x = 2;"); await h.driver.handleAutomaticGuidance();
+  assert.equal(h.state.statusMessage, undefined, "the same automatic stop is not re-announced");
+  assert.equal(requests, 0); assert.equal(h.state.requestState, "idle");
+  failure = new Error("UNEXPECTED_BUG");
+  h.editCode("const x = 3;");
+  await assert.rejects(h.driver.handleAutomaticGuidance(), /UNEXPECTED_BUG/);
   assert.equal(h.state.requestState, "idle");
 });
 

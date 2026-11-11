@@ -9,6 +9,13 @@ import { ReferenceDocumentService } from "../../services/ReferenceDocumentServic
 import { isPathExcluded, PATH_CASE_INSENSITIVE } from "../../services/globMatch";
 import { PROTECTED_EXCLUDED_GLOBS } from "../../services/protectedGlobs";
 import { parseReferencePatterns, resolveReferenceContext } from "../../services/ReferenceContextResolver";
+import { ReferenceContextError } from "../../shared/referenceContext";
+
+/**
+ * A full rescan before sending is only needed to catch changes that watchers missed.
+ * Within this window the cached catalog is used; the files actually sent are always re-hashed.
+ */
+export const REFERENCE_FULL_RESCAN_INTERVAL_MS = 30_000;
 
 export class AdditionalContextCoordinator implements vscode.Disposable {
   private documents: ReferenceDocument[] = [];
@@ -19,6 +26,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
   private timer?: ReturnType<typeof setTimeout>;
   private disposed = false;
   private dirty = true;
+  private lastScanAt = 0;
   public revision = 0;
   private readonly service = new ReferenceDocumentService();
   public constructor(private readonly registry: ContextSourceRegistry, private readonly changed: () => void,
@@ -129,21 +137,42 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     const document = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
     await vscode.window.showTextDocument(document, { preview: true });
   }
-  public async resolve(context: GuidanceContext, question: string, activePath?: string, force = false): Promise<ReferenceExcerpt[]> {
+  /** fresh: rescan only when watchers may have missed changes for longer than the rescan interval. */
+  public async resolve(context: GuidanceContext, question: string, activePath?: string, fresh = false): Promise<ReferenceExcerpt[]> {
     if (!vscode.workspace.isTrusted || !this.registry.list().some(source => source.enabled)) return [];
-    await this.refresh(force);
+    await this.refresh(fresh && Date.now() - this.lastScanAt >= REFERENCE_FULL_RESCAN_INTERVAL_MS);
     const uri = activePath && path.isAbsolute(activePath) ? vscode.Uri.file(activePath) : undefined;
     const root = uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined;
     const relative = activePath && root ? path.relative(root.uri.fsPath, activePath).replaceAll("\\", "/") : "";
     return resolveReferenceContext(this.registry.list(), this.documents, context, question, relative, root?.uri.fsPath);
   }
+  /** Re-hash only the files that are about to be sent instead of rescanning every registered source. */
   public async validate(excerpts: readonly ReferenceExcerpt[], revision: number): Promise<void> {
     if (!excerpts.length) return;
-    this.requireTrust();
-    await this.refresh(true);
-    if (revision !== this.revision || excerpts.some(item => !this.documents.some(doc => doc.sourceId === item.sourceId && doc.hash === item.hash))) {
-      throw new Error("参照資料または許可設定が更新されました。送信内容を確認してもう一度お試しください。");
+    if (!vscode.workspace.isTrusted) throw new ReferenceContextError("ワークスペースを信頼してから参照資料を利用してください。");
+    if (this.pending) await this.pending;
+    const stale = () => new ReferenceContextError("参照資料または許可設定が更新されました。送信内容を確認してもう一度お試しください。");
+    if (revision !== this.revision || this.dirty) throw stale();
+    const sources = this.registry.list();
+    const targets = new Map<string, { source: ContextSource; documents: Map<string, ReferenceDocument> }>();
+    for (const excerpt of excerpts) {
+      const doc = this.documents.find(doc => doc.id === excerpt.id.slice(0, excerpt.id.lastIndexOf(":")) && doc.sourceId === excerpt.sourceId);
+      const source = sources.find(source => source.id === excerpt.sourceId && source.enabled);
+      if (!doc || !source || doc.hash !== excerpt.hash || source.localOnly !== excerpt.localOnly) throw stale();
+      const target = targets.get(source.id) ?? { source, documents: new Map<string, ReferenceDocument>() };
+      target.documents.set(doc.relativePath, doc);
+      targets.set(source.id, target);
     }
+    const roots = (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath);
+    for (const { source, documents } of targets.values()) {
+      const hashes = await this.service.verify(source, [...documents.keys()], this.excluded(), roots);
+      if ([...documents].some(([relativePath, doc]) => hashes.get(relativePath) !== doc.hash)) {
+        // The cached catalog is outdated; rebuild it on the next preview or request.
+        this.invalidate(); this.schedule();
+        throw stale();
+      }
+    }
+    if (revision !== this.revision) throw stale();
   }
   /** Recheck current permissions for prior answers as well as current excerpts. */
   public protectHistory(entries: readonly ConversationEntry[]): ConversationEntry[] {
@@ -171,9 +200,10 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     const operation = (async () => {
       const scanned = await this.service.scan(this.registry.list(), this.excluded(), (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath));
       if (this.disposed || generation !== this.revision || !vscode.workspace.isTrusted) return;
-      if (JSON.stringify(scanned.documents) !== JSON.stringify(this.documents)) this.revision++;
+      // Text, title, status and Skill metadata are derived from the content hash.
+      if (documentSignature(scanned.documents) !== documentSignature(this.documents)) this.revision++;
       this.documents = scanned.documents; this.errors = scanned.errors;
-      this.dirty = false;
+      this.dirty = false; this.lastScanAt = Date.now();
     })();
     this.pending = operation; this.changed();
     try { await operation; }
@@ -210,7 +240,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
       } catch { /* Read/scan errors are reported by refresh; manual refresh remains available. */ }
     }
   }
-  private requireTrust(): void { if (!vscode.workspace.isTrusted) throw new Error("ワークスペースを信頼してから参照資料を利用してください。"); }
+  private requireTrust(): void { if (!vscode.workspace.isTrusted) throw new ReferenceContextError("ワークスペースを信頼してから参照資料を利用してください。"); }
   private parsePatterns(text: string): string[] { return parseReferencePatterns(text); }
   public dispose(): void {
     this.disposed = true;
@@ -218,4 +248,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     [...this.watchers, ...this.listeners].forEach(item => item.dispose());
     this.documents = [];
   }
+}
+function documentSignature(documents: readonly ReferenceDocument[]): string {
+  return documents.map(doc => `${doc.sourceId}\0${doc.id}\0${doc.relativePath}\0${doc.hash}`).join("\n");
 }

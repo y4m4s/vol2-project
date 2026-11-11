@@ -31,6 +31,7 @@ export function applySkillContextPreset(context: GuidanceContext, command?: Slas
 
   return {
     referenceDocuments: context.referenceDocuments,
+    withheldReferenceDocuments: context.withheldReferenceDocuments,
     referenceRevision: context.referenceRevision,
     activeFilePath: context.activeFilePath,
     activeFileLanguage: context.activeFileLanguage,

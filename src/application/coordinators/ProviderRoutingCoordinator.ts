@@ -103,7 +103,7 @@ export class ProviderRoutingCoordinator {
     const oneShot = stream ? this.once.get(stream) : undefined;
     if (routing.mode === "manual" && !oneShot && !preference?.providerId) {
       if (referenceLocalOnly && !isVerifiedReferenceLocalModel(this.connection.getConnectedModel())) {
-        return { ok: false, taskProfile, reason: "ローカル限定の参照資料・会話を含みます。ローカルLLMへ接続するか、参照先の送信範囲を確認してください。" };
+        return { ok: false, taskProfile, reason: "ローカル限定の参照資料を使った会話です。ローカルLLMへ接続するか、新しい会話で相談してください。" };
       }
       const connected = this.connection.getState() === "connected";
       const currentProviderId = this.connection.getProviderId?.();
@@ -133,8 +133,7 @@ export class ProviderRoutingCoordinator {
         tokenLimit: settings.dailyTokenLimit,
         maxInputTokens: model ? deriveModelProfile(model.profileSource).contextBudget : 0,
         costUsd: usage.requestCount === 0 ? 0 : this.usage.getRecordedCostUsd(providerId),
-        verifiedLocal: Boolean(model && (providerId === "ollama" || providerId === "lmStudio") &&
-          /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?\/?$/i.test(model.endpoint ?? "") && !/cloud/i.test(model.modelId)) };
+        verifiedLocal: isVerifiedReferenceLocalModel(model) };
     });
     const localOnly = referenceLocalOnly || history.some(e => e.transmissionClass === "localOnly" ||
       (!e.transmissionClass && (e.providerId === "ollama" || e.providerId === "lmStudio")));

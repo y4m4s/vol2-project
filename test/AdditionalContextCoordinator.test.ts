@@ -128,3 +128,39 @@ test("revoking a source also restricts prior and derived answers that carry its 
   assert.equal(h.coordinator.protectHistory(entries)[0].transmissionClass, "localOnly");
   assert.equal(h.coordinator.protectHistory([{ ...entries[0], transmissionClass: "excluded" }])[0].transmissionClass, "excluded");
 });
+
+test("sending re-hashes only the selected files instead of rescanning every registered document", async t => {
+  const h = await setup(t);
+  await fs.writeFile(path.join(h.root, "other.md"), "# Other\nunrelated");
+  const internals = h.coordinator as unknown as { service: { scan: (...args: unknown[]) => Promise<unknown> }; lastScanAt: number };
+  const originalScan = internals.service.scan.bind(internals.service);
+  let scans = 0;
+  internals.service.scan = async (...args: unknown[]) => { scans++; return originalScan(...args); };
+  const selected = await h.coordinator.resolve(context, "TypeScript", undefined, true), revision = h.coordinator.revision;
+  assert.equal(scans, 1);
+  assert.deepEqual(selected.map(item => item.path), ["docs/guide.md"]);
+  await h.coordinator.resolve(context, "TypeScript", undefined, true);
+  await h.coordinator.validate(selected, revision);
+  assert.equal(scans, 1, "fresh resolves within the interval and validation reuse the catalog");
+  await fs.writeFile(path.join(h.root, "other.md"), "# Other\nchanged without a watcher event");
+  await h.coordinator.validate(selected, revision);
+  assert.equal(scans, 1, "unsent documents are not read before sending");
+  internals.lastScanAt = 0;
+  await h.coordinator.resolve(context, "TypeScript", undefined, true);
+  assert.equal(scans, 2, "a stale catalog is rescanned to catch missed watcher events");
+  const current = await h.coordinator.resolve(context, "TypeScript"), currentRevision = h.coordinator.revision;
+  await fs.writeFile(path.join(h.root, "guide.md"), "# TypeScript\nEDITED");
+  await assert.rejects(h.coordinator.validate(current, currentRevision), (error: Error) => error.name === "ReferenceContextError" && /更新/.test(error.message));
+  assert.match((await h.coordinator.resolve(context, "TypeScript"))[0].text, /EDITED/);
+});
+
+test("validation rejects excerpts whose source permission changed since selection", async t => {
+  const h = await setup(t, false);
+  const selected = await h.coordinator.resolve(context, "TypeScript"), revision = h.coordinator.revision;
+  const sources = h.data.get("aiPairNavigator.referenceSources.v1") as ContextSource[];
+  // Simulate another writer: the in-memory registry is the authority used at send time.
+  const registry = (h.coordinator as unknown as { registry: { update(change: (items: ContextSource[]) => ContextSource[]): Promise<void> } }).registry;
+  await registry.update(items => items.map(item => ({ ...item, localOnly: true })));
+  assert.equal(sources.length, 1);
+  await assert.rejects(h.coordinator.validate(selected, revision), /更新/);
+});

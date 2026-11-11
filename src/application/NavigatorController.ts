@@ -55,7 +55,7 @@ import {
 import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import type { AdditionalContextCoordinator } from "./coordinators/AdditionalContextCoordinator";
-import { isVerifiedReferenceLocalModel, type ReferenceAction } from "../shared/referenceContext";
+import { isVerifiedReferenceLocalModel, ReferenceContextError, splitReferencesForDestination, type ReferenceAction } from "../shared/referenceContext";
 import {
   AdviceMode,
   AiProviderId,
@@ -127,6 +127,8 @@ export class NavigatorController implements vscode.Disposable {
   private routingProviderConnectionRevision = 0;
   private initialized = false;
   private lastReferenceRevision = -1;
+  /** Last stop reason shown for automatic guidance; repeated triggers do not re-announce it. */
+  private lastAutomaticStopNotice?: string;
 
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
 
@@ -169,8 +171,9 @@ export class NavigatorController implements vscode.Disposable {
         getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
         resolveReferenceContext: async (context, question) => {
           if (!this.referenceContext) return context;
-          const referenceDocuments = await this.referenceContext.resolve(context, question, context.activeFilePath);
-          return { ...context, referenceDocuments, referenceRevision: this.referenceContext.revision };
+          const resolved = await this.referenceContext.resolve(context, question, context.activeFilePath);
+          const { sent, withheld } = splitReferencesForDestination(resolved, this.isConnectedModelVerifiedLocal());
+          return { ...context, referenceDocuments: sent, withheldReferenceDocuments: withheld, referenceRevision: this.referenceContext.revision };
         },
         getPromptExtras: (context, plan) => ({
           conversationMemory: plan.kind === "always" || this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
@@ -815,6 +818,7 @@ export class NavigatorController implements vscode.Disposable {
     const revision = this.referenceContext?.revision ?? -1;
     if (revision !== this.lastReferenceRevision) {
       this.lastReferenceRevision = revision;
+      this.lastAutomaticStopNotice = undefined;
       this.requestPlanCoordinator.invalidate();
     }
     this.didChangeStateEmitter.fire();
@@ -1184,12 +1188,15 @@ export class NavigatorController implements vscode.Disposable {
       // Commit duplicate suppression before finally returns to idle and dispatches
       // any events accumulated during a slow response.
       if (result.ok) {
+        this.lastAutomaticStopNotice = undefined;
         onSuccess?.();
         this.patchSession({ guidanceCompleted: true, guidanceCompletionRevision: (this.sessionStore.getState().guidanceCompletionRevision ?? 0) + 1 });
       }
       return result;
     } catch (error) {
-      this.patchGuidanceSession({ statusMessage: { kind: "warning", text: error instanceof Error ? error.message : "参照情報を準備できませんでした。" } });
+      // Only reference policy/consistency stops are reported here; anything else is a real failure.
+      if (!(error instanceof ReferenceContextError)) throw error;
+      this.notifyGuidanceStopped(error.message, automatic);
       return { ok: false };
     } finally {
       const activeRequest = this.activeGuidanceRequest;
@@ -1280,13 +1287,9 @@ export class NavigatorController implements vscode.Disposable {
         : preview;
 
     const history = this.protectReferenceHistory(this.sessionStore.getState().conversationHistory);
-    const referenceLocalOnly = Boolean(prepared.context.referenceDocuments?.some(doc => doc.localOnly) ||
-      history.some(entry => entry.requestPlan?.referenceLocalOnly));
-    prepared.requestPlan.referenceLocalOnly = referenceLocalOnly;
-    prepared.requestPlan.referenceSourceIds = [...new Set([
-      ...history.flatMap(entry => entry.requestPlan?.referenceSourceIds ?? entry.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? []),
-      ...(prepared.context.referenceDocuments ?? []).map(doc => doc.sourceId)
-    ])];
+    // Only the conversation's own provenance constrains routing. Local-only excerpts for this turn
+    // are withheld after routing when the destination is not a verified local model.
+    const historyLocalOnly = history.some(entry => entry.requestPlan?.referenceLocalOnly);
     const requestId = this.nextGuidanceRequestId++;
     const tokenSource = new vscode.CancellationTokenSource();
     this.activeGuidanceRequest = { id: requestId, tokenSource };
@@ -1307,10 +1310,10 @@ export class NavigatorController implements vscode.Disposable {
         diagnostics: prepared.context.diagnosticsSummary,
         changeCount: prepared.context.recentEditsSummary.length
       },
-      referenceLocalOnly
+      historyLocalOnly
     );
     if (!route.ok || JSON.stringify(settings) !== JSON.stringify(this.settingsService.getSettings())) {
-      this.patchGuidanceSession({ statusMessage: { kind: "warning", text: route.reason ?? "設定が変更されたため送信を中止しました。" } });
+      this.notifyGuidanceStopped(route.reason ?? "設定が変更されたため送信を中止しました。", options.kind === "always");
       return { ok: false };
     }
     // Routing can select a different provider after context collection. Apply
@@ -1334,6 +1337,17 @@ export class NavigatorController implements vscode.Disposable {
       }
       prepared = refreshed;
     }
+    prepared = await this.applyReferenceDestination(prepared, options.userPrompt ?? "", preview.activeFilePath);
+    if (tokenSource.token.isCancellationRequested || this.sessionStore.getState().requestState !== preparationState) {
+      tokenSource.dispose();
+      return { ok: false };
+    }
+    const referenceLocalOnly = historyLocalOnly || Boolean(prepared.context.referenceDocuments?.some(doc => doc.localOnly));
+    prepared.requestPlan.referenceLocalOnly = referenceLocalOnly;
+    prepared.requestPlan.referenceSourceIds = [...new Set([
+      ...history.flatMap(entry => entry.requestPlan?.referenceSourceIds ?? entry.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? []),
+      ...(prepared.context.referenceDocuments ?? []).map(doc => doc.sourceId)
+    ])];
     let conversationMemory: string;
     try {
       // Automatic observations concern the current code and explicit current task.
@@ -1345,7 +1359,7 @@ export class NavigatorController implements vscode.Disposable {
     }
     if (tokenSource.token.isCancellationRequested) { tokenSource.dispose(); return { ok: false }; }
     if (referenceLocalOnly && !isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel())) {
-      throw new Error("ローカル限定の参照資料・会話を含むため、確認済みのローカルLLMで続けてください。");
+      throw new ReferenceContextError("ローカル限定の参照資料・会話を含むため、確認済みのローカルLLMで続けてください。");
     }
     await this.referenceContext?.validate(prepared.context.referenceDocuments ?? [], prepared.context.referenceRevision ?? -1);
     if (tokenSource.token.isCancellationRequested || this.activeGuidanceRequest?.id !== requestId) {
@@ -1354,7 +1368,7 @@ export class NavigatorController implements vscode.Disposable {
     }
     if (this.protectReferenceHistory(history).some(entry => entry.requestPlan?.referenceLocalOnly) &&
       !isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel())) {
-      throw new Error("参照先の送信許可が変更されたため、外部送信を中止しました。");
+      throw new ReferenceContextError("参照先の送信許可が変更されたため、外部送信を中止しました。");
     }
     const knowledgeItems = this.findReusableKnowledge(prepared.context);
     prepared.requestPlan.referenceSourceIds = [...new Set([
@@ -1798,10 +1812,39 @@ export class NavigatorController implements vscode.Disposable {
 
   private async attachReferenceContext(prepared: PreparedGuidanceRequest, question: string, activePath?: string): Promise<PreparedGuidanceRequest> {
     if (!this.referenceContext) return prepared;
-    const referenceDocuments = await this.referenceContext.resolve(prepared.context, question, activePath, true);
+    const resolved = await this.referenceContext.resolve(prepared.context, question, activePath, true);
+    const { sent, withheld } = splitReferencesForDestination(resolved, this.isConnectedModelVerifiedLocal());
     return this.requestPlanCoordinator.externalize({ ...prepared,
-      context: { ...prepared.context, referenceDocuments, referenceRevision: this.referenceContext.revision }
+      context: { ...prepared.context, referenceDocuments: sent, withheldReferenceDocuments: withheld, referenceRevision: this.referenceContext.revision }
     }, question);
+  }
+
+  /**
+   * Re-apply the local-only boundary for the provider chosen by routing. Withheld excerpts carry no
+   * text, so a local destination that can use them resolves again; any other destination only drops.
+   */
+  private async applyReferenceDestination(prepared: PreparedGuidanceRequest, question: string, activePath?: string): Promise<PreparedGuidanceRequest> {
+    if (!this.referenceContext) return prepared;
+    const local = this.isConnectedModelVerifiedLocal();
+    if (local && prepared.context.withheldReferenceDocuments?.length) return this.attachReferenceContext(prepared, question, activePath);
+    if (local || !prepared.context.referenceDocuments?.some(doc => doc.localOnly)) return prepared;
+    const { sent, withheld } = splitReferencesForDestination(prepared.context.referenceDocuments, false);
+    return this.requestPlanCoordinator.externalize({ ...prepared, context: { ...prepared.context, referenceDocuments: sent,
+      withheldReferenceDocuments: [...(prepared.context.withheldReferenceDocuments ?? []), ...withheld] } }, question);
+  }
+
+  private isConnectedModelVerifiedLocal(): boolean {
+    return isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel());
+  }
+
+  /** Manual requests always explain a stop. Automatic triggers announce the same reason once. */
+  private notifyGuidanceStopped(text: string, automatic: boolean): void {
+    if (automatic && this.lastAutomaticStopNotice === text) {
+      this.writeDiagnostic({ event: "automatic_guidance_stop_repeated", reason: text });
+      return;
+    }
+    this.lastAutomaticStopNotice = automatic ? text : undefined;
+    this.patchGuidanceSession({ statusMessage: { kind: "warning", text } });
   }
 
   private protectReferenceHistory(entries: ConversationEntry[]): ConversationEntry[] {

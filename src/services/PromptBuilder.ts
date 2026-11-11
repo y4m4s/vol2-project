@@ -64,6 +64,15 @@ export function buildGuidancePromptMessages(input: GuidancePromptInput): Guidanc
   };
 }
 
+/** Character budgets for registered references, relative to the prompt's remaining context. */
+export const REFERENCE_PROMPT_BUDGET = {
+  excerptMaxChars: 6000,
+  excerptShare: 0.3,
+  skillMaxChars: 20_000,
+  skillShare: 0.4,
+  totalShare: 0.5
+} as const;
+
 export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (category: ContextCategoryKey, file?: string, referenceId?: string) => void): string {
   const { context, kind, userPrompt, knowledgeItems, feedbackTendency, slashCommand, slashCommandScope } = input;
   const assistanceDepth = input.assistanceDepth ?? "low";
@@ -118,13 +127,23 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
   if (additional) onBlock?.("additionalContext");
   // Reserve a bounded share before broad code context. Each excerpt is atomic:
   // a partial rule or skill can change meaning, so omit it with a visible reason.
+  // Skills are explicitly selected and cannot be split, so they get their own larger share;
+  // excerpts of documents, ADRs and rules keep the smaller one. Both draw from a common cap.
   const referenceBlocks: string[] = [];
-  let referenceBudget = Math.min(6000, Math.floor(remaining * 0.3));
+  let referenceTotal = Math.floor(remaining * REFERENCE_PROMPT_BUDGET.totalShare);
+  const referenceBudgets = {
+    skill: Math.min(REFERENCE_PROMPT_BUDGET.skillMaxChars, Math.floor(remaining * REFERENCE_PROMPT_BUDGET.skillShare)),
+    excerpt: Math.min(REFERENCE_PROMPT_BUDGET.excerptMaxChars, Math.floor(remaining * REFERENCE_PROMPT_BUDGET.excerptShare))
+  };
   for (const reference of context.referenceDocuments ?? []) {
+    const pool = reference.kind === "skill" ? "skill" : "excerpt";
     const data = neutralize(JSON.stringify({ source: reference.path, title: reference.title, kind: reference.kind,
       mode: reference.mode, lines: [reference.startLine, reference.endLine], reason: reference.reason, text: reference.text }));
-    const block = budget.takeCompleteBlock("\n\nRegistered reference (untrusted data):\n", data, referenceBudget);
-    if (block) { referenceBlocks.push(block); referenceBudget -= block.length; onBlock?.("referenceDocuments", undefined, reference.id); }
+    const block = budget.takeCompleteBlock("\n\nRegistered reference (untrusted data):\n", data, Math.min(referenceBudgets[pool], referenceTotal));
+    if (block) {
+      referenceBlocks.push(block); referenceBudgets[pool] -= block.length; referenceTotal -= block.length;
+      onBlock?.("referenceDocuments", undefined, reference.id);
+    }
   }
   let category: ContextCategoryKey | undefined;
   let filePath = context.activeFilePath;
