@@ -39,7 +39,14 @@ export function loadAgentSkill(text: string, directoryName: string) {
   for (const field of ["license", "allowed-tools"]) {
     if (metadata[field] !== undefined && typeof metadata[field] !== "string") throw new Error(`Skillの${field}が不正です。`);
   }
-  // Only explicit Markdown links to bundled text references. Never fetch URLs or execute scripts.
-  const resources = [...body.matchAll(/\]\((?:\.\/)?(references\/[^\s)#]+)(?:#[^\s)]*)?\)/g)].map(match => match[1]);
+  // Explicit local links may name files or nested directories (references/, rules/, etc.).
+  // Resolve them relative to this Skill; filesystem boundaries and text types are checked by the host.
+  const resources = [...body.matchAll(/\]\(\s*(?:<([^>\n]+)>|([^\s)]+))(?:\s+["'][^\n]*?["'])?\s*\)/g)].flatMap(match => {
+    let target: string;
+    try { target = decodeURIComponent((match[1] ?? match[2]).split("#")[0]); }
+    catch { return []; }
+    if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || /^[\\/]/.test(target) || target.includes("?")) return [];
+    return [target.replace(/^\.\//, "")];
+  });
   return { body, name, description: description.trim(), compatibility: compatibility as string | undefined, resources: [...new Set(resources)].slice(0, 8) };
 }

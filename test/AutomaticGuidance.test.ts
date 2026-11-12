@@ -9,7 +9,7 @@ import { RequestPlanner, type PreparedGuidanceRequest } from "../src/services/Re
 import type { GuidanceRequestInput } from "../src/services/AdviceService";
 import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 import { classifyRoutingTask } from "../src/shared/adaptiveProviderRouting";
-import { ReferenceContextError, type ReferenceAction, type ReferenceExcerpt } from "../src/shared/referenceContext";
+import { ReferenceContextError, type ReferenceAction, type ReferenceExcerpt, type ContextSource } from "../src/shared/referenceContext";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
@@ -216,13 +216,83 @@ test("manual reference selection receives the current question and hand-entered 
   const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言" }; });
   t.after(h.dispose);
   const queries: { question: string; additional?: string }[] = [];
-  Object.assign(h.driver, { feedbackStore: { getTendencySummary: () => undefined }, referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries, resolve: async (context: GuidanceContext, question: string) => {
+  Object.assign(h.driver, { feedbackStore: { getTendencySummary: () => undefined }, referenceContext: { revision: 1, catalog: async () => [], protectHistory: (entries: unknown) => entries, resolve: async (context: GuidanceContext, question: string) => {
     queries.push({ question, additional: context.additionalContext }); return [];
   }, validate: async () => {} } });
   await h.driver.askForGuidanceWithCurrentContext("TypeScriptの命名規約を説明して", "手入力の現在要件");
   assert.ok(queries.some(query => query.question === "TypeScriptの命名規約を説明して" && query.additional === "手入力の現在要件"));
   assert.equal(sent.length, 1, h.state.statusMessage?.text);
   assert.equal(sent[0].context.additionalContext, "手入力の現在要件");
+});
+
+test("manual retrieval uses model-selected references and records catalog provenance", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "助言" }; });
+  t.after(h.dispose);
+  let plans = 0;
+  const selected: ReferenceExcerpt = { id: "guide:1", sourceId: "source", path: "docs/guide.md", title: "Guide", kind: "document", hash: "v1",
+    text: "MODEL_REQUESTED_REFERENCE", startLine: 1, endLine: 1, reason: "AIが参照を要求", localOnly: false, mode: "reference" };
+  Object.assign(h.driver, { feedbackStore: { getTendencySummary: () => undefined },
+    referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+      catalog: async () => [{ id: "guide", sourceId: "source", path: "docs/guide.md", title: "Guide", localOnly: false }],
+      resolve: async (_context: GuidanceContext, _question: string, _path: string, _fresh: boolean, search?: { documentIds: string[] }) => search?.documentIds.includes("guide") ? [selected] : [],
+      validate: async () => {} },
+    adviceService: { requestGuidance: async (input: GuidanceRequestInput) => { sent.push(input); return { ok: true, text: "助言", usage: { inputTokens: 50, outputTokens: 20 },
+      responseMetadata: { attemptCount: 1, providerRequestCount: 1 } }; },
+      planReferenceSearch: async () => { plans++; return { search: { queries: ["retry"], documentIds: ["guide"] }, usage: { inputTokens: 10, outputTokens: 5 },
+        responseMetadata: { attemptCount: 1, providerRequestCount: 1 } }; } }
+  });
+  await h.driver.askForGuidanceWithCurrentContext("retryを説明して", "現在の要件");
+  assert.equal(plans, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].context.referenceDocuments?.[0].text, selected.text);
+  assert.ok(h.state.conversationHistory.at(-1)?.requestPlan?.referenceSourceIds?.includes("source"));
+  assert.deepEqual(h.state.conversationHistory.at(-1)?.tokenUsage, { inputTokens: 60, outputTokens: 25 });
+  assert.equal(h.state.conversationHistory.at(-1)?.responseMetadata?.attemptCount, 1, "search is not an answer regeneration");
+  assert.equal(h.state.conversationHistory.at(-1)?.responseMetadata?.providerRequestCount, 2);
+  assert.equal(h.state.conversationHistory.at(-1)?.responseMetadata?.referenceSearchCount, 1);
+});
+
+test("cancelling reference planning sends no final request and adds no question history", async t => {
+  let responses = 0;
+  const h = await lifecycleHarness(async () => { responses++; return { ok: true, text: "助言" }; });
+  t.after(h.dispose);
+  Object.assign(h.driver, { referenceContext: { revision: 1, protectHistory: (entries: unknown) => entries,
+    catalog: async () => [{ id: "guide", sourceId: "source", path: "guide.md", title: "Guide", localOnly: false }],
+    resolve: async () => [], validate: async () => {} },
+    adviceService: { requestGuidance: async () => { responses++; return { ok: true, text: "助言" }; },
+      planReferenceSearch: async () => { h.driver.cancelGuidanceRequest(); return { search: { queries: ["retry"], documentIds: ["guide"] } }; } }
+  });
+  await h.driver.askForGuidanceWithCurrentContext("retryを説明して", "現在の要件");
+  assert.equal(responses, 0);
+  assert.equal(h.state.conversationHistory.length, 0);
+  assert.equal(h.state.requestState, "idle");
+});
+
+test("attachment JSON persists per conversation and never follows a new conversation", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: true, text: "助言" }));
+  t.after(h.dispose);
+  const first = await h.store.createStream();
+  const source: ContextSource = { id: "attachment", uri: "file:///docs", label: "docs", directory: true, kind: "document", scope: "workspace",
+    enabled: true, localOnly: true, languages: [], appliesTo: [], selectedPaths: ["SKILL.md"], skillMode: "procedure" };
+  await h.store.saveContextSources(first.id, [source]);
+  assert.ok(h.store.list().some(item => item.id === first.id), "a conversation containing attachments is retained before its first question");
+  (h.store as unknown as { deleteEmptyStreamsInMemory(): void }).deleteEmptyStreamsInMemory();
+  assert.deepEqual(h.store.get(first.id)?.contextSources, [source]);
+  // The genuinely empty second conversation is discarded at startup.
+  const empty = await h.store.createStream();
+  assert.equal(h.store.get(first.id)?.revision, first.revision, "editing attachments does not race entry revisions");
+  assert.deepEqual(h.store.get(empty.id)?.contextSources, []);
+  await h.driver.selectConversationStream(first.id);
+  assert.deepEqual(h.attachments(), [source]);
+  await h.driver.selectConversationStream(empty.id);
+  assert.deepEqual(h.attachments(), []);
+  await h.driver.selectConversationStream(first.id);
+  assert.deepEqual(h.attachments(), [source]);
+  await h.store.saveStream({ ...h.store.get(first.id)!, entries: [{ id: "entry", role: "user", text: "question", kind: "manual", createdAt: new Date().toISOString() }] });
+  assert.deepEqual(h.store.get(first.id)?.contextSources, [source]);
+  await h.store.deleteStream(first.id);
+  assert.deepEqual(h.store.getContextSources(first.id), []);
 });
 
 test("オンボーディングで選んだ接続先を基本プロバイダーにして自動候補を再確認する", async () => {
@@ -285,6 +355,7 @@ test("オンボーディングからOrcaRouter設定を経由しても明示選�
 // Keep the real scheduler, request gate, controller execution and stream lifecycle.
 // Only the editor/provider and filesystem persistence are replaced.
 async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promise<GuidanceRequestResult>) {
+  let attachments: ContextSource[] = [];
   const sql = await require("sql.js")();
   const db = new sql.Database();
   const store = new ConversationStore({} as vscode.Uri);
@@ -299,6 +370,7 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
     referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
   const scheduler = new AdviceScheduler();
   const driver = Object.create(NavigatorController.prototype) as Driver & {
+    selectConversationStream(id: string): Promise<void>;
     patchSession(patch: Partial<NavigatorSessionState>): void;
     createGuidanceCard(entry: NavigatorSessionState["conversationHistory"][number]): NonNullable<NavigatorSessionState["latestGuidance"]>;
     automaticFingerprints: Set<string>;
@@ -336,7 +408,9 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
     createGuidanceCard: (entry) => driver.createGuidanceCard(entry),
     getGuidanceAdditionalContext: (currentState) => currentState.screen === "main"
       ? currentState.pendingAdditionalContext ?? currentState.activeAdditionalContext
-      : currentState.activeAdditionalContext
+      : currentState.activeAdditionalContext,
+    getContextSources: () => attachments,
+    activateContextSources: sources => { attachments = [...sources]; }
   });
   Object.assign(driver, { conversationCoordinator: coordinator });
   const internals = driver as unknown as { connectionService: ConstructorParameters<typeof ProviderRoutingCoordinator>[0]; usageMeter: ConstructorParameters<typeof ProviderRoutingCoordinator>[1] };
@@ -346,6 +420,7 @@ async function lifecycleHarness(respond: (input: GuidanceRequestInput) => Promis
   });
   driver.patchSession({});
   return { driver, state, scheduler, store, context,
+    attachments: () => attachments,
     memoryRowCount: (streamId: string) => {
       const stmt = db.prepare("SELECT COUNT(*) AS count FROM conversation_memories WHERE stream_id = ?");
       try {

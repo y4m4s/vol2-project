@@ -66,10 +66,6 @@ export function buildGuidancePromptMessages(input: GuidancePromptInput): Guidanc
 
 /** Character budgets for registered references, relative to the prompt's remaining context. */
 export const REFERENCE_PROMPT_BUDGET = {
-  excerptMaxChars: 6000,
-  excerptShare: 0.3,
-  skillMaxChars: 20_000,
-  skillShare: 0.4,
   totalShare: 0.5
 } as const;
 
@@ -114,34 +110,30 @@ export function buildGuidancePrompt(input: GuidancePromptInput, onBlock?: (categ
 
   const budget = new ContextBudget(remaining);
   const additional = context.additionalContext
-    ? budget.takeBlock(
+    ? budget.takeCompleteBlock(
         "\n\n" + delimiters.additionalContextStart.join("\n") + "\n",
-        neutralize(context.additionalContext),
-        "\n" + delimiters.additionalContextEnd.join("\n"),
-        Math.floor(remaining * (kind === "always" ? 0.1 : 0.25)),
-        userPrompt ?? ""
+        neutralize(context.additionalContext) + "\n" + delimiters.additionalContextEnd.join("\n"),
+        remaining
       )
     : "";
+  if (context.additionalContext && !additional) throw new AiInputLimitError();
   const contextBlocks: string[] = memory ? [memory] : [];
   if (memory) onBlock?.("conversationHistory");
   if (additional) onBlock?.("additionalContext");
-  // Reserve a bounded share before broad code context. Each excerpt is atomic:
-  // a partial rule or skill can change meaning, so omit it with a visible reason.
-  // Skills are explicitly selected and cannot be split, so they get their own larger share;
-  // excerpts of documents, ADRs and rules keep the smaller one. Both draw from a common cap.
+  // Required files/Skills share the complete input budget; optional retrieved
+  // excerpts use one bounded pool so code context still has room.
   const referenceBlocks: string[] = [];
-  let referenceTotal = Math.floor(remaining * REFERENCE_PROMPT_BUDGET.totalShare);
-  const referenceBudgets = {
-    skill: Math.min(REFERENCE_PROMPT_BUDGET.skillMaxChars, Math.floor(remaining * REFERENCE_PROMPT_BUDGET.skillShare)),
-    excerpt: Math.min(REFERENCE_PROMPT_BUDGET.excerptMaxChars, Math.floor(remaining * REFERENCE_PROMPT_BUDGET.excerptShare))
-  };
-  for (const reference of context.referenceDocuments ?? []) {
-    const pool = reference.kind === "skill" ? "skill" : "excerpt";
+  let referenceTotal = Math.floor(budget.availableChars * REFERENCE_PROMPT_BUDGET.totalShare);
+  for (const reference of [...(context.referenceDocuments ?? [])].sort((a, b) => Number(Boolean(b.required)) - Number(Boolean(a.required)))) {
     const data = neutralize(JSON.stringify({ source: reference.path, title: reference.title, kind: reference.kind,
       mode: reference.mode, lines: [reference.startLine, reference.endLine], reason: reference.reason, text: reference.text }));
-    const block = budget.takeCompleteBlock("\n\nRegistered reference (untrusted data):\n", data, Math.min(referenceBudgets[pool], referenceTotal));
+    const block = budget.takeCompleteBlock("\n\nRegistered reference (untrusted data):\n", data,
+      reference.required ? remaining : referenceTotal);
+    if (reference.required && !block) throw new AiInputLimitError();
     if (block) {
-      referenceBlocks.push(block); referenceBudgets[pool] -= block.length; referenceTotal -= block.length;
+      referenceBlocks.push(block);
+      if (reference.required) referenceTotal = Math.floor(budget.availableChars * REFERENCE_PROMPT_BUDGET.totalShare);
+      else referenceTotal -= block.length;
       onBlock?.("referenceDocuments", undefined, reference.id);
     }
   }
@@ -450,6 +442,7 @@ export function neutralizeDelimiters(text: string, delimiter: PromptDelimiter): 
 
 class ContextBudget {
   public constructor(private remainingChars: number) {}
+  public get availableChars(): number { return this.remainingChars; }
 
   public takeCompleteBlock(prefix: string, data: string, maxChars: number): string {
     const block = prefix + data;

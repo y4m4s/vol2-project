@@ -42,7 +42,7 @@ export function AdditionalContextPanel({ id, value, disabled = false, onChange, 
       <div className="additional-context-head">
         <div className="additional-context-title">
           <span className="material-symbols-outlined">description</span>
-          追加コンテキスト
+          コンテキスト
         </div>
         <button
           type="button"
@@ -59,15 +59,13 @@ export function AdditionalContextPanel({ id, value, disabled = false, onChange, 
         ref={textareaRef}
         id={id}
         className="additional-context-input"
-        placeholder="課題文、プロダクト方針、実装で守りたい前提などを、ここに入力してください。"
+        placeholder="補足や課題文を入力…"
         rows={2}
+        maxLength={10000}
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       />
-      <div className="additional-context-note">
-        変更内容は次回の質問・自動助言から反映されます。
-      </div>
       <ReferenceSourceManager disabled={disabled} />
     </div>
   );

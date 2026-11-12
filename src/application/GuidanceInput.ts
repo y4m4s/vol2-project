@@ -120,7 +120,7 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
     return undefined;
   }
 
-  return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
+  return normalized;
 }
 
 /**

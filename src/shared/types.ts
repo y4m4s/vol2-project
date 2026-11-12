@@ -380,6 +380,7 @@ export interface TokenUsage {
 }
 
 export interface ProviderResponseMetadata {
+  referenceSearchCount?: number;
   attemptCount: number;
   providerRequestCount: number;
   requestIds?: string[];

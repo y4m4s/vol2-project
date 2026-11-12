@@ -121,7 +121,8 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
     case "setContextSourceEnabled":
       return isBoundedString(value.id, 1, 200) && typeof value.enabled === "boolean" ? value as WebviewToExtension : undefined;
     case "refreshContextSources":
-      return { type: "refreshContextSources" };
+    case "importContextSources":
+      return { type: value.type };
     case "setConversationRouting":
       return (value.mode === undefined || ["manual", "automatic"].includes(String(value.mode))) &&
         (value.providerId === undefined || ["copilot", "orcaRouter", "ollama", "lmStudio"].includes(String(value.providerId))) ? value as WebviewToExtension : undefined;

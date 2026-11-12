@@ -68,6 +68,146 @@ test("four-backtick code fences are not closed by embedded triple-backtick examp
   assert.match(chunks[0].text, /# still in example/);
 });
 
+test("explicitly applied Skills are not evicted by the five search excerpt limit", () => {
+  const skills = source({ selectedPaths: Array.from({ length: 7 }, (_, i) => `skill${i}/SKILL.md`) });
+  const docs = skills.selectedPaths.map((relativePath, i) => document({ id: `skill${i}`, relativePath, text: `STEP_${i}`,
+    kind: "skill", skill: { name: `skill${i}`, description: "Guide", resources: [] } }));
+  const selected = resolveReferenceContext([skills], docs, context(), "unrelated", "");
+  assert.equal(selected.length, 7);
+  assert.ok(selected.every(item => item.required && item.kind === "skill" && item.mode === "procedure"));
+});
+
+test("always-include files retain the final condition and cannot be silently clipped", () => {
+  const text = "# Task\n" + "details ".repeat(700) + "\nFINAL_REQUIREMENT";
+  const selected = resolveReferenceContext([source({ alwaysInclude: true })], [document({ text })], context(), "unrelated", "");
+  assert.equal(selected[0].text, text);
+  assert.equal(selected[0].required, true);
+  const input = { kind: "manual" as const, context: context({ referenceDocuments: selected }),
+    modelProfile: { delimiter: "xml" as const, contextBudget: 16000, terse: false } };
+  assert.match(buildGuidancePromptMessages(input).userPrompt, /FINAL_REQUIREMENT/);
+  assert.throws(() => buildGuidancePromptMessages({ ...input, modelProfile: { ...input.modelProfile, contextBudget: 1000 } }), /入力予算/);
+});
+
+test("model-selected documents can be retrieved without becoming permanently pinned", () => {
+  const doc = document({ text: "requested body" });
+  const sources = [source()];
+  assert.equal(resolveReferenceContext(sources, [doc], context(), "unrelated", "").length, 0);
+  const selected = resolveReferenceContext(sources, [doc], context(), "unrelated", "", undefined, [doc.id]);
+  assert.equal(selected.length, 1);
+  assert.equal(selected[0].required, false);
+  assert.match(selected[0].reason, /AI/);
+  assert.deepEqual(sources[0].selectedPaths, []);
+});
+
+test("ordinary attachments detect Skills, read code, and do not scan Skill scripts", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "test-skill");
+  await fs.mkdir(path.join(skillRoot, "scripts"), { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: test-skill\ndescription: Test procedure\n---\nFollow these steps.");
+  await fs.writeFile(path.join(skillRoot, "scripts", "run.py"), "SCRIPT_BODY");
+  await fs.writeFile(path.join(root, "app.ts"), "const value = 1;");
+  const registered = source({ uri: pathToFileURL(root).href });
+  const result = await new ReferenceDocumentService().scan([registered]);
+  assert.ok(result.documents.some(doc => doc.skill?.name === "test-skill" && doc.kind === "skill"));
+  assert.ok(result.documents.some(doc => doc.relativePath === "app.ts"));
+  assert.ok(result.documents.every(doc => !doc.text.includes("SCRIPT_BODY")));
+});
+
+test("directory attachments discover and search ordinary files through multiple nested directories", async t => {
+  const root = await fixture(t), nested = path.join(root, "team", "frontend", "typescript");
+  await fs.mkdir(nested, { recursive: true });
+  await fs.writeFile(path.join(root, "top.md"), "Top level overview");
+  await fs.writeFile(path.join(nested, "guide.md"), "# DeepRetryPolicy\nNESTED_REFERENCE_BODY");
+  const registered = source({ uri: pathToFileURL(root).href });
+  const result = await new ReferenceDocumentService().scan([registered]);
+  assert.deepEqual(result.documents.map(doc => doc.relativePath), ["team/frontend/typescript/guide.md", "top.md"]);
+  const selected = resolveReferenceContext([registered], result.documents, context(), "DeepRetryPolicy", "");
+  assert.equal(selected.length, 1);
+  assert.match(selected[0].path, /team\/frontend\/typescript\/guide\.md$/);
+  assert.match(selected[0].text, /NESTED_REFERENCE_BODY/);
+});
+
+test("nested Skills can be chosen for one request without pinning every Skill in the directory", () => {
+  const registered = source(), skill = document({ relativePath: "team/frontend/review/SKILL.md", text: "NESTED_SKILL_STEPS",
+    kind: "skill", skill: { name: "review", description: "Review TypeScript", resources: [] } });
+  assert.deepEqual(resolveReferenceContext([registered], [skill], context(), "Review TypeScript", ""), []);
+  const selected = resolveReferenceContext([registered], [skill], context(), "Review TypeScript", "", undefined, [skill.id]);
+  assert.equal(selected.length, 1);
+  assert.equal(selected[0].text, "NESTED_SKILL_STEPS");
+  assert.equal(selected[0].required, true);
+  assert.match(selected[0].reason, /AI/);
+  assert.deepEqual(registered.selectedPaths, []);
+});
+
+test("selected nested Skills recursively include linked reference directories", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "team", "frontend", "review");
+  const referenceRoot = path.join(skillRoot, "references", "languages", "typescript");
+  await fs.mkdir(referenceRoot, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review TypeScript\n---\nRead [guides](references/).\n");
+  await fs.writeFile(path.join(referenceRoot, "guide.md"), "# DeepRetryPolicy\nNESTED_SKILL_REFERENCE");
+  const registered = source({ kind: "skill", uri: pathToFileURL(root).href, selectedPaths: ["team/frontend/review/SKILL.md"] });
+  const result = await new ReferenceDocumentService().scan([registered]);
+  const selected = resolveReferenceContext([registered], result.documents, context(), "DeepRetryPolicy", "");
+  assert.equal(selected.length, 2);
+  assert.match(selected[1].text, /NESTED_SKILL_REFERENCE/);
+  assert.equal(selected[1].kind, "document");
+  assert.match(selected[1].path, /references\/languages\/typescript\/guide.md$/);
+  assert.equal(result.errors.get("source")?.length, 0);
+});
+
+test("Skills inside a grouping directory named references are still discovered", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "references", "team", "review");
+  await fs.mkdir(skillRoot, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review code\n---\nReview steps.");
+  const result = await new ReferenceDocumentService().scan([source({ kind: "skill", uri: pathToFileURL(root).href })]);
+  assert.equal(result.documents.length, 1);
+  assert.equal(result.documents[0].relativePath, "references/team/review/SKILL.md");
+});
+
+test("direct SKILL.md attachments resolve linked nested rule directories", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "review"), rules = path.join(skillRoot, "rules", "typescript", "async");
+  await fs.mkdir(rules, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review code\n---\nRead [rules](rules/typescript/).\n");
+  await fs.writeFile(path.join(rules, "retry.md"), "RetryPolicy NESTED_RULE_BODY");
+  const registered = source({ kind: "skill", directory: false, uri: pathToFileURL(path.join(skillRoot, "SKILL.md")).href, selectedPaths: ["SKILL.md"] });
+  const result = await new ReferenceDocumentService().scan([registered]);
+  const selected = resolveReferenceContext([registered], result.documents, context(), "RetryPolicy", "");
+  assert.equal(selected.length, 2);
+  assert.match(selected[1].text, /NESTED_RULE_BODY/);
+});
+
+test("directory links rank all nested files before applying the excerpt limit", () => {
+  const registered = source({ kind: "skill", selectedPaths: ["review/SKILL.md"] });
+  const skill = document({ relativePath: "review/SKILL.md", skill: { name: "review", description: "Review", resources: ["references/"] } });
+  const docs = Array.from({ length: 10 }, (_, index) => document({ id: `linked${index}`, relativePath: `review/references/a${index}.md`, text: "General notes" }));
+  docs.push(document({ id: "best", relativePath: "review/references/typescript/z-retry.md", text: "RetryPolicy RELEVANT_NESTED_FILE" }));
+  const selected = resolveReferenceContext([registered], [skill, ...docs], context(), "RetryPolicy", "");
+  assert.equal(selected[1].id, "best:1");
+  assert.ok(selected.length <= 9);
+});
+
+test("explicit deeply nested links cannot bypass the recursion depth limit", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "review");
+  const deepParts = ["references", ...Array.from({ length: REFERENCE_LIMITS.depth }, (_, index) => `d${index}`)];
+  const deep = path.join(skillRoot, ...deepParts);
+  await fs.mkdir(deep, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), `---\nname: review\ndescription: Review\n---\n[deep](${deepParts.join("/")}/guide.md)`);
+  await fs.writeFile(path.join(deep, "guide.md"), "TOO_DEEP");
+  const result = await new ReferenceDocumentService().scan([source({ kind: "skill", directory: false,
+    uri: pathToFileURL(path.join(skillRoot, "SKILL.md")).href, selectedPaths: ["SKILL.md"] })]);
+  assert.deepEqual(result.documents.map(doc => doc.relativePath), ["SKILL.md"]);
+  assert.match(result.errors.get("source")!.join(""), /深度/);
+});
+
+test("nested directory links preserve exclusions and never read scripts, assets or escaped paths", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "review"), resources = path.join(skillRoot, "references");
+  for (const dir of ["typescript", "private", "Scripts", "assets", "node_modules"]) await fs.mkdir(path.join(resources, dir), { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review\n---\n[all](references/)\n[script](references/Scripts/run.py)\n[escaped](%2e%2e/outside.md)\n[external](https://example.com/guide.md)");
+  for (const dir of ["typescript", "private", "Scripts", "assets", "node_modules"]) await fs.writeFile(path.join(resources, dir, "guide.md"), dir);
+  const result = await new ReferenceDocumentService().scan([source({ kind: "skill", uri: pathToFileURL(skillRoot).href, selectedPaths: ["SKILL.md"] })], ["**/private/**"]);
+  assert.deepEqual(result.documents.map(doc => doc.relativePath), ["references/typescript/guide.md", "SKILL.md"]);
+  assert.match(result.errors.get("source")!.join(""), /範囲外/);
+});
+
 test("ordinary Markdown horizontal rules are readable even when they are not YAML frontmatter", async t => {
   const root = await fixture(t);
   await fs.writeFile(path.join(root, "guide.md"), "---\n# Guide\nORDINARY_MARKDOWN");
@@ -269,21 +409,20 @@ test("reference-local-only answers cannot enter global reusable knowledge", asyn
   assert.equal(modelCalls, 0); assert.match(state.statusMessage?.text ?? "", /共通ナレッジへ保存できません/);
 });
 
-test("Skills have their own larger budget so a typical SKILL.md fits where a document excerpt would not", () => {
+test("required Skills and documents share the input budget without separate kind caps", () => {
   const skillText = "SKILL_START" + "手順".repeat(6000) + "SKILL_END";
   const raw = context({ referenceDocuments: [
-    excerpt({ id: "skill:1", kind: "skill", mode: "procedure", text: skillText }),
-    excerpt({ id: "doc:1", text: "DOC_START" + "x".repeat(REFERENCE_PROMPT_BUDGET.excerptMaxChars) + "DOC_END" }),
+    excerpt({ id: "skill:1", kind: "skill", mode: "procedure", required: true, text: skillText }),
+    excerpt({ id: "doc:1", required: true, text: "DOC_START" + "x".repeat(24000) + "DOC_END" }),
     excerpt({ id: "doc2:1", path: "資料/small.md", text: "SMALL_DOC" })
   ] });
   const plan = { kind: "manual" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
   const input = { ...plan, context: raw, userPrompt: "質問", modelProfile: { delimiter: "xml" as const, contextBudget: 64000, terse: false } };
   const prompt = buildGuidancePromptMessages(input).userPrompt;
-  assert.ok(skillText.length > REFERENCE_PROMPT_BUDGET.excerptMaxChars);
   assert.match(prompt, /SKILL_START[\s\S]*SKILL_END/); assert.match(prompt, /SMALL_DOC/);
-  assert.doesNotMatch(prompt, /DOC_START/);
+  assert.match(prompt, /DOC_START[\s\S]*DOC_END/);
   const included = reconcileRequestPlan(plan, input).referenceDocuments?.map(doc => [doc.id, doc.included]);
-  assert.deepEqual(included, [["skill:1", true], ["doc:1", false], ["doc2:1", true]]);
+  assert.deepEqual(included, [["skill:1", true], ["doc:1", true], ["doc2:1", true]]);
 });
 
 test("reference budgets never take more than the shared cap of the remaining context", () => {

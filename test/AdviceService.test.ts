@@ -101,6 +101,27 @@ function harness(options: {
   return { service: new AdviceService(connection, meter, (entry) => diagnostics.push(entry)), meter, requests, diagnostics, calls: () => calls, resets: () => resets };
 }
 
+test("reference planning is bounded, accounted for, and rejects unknown document IDs", async () => {
+  const h = harness({ response: '{"queries":["RetryPolicy"],"documentIds":["guide"]}', inputTokens: 120, outputTokens: 15 });
+  const token = new TestTokenSource();
+  const result = await h.service.planReferenceSearch("retryについて", "現在の課題", [{ id: "guide", path: "docs/guide.md", title: "Guide" }], token.token);
+  assert.deepEqual(result?.search, { queries: ["RetryPolicy"], documentIds: ["guide"] });
+  assert.equal(h.calls(), 1);
+  assert.equal(h.requests[0].maxOutputTokens, 512);
+  assert.equal(h.meter.getToday().requestCount, 1);
+  assert.equal(result?.usage?.inputTokens, 120);
+  const invalid = harness({ response: '{"queries":[],"documentIds":["secret"]}' });
+  assert.equal((await invalid.service.planReferenceSearch("q", undefined, [{ id: "guide", path: "guide.md", title: "Guide" }], token.token))?.search, undefined);
+});
+
+test("empty catalogs and cancelled reference plans never call the provider", async () => {
+  const h = harness(), token = new TestTokenSource();
+  await h.service.planReferenceSearch("q", undefined, [], token.token);
+  token.cancel();
+  await h.service.planReferenceSearch("q", undefined, [{ id: "guide", path: "guide.md", title: "Guide" }], token.token);
+  assert.equal(h.calls(), 0);
+});
+
 test("高強度は8192トークンを要求し、低強度は2048を維持する", async () => {
   for (const kind of ["manual", "always"] as const) {
     for (const assistanceDepth of ["low", "high"] as const) {

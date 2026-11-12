@@ -8,8 +8,10 @@ import { ContextSourceRegistry } from "../../services/ContextSourceRegistry";
 import { ReferenceDocumentService } from "../../services/ReferenceDocumentService";
 import { isPathExcluded, PATH_CASE_INSENSITIVE } from "../../services/globMatch";
 import { PROTECTED_EXCLUDED_GLOBS } from "../../services/protectedGlobs";
-import { parseReferencePatterns, resolveReferenceContext } from "../../services/ReferenceContextResolver";
+import { parseReferencePatterns, referenceQueryTerms, resolveReferenceContext } from "../../services/ReferenceContextResolver";
+import { boundReferenceCatalog, type ReferenceCatalogItem, type ReferenceSearchRequest } from "../../services/ReferenceRetrieval";
 import { ReferenceContextError } from "../../shared/referenceContext";
+import { isReferenceTextPath, REFERENCE_TEXT_EXTENSIONS } from "../../shared/referenceFiles";
 
 /**
  * A full rescan before sending is only needed to catch changes that watchers missed.
@@ -28,9 +30,26 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
   private dirty = true;
   private lastScanAt = 0;
   public revision = 0;
+  public conversationId?: string;
   private readonly service = new ReferenceDocumentService();
   public constructor(private readonly registry: ContextSourceRegistry, private readonly changed: () => void,
     private readonly excluded: () => readonly string[]) {}
+
+  public sources(): ContextSource[] { return this.registry.list(); }
+  public async importLegacy(): Promise<void> {
+    this.requireTrust();
+    const items = this.registry.legacySources().filter(source => !this.sources().some(item => item.id === source.id));
+    const selected = await vscode.window.showQuickPick(items.map(source => ({ label: source.label, description: source.kind === "skill" ? "Skills" : undefined, source })),
+      { canPickMany: true, title: "この会話に添付" });
+    if (!selected?.length) return;
+    await this.registry.update(sources => [...sources, ...selected.map(item => item.source)]);
+    this.invalidate(); this.installWatchers(); await this.refresh();
+  }
+  public activate(sources: readonly ContextSource[], conversationId?: string): void {
+    this.conversationId = conversationId;
+    this.registry.activate(sources);
+    this.errors.clear(); this.invalidate(); this.installWatchers(); this.schedule();
+  }
 
   public initialize(): void {
     this.listeners.push(vscode.workspace.onDidGrantWorkspaceTrust(() => { this.invalidate(); this.installWatchers(); this.schedule(); }),
@@ -39,7 +58,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     this.schedule();
   }
   public view(): ReferenceContextView {
-    return { revision: this.revision, trusted: vscode.workspace.isTrusted, sources: this.registry.list().map(source => {
+    return { revision: this.revision, trusted: vscode.workspace.isTrusted, legacyAvailable: this.registry.legacySources().some(source => !this.sources().some(item => item.id === source.id)), workspaceAvailable: Boolean(vscode.workspace.workspaceFolders?.length), sources: this.registry.list().map(source => {
       const { uri: _uri, workspaceRoot: _root, ...safeSource } = source;
       let location: string | undefined;
       try { location = fileURLToPath(source.uri); } catch { /* Invalid saved URI is reported by scanning. */ }
@@ -53,16 +72,15 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
   }
   public async add(kind: ReferenceKind, directory: boolean, scope: ReferenceScope): Promise<void> {
     this.requireTrust();
-    if (this.registry.list().length >= 20) throw new Error("参照先は最大20件です。");
-    if (scope === "workspace" && !vscode.workspace.workspaceFolders?.length) throw new Error("ワークスペースを開くか、共通の参照先として登録してください。");
     const selected = await vscode.window.showOpenDialog({ canSelectFiles: !directory, canSelectFolders: directory, canSelectMany: false,
-      openLabel: "参照先に登録", filters: directory ? undefined : { "テキスト資料": ["md", "markdown", "txt", "json"] } });
+      openLabel: "添付", filters: directory ? undefined : { "テキスト・コード": REFERENCE_TEXT_EXTENSIONS } });
     if (!selected?.[0]) return;
     const uri = selected[0];
-    if (uri.scheme !== "file") throw new Error("このバージョンはローカルファイルに対応しています。");
-    if (kind === "skill" && !directory && path.basename(uri.fsPath) !== "SKILL.md") throw new Error("Skillをファイル登録する場合はSKILL.mdを選択してください。");
+    if (uri.scheme !== "file") throw new ReferenceContextError("このバージョンはローカルファイルに対応しています。");
+    if (!directory && path.basename(uri.fsPath) === "SKILL.md") kind = "skill";
+    if (kind === "skill" && !directory && path.basename(uri.fsPath) !== "SKILL.md") throw new ReferenceContextError("Skillをファイル登録する場合はSKILL.mdを選択してください。");
     const source: ContextSource = { id: randomUUID(), uri: uri.toString(), label: path.basename(uri.fsPath), directory, kind, scope,
-      enabled: true, localOnly: true, languages: [], appliesTo: [], selectedPaths: [], skillMode: "reference" };
+      enabled: true, localOnly: true, languages: [], appliesTo: [], selectedPaths: kind === "skill" && !directory ? ["SKILL.md"] : [], skillMode: kind === "skill" ? "procedure" : "reference" };
     if (kind === "rules") {
       const languages = await vscode.window.showInputBox({ title: "規約の対象言語", prompt: "言語IDをカンマ区切りで指定（例: typescript,typescriptreact）。空欄は全言語。", value: "", ignoreFocusOut: true });
       if (languages === undefined) return;
@@ -95,6 +113,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     if (!source) return;
     const option = await vscode.window.showQuickPick([
       { label: "送信範囲: ローカル限定", action: "local" }, { label: "送信範囲: 外部AIへの送信を許可", action: "external" },
+      ...(!source.directory && source.kind !== "skill" ? [{ label: "参照方法: 必要な箇所を検索", action: "search" }, { label: "参照方法: 常に全文を含める", action: "full" }] : []),
       ...(source.kind === "skill" ? [{ label: "Skills: 参考資料として利用", action: "reference" }, { label: "Skills: 学習・説明の手順として適用", action: "procedure" }] : []),
       ...(source.kind === "rules" ? [{ label: "規約: 対象言語・パスを変更", action: "scope" }] : [])
     ], { title: `${source.label} の利用方法` });
@@ -111,6 +130,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
       `${source.label} の選択箇所と、その内容を含む回答・履歴が接続先の外部AIに送信されます。`, { modal: true }, "外部送信を許可") !== "外部送信を許可") return;
     await this.registry.update(sources => sources.map(item => item.id !== id ? item : { ...item,
       localOnly: option.action === "external" ? false : option.action === "local" ? true : item.localOnly,
+      alwaysInclude: option.action === "full" ? true : option.action === "search" ? false : item.alwaysInclude,
       skillMode: option.action === "procedure" ? "procedure" : option.action === "reference" ? "reference" : item.skillMode }));
     this.invalidate(); await this.refresh();
   }
@@ -122,7 +142,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
       label: doc.title, description: doc.relativePath, detail: doc.skill?.description,
       picked: source.selectedPaths.includes(doc.relativePath), relativePath: doc.relativePath
     }));
-    const selected = await vscode.window.showQuickPick(items, { canPickMany: true, title: source.kind === "skill" ? "有効にするSkillsを選択（次回以降の相談に反映）" : "優先して参照する資料を選択（未選択の資料も関連検索されます）" });
+    const selected = await vscode.window.showQuickPick(items, { canPickMany: true, title: "常に含めるファイル・適用するSkills" });
     if (!selected) return;
     await this.registry.update(sources => sources.map(item => item.id === id ? { ...item, selectedPaths: selected.map(item => item.relativePath) } : item));
     this.invalidate(); await this.refresh();
@@ -138,13 +158,35 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     await vscode.window.showTextDocument(document, { preview: true });
   }
   /** fresh: rescan only when watchers may have missed changes for longer than the rescan interval. */
-  public async resolve(context: GuidanceContext, question: string, activePath?: string, fresh = false): Promise<ReferenceExcerpt[]> {
+  public async resolve(context: GuidanceContext, question: string, activePath?: string, fresh = false, search?: ReferenceSearchRequest): Promise<ReferenceExcerpt[]> {
     if (!vscode.workspace.isTrusted || !this.registry.list().some(source => source.enabled)) return [];
     await this.refresh(fresh && Date.now() - this.lastScanAt >= REFERENCE_FULL_RESCAN_INTERVAL_MS);
+    const sources = this.registry.list();
+    const requestedSkills = this.documents.filter(doc => doc.skill && search?.documentIds.includes(doc.id) &&
+      sources.some(source => source.id === doc.sourceId && source.kind === "skill" && !source.selectedPaths.includes(doc.relativePath)));
+    // Legacy Skill-only catalogs initially contain metadata. Load the requested bundles
+    // in one bounded scan, without changing the conversation's persistent selection.
+    if (requestedSkills.length) await this.refresh(true, requestedSkills);
     const uri = activePath && path.isAbsolute(activePath) ? vscode.Uri.file(activePath) : undefined;
     const root = uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined;
     const relative = activePath && root ? path.relative(root.uri.fsPath, activePath).replaceAll("\\", "/") : "";
-    return resolveReferenceContext(this.registry.list(), this.documents, context, question, relative, root?.uri.fsPath);
+    return resolveReferenceContext(this.registry.list(), this.documents, context, [question, ...(search?.queries ?? [])].join("\n"), relative, root?.uri.fsPath, search?.documentIds);
+  }
+  public async catalog(context: GuidanceContext, question: string, verifiedLocal: boolean, maxChars: number): Promise<ReferenceCatalogItem[]> {
+    if (!vscode.workspace.isTrusted) return [];
+    await this.refresh();
+    if (!vscode.workspace.isTrusted) return [];
+    const terms = referenceQueryTerms(`${question}\n${context.additionalContext ?? ""}\n${context.activeFileLanguage ?? ""}`);
+    const sources = this.registry.list().filter(source => source.enabled && (verifiedLocal || !source.localOnly));
+    // Metadata can be confidential too. Never expose private paths or Skill descriptions to cloud models.
+    const items = this.documents.filter(doc => sources.some(source => source.id === doc.sourceId && !source.alwaysInclude &&
+      !source.selectedPaths.includes(doc.relativePath) && (source.kind !== "skill" || doc.skill))).map(doc => {
+      const source = sources.find(source => source.id === doc.sourceId)!;
+      const item = { id: doc.id, path: `${source.label}/${doc.relativePath}`, title: doc.title, description: doc.skill?.description, sourceId: source.id, localOnly: source.localOnly };
+      const text = `${item.path}\n${item.title}\n${item.description ?? ""}`.normalize("NFKC").toLowerCase();
+      return { item, score: terms.reduce((score, term) => score + (text.includes(term) ? 1 : 0), 0) };
+    }).sort((a, b) => b.score - a.score || a.item.path.localeCompare(b.item.path));
+    return boundReferenceCatalog(items.map(({ item }) => item), maxChars);
   }
   /** Re-hash only the files that are about to be sent instead of rescanning every registered source. */
   public async validate(excerpts: readonly ReferenceExcerpt[], revision: number): Promise<void> {
@@ -191,14 +233,17 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     const sources = this.registry.list();
     return ids.every(id => sources.some(source => source.id === id && source.enabled && !source.localOnly));
   }
-  public async refresh(force = false): Promise<void> {
+  public async refresh(force = false, requestedSkills: readonly ReferenceDocument[] = []): Promise<void> {
     if (this.disposed) return;
-    if (this.pending) { await this.pending; if (this.dirty) await this.refresh(); return; }
+    if (this.pending) { await this.pending; await this.refresh(force, requestedSkills); return; }
     if (!force && !this.dirty) return;
     if (!vscode.workspace.isTrusted) { this.documents = []; this.changed(); return; }
     const generation = this.revision;
+    const sources = this.registry.list().map(source => ({ ...source, selectedPaths: [...new Set([
+      ...source.selectedPaths, ...requestedSkills.filter(doc => doc.sourceId === source.id).map(doc => doc.relativePath)
+    ])] }));
     const operation = (async () => {
-      const scanned = await this.service.scan(this.registry.list(), this.excluded(), (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath));
+      const scanned = await this.service.scan(sources, this.excluded(), (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath));
       if (this.disposed || generation !== this.revision || !vscode.workspace.isTrusted) return;
       // Text, title, status and Skill metadata are derived from the content hash.
       if (documentSignature(scanned.documents) !== documentSignature(this.documents)) this.revision++;
@@ -208,7 +253,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     this.pending = operation; this.changed();
     try { await operation; }
     finally { this.pending = undefined; if (!this.disposed) this.changed(); }
-    if (this.dirty) await this.refresh();
+    if (this.dirty) await this.refresh(false, requestedSkills);
   }
   public invalidate(): void { this.revision++; this.dirty = true; this.documents = []; this.changed(); }
   private schedule(): void {
@@ -232,7 +277,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
             const bundledReference = source.kind === "skill" && /^references\//i.test(path.relative(base.fsPath, target.fsPath).replaceAll("\\", "/"));
             if (!source.directory && !bundledReference && normalize(target.fsPath) !== normalize(uri.fsPath) && normalize(target.fsPath) !== normalize(base.fsPath)) return;
             if (isPathExcluded(target.fsPath, PROTECTED_EXCLUDED_GLOBS) || isPathExcluded(`${target.fsPath}/__reference__`, PROTECTED_EXCLUDED_GLOBS)) return;
-            if (!structural && !/\.(md|markdown|txt|json)$/i.test(target.fsPath)) return;
+            if (!structural && !isReferenceTextPath(target.fsPath)) return;
           }
           this.invalidate(); this.schedule();
         };

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { randomUUID } from "node:crypto";
 import { NavigatorController } from "../application/NavigatorController";
 import { parseWebviewMessage } from "../shared/messages";
+import { ReferenceContextError } from "../shared/referenceContext";
 
 export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "aiPairNavigator.sidebar";
@@ -52,6 +53,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "selectContextDocuments":
           case "openContextDocument":
           case "refreshContextSources":
+          case "importContextSources":
             await this.controller.manageReferenceContext(message);
             return;
           case "ready":
@@ -187,7 +189,7 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
         }
         } catch (error) {
           console.error(`NaviCom webview operation failed: ${message.type}`, error);
-          await this.postOperationError("操作を完了できませんでした。データは変更されていない可能性があります。再試行してください。");
+          await this.postOperationError(error instanceof ReferenceContextError ? error.message : "操作を完了できませんでした。データは変更されていない可能性があります。再試行してください。");
           await this.postViewModel().catch(() => undefined);
         }
       })

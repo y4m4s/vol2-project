@@ -1,53 +1,85 @@
-import { useState } from "react";
-import type { ReferenceKind, ReferenceScope } from "../../../shared/referenceContext";
+import { useId, useState } from "react";
 import { useApp } from "../state/AppContext";
 
-const kinds: Record<ReferenceKind, string> = { rules: "コーディング規約", adr: "ADR", document: "技術・設計資料", skill: "Skills" };
-const statuses = { ready: "更新済み", scanning: "確認中", error: "一部読込エラー", disabled: "無効", restricted: "信頼待ち" };
+const statuses = { ready: "更新済み", scanning: "更新中", error: "確認が必要", disabled: "無効", restricted: "信頼待ち" };
+
 export function ReferenceSourceManager({ disabled }: { disabled: boolean }) {
   const { viewModel, send } = useApp();
-  const [kind, setKind] = useState<ReferenceKind>("document");
-  const [scope, setScope] = useState<ReferenceScope>("workspace");
+  const [adding, setAdding] = useState(false);
+  const addPanelId = useId();
   const references = viewModel?.referenceContext;
   if (!references) return null;
   const unavailable = disabled || !references.trusted;
-  return <section className="reference-source-manager" aria-label="登録資料とSkills">
-    <div className="reference-source-heading"><strong>参照先・Skills</strong>
-      <button type="button" disabled={unavailable} onClick={() => send({ type: "refreshContextSources" })}>再確認</button>
+
+  function add(directory: boolean) {
+    send({ type: "addContextSource", kind: "document", scope: "workspace", directory });
+    setAdding(false);
+  }
+
+  return <section className="reference-source-manager" aria-label="添付">
+    {!references.trusted && <small role="status">ワークスペースの信頼が必要です</small>}
+    {references.sources.map(item => {
+      const selected = item.documents.filter(doc => doc.selected);
+      return <div className="reference-source-item" key={item.source.id}>
+        <div className="reference-source-row">
+          {item.source.directory
+            ? <svg className="reference-attachment-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M3 7V5h6l2 2h10v13H3V7Z" /></svg>
+            : <span className="material-symbols-outlined reference-attachment-icon" aria-hidden="true">description</span>}
+          <label className="reference-source-name" title={item.location}>
+            <input className="reference-source-toggle" type="checkbox" role="switch" aria-label={`${item.source.label}を有効にする`} aria-checked={item.source.enabled}
+              checked={item.source.enabled} disabled={disabled || (!references.trusted && !item.source.enabled)}
+              onChange={event => send({ type: "setContextSourceEnabled", id: item.source.id, enabled: event.target.checked })} />
+            <span>{item.source.label}</span>
+          </label>
+          <span className="reference-source-badge" title={item.source.localOnly ? "ローカル限定" : "外部AIへの送信を許可済み"}>
+            {item.source.localOnly ? "ローカル" : "外部可"}
+          </span>
+          <button type="button" className="reference-attachment-remove" title="添付を外す" aria-label={`${item.source.label}の添付を外す`}
+            disabled={disabled} onClick={() => send({ type: "removeContextSource", id: item.source.id })}>×</button>
+        </div>
+        {item.status !== "ready" && item.status !== "error" && <small role="status">{statuses[item.status]}</small>}
+        {item.errors.length > 0 && <details className="reference-source-notices">
+          <summary title="クリックで詳細を表示">確認事項 <span>{item.errors.length}件</span></summary>
+          <ul className="reference-source-notice-list">
+            {item.errors.map(error => <li key={error}>{error}</li>)}
+          </ul>
+        </details>}
+        {selected.length > 0 && <div className="reference-selected-items">
+          {selected.slice(0, 3).map(doc => <span key={doc.id} title={doc.path}>{doc.title}</span>)}
+          {selected.length > 3 && <span>＋{selected.length - 3}</span>}
+        </div>}
+        <details className="reference-source-management">
+          <summary>{item.source.kind === "skill" ? item.source.skillMode === "procedure" ? "手順を適用" : "参考として適用" : item.source.alwaysInclude ? "常に全文を含める" : "必要な箇所を参照"} · {item.documentCount}ファイル</summary>
+          {item.location && <small className="reference-source-location">{item.location}</small>}
+          {(item.source.languages.length > 0 || item.source.appliesTo.length > 0) && <small>{[...item.source.languages, ...item.source.appliesTo].join(", ")}</small>}
+          <div className="reference-source-actions">
+            {item.source.directory && <button type="button" disabled={unavailable || !item.source.enabled}
+              onClick={() => send({ type: "selectContextDocuments", id: item.source.id })}>常に含めるものを選択</button>}
+            <button type="button" disabled={unavailable} onClick={() => send({ type: "configureContextSource", id: item.source.id })}>利用設定</button>
+            <button type="button" disabled={unavailable} onClick={() => send({ type: "refreshContextSources" })}>再読み込み</button>
+          </div>
+          {!!item.documents.length && <details><summary>ファイル一覧</summary><ul>
+            {item.documents.slice(0, 100).map(doc => <li key={doc.id} title={doc.description}><button type="button" disabled={unavailable}
+              data-selected={doc.selected} aria-label={doc.selected ? `${doc.path}（選択済み）` : doc.path}
+              onClick={() => send({ type: "openContextDocument", id: doc.id })}>{doc.path}</button></li>)}
+            {item.documents.length > 100 && <li>ほか{item.documents.length - 100}件</li>}
+          </ul></details>}
+        </details>
+      </div>;
+    })}
+    <div className="reference-source-heading">
+      <button type="button" disabled={unavailable} aria-expanded={adding} aria-controls={addPanelId} onClick={() => setAdding(!adding)}>
+        {adding ? "閉じる" : "＋追加"}
+      </button>
     </div>
-    {!references.trusted && <p role="status">ワークスペースを信頼すると参照資料を利用できます。</p>}
-    <div className="reference-source-controls">
-      <select aria-label="資料の用途" value={kind} disabled={unavailable} onChange={event => setKind(event.target.value as ReferenceKind)}>
-        {Object.entries(kinds).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select>
-      <select aria-label="登録の保存範囲" value={scope} disabled={unavailable} onChange={event => setScope(event.target.value as ReferenceScope)}>
-        <option value="workspace">このワークスペース</option><option value="global">共通</option>
-      </select>
-      <button type="button" disabled={unavailable} onClick={() => send({ type: "addContextSource", kind, scope, directory: false })}>ファイル追加</button>
-      <button type="button" disabled={unavailable} onClick={() => send({ type: "addContextSource", kind, scope, directory: true })}>フォルダー追加</button>
-    </div>
-    <p className="additional-context-note">登録時はローカル限定です。外部AIで使う資料は「利用方法」から送信を許可してください。Skillsのスクリプトは実行されません。</p>
-    {!references.sources.length && <p className="additional-context-note">規約は適用範囲、ADR・資料は関連語で選びます。Skillsは登録後に選択してください。</p>}
-    {references.sources.map(item => <div className="reference-source-item" key={item.source.id}>
-      <label><input type="checkbox" checked={item.source.enabled} disabled={disabled || (!references.trusted && !item.source.enabled)}
-        onChange={event => send({ type: "setContextSourceEnabled", id: item.source.id, enabled: event.target.checked })} />
-        <strong>{item.source.label}</strong></label>
-      <small>{kinds[item.source.kind]} · {item.source.scope === "workspace" ? "このワークスペース" : "共通"} · {item.source.localOnly ? "ローカル限定" : "外部送信可"}</small>
-      {item.location && <small title={item.location}>{item.location}</small>}
-      <small>{statuses[item.status]} · {item.documentCount}文書{item.source.kind === "skill" ? ` · ${item.source.skillMode === "procedure" ? "手順として適用" : "参考資料"}` : ""}</small>
-      {(item.source.languages.length > 0 || item.source.appliesTo.length > 0) && <small>対象: {[...item.source.languages, ...item.source.appliesTo].join(", ")}</small>}
-      <div className="reference-source-actions">
-        <button type="button" disabled={unavailable || !item.source.enabled} onClick={() => send({ type: "selectContextDocuments", id: item.source.id })}>
-          {item.source.kind === "skill" ? "Skillsを選択" : "優先資料を選択"}
-        </button>
-        <button type="button" disabled={unavailable} onClick={() => send({ type: "configureContextSource", id: item.source.id })}>利用方法</button>
-        <button type="button" disabled={disabled} onClick={() => send({ type: "removeContextSource", id: item.source.id })}>登録解除</button>
+    {adding && <div id={addPanelId} className="reference-add-panel">
+      <div className="reference-add-options">
+        <button type="button" disabled={unavailable} onClick={() => add(false)}>ファイル</button>
+        <button type="button" disabled={unavailable} onClick={() => add(true)}>フォルダー</button>
+        {references.legacyAvailable && <button type="button" disabled={unavailable} onClick={() => {
+          send({ type: "importContextSources" }); setAdding(false);
+        }}>以前の登録から</button>}
       </div>
-      {!!item.documents.length && <details><summary>読込対象・選択状況を確認</summary><ul>
-        {item.documents.slice(0, 100).map(doc => <li key={doc.id} title={doc.description}><button type="button" disabled={unavailable} onClick={() => send({ type: "openContextDocument", id: doc.id })}>{doc.selected ? "✓ " : ""}{doc.path}</button></li>)}
-        {item.documents.length > 100 && <li>ほか{item.documents.length - 100}件。「選択」から全件を確認できます。</li>}
-      </ul></details>}
-      {item.errors.map(error => <p key={error} className="reference-source-error" role="status">{error}</p>)}
-    </div>)}
+    </div>}
   </section>;
 }

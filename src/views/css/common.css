@@ -1251,9 +1251,9 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 }
 
 .reference-source-manager { border-top: 1px solid var(--vscode-panel-border); margin-top: 12px; padding-top: 10px; }
-.reference-source-heading, .reference-source-controls, .reference-source-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.reference-source-heading { justify-content: space-between; margin-bottom: 8px; }
-.reference-source-manager button, .reference-source-manager select { font: inherit; font-size: 11px; padding: 4px 6px; border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border)); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); max-width: 100%; }
+.reference-source-heading, .reference-source-actions, .reference-source-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.reference-source-heading { justify-content: flex-end; margin-bottom: 8px; gap: 8px; }
+.reference-source-manager button, .reference-source-manager select { font: inherit; font-size: 11px; width: auto; min-height: 0; margin: 0; padding: 4px 8px; border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border)); border-radius: 4px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); max-width: 100%; }
 .reference-source-manager button { cursor: pointer; }
 .reference-source-manager button:disabled { opacity: .5; cursor: default; }
 .reference-source-item { border-top: 1px solid var(--vscode-panel-border); padding: 9px 0; overflow-wrap: anywhere; }
@@ -1262,7 +1262,43 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 .reference-source-item details { margin-top: 6px; font-size: 11px; }
 .reference-source-item summary { cursor: pointer; }
 .reference-source-item ul { padding-left: 18px; max-height: 160px; overflow-y: auto; }
-.reference-source-error { color: var(--vscode-editorWarning-foreground); font-size: 11px; }
+.reference-add-panel { padding: 8px; margin: 8px 0; border: 1px solid var(--vscode-panel-border); border-radius: 6px; }
+.reference-add-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.reference-source-manager .reference-add-options button { flex: 1 1 70px; padding: 9px 8px; }
+.reference-source-row { flex-wrap: nowrap; }
+.reference-source-name { flex: 1; min-width: 0; }
+.reference-source-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reference-source-badge { flex-shrink: 0; padding: 2px 5px; border-radius: 4px; font-size: 10px; color: var(--vscode-badge-foreground); background: var(--vscode-badge-background); }
+.reference-selected-items { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0; }
+.reference-selected-items span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 6px; border: 1px solid var(--vscode-panel-border); border-radius: 8px; font-size: 11px; }
+.reference-source-management > summary { color: var(--vscode-descriptionForeground); }
+.reference-source-location { overflow-wrap: anywhere; }
+.reference-source-manager .reference-source-toggle { appearance: none; position: relative; flex: 0 0 26px; width: 26px; min-width: 26px; max-width: 26px; height: 15px; min-height: 15px; padding: 0; margin: 0; border: 1px solid var(--vscode-input-border, var(--vscode-descriptionForeground)); border-radius: 10px; background: var(--vscode-input-background); cursor: pointer; }
+.reference-source-toggle::before { content: ""; position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--vscode-descriptionForeground); }
+.reference-source-manager .reference-source-toggle:checked { background: var(--vscode-button-background); border-color: var(--vscode-button-background); }
+.reference-source-toggle:checked::before { transform: translateX(11px); background: var(--vscode-button-foreground); }
+.reference-source-toggle:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 3px; }
+.reference-source-toggle:disabled { opacity: .45; cursor: default; }
+.reference-source-manager .reference-source-badge { background: transparent; border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); }
+.reference-source-item .reference-source-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+.reference-source-manager .reference-source-actions button { width: 100%; min-height: 30px; border-radius: 6px; }
+.reference-source-item summary { display: flex; align-items: center; gap: 6px; list-style: none; padding: 3px 0; }
+.reference-source-item summary::-webkit-details-marker { display: none; }
+.reference-source-item summary::before { content: ""; flex: 0 0 4px; width: 4px; height: 4px; margin-right: 3px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: rotate(-45deg); }
+.reference-source-item details[open] > summary::before { transform: rotate(45deg); }
+.reference-source-notices > summary { color: var(--vscode-descriptionForeground); font-size: 11px; }
+.reference-source-notices > summary span { color: var(--vscode-editorWarning-foreground); }
+.reference-source-item .reference-source-notice-list { max-height: 140px; overflow-y: auto; margin: 6px 0 8px; padding: 0 8px 0 20px; color: var(--vscode-descriptionForeground); font-size: 11px; line-height: 1.6; }
+.reference-source-notice-list li { padding: 5px 0; overflow-wrap: anywhere; }
+.reference-source-item summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+.reference-source-management button[data-selected] { justify-content: flex-start; text-align: left; border-color: transparent; background: transparent; }
+.reference-source-management button[data-selected]::before { content: ""; flex: 0 0 5px; width: 5px; height: 5px; border: 1px solid var(--vscode-descriptionForeground); border-radius: 50%; }
+.reference-source-management button[data-selected="true"]::before { background: var(--vscode-textLink-foreground); border-color: var(--vscode-textLink-foreground); }
+.reference-attachment-icon { flex-shrink: 0; font-size: 16px; color: var(--vscode-descriptionForeground); }
+.reference-source-manager .reference-attachment-remove { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; width: 24px; height: 24px; padding: 0; border-color: transparent; background: transparent; color: var(--vscode-descriptionForeground); font-size: 17px; }
+.reference-source-manager .reference-attachment-remove:hover:not(:disabled) { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
+.reference-source-heading:last-child { margin: 8px 0 0; }
+.reference-source-manager button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
 
 .additional-context-head {
   display: flex;

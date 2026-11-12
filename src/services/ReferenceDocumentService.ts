@@ -6,6 +6,7 @@ import type { ContextSource, ReferenceDocument } from "../shared/referenceContex
 import { isPathExcluded } from "./globMatch";
 import { PROTECTED_EXCLUDED_GLOBS } from "./protectedGlobs";
 import { loadAgentSkill, parseReferenceFrontmatter } from "./AgentSkillLoader";
+import { isReferenceTextPath } from "../shared/referenceFiles";
 
 export const REFERENCE_LIMITS = { files: 1000, directories: 2000, entries: 10000, bytes: 20 * 1024 * 1024, fileBytes: 256 * 1024, depth: 12 } as const;
 export interface ReferenceScanResult { documents: ReferenceDocument[]; errors: Map<string, string[]> }
@@ -78,7 +79,7 @@ export class ReferenceDocumentService {
         if (!relativePath || path.isAbsolute(relativePath) || relativePath.split("/").some(part => part === ".." || part === ".")) throw new Error("範囲外");
         const candidate = path.resolve(root, ...relativePath.split("/"));
         await rejectLinkedReferencePath(candidate, root);
-        if (isBlockedReferencePath(candidate, root, blocked, workspaceRoots) || !/\.(md|markdown|txt|json)$/i.test(candidate)) throw new Error("保護対象");
+        if (isBlockedReferencePath(candidate, root, blocked, workspaceRoots) || !isReferenceTextPath(candidate)) throw new Error("保護対象");
         const stat = await fs.lstat(candidate);
         const real = await fs.realpath(candidate);
         if (!stat.isFile() || stat.size > REFERENCE_LIMITS.fileBytes || !isInsideReferenceRoot(real, root)) throw new Error("範囲外");
@@ -101,7 +102,7 @@ export class ReferenceDocumentService {
       try {
         const { input, root } = await referenceRoot(source);
         const blockedPath = (candidate: string) => isBlockedReferencePath(candidate, root, blocked, workspaceRoots);
-        const walk = async (candidate: string, depth: number): Promise<void> => {
+        const walk = async (candidate: string, depth: number, skillResource = false): Promise<void> => {
           entries++;
           if (blockedPath(candidate)) return;
           if (depth > REFERENCE_LIMITS.depth) { issue("再帰深度の上限に達しました。"); return; }
@@ -118,10 +119,13 @@ export class ReferenceDocumentService {
           visited.add(real);
           if (stat.isDirectory()) {
             directories++;
+            const skillDirectory = await fs.lstat(path.join(real, "SKILL.md")).then(info => info.isFile(), () => false);
             for await (const entry of await fs.opendir(real)) {
               const name = entry.name;
-              if (source.kind === "skill" && ["scripts", "assets", "references"].includes(name)) continue;
-              try { await walk(path.join(real, name), depth + 1); }
+              if ((skillDirectory || skillResource || source.kind === "skill") && ["scripts", "assets"].includes(name.toLowerCase())) continue;
+              // Skip bundled references during Skill discovery, not grouping directories with the same name.
+              if (skillDirectory && source.kind === "skill" && !skillResource && name === "references") continue;
+              try { await walk(path.join(real, name), depth + 1, skillResource); }
               catch { issue(`${name}: 読み込みできません。`); }
               if (count >= REFERENCE_LIMITS.files || bytes >= REFERENCE_LIMITS.bytes || directories >= REFERENCE_LIMITS.directories || entries > REFERENCE_LIMITS.entries) {
                 issue("走査上限に達しました。登録範囲を狭めてください。"); break;
@@ -129,7 +133,7 @@ export class ReferenceDocumentService {
             }
             return;
           }
-          if (!stat.isFile() || !/\.(md|markdown|txt|json)$/i.test(real)) return;
+          if (!stat.isFile() || !isReferenceTextPath(real)) return;
           count++;
           const relativePath = path.relative(root, real).replaceAll("\\", "/");
           if (stat.size > REFERENCE_LIMITS.fileBytes) { issue(`${relativePath}: 256KiBを超えるため除外しました。`); return; }
@@ -140,7 +144,7 @@ export class ReferenceDocumentService {
           let text: string;
           try { text = new TextDecoder("utf-8", { fatal: true }).decode(data).replace(/\r\n/g, "\n"); }
           catch { issue(`${relativePath}: UTF-8テキストではありません。`); return; }
-          const skillFile = path.basename(real) === "SKILL.md" && source.kind === "skill";
+          const skillFile = path.basename(real) === "SKILL.md";
           try {
             const skill = skillFile ? loadAgentSkill(text, path.basename(path.dirname(real))) : undefined;
             let parsed: ReturnType<typeof parseReferenceFrontmatter> | undefined;
@@ -151,19 +155,20 @@ export class ReferenceDocumentService {
             const status = parsed?.metadata.status ?? /^\s*(?:status|状態)\s*:\s*(.+)$/im.exec(text)?.[1];
             documents.push({ id: createHash("sha256").update(`${source.id}\0${relativePath}`).digest("hex").slice(0, 24), sourceId: source.id,
               relativePath, title: skill?.name ?? /^#\s+(.+)$/m.exec(text)?.[1]?.slice(0, 160) ?? path.basename(real),
-              text, hash: createHash("sha256").update(data).digest("hex"), kind: source.kind,
+              text, hash: createHash("sha256").update(data).digest("hex"), kind: skill ? "skill" : source.kind,
               status: typeof status === "string" ? status.slice(0, 100) : undefined,
               skill: skill ? { name: skill.name, description: skill.description, compatibility: skill.compatibility, resources: skill.resources } : undefined });
             if (skill && source.selectedPaths.includes(relativePath)) {
               for (const resource of skill.resources) {
-                if (resource.split("/").some(part => part === ".." || part === ".") || resource.includes("\\")) {
+                if (resource.split("/").some(part => ["..", ".", "scripts", "assets"].includes(part.toLowerCase())) || resource.includes("\\")) {
                   issue(`${relativePath}: 範囲外を指すSkill参照を除外しました。`); continue;
                 }
                 try {
                   const target = path.resolve(path.dirname(real), resource);
                   await rejectLinkedReferencePath(target, path.dirname(real));
                   if (!isInsideReferenceRoot(await fs.realpath(target), path.dirname(real))) throw new Error("範囲外");
-                  await walk(target, depth + 1);
+                  // Count actual path segments so a deep explicit link cannot bypass the depth cap.
+                  await walk(target, path.relative(root, target).split(path.sep).filter(Boolean).length, true);
                 } catch { issue(`${resource}: Skillの関連資料を読み込めません。`); }
               }
             }

@@ -11,7 +11,7 @@ import { ProviderRoutingCoordinator } from "./coordinators/ProviderRoutingCoordi
 import { reconcileRequestPlan } from "../services/RequestPlanTransmission";
 import { SessionStore } from "./SessionStore";
 import { ContextCollector } from "../services/ContextCollector";
-import { AdviceService } from "../services/AdviceService";
+import { AdviceService, type ReferenceSearchPlanningResult } from "../services/AdviceService";
 import { AdviceScheduler, type AutoAdviceTriggerEvent } from "../services/AdviceScheduler";
 import type { AutomaticGuidanceObservation, AutomaticGuidanceFocus } from "../shared/types";
 import { ConversationStore } from "../services/ConversationStore";
@@ -56,6 +56,7 @@ import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import type { AdditionalContextCoordinator } from "./coordinators/AdditionalContextCoordinator";
 import { isVerifiedReferenceLocalModel, ReferenceContextError, splitReferencesForDestination, type ReferenceAction } from "../shared/referenceContext";
+import { REFERENCE_SEARCH_LIMITS } from "../services/ReferenceRetrieval";
 import {
   AdviceMode,
   AiProviderId,
@@ -223,7 +224,10 @@ export class NavigatorController implements vscode.Disposable {
           this.automaticOverviewByFile.clear();
         },
         createGuidanceCard: (entry) => this.createGuidanceCard(entry),
-        getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state)
+        getGuidanceAdditionalContext: (state) => this.getGuidanceAdditionalContext(state),
+        getContextSources: streamId => streamId && this.referenceContext?.conversationId !== streamId
+          ? this.conversationStore.getContextSources(streamId) : this.referenceContext?.sources() ?? [],
+        activateContextSources: (sources, streamId) => this.referenceContext?.activate(sources, streamId)
       }
     );
     this.navigationCoordinator = new NavigationCoordinator({
@@ -370,6 +374,7 @@ export class NavigatorController implements vscode.Disposable {
       mode: settings.defaultMode,
       assistanceDepth: settings.defaultAssistanceDepth
     });
+    this.referenceContext?.activate([]);
     this.refreshContextPreview();
     void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
   }
@@ -652,6 +657,15 @@ export class NavigatorController implements vscode.Disposable {
 
 
   public navigate(screen: NavigatorScreen): void {
+    const state = this.sessionStore.getState();
+    if (state.requestState === "idle") {
+      if (screen === "main") this.referenceContext?.activate([]);
+      else if (screen === "conversation" && state.screen !== "conversation" && state.activeConversationStreamId) {
+        const record = this.conversationStore.get(state.activeConversationStreamId);
+        this.referenceContext?.activate(record?.contextSources ?? [], record?.id);
+        this.patchSession({ activeAdditionalContext: record?.additionalContext });
+      }
+    }
     this.navigationCoordinator.navigate(screen);
   }
 
@@ -838,6 +852,12 @@ export class NavigatorController implements vscode.Disposable {
         case "selectContextDocuments": await this.referenceContext.selectDocuments(action.id); break;
         case "openContextDocument": await this.referenceContext.openDocument(action.id); break;
         case "refreshContextSources": this.referenceContext.invalidate(); await this.referenceContext.refresh(); break;
+        case "importContextSources": await this.referenceContext.importLegacy(); break;
+      }
+      const current = this.sessionStore.getState();
+      if (current.activeConversationStreamId && this.referenceContext.conversationId === current.activeConversationStreamId) {
+        await this.conversationStore.saveContextSources(current.activeConversationStreamId, this.referenceContext.sources());
+        this.patchSession({ conversationStreams: this.conversationStore.list() });
       }
     } finally {
       release();
@@ -1276,7 +1296,7 @@ export class NavigatorController implements vscode.Disposable {
         options.slashCommand,
         options.slashCommandScope
       ), options.userPrompt);
-    if (prepared.context.referenceRevision === undefined) {
+    if (prepared.context.referenceRevision !== this.referenceContext?.revision) {
       prepared = await this.attachReferenceContext(prepared, options.userPrompt ?? "", preview.activeFilePath);
     }
     if (this.sessionStore.getState().requestState !== preparationState) return { ok: false };
@@ -1338,15 +1358,47 @@ export class NavigatorController implements vscode.Disposable {
       prepared = refreshed;
     }
     prepared = await this.applyReferenceDestination(prepared, options.userPrompt ?? "", preview.activeFilePath);
+    // A bounded, provider-independent planning turn lets the model choose search terms.
+    // Automatic guidance stays on the local search path and creates no extra model request.
+    let catalogLocalOnly = false;
+    let retrieval: ReferenceSearchPlanningResult | undefined;
+    const catalogSourceIds: string[] = [];
+    if (options.kind !== "always" && this.referenceContext && !tokenSource.token.isCancellationRequested) {
+      const model = this.connectionService.getConnectedModel();
+      const catalog = await this.referenceContext.catalog(prepared.context, options.userPrompt ?? "",
+        isVerifiedReferenceLocalModel(model), Math.min(REFERENCE_SEARCH_LIMITS.catalogChars, Math.floor(deriveModelProfile(model?.profileSource).contextBudget * 0.75)));
+      if (tokenSource.token.isCancellationRequested) return { ok: false };
+      if (!vscode.workspace.isTrusted) throw new ReferenceContextError("ワークスペースの信頼が変更されたため、資料の送信を中止しました。");
+      if (catalog.length) {
+        catalogLocalOnly = catalog.some(item => item.localOnly);
+        catalogSourceIds.push(...catalog.flatMap(item => item.sourceId ? [item.sourceId] : []));
+        retrieval = await this.adviceService.planReferenceSearch(options.userPrompt ?? prepared.context.selectedText ?? "現在のコードについて相談",
+          prepared.context.additionalContext, catalog, tokenSource.token);
+        const search = retrieval?.search;
+        if (tokenSource.token.isCancellationRequested) return { ok: false };
+        if (search && (search.queries.length || search.documentIds.length)) {
+          const resolved = await this.referenceContext.resolve(prepared.context, options.userPrompt ?? "", preview.activeFilePath, true, search);
+          const { sent, withheld } = splitReferencesForDestination(resolved, isVerifiedReferenceLocalModel(this.connectionService.getConnectedModel()));
+          prepared = this.requestPlanCoordinator.externalize({ ...prepared,
+            context: { ...prepared.context, referenceDocuments: sent, withheldReferenceDocuments: withheld, referenceRevision: this.referenceContext.revision }
+          }, options.userPrompt);
+        }
+      }
+    }
+    if (this.usageMeter.isTokenLimitExceeded(this.connectionService.getProviderId(), settings.dailyTokenLimit)) {
+      this.notifyGuidanceStopped("本日のトークン上限に達したため、回答の生成を見送りました。", options.kind === "always");
+      return { ok: false };
+    }
     if (tokenSource.token.isCancellationRequested || this.sessionStore.getState().requestState !== preparationState) {
       tokenSource.dispose();
       return { ok: false };
     }
-    const referenceLocalOnly = historyLocalOnly || Boolean(prepared.context.referenceDocuments?.some(doc => doc.localOnly));
+    const referenceLocalOnly = historyLocalOnly || catalogLocalOnly || Boolean(prepared.context.referenceDocuments?.some(doc => doc.localOnly));
     prepared.requestPlan.referenceLocalOnly = referenceLocalOnly;
     prepared.requestPlan.referenceSourceIds = [...new Set([
       ...history.flatMap(entry => entry.requestPlan?.referenceSourceIds ?? entry.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? []),
-      ...(prepared.context.referenceDocuments ?? []).map(doc => doc.sourceId)
+      ...(prepared.context.referenceDocuments ?? []).map(doc => doc.sourceId),
+      ...catalogSourceIds
     ])];
     let conversationMemory: string;
     try {
@@ -1452,6 +1504,21 @@ export class NavigatorController implements vscode.Disposable {
       tokenSource.token
     );
     const activeRequestAfterResponse = this.activeGuidanceRequest;
+    if (result.ok && retrieval) {
+      if (result.usage && retrieval.usage) {
+        result.usage = { inputTokens: result.usage.inputTokens + retrieval.usage.inputTokens,
+          outputTokens: result.usage.outputTokens + retrieval.usage.outputTokens,
+          costUsd: result.usage.costUsd !== undefined && retrieval.usage.costUsd !== undefined ? result.usage.costUsd + retrieval.usage.costUsd : undefined };
+      }
+      if (result.responseMetadata && retrieval.responseMetadata) {
+        const previous = retrieval.responseMetadata, current = result.responseMetadata;
+        result.responseMetadata = { ...current, referenceSearchCount: previous.attemptCount,
+          providerRequestCount: previous.providerRequestCount + current.providerRequestCount,
+          requestIds: [...(previous.requestIds ?? []), ...(current.requestIds ?? [])],
+          resolvedModelIds: [...new Set([...(previous.resolvedModelIds ?? []), ...(current.resolvedModelIds ?? [])])],
+          finishReasons: [...(previous.finishReasons ?? []), ...(current.finishReasons ?? [])] };
+      }
+    }
     const requestIsCurrent = activeRequestAfterResponse?.id === requestId;
     const wasCancelled = tokenSource.token.isCancellationRequested || (!result.ok && result.cancelled);
     if (activeRequestAfterResponse?.id === requestId) {

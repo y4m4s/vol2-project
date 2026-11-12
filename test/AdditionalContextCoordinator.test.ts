@@ -12,10 +12,12 @@ import type { ConversationEntry, GuidanceContext } from "../src/shared/types";
 let trusted = true;
 const events: ((uri?: { fsPath: string }) => void)[] = [];
 let watches = 0, disposed = 0;
+const openDialogs: { canSelectFiles: boolean; canSelectFolders: boolean }[] = [];
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
 const fileUri = (file: string) => ({ scheme: "file", fsPath: file, toString: () => pathToFileURL(file).href });
 loader._load = (id, parent, isMain) => id === "vscode" ? {
+  window: { showOpenDialog: async (options: { canSelectFiles: boolean; canSelectFolders: boolean }) => { openDialogs.push(options); return undefined; } },
   Uri: { file: fileUri, parse: (uri: string) => fileUri(fileURLToPath(uri)) },
   RelativePattern: class { constructor(public base: unknown, public pattern: unknown) {} },
   workspace: {
@@ -32,6 +34,7 @@ loader._load = originalLoad;
 
 const context: GuidanceContext = { referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
 async function setup(t: TestContext, localOnly = true) {
+  openDialogs.splice(0);
   trusted = true; watches = 0; disposed = 0; events.splice(0);
   const parent = path.resolve(os.tmpdir()), root = await fs.mkdtemp(path.join(parent, "navicom-coordinator-"));
   assert.equal(path.dirname(root), parent);
@@ -47,6 +50,16 @@ async function setup(t: TestContext, localOnly = true) {
   t.after(() => coordinator.dispose());
   return { root, coordinator, data, notifications: () => notifications };
 }
+
+test("conversation attachments can open file and folder pickers without a workspace", async t => {
+  const h = await setup(t);
+  assert.equal(h.coordinator.view().workspaceAvailable, false);
+  await h.coordinator.add("document", false, "global");
+  await h.coordinator.add("document", true, "global");
+  assert.deepEqual(openDialogs.map(options => [options.canSelectFiles, options.canSelectFolders]), [[true, false], [false, true]]);
+  await h.coordinator.add("document", false, "workspace");
+  assert.equal(openDialogs.length, 3);
+});
 
 test("untrusted workspaces cannot scan or resolve saved sources", async t => {
   const h = await setup(t);
@@ -83,14 +96,63 @@ test("watcher events invalidate cached previews and new/delete changes appear", 
   assert.equal((await h.coordinator.resolve(context, "NEW_FILE")).some(doc => doc.path.endsWith("new.md")), false);
 });
 
-test("uppercase documents invalidate previews while ordinary source-file edits do not", async t => {
+test("code and uppercase documents invalidate previews while binary edits do not", async t => {
   const h = await setup(t); h.coordinator.initialize();
   await h.coordinator.resolve(context, "TypeScript");
   const revision = h.coordinator.revision;
-  events[0]({ fsPath: path.join(h.root, "code.ts") });
+  events[0]({ fsPath: path.join(h.root, "image.png") });
   assert.equal(h.coordinator.revision, revision);
   events[0]({ fsPath: path.join(h.root, "GUIDE.MD") });
   assert.ok(h.coordinator.revision > revision);
+  const afterMarkdown = h.coordinator.revision;
+  events[0]({ fsPath: path.join(h.root, "code.ts") });
+  assert.ok(h.coordinator.revision > afterMarkdown);
+});
+
+test("catalog metadata respects destination permissions and conversation activation", async t => {
+  const h = await setup(t);
+  assert.deepEqual(await h.coordinator.catalog(context, "TypeScript", false, 8000), []);
+  assert.equal((await h.coordinator.catalog(context, "TypeScript", true, 8000)).length, 1);
+  h.coordinator.activate([]);
+  assert.deepEqual(await h.coordinator.catalog(context, "TypeScript", true, 8000), []);
+  assert.equal(h.coordinator.view().legacyAvailable, true);
+  assert.equal((h.data.get("aiPairNavigator.referenceSources.v1") as ContextSource[]).length, 1);
+});
+
+test("permitted catalog exposes metadata without file bodies", async t => {
+  const h = await setup(t, false);
+  const catalog = await h.coordinator.catalog(context, "TypeScript", false, 8000);
+  assert.equal(catalog.length, 1);
+  assert.equal("text" in catalog[0], false);
+  assert.equal(JSON.stringify(catalog).includes("命名規約"), false);
+});
+
+test("nested Skill catalogs and per-request selection include bundled files without persisting selection", async t => {
+  const h = await setup(t, false), skillRoot = path.join(h.root, "team", "frontend", "review");
+  await fs.mkdir(path.join(skillRoot, "references", "typescript"), { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review TypeScript code\n---\nRead [guides](references/).\nNESTED_SKILL_STEPS");
+  await fs.writeFile(path.join(skillRoot, "references", "typescript", "guide.md"), "RetryPolicy NESTED_REFERENCE_BODY");
+  const original = h.coordinator.sources()[0];
+  h.coordinator.activate([{ ...original, kind: "skill" }]);
+  const catalog = await h.coordinator.catalog(context, "Review TypeScript", false, 8000);
+  const skill = catalog.find(item => item.path.endsWith("team/frontend/review/SKILL.md"));
+  assert.ok(skill);
+  assert.equal(skill.description, "Review TypeScript code");
+  assert.equal(JSON.stringify(catalog).includes("NESTED_SKILL_STEPS"), false);
+  const selected = await h.coordinator.resolve(context, "RetryPolicy", undefined, false, { queries: ["RetryPolicy"], documentIds: [skill.id] });
+  assert.equal(selected.length, 2);
+  assert.match(selected[1].text, /NESTED_REFERENCE_BODY/);
+  await h.coordinator.validate(selected, h.coordinator.revision);
+  assert.deepEqual(h.coordinator.sources()[0].selectedPaths, []);
+  assert.deepEqual(await h.coordinator.resolve(context, "RetryPolicy"), [], "a one-request Skill never stays applied");
+});
+
+test("private nested Skill metadata is withheld from cloud catalogs", async t => {
+  const h = await setup(t), skillRoot = path.join(h.root, "team", "review");
+  await fs.mkdir(skillRoot, { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: PRIVATE_SKILL_DESCRIPTION\n---\nPRIVATE_SKILL_STEPS");
+  assert.deepEqual(await h.coordinator.catalog(context, "review", false, 8000), []);
+  assert.ok((await h.coordinator.catalog(context, "review", true, 8000)).some(item => item.description === "PRIVATE_SKILL_DESCRIPTION"));
 });
 
 test("disabling or removing a source stops selection and disposes watchers", async t => {

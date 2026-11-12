@@ -29,7 +29,7 @@ export function referenceQueryTerms(value: string): string[] {
 }
 
 export function resolveReferenceContext(sources: readonly ContextSource[], documents: readonly ReferenceDocument[], context: GuidanceContext,
-  question: string, activeRelativePath: string, activeRoot?: string): ReferenceExcerpt[] {
+  question: string, activeRelativePath: string, activeRoot?: string, preferredDocumentIds: readonly string[] = []): ReferenceExcerpt[] {
   const primary = referenceQueryTerms(`${question}\n${context.additionalContext ?? ""}`);
   const secondary = referenceQueryTerms(`${context.activeFileLanguage ?? ""}\n${context.selectedText ?? context.activeFileExcerpt?.slice(0, 2000) ?? ""}\n${context.diagnosticsSummary.map(d => d.message).join("\n")}`);
   const ranked: { excerpt: ReferenceExcerpt; score: number; priority: number }[] = [];
@@ -39,52 +39,66 @@ export function resolveReferenceContext(sources: readonly ContextSource[], docum
     if (source.appliesTo.length && (!activeRelativePath || !isPathExcluded(activeRelativePath, source.appliesTo))) continue;
     for (const doc of documents.filter(doc => doc.sourceId === source.id)) {
       const pinned = source.selectedPaths.includes(doc.relativePath);
-      if (source.kind === "skill" && (!doc.skill || !pinned)) continue;
+      const requested = preferredDocumentIds.includes(doc.id);
+      if ((doc.skill || source.kind === "skill") && (!doc.skill || (!pinned && !requested))) continue;
+      const required = pinned || Boolean(source.alwaysInclude) || Boolean(doc.skill && requested);
       const obsolete = /superseded|deprecated|rejected|廃止|置換|却下/i.test(doc.status ?? "");
-      if (source.kind === "adr" && obsolete && !pinned && !/過去|経緯|旧|廃止|履歴|history|superseded|deprecated/i.test(question)) continue;
-      const chunks = doc.skill ? [{ text: doc.text, start: 1, end: doc.text.split("\n").length }] : chunkReferenceText(doc.text);
+      if (source.kind === "adr" && obsolete && !required && !/過去|経緯|旧|廃止|履歴|history|superseded|deprecated/i.test(question)) continue;
+      const chunks = required ? [{ text: doc.text, start: 1, end: doc.text.split("\n").length }] : chunkReferenceText(doc.text);
       for (const chunk of chunks) {
         const meta = normalizeKnowledgeSearchText(doc.relativePath, doc.title, doc.skill?.description ?? "");
         const haystack = normalizeKnowledgeSearchText(chunk.text);
         const score = primary.reduce((n, term) => n + (meta.includes(term) ? 6 : 0) + (haystack.includes(term) ? 3 : 0), 0) +
           secondary.reduce((n, term) => n + (meta.includes(term) ? 2 : 0) + (haystack.includes(term) ? 1 : 0), 0);
-        if (!pinned && source.kind !== "rules" && score === 0) continue;
-        ranked.push({ score, priority: pinned ? 2 : source.kind === "rules" ? 1 : 0, excerpt: {
+        if (!required && !requested && source.kind !== "rules" && score === 0) continue;
+        ranked.push({ score, priority: required ? 2 : requested ? 1.5 : source.kind === "rules" ? 1 : 0, excerpt: {
           id: `${doc.id}:${chunk.start}`, sourceId: source.id, path: `${source.label}/${doc.relativePath}`, title: doc.title,
-          kind: source.kind, hash: doc.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end,
-          reason: pinned ? "明示選択" : source.kind === "rules" ? "言語・パスの適用範囲に一致" : `関連語の一致${doc.status ? ` / 状態: ${doc.status}` : ""}`,
-          localOnly: source.localOnly, mode: doc.skill ? source.skillMode : "reference"
+          kind: doc.skill ? "skill" : source.kind, hash: doc.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end, required,
+          reason: pinned || source.alwaysInclude ? "常に含める" : requested ? "AIが参照を要求" : source.kind === "rules" ? "言語・パスの適用範囲に一致" : `関連語の一致${doc.status ? ` / 状態: ${doc.status}` : ""}`,
+          localOnly: source.localOnly, mode: doc.skill ? source.kind === "skill" ? source.skillMode : "procedure" : "reference"
         } });
       }
     }
   }
   ranked.sort((a, b) => b.priority - a.priority || b.score - a.score || a.excerpt.path.localeCompare(b.excerpt.path) || a.excerpt.startLine - b.excerpt.startLine);
-  // Skills remain complete. PromptBuilder may omit a whole skill but never clip its procedure.
-  // Take one fragment per document first, so a long pinned file cannot crowd out a selected Skill.
-  const selected: ReferenceExcerpt[] = [];
-  const represented = new Set<string>();
+  // Required files/Skills are complete and are never evicted by the search result limit.
+  // Spread optional excerpts across documents before filling the remaining slots.
+  const selected: ReferenceExcerpt[] = ranked.filter(item => item.excerpt.required).map(item => item.excerpt);
+  const represented = new Set(selected.map(item => `${item.sourceId}\0${item.path}`));
   for (const { excerpt } of ranked) {
+    if (selected.filter(item => !item.required).length >= 5) break;
     const key = `${excerpt.sourceId}\0${excerpt.path}`;
     if (represented.has(key)) continue;
     selected.push(excerpt); represented.add(key);
-    if (selected.length === 5) break;
   }
   for (const { excerpt } of ranked) {
-    if (selected.length >= 5) break;
+    if (selected.filter(item => !item.required).length >= 5) break;
     if (!selected.some(item => item.id === excerpt.id)) selected.push(excerpt);
   }
   for (const skill of [...selected].filter(item => item.kind === "skill")) {
     const doc = documents.find(doc => `${doc.id}:1` === skill.id);
     const base = doc?.relativePath.replace(/[^/]+$/, "");
+    const linkedDocuments = new Map<string, ReferenceDocument>();
     for (const resource of doc?.skill?.resources ?? []) {
-      const linked = documents.find(item => item.sourceId === skill.sourceId && item.relativePath === base + resource);
-      const resourcePath = skill.path.replace(/[^/]+$/, "") + resource;
-      if (!linked || selected.length >= 8 || selected.some(item => item.sourceId === linked.sourceId && item.path === resourcePath)) continue;
-      const chunk = chunkReferenceText(linked.text).map(chunk => {
+      const target = base + resource.replace(/\/+$/, "");
+      for (const linked of documents.filter(item => item.sourceId === skill.sourceId && !item.skill &&
+        (item.relativePath === target || item.relativePath.startsWith(`${target}/`)))) linkedDocuments.set(linked.id, linked);
+    }
+    // A directory link can contain many files. Rank all their representative chunks before taking the bounded set.
+    const candidates = [...linkedDocuments.values()].map(linked => {
+      const best = chunkReferenceText(linked.text).map(chunk => {
         const haystack = normalizeKnowledgeSearchText(chunk.text);
         return { chunk, score: [...primary, ...secondary].reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0) };
-      }).sort((a, b) => b.score - a.score || a.chunk.start - b.chunk.start)[0]?.chunk;
-      if (chunk) selected.push({ ...skill, id: `${linked.id}:${chunk.start}`, kind: "document", mode: "reference", path: resourcePath,
+      }).sort((a, b) => b.score - a.score || a.chunk.start - b.chunk.start)[0];
+      return { linked, best };
+    }).sort((a, b) => (b.best?.score ?? 0) - (a.best?.score ?? 0) || a.linked.relativePath.localeCompare(b.linked.relativePath));
+    const source = sources.find(source => source.id === skill.sourceId);
+    for (const { linked, best } of candidates) {
+      if (selected.filter(item => !item.required).length >= 8) break;
+      const resourcePath = `${source?.label}/${linked.relativePath}`;
+      if (selected.some(item => item.sourceId === linked.sourceId && item.path === resourcePath)) continue;
+      const chunk = best?.chunk;
+      if (chunk) selected.push({ ...skill, id: `${linked.id}:${chunk.start}`, kind: "document", mode: "reference", required: false, path: resourcePath,
         title: linked.title, hash: linked.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end, reason: "選択Skillの関連資料" });
     }
   }

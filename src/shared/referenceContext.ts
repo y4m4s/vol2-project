@@ -8,7 +8,8 @@ export type ReferenceAction =
   | { type: "configureContextSource"; id: string }
   | { type: "selectContextDocuments"; id: string }
   | { type: "openContextDocument"; id: string }
-  | { type: "refreshContextSources" };
+  | { type: "refreshContextSources" }
+  | { type: "importContextSources" };
 export interface ContextSource {
   id: string;
   uri: string;
@@ -23,6 +24,8 @@ export interface ContextSource {
   workspaceRoot?: string;
   selectedPaths: string[];
   skillMode: "reference" | "procedure";
+  /** Include complete documents instead of searching for excerpts. */
+  alwaysInclude?: boolean;
 }
 export interface ReferenceDocument {
   id: string;
@@ -48,6 +51,7 @@ export interface ReferenceExcerpt {
   reason: string;
   localOnly: boolean;
   mode: "reference" | "procedure";
+  required?: boolean;
 }
 export type ReferenceProvenance = Omit<ReferenceExcerpt, "text"> & { included: boolean; note?: string };
 export interface ContextSourceView {
@@ -59,6 +63,8 @@ export interface ContextSourceView {
   documents: { id: string; path: string; title: string; description?: string; selected: boolean }[];
 }
 export interface ReferenceContextView {
+  legacyAvailable?: boolean;
+  workspaceAvailable?: boolean;
   revision: number;
   trusted: boolean;
   sources: ContextSourceView[];

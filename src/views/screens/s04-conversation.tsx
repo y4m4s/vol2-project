@@ -147,6 +147,7 @@ function ChatBubble(
   const responseMetadata = !isUser ? entry.responseMetadata : undefined;
   const modelDetails = [
     modelLabel,
+    responseMetadata?.referenceSearchCount ? `資料検索: ${responseMetadata.referenceSearchCount}回` : undefined,
     responseMetadata?.finishReasons?.length
       ? `終了理由: ${responseMetadata.finishReasons.join(" → ")}`
       : undefined,
