@@ -1373,7 +1373,7 @@ export class NavigatorController implements vscode.Disposable {
         catalogLocalOnly = catalog.some(item => item.localOnly);
         catalogSourceIds.push(...catalog.flatMap(item => item.sourceId ? [item.sourceId] : []));
         retrieval = await this.adviceService.planReferenceSearch(options.userPrompt ?? prepared.context.selectedText ?? "現在のコードについて相談",
-          prepared.context.additionalContext, catalog, tokenSource.token);
+          prepared.context.additionalContext, catalog, tokenSource.token, prepared.context);
         const search = retrieval?.search;
         if (tokenSource.token.isCancellationRequested) return { ok: false };
         if (search && (search.queries.length || search.documentIds.length)) {

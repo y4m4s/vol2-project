@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { ContextSource, ReferenceContextView, ReferenceDocument, ReferenceExcerpt, ReferenceKind, ReferenceScope } from "../../shared/referenceContext";
 import type { ConversationEntry, GuidanceContext } from "../../shared/types";
 import { ContextSourceRegistry } from "../../services/ContextSourceRegistry";
-import { ReferenceDocumentService } from "../../services/ReferenceDocumentService";
+import { isInsideReferenceRoot, ReferenceDocumentService } from "../../services/ReferenceDocumentService";
 import { isPathExcluded, PATH_CASE_INSENSITIVE } from "../../services/globMatch";
 import { PROTECTED_EXCLUDED_GLOBS } from "../../services/protectedGlobs";
 import { parseReferencePatterns, referenceQueryTerms, resolveReferenceContext } from "../../services/ReferenceContextResolver";
@@ -22,6 +22,8 @@ export const REFERENCE_FULL_RESCAN_INTERVAL_MS = 30_000;
 export class AdditionalContextCoordinator implements vscode.Disposable {
   private documents: ReferenceDocument[] = [];
   private errors = new Map<string, string[]>();
+  /** Keep watch targets while the catalog is dirty so consecutive changes are not lost. */
+  private relatedWatchPaths = new Map<string, string[]>();
   private readonly watchers: vscode.Disposable[] = [];
   private readonly listeners: vscode.Disposable[] = [];
   private pending?: Promise<void>;
@@ -48,6 +50,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
   public activate(sources: readonly ContextSource[], conversationId?: string): void {
     this.conversationId = conversationId;
     this.registry.activate(sources);
+    this.relatedWatchPaths.clear();
     this.errors.clear(); this.invalidate(); this.installWatchers(); this.schedule();
   }
 
@@ -170,7 +173,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     const uri = activePath && path.isAbsolute(activePath) ? vscode.Uri.file(activePath) : undefined;
     const root = uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined;
     const relative = activePath && root ? path.relative(root.uri.fsPath, activePath).replaceAll("\\", "/") : "";
-    return resolveReferenceContext(this.registry.list(), this.documents, context, [question, ...(search?.queries ?? [])].join("\n"), relative, root?.uri.fsPath, search?.documentIds);
+    return resolveReferenceContext(this.registry.list(), this.documents, context, question, relative, root?.uri.fsPath, search?.documentIds, search?.queries);
   }
   public async catalog(context: GuidanceContext, question: string, verifiedLocal: boolean, maxChars: number): Promise<ReferenceCatalogItem[]> {
     if (!vscode.workspace.isTrusted) return [];
@@ -248,6 +251,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
       // Text, title, status and Skill metadata are derived from the content hash.
       if (documentSignature(scanned.documents) !== documentSignature(this.documents)) this.revision++;
       this.documents = scanned.documents; this.errors = scanned.errors;
+      this.updateRelatedWatchPaths(sources);
       this.dirty = false; this.lastScanAt = Date.now();
     })();
     this.pending = operation; this.changed();
@@ -259,6 +263,24 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
   private schedule(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => { void this.refresh().catch(() => {}); }, 600);
+  }
+  private updateRelatedWatchPaths(sources: readonly ContextSource[]): void {
+    this.relatedWatchPaths.clear();
+    for (const source of sources.filter(source => !source.directory && source.kind === "skill")) {
+      try {
+        const root = path.dirname(fileURLToPath(source.uri));
+        const paths = new Set<string>();
+        for (const doc of this.documents.filter(doc => doc.sourceId === source.id)) {
+          const file = path.resolve(root, doc.relativePath);
+          paths.add(file);
+          for (const resource of doc.skill?.resources ?? []) {
+            const target = path.resolve(path.dirname(file), resource);
+            if (isInsideReferenceRoot(target, root)) paths.add(target);
+          }
+        }
+        this.relatedWatchPaths.set(source.id, [...paths]);
+      } catch { /* Invalid saved URIs are reported by the scanner. */ }
+    }
   }
   private installWatchers(): void {
     this.watchers.splice(0).forEach(watcher => watcher.dispose());
@@ -274,7 +296,9 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
         const changed = (target: vscode.Uri | undefined, structural: boolean) => {
           if (target) {
             const normalize = (value: string) => PATH_CASE_INSENSITIVE ? path.resolve(value).toLowerCase() : path.resolve(value);
-            const bundledReference = source.kind === "skill" && /^references\//i.test(path.relative(base.fsPath, target.fsPath).replaceAll("\\", "/"));
+            const targetPath = normalize(target.fsPath);
+            const bundledReference = source.kind === "skill" && (this.relatedWatchPaths.get(source.id) ?? []).some(file =>
+              isInsideReferenceRoot(targetPath, normalize(file)) || (structural && isInsideReferenceRoot(normalize(file), targetPath)));
             if (!source.directory && !bundledReference && normalize(target.fsPath) !== normalize(uri.fsPath) && normalize(target.fsPath) !== normalize(base.fsPath)) return;
             if (isPathExcluded(target.fsPath, PROTECTED_EXCLUDED_GLOBS) || isPathExcluded(`${target.fsPath}/__reference__`, PROTECTED_EXCLUDED_GLOBS)) return;
             if (!structural && !isReferenceTextPath(target.fsPath)) return;
@@ -292,6 +316,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     if (this.timer) clearTimeout(this.timer);
     [...this.watchers, ...this.listeners].forEach(item => item.dispose());
     this.documents = [];
+    this.relatedWatchPaths.clear();
   }
 }
 function documentSignature(documents: readonly ReferenceDocument[]): string {

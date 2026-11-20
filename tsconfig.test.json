@@ -8,6 +8,7 @@
     "outDir": ".test-out",
     "rootDir": ".",
     "strict": true,
+    "jsx": "react-jsx",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "esModuleInterop": true,
@@ -18,6 +19,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "test/ReferenceDocumentsContent.test.ts",
     "test/ReferenceRetrieval.test.ts",
     "test/ReferenceKnowledge.test.ts",
     "test/AdditionalContextCoordinator.test.ts",

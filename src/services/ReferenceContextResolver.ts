@@ -29,8 +29,9 @@ export function referenceQueryTerms(value: string): string[] {
 }
 
 export function resolveReferenceContext(sources: readonly ContextSource[], documents: readonly ReferenceDocument[], context: GuidanceContext,
-  question: string, activeRelativePath: string, activeRoot?: string, preferredDocumentIds: readonly string[] = []): ReferenceExcerpt[] {
-  const primary = referenceQueryTerms(`${question}\n${context.additionalContext ?? ""}`);
+  question: string, activeRelativePath: string, activeRoot?: string, preferredDocumentIds: readonly string[] = [], searchQueries: readonly string[] = []): ReferenceExcerpt[] {
+  // Each bounded AI query gets its own extraction budget, independent of long questions or task text.
+  const primary = [...new Set([...searchQueries.flatMap(referenceQueryTerms), ...referenceQueryTerms(`${question}\n${context.additionalContext ?? ""}`)])];
   const secondary = referenceQueryTerms(`${context.activeFileLanguage ?? ""}\n${context.selectedText ?? context.activeFileExcerpt?.slice(0, 2000) ?? ""}\n${context.diagnosticsSummary.map(d => d.message).join("\n")}`);
   const ranked: { excerpt: ReferenceExcerpt; score: number; priority: number }[] = [];
   for (const source of sources.filter(source => source.enabled)) {

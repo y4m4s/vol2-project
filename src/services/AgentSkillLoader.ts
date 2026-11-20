@@ -48,5 +48,6 @@ export function loadAgentSkill(text: string, directoryName: string) {
     if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || /^[\\/]/.test(target) || target.includes("?")) return [];
     return [target.replace(/^\.\//, "")];
   });
-  return { body, name, description: description.trim(), compatibility: compatibility as string | undefined, resources: [...new Set(resources)].slice(0, 8) };
+  // Index all explicit links. Filesystem scan limits and prompt excerpt limits are enforced separately.
+  return { body, name, description: description.trim(), compatibility: compatibility as string | undefined, resources: [...new Set(resources)] };
 }

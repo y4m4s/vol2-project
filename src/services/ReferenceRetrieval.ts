@@ -1,4 +1,36 @@
 /** Provider-independent, bounded retrieval planning. File access stays in the host. */
+import type { GuidanceContext } from "../shared/types";
+
+export interface ReferenceSearchEvidence {
+  language?: string;
+  codeSource: "selection" | "activeFile";
+  code: string;
+  codeTruncated: boolean;
+  diagnostics: { severity: string; line: number; message: string }[];
+}
+
+/** Accept only the context already filtered for the selected provider; omit file paths and other metadata. */
+export function buildReferenceSearchEvidence(context: GuidanceContext, maxChars: number): ReferenceSearchEvidence | undefined {
+  const code = context.selectedText || context.activeFileExcerpt || "";
+  const result: ReferenceSearchEvidence = { language: context.activeFileLanguage?.slice(0, 100),
+    codeSource: context.selectedText ? "selection" : "activeFile", code: "", codeTruncated: code.length > 0, diagnostics: [] };
+  // Reserve a short diagnostic summary before filling the remaining room with code.
+  for (const diagnostic of context.diagnosticsSummary.slice(0, 3)) {
+    result.diagnostics.push({ severity: diagnostic.severity, line: diagnostic.line, message: diagnostic.message.slice(0, 200) });
+  }
+  while (JSON.stringify(result).length > maxChars && result.diagnostics.length) result.diagnostics.pop();
+  if (JSON.stringify(result).length > maxChars) return undefined;
+  let low = 0, high = Math.min(1200, code.length);
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    result.code = code.slice(0, middle); result.codeTruncated = middle < code.length;
+    if (JSON.stringify(result).length <= maxChars) low = middle;
+    else high = middle - 1;
+  }
+  result.code = code.slice(0, low); result.codeTruncated = low < code.length;
+  return result;
+}
+
 export interface ReferenceCatalogItem {
   id: string;
   path: string;

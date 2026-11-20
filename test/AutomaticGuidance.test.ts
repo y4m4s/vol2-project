@@ -239,7 +239,9 @@ test("manual retrieval uses model-selected references and records catalog proven
       validate: async () => {} },
     adviceService: { requestGuidance: async (input: GuidanceRequestInput) => { sent.push(input); return { ok: true, text: "助言", usage: { inputTokens: 50, outputTokens: 20 },
       responseMetadata: { attemptCount: 1, providerRequestCount: 1 } }; },
-      planReferenceSearch: async () => { plans++; return { search: { queries: ["retry"], documentIds: ["guide"] }, usage: { inputTokens: 10, outputTokens: 5 },
+      planReferenceSearch: async (_question: string, _additional: string | undefined, _catalog: unknown, _token: unknown, codeContext: GuidanceContext) => {
+        plans++; assert.equal(codeContext.activeFileExcerpt, h.context.activeFileExcerpt);
+        return { search: { queries: ["retry"], documentIds: ["guide"] }, usage: { inputTokens: 10, outputTokens: 5 },
         responseMetadata: { attemptCount: 1, providerRequestCount: 1 } }; } }
   });
   await h.driver.askForGuidanceWithCurrentContext("retryを説明して", "現在の要件");

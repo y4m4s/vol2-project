@@ -160,6 +160,9 @@ export class ReferenceDocumentService {
               skill: skill ? { name: skill.name, description: skill.description, compatibility: skill.compatibility, resources: skill.resources } : undefined });
             if (skill && source.selectedPaths.includes(relativePath)) {
               for (const resource of skill.resources) {
+                if (count >= REFERENCE_LIMITS.files || bytes >= REFERENCE_LIMITS.bytes || directories >= REFERENCE_LIMITS.directories || entries >= REFERENCE_LIMITS.entries) {
+                  issue("走査上限に達しました。登録範囲を狭めてください。"); break;
+                }
                 if (resource.split("/").some(part => ["..", ".", "scripts", "assets"].includes(part.toLowerCase())) || resource.includes("\\")) {
                   issue(`${relativePath}: 範囲外を指すSkill参照を除外しました。`); continue;
                 }

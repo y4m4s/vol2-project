@@ -84,6 +84,45 @@ test("cache avoids preview rescans while forced validation detects changes witho
   assert.equal("uri" in h.coordinator.view().sources[0].source, false);
 });
 
+test("direct Skills track rule-file edits, linked-directory creation, and deletion of parent directories", async t => {
+  const h = await setup(t), skillRoot = path.join(h.root, "review"), rule = path.join(skillRoot, "rules", "guide.md");
+  await fs.mkdir(path.dirname(rule), { recursive: true });
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), "---\nname: review\ndescription: Review\n---\n[guide](rules/guide.md)\n[more](docs/)");
+  await fs.writeFile(rule, "RetryPolicy OLD_BODY");
+  const original = h.coordinator.sources()[0];
+  h.coordinator.activate([{ ...original, kind: "skill", directory: false, uri: pathToFileURL(path.join(skillRoot, "SKILL.md")).href, selectedPaths: ["SKILL.md"] }]);
+  await h.coordinator.resolve(context, "RetryPolicy");
+  const revision = h.coordinator.revision;
+  await fs.writeFile(rule, "RetryPolicy NEW_BODY");
+  events[0]({ fsPath: rule });
+  assert.ok(h.coordinator.revision > revision);
+  const updated = await h.coordinator.resolve(context, "RetryPolicy");
+  assert.ok(updated.some(item => item.text.includes("NEW_BODY")));
+  await h.coordinator.validate(updated, h.coordinator.revision);
+  const docs = path.join(skillRoot, "docs", "nested");
+  await fs.mkdir(docs, { recursive: true });
+  await fs.writeFile(path.join(docs, "other.md"), "RetryPolicy NEW_FILE");
+  events[1]({ fsPath: path.join(docs, "other.md") });
+  assert.ok((await h.coordinator.resolve(context, "RetryPolicy")).some(item => item.text.includes("NEW_FILE")));
+  // Files are already removed when VS Code reports a directory deletion.
+  await fs.unlink(rule); await fs.rmdir(path.dirname(rule));
+  events[2]({ fsPath: path.dirname(rule) });
+  assert.ok((await h.coordinator.resolve(context, "RetryPolicy")).every(item => !item.text.includes("NEW_BODY")));
+  const beforeUnrelated = h.coordinator.revision;
+  events[0]({ fsPath: path.join(skillRoot, "unrelated.md") });
+  assert.equal(h.coordinator.revision, beforeUnrelated);
+});
+
+test("AI search queries survive long questions independently of ordinary query extraction", async t => {
+  const h = await setup(t);
+  await fs.writeFile(path.join(h.root, "needle.md"), "UNIQUE_NEEDLE_FRAGMENT");
+  const longQuestion = Array.from({ length: 90 }, (_, index) => `word${index}`).join(" ");
+  const selected = await h.coordinator.resolve(context, longQuestion, undefined, false,
+    { queries: ["UNIQUE_NEEDLE_FRAGMENT"], documentIds: [] });
+  assert.equal(selected.length, 1);
+  assert.match(selected[0].text, /UNIQUE_NEEDLE_FRAGMENT/);
+});
+
 test("watcher events invalidate cached previews and new/delete changes appear", async t => {
   const h = await setup(t); h.coordinator.initialize();
   assert.equal(watches, 1);

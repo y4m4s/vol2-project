@@ -1,24 +1,28 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties, FocusEvent } from "react";
 import type { RequestPlanFile } from "../../../shared/types";
+import type { ReferenceProvenance } from "../../../shared/referenceContext";
+import { ReferenceDocumentsContent } from "./ReferenceDocumentsContent";
 import { useApp } from "../state/AppContext";
 
 interface ReferencedFilesBadgeProps {
   files?: RequestPlanFile[];
+  documents?: readonly ReferenceProvenance[];
 }
 
-const MAX_INLINE_FILE_COUNT = 2;
 const CARD_GAP_PX = 6;
 const VIEWPORT_PADDING_PX = 8;
 const CARD_MAX_HEIGHT_PX = 240;
 
 type CardPlacement = "above" | "below";
 
-export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
+export function ReferencedFilesBadge({ files, documents }: ReferencedFilesBadgeProps) {
   const { send } = useApp();
   const badgeRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const cardId = useId();
   const closeTimerRef = useRef<number | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -95,7 +99,7 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
     if (isOpen) {
       updateCardPosition();
     }
-  }, [isOpen, referencedFiles.length, updateCardPosition]);
+  }, [isOpen, referencedFiles.length, documents, updateCardPosition]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -134,17 +138,11 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
 
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
-  if (referencedFiles.length === 0) {
-    return null;
-  }
-
-  const inlineFiles = referencedFiles.slice(0, MAX_INLINE_FILE_COUNT);
-  const hiddenCount = Math.max(0, referencedFiles.length - inlineFiles.length);
-  const label = [
-    "参照ファイル:",
-    ...inlineFiles.map((file) => getShortFileName(file.path)),
-    hiddenCount > 0 ? `他${hiddenCount}個` : undefined
-  ].filter(Boolean).join(" ");
+  const sentDocuments = (documents ?? []).filter(doc => doc.included);
+  const attachmentCount = new Set(sentDocuments.map(doc => `${doc.sourceId}\0${doc.path}`)).size;
+  const count = referencedFiles.length + attachmentCount;
+  const omitted = (documents?.length ?? 0) - sentDocuments.length;
+  const label = count ? `参照 ${count}件` : omitted ? `未使用 ${omitted}件` : documents ? "参照なし" : "記録なし";
 
   function handleTriggerClick() {
     if (isPinned) {
@@ -157,7 +155,7 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
   }
 
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
-    if (event.relatedTarget instanceof Node && badgeRef.current?.contains(event.relatedTarget)) {
+    if (event.relatedTarget instanceof Node && (badgeRef.current?.contains(event.relatedTarget) || cardRef.current?.contains(event.relatedTarget))) {
       return;
     }
 
@@ -179,25 +177,31 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
         ref={triggerRef}
         type="button"
         className="referenced-files-trigger"
-        aria-label={`参照ファイル ${referencedFiles.length}件`}
+        aria-label={`参照した資料・Skills: ${label}`}
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        aria-controls={isOpen ? cardId : undefined}
         onClick={handleTriggerClick}
       >
         <span className="material-symbols-outlined">attach_file</span>
         <span className="referenced-files-label">{label}</span>
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div
+          id={cardId}
           ref={cardRef}
           className={`referenced-files-card ${placement}`}
-          role="tooltip"
+          role="dialog"
+          aria-label="参照した資料・Skills"
           style={cardStyle}
           onMouseEnter={openCard}
           onMouseLeave={scheduleCloseCard}
+          onFocus={openCard}
+          onBlur={handleBlur}
         >
-          <div className="referenced-files-card-title">参照ファイル</div>
-          <div className="referenced-files-card-list">
+          <div className="referenced-files-card-title">参照した資料・Skills</div>
+          {referencedFiles.length > 0 && <><div className="referenced-files-card-section">作業ファイル</div><div className="referenced-files-card-list">
             {referencedFiles.map((file) => (
               <button
                 key={file.path}
@@ -216,8 +220,9 @@ export function ReferencedFilesBadge({ files }: ReferencedFilesBadgeProps) {
                 </div>
               </button>
             ))}
-          </div>
-        </div>
+          </div></>}
+          <ReferenceDocumentsContent documents={documents} />
+        </div>, document.body
       )}
     </div>
   );

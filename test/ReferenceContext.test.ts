@@ -234,6 +234,23 @@ test("Skills parse multiline YAML and retain resource paths without granting too
   assert.match(skill.body, /# Guide/);
 });
 
+test("direct Skills index every explicit link while prompt excerpts remain bounded", async t => {
+  const root = await fixture(t), skillRoot = path.join(root, "review"), rules = path.join(skillRoot, "rules");
+  await fs.mkdir(rules, { recursive: true });
+  const links = Array.from({ length: 12 }, (_, index) => `[rule ${index}](rules/r${index}.md)`);
+  const text = `---\nname: review\ndescription: Review\n---\n${links.join("\n")}`;
+  await fs.writeFile(path.join(skillRoot, "SKILL.md"), text);
+  await Promise.all(links.map((_, index) => fs.writeFile(path.join(rules, `r${index}.md`), index === 11 ? "NEEDED_LAST_RULE" : "General notes")));
+  assert.equal(loadAgentSkill(text, "review").resources.length, 12);
+  const registered = source({ kind: "skill", directory: false, uri: pathToFileURL(path.join(skillRoot, "SKILL.md")).href, selectedPaths: ["SKILL.md"] });
+  const result = await new ReferenceDocumentService().scan([registered]);
+  assert.equal(result.documents.length, 13);
+  assert.deepEqual(result.errors.get("source"), []);
+  const selected = resolveReferenceContext([registered], result.documents, context(), "NEEDED_LAST_RULE", "");
+  assert.ok(selected.some(item => item.text.includes("NEEDED_LAST_RULE")));
+  assert.ok(selected.filter(item => !item.required).length <= 8);
+});
+
 test("Skills reject malformed YAML, aliases, custom tags, invalid metadata and names", () => {
   for (const frontmatter of ["name: wrong\ndescription: ok", "name: test-skill\ndescription: [invalid]", "name: test-skill\ndescription: ok\nmetadata: { count: 2 }",
     "name: test-skill\ndescription: &a hi\nlicense: *a", "name: test-skill\ndescription: !unknown hi", "name: test-skill\ndescription: use: invalid"]) {
@@ -350,6 +367,12 @@ test("registered references survive low depth and slash presets, remain user dat
   assert.equal("text" in plan.referenceDocuments![0], false);
   assert.equal(hasMeaningfulContext(raw), true);
   assert.notEqual(createAutomaticFingerprint(raw), createAutomaticFingerprint({ ...raw, referenceDocuments: [excerpt({ hash: "v2" })] }));
+});
+
+test("request plans explicitly record an empty attachment list for answers without references", () => {
+  const plan = { kind: "manual" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
+  const reconciled = reconcileRequestPlan(plan, { ...plan, context: context(), userPrompt: "a" });
+  assert.deepEqual(reconciled.referenceDocuments, []);
 });
 
 test("over-budget procedures are omitted whole with a reason and the question remains intact", () => {

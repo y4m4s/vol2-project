@@ -1280,6 +1280,7 @@ body.vscode-high-contrast .provider-logo-theme-pair .provider-logo-theme-white {
 .reference-source-toggle:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 3px; }
 .reference-source-toggle:disabled { opacity: .45; cursor: default; }
 .reference-source-manager .reference-source-badge { background: transparent; border: 1px solid var(--vscode-panel-border); color: var(--vscode-descriptionForeground); }
+.reference-source-manager .reference-source-badge[data-withheld="true"] { white-space: normal; max-width: 112px; }
 .reference-source-item .reference-source-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
 .reference-source-manager .reference-source-actions button { width: 100%; min-height: 30px; border-radius: 6px; }
 .reference-source-item summary { display: flex; align-items: center; gap: 6px; list-style: none; padding: 3px 0; }

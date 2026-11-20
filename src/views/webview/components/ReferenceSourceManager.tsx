@@ -20,6 +20,8 @@ export function ReferenceSourceManager({ disabled }: { disabled: boolean }) {
     {!references.trusted && <small role="status">ワークスペースの信頼が必要です</small>}
     {references.sources.map(item => {
       const selected = item.documents.filter(doc => doc.selected);
+      const withheld = item.source.enabled && references.trusted && item.source.localOnly &&
+        viewModel?.connectionState === "connected" && viewModel.providerIsVerifiedLocal !== true;
       return <div className="reference-source-item" key={item.source.id}>
         <div className="reference-source-row">
           {item.source.directory
@@ -31,8 +33,8 @@ export function ReferenceSourceManager({ disabled }: { disabled: boolean }) {
               onChange={event => send({ type: "setContextSourceEnabled", id: item.source.id, enabled: event.target.checked })} />
             <span>{item.source.label}</span>
           </label>
-          <span className="reference-source-badge" title={item.source.localOnly ? "ローカル限定" : "外部AIへの送信を許可済み"}>
-            {item.source.localOnly ? "ローカル" : "外部可"}
+          <span className="reference-source-badge" data-withheld={withheld} title={withheld ? "ローカル限定のため、この接続先には送信しません" : item.source.localOnly ? "ローカル限定" : "外部AIへの送信を許可済み"}>
+            {withheld ? "この接続先では未使用" : item.source.localOnly ? "ローカル" : "外部可"}
           </span>
           <button type="button" className="reference-attachment-remove" title="添付を外す" aria-label={`${item.source.label}の添付を外す`}
             disabled={disabled} onClick={() => send({ type: "removeContextSource", id: item.source.id })}>×</button>

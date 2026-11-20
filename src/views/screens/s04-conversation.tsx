@@ -194,6 +194,7 @@ function ChatBubble(
         <ResponseActions
           text={entry.text}
           referencedFiles={entry.requestPlan?.targetFiles}
+          referenceDocuments={entry.requestPlan?.referenceDocuments}
           tokenUsage={(entry.providerId === "lmStudio" || entry.providerId === "ollama") ? undefined : entry.tokenUsage}
           regenerated={Boolean(responseMetadata && responseMetadata.attemptCount > 1)}
           alreadySaved={alreadySaved}
@@ -463,6 +464,7 @@ function ResponseActions(
   {
     text,
     referencedFiles,
+    referenceDocuments,
     tokenUsage,
     regenerated,
     alreadySaved,
@@ -474,6 +476,7 @@ function ResponseActions(
   }: {
     text: string;
     referencedFiles?: RequestPlanSnapshot["targetFiles"];
+    referenceDocuments?: RequestPlanSnapshot["referenceDocuments"];
     tokenUsage?: TokenUsage;
     regenerated: boolean;
     alreadySaved: boolean;
@@ -517,12 +520,11 @@ function ResponseActions(
 
   return (
     <div className="s04-response-actions">
-      {(tokenUsage || regenerated) && (
-        <div className="s04-response-usage-row">
+      <div className="s04-response-info">
           {tokenUsage && (
           <span
             className="s04-response-usage"
-            title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン`}
+            title={`入力 ${tokenUsage.inputTokens} / 出力 ${tokenUsage.outputTokens} トークン${recordedCostUsd !== undefined ? ` · 記録料金 ${formatCostUsd(recordedCostUsd)}` : ""}`}
           >
             約{formatTokenCount(tokenUsage.inputTokens + tokenUsage.outputTokens)}トークン
             {recordedCostUsd !== undefined && (
@@ -535,11 +537,9 @@ function ResponseActions(
               回答を自動再生成済み
             </span>
           )}
-        </div>
-      )}
-
+        <ReferencedFilesBadge files={referencedFiles} documents={referenceDocuments} />
+      </div>
       <div className="s04-response-tools-row">
-        <ReferencedFilesBadge files={referencedFiles} />
 
         <button
           className={`s04-response-action ${feedback === "good" ? "active feedback-good" : ""}`}
