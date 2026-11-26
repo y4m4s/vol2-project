@@ -103,6 +103,9 @@
     "src/shared/languageConcepts.ts",
     "src/services/ComparisonPolicy.ts",
     "src/services/LearningProfileService.ts",
+    "src/services/StuckSignalTracker.ts",
+    "test/StuckSignalTracker.test.ts",
+    "test/StuckDetectionCoordinator.test.ts",
     "test/ComparisonPolicy.test.ts",
     "test/LearningProfile.test.ts"
   ]

@@ -55,6 +55,7 @@ import {
 import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import { LearningProfileService } from "../services/LearningProfileService";
+import { StuckDetectionCoordinator } from "./coordinators/StuckDetectionCoordinator";
 import {
   dismissedConceptKey,
   EMPTY_COMPARISON_EVIDENCE,
@@ -166,6 +167,8 @@ export class NavigatorController implements vscode.Disposable {
   /** 比較を提示した時刻（`${学習中の言語}:${概念}:${言語}`）。同じ比較を30分は繰り返さない（セッション内のみ） */
   private readonly comparisonShownAt = new Map<string, number>();
   private learningSuggestion?: StoredLearningSuggestion;
+  /** つまずき検知（Phase 3a・シャドーモード）。記録だけで、表示や介入はしない */
+  private readonly stuckDetection?: StuckDetectionCoordinator;
   /** Last stop reason shown for automatic guidance; repeated triggers do not re-announce it. */
   private lastAutomaticStopNotice?: string;
 
@@ -189,6 +192,11 @@ export class NavigatorController implements vscode.Disposable {
     private readonly learningProfileService?: LearningProfileService
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
+    this.stuckDetection = new StuckDetectionCoordinator({
+      isEnabled: () => Boolean(this.learningProfileService) && this.getLearningProfile().stuckDetectionEnabled,
+      isExcluded: (filePath) => this.isComparisonFileExcluded(filePath),
+      log: (entry) => this.diagnostic(entry)
+    });
     this.providerRoutingCoordinator = new ProviderRoutingCoordinator(
       this.connectionService, this.usageMeter, conversationStore, this.providerEvaluationStore, this.diagnostic
     );
@@ -361,12 +369,14 @@ export class NavigatorController implements vscode.Disposable {
         this.invalidateRequestPlan();
       }),
       vscode.workspace.onDidCloseTextDocument((document) => {
+        this.stuckDetection?.releaseDocument(document.uri);
         this.automaticFocusByFile.delete(document.uri.fsPath);
         this.automaticOverviewByFile.delete(document.uri.fsPath);
         this.contextCollector.releaseDocument(document.uri);
         this.invalidateRequestPlan();
       }),
       vscode.window.onDidChangeTextEditorSelection((event) => {
+        this.stuckDetection?.noteSelection(event.textEditor.document);
         this.refreshContextPreview();
         if (event.selections.some((selection) => !selection.isEmpty)) {
           this.adviceScheduler.handleActivity("selection_change");
@@ -378,6 +388,7 @@ export class NavigatorController implements vscode.Disposable {
         // Saving/dirty-state notifications can have no actual content changes.
         if (event.contentChanges.length === 0) return;
         this.contextCollector.captureDocumentChange(event);
+        this.stuckDetection?.noteTextChange(event);
 
         if (this.isActiveDocument(event.document.uri)) {
           if (!this.adviceScheduler.getTriggerSnapshot().signals.length) this.contextCollector.resetAutomaticDiagnosticsBaseline();
@@ -388,6 +399,7 @@ export class NavigatorController implements vscode.Disposable {
         }
       }),
       vscode.languages.onDidChangeDiagnostics((event) => {
+        this.stuckDetection?.noteDiagnostics(event.uris);
         if (!this.hasActiveDocumentDiagnosticChange(event.uris)) {
           this.invalidateRequestPlan();
           return;
@@ -401,7 +413,10 @@ export class NavigatorController implements vscode.Disposable {
       }),
       vscode.workspace.onDidCreateFiles(() => this.invalidateRequestPlan()),
       vscode.workspace.onDidDeleteFiles(() => this.invalidateRequestPlan()),
-      vscode.workspace.onDidRenameFiles(() => this.invalidateRequestPlan()),
+      vscode.workspace.onDidRenameFiles(() => {
+        this.stuckDetection?.noteBulkChange();
+        this.invalidateRequestPlan();
+      }),
       vscode.lm.onDidChangeChatModels(() => {
         void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
       })
@@ -647,6 +662,7 @@ export class NavigatorController implements vscode.Disposable {
       return;
     }
     const comparedPrompt = comparison.userPrompt;
+    if (!parsed.slashCommand) this.stuckDetection?.noteQuestion(parsed.userPrompt);
     const guidanceKind = kind ?? (comparedPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
       await this.executeGuidanceRequest(async () => {
@@ -689,6 +705,7 @@ export class NavigatorController implements vscode.Disposable {
       this.patchGuidanceSession({ statusMessage: { kind: "info", text: comparison.notice } });
       return;
     }
+    if (!parsed.slashCommand) this.stuckDetection?.noteQuestion(parsed.userPrompt);
     await this.executeGuidanceRequest(async () => {
       const options = await this.buildCurrentContextGuidanceOptions(
         comparison.userPrompt,
@@ -708,6 +725,7 @@ export class NavigatorController implements vscode.Disposable {
   public async saveLearningProfile(profile: unknown): Promise<void> {
     if (!this.learningProfileService) return;
     await this.learningProfileService.saveProfile(profile);
+    this.stuckDetection?.refresh();
     // 送信予定の「学習プロファイル」の表示は、保存したプロファイルで作り直す。
     this.invalidateRequestPlan();
     this.patchSession({ statusMessage: { kind: "info", text: "学習プロファイルを保存しました。" } });
@@ -909,6 +927,8 @@ export class NavigatorController implements vscode.Disposable {
     // 保存操作を「状態を読み直す」合図として扱い、接続処理の前に表示を実機へ合わせる。
     await this.syncLmStudioServerForSettingsSave(input);
     await this.connectionSettingsCoordinator.save(input);
+    // 除外パターンの変更を、つまずきの追跡にもすぐ反映する。
+    this.stuckDetection?.refresh();
     if (this.connectionSettingsCoordinator.revision !== previousRevision) {
       this.referenceContext?.invalidate();
       await this.synchronizeRoutingProviders();
@@ -993,6 +1013,7 @@ export class NavigatorController implements vscode.Disposable {
   public async resetSettings(): Promise<void> {
     await this.connectionSettingsCoordinator.reset();
     this.referenceContext?.invalidate();
+    this.stuckDetection?.refresh();
   }
 
   public async setAssistanceDepth(assistanceDepth: AssistanceDepth): Promise<void> {
@@ -1137,6 +1158,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public dispose(): void {
+    this.stuckDetection?.dispose();
     this.referenceContext?.dispose();
     for (const disposable of this.disposables) {
       disposable.dispose();

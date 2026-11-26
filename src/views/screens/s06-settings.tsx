@@ -723,7 +723,8 @@ function toLearningProfileDraft(profile?: LearningProfileDraft): LearningProfile
   const source = profile ?? DEFAULT_LEARNING_PROFILE;
   return {
     knownLanguages: source.knownLanguages.map((item) => item.level ? { languageId: item.languageId, level: item.level } : { languageId: item.languageId }),
-    comparisonMode: source.comparisonMode
+    comparisonMode: source.comparisonMode,
+    stuckDetectionEnabled: source.stuckDetectionEnabled ?? true
   };
 }
 

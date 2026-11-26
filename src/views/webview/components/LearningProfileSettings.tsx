@@ -12,7 +12,7 @@ import {
 import { SettingTitle } from "./SettingTitle";
 import { SettingsSelect, type SettingsSelectOption } from "./SettingsSelect";
 
-export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "comparisonMode">;
+export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "comparisonMode" | "stuckDetectionEnabled">;
 
 type LevelValue = ProficiencyLevel | "unspecified";
 
@@ -135,6 +135,29 @@ export function LearningProfileSettings({
             <button type="button" className="learning-dismissed-reset" onClick={onResetDismissed}>すべて戻す</button>
           </div>
         )}
+      </div>
+
+      <div className="setting-item">
+        <SettingTitle
+          icon="timer"
+          help="試験中の機能です。同じエラーが直らない・同じ所を書いては消す・同じ質問を繰り返す、といった様子から、つまずいている可能性を推定し、「出力」の NaviCom Diagnostics にだけ記録します。画面への表示やAIへの送信はしません。コードやエラーメッセージ、ファイル名は記録せず、推定の材料はメモリ上だけで扱います。"
+        >
+          つまずきの記録（試験中）
+        </SettingTitle>
+        <div className="setting-desc">つまずきの兆候を推定し、NaviCom Diagnostics にだけ記録します。表示やAIへの送信はしません</div>
+        <div className="choice-options mode-options" role="group" aria-label="つまずきの記録">
+          {[true, false].map((enabled) => (
+            <button
+              key={String(enabled)}
+              type="button"
+              className={`choice-option ${value.stuckDetectionEnabled === enabled ? "selected" : ""}`}
+              aria-pressed={value.stuckDetectionEnabled === enabled}
+              onClick={() => update({ stuckDetectionEnabled: enabled })}
+            >
+              {enabled ? "記録する" : "記録しない"}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );

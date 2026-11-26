@@ -13,7 +13,7 @@ export class LearningProfileService {
 
   public getProfile(): LearningProfile {
     const saved = this.storage.get<unknown>(LEARNING_PROFILE_STORAGE_KEY);
-    return saved === undefined ? { ...DEFAULT_LEARNING_PROFILE, knownLanguages: [], dismissedConcepts: [] } : normalizeLearningProfile(saved);
+    return saved === undefined ? normalizeLearningProfile(DEFAULT_LEARNING_PROFILE) : normalizeLearningProfile(saved);
   }
 
   /**

@@ -66,6 +66,7 @@ export type WebviewToExtension =
   | { type: "dismissLearningSuggestion"; id: string; scope: "once" | "concept" };
 
 export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "comparisonMode"> & {
+  stuckDetectionEnabled?: boolean;
   /** 指定したときだけ置き換える（設定画面の「すべて戻す」） */
   dismissedConcepts?: string[];
 };
@@ -223,6 +224,7 @@ function isSaveLearningProfilePayload(value: unknown): value is SaveLearningProf
   const levels = new Set<unknown>([undefined, "basic", "working", "advanced"]);
   return value.knownLanguages.every((item) => isRecord(item) && isLanguageFamilyId(item.languageId) && levels.has(item.level)) &&
     ["off", "onRequest", "suggest", "auto"].includes(String(value.comparisonMode)) &&
+    (value.stuckDetectionEnabled === undefined || typeof value.stuckDetectionEnabled === "boolean") &&
     (value.dismissedConcepts === undefined || (Array.isArray(value.dismissedConcepts) && value.dismissedConcepts.length <= MAX_DISMISSED_CONCEPTS &&
       value.dismissedConcepts.every((item) => isBoundedString(item, 1, 100))));
 }

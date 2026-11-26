@@ -40,7 +40,8 @@ test("正規化で VS Code の言語IDをファミリーへ寄せ、未知・重
     schemaVersion: 1,
     knownLanguages: [{ languageId: "php", level: "advanced" }, { languageId: "typescript" }],
     comparisonMode: "onRequest",
-    dismissedConcepts: []
+    dismissedConcepts: [],
+    stuckDetectionEnabled: true
   });
   const many = normalizeLearningProfile({ knownLanguages: LANGUAGE_FAMILY_IDS.map(languageId => ({ languageId })) });
   assert.equal(many.knownLanguages.length, MAX_KNOWN_LANGUAGES);
@@ -48,7 +49,7 @@ test("正規化で VS Code の言語IDをファミリーへ寄せ、未知・重
 
 test("以前の保存値に残っている targetLanguage は読み捨てる", () => {
   assert.deepEqual(normalizeLearningProfile({ knownLanguages: [], targetLanguage: "go", comparisonMode: "off" }),
-    { schemaVersion: 1, knownLanguages: [], comparisonMode: "off", dismissedConcepts: [] });
+    { schemaVersion: 1, knownLanguages: [], comparisonMode: "off", dismissedConcepts: [], stuckDetectionEnabled: true });
 });
 
 test("LearningProfileService は globalState の独立キーへ正規化して保存する", async () => {
@@ -61,7 +62,7 @@ test("LearningProfileService は globalState の独立キーへ正規化して�
   assert.deepEqual(service.getProfile(), DEFAULT_LEARNING_PROFILE);
   await service.saveProfile({ knownLanguages: [{ languageId: "php" }, { languageId: "php" }], comparisonMode: "off" });
   assert.deepEqual(data.get(LEARNING_PROFILE_STORAGE_KEY), {
-    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], comparisonMode: "off", dismissedConcepts: []
+    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], comparisonMode: "off", dismissedConcepts: [], stuckDetectionEnabled: true
   });
   assert.equal(service.getProfile().comparisonMode, "off");
   await service.resetProfile();
@@ -190,4 +191,17 @@ test("提案チップのメッセージを検証する", () => {
   assert.deepEqual(parseWebviewMessage({ type: "dismissLearningSuggestion", id: "s1", scope: "concept" }), { type: "dismissLearningSuggestion", id: "s1", scope: "concept" });
   assert.equal(parseWebviewMessage({ type: "dismissLearningSuggestion", id: "s1", scope: "forever" }), undefined);
   assert.equal(parseWebviewMessage({ type: "acceptLearningSuggestion", id: "" }), undefined);
+});
+
+test("つまずきの記録は既定でオン。設定の保存で切り替えられ、壊れた値は既定へ寄せる", async () => {
+  assert.equal(DEFAULT_LEARNING_PROFILE.stuckDetectionEnabled, true);
+  assert.equal(normalizeLearningProfile({ stuckDetectionEnabled: "yes" }).stuckDetectionEnabled, true);
+  const data = new Map<string, unknown>();
+  const service = new LearningProfileService({ get: <T>(key: string) => data.get(key) as T | undefined, update: async (key: string, value: unknown) => { data.set(key, value); } } as never);
+  await service.saveProfile({ knownLanguages: [], comparisonMode: "onRequest", stuckDetectionEnabled: false });
+  assert.equal(service.getProfile().stuckDetectionEnabled, false);
+  // 設定画面以外からの保存（「今後出さない」）でも、オフのまま引き継ぐ
+  await service.dismissConcept("typescript:nullability");
+  assert.equal(service.getProfile().stuckDetectionEnabled, false);
+  assert.equal(parseWebviewMessage({ type: "saveLearningProfile", profile: { knownLanguages: [], comparisonMode: "off", stuckDetectionEnabled: "no" } }), undefined);
 });

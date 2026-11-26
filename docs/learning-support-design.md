@@ -2,10 +2,10 @@
 
 - 作成日: 2026-11-26
 - 対象リポジトリ: `C:\vol2`（`y4m4s/vol2-project`）
-- 位置づけ: Phase 1〜4 全体の調査と技術設計。Phase 1 で実装した範囲の仕様は [18. 学習プロファイルと既知言語との比較](18-learning-profile-and-comparison.md) を参照
-- 状況: Phase 1（学習プロファイル・`/compare`・質問文での明示要求）と Phase 2（比較の自動判定・提案チップ・自動で含める）は実装済み。Phase 3 以降は未着手
+- 位置づけ: Phase 1〜4 全体の調査と技術設計。Phase 1・2 で実装した範囲の仕様は [18. 学習プロファイルと既知言語との比較](18-learning-profile-and-comparison.md)、Phase 3a の仕様は [19. つまずき検知のシャドーモード](19-stuck-detection-shadow-mode.md) を参照
+- 状況: Phase 1（学習プロファイル・`/compare`・質問文での明示要求）と Phase 2（比較の自動判定・提案チップ・自動で含める）、Phase 3a（つまずき検知のシャドーモード。仕様は [19](19-stuck-detection-shadow-mode.md)）は実装済み。Phase 3b 以降は未着手
 - 実装時の変更: §3.4 の「学習中の言語」の固定は採用せず、常に編集中のファイルの言語を使う（詳細は 18 を参照）
-- 実装時の変更: Phase 2 では `LearningSupportCoordinator` を設けず、比較の判定は `ComparisonPolicy`（純関数）、チップの状態は `NavigatorController` に置いた。つまずき検知（Phase 3）で状態が増える時点で切り出す
+- 実装時の変更: Phase 2 では `LearningSupportCoordinator` を設けず、比較の判定は `ComparisonPolicy`（純関数）、チップの状態は `NavigatorController` に置いた。Phase 3a でも設けず、つまずき検知は `StuckSignalTracker`（純粋ロジック）と `StuckDetectionCoordinator`（VS Code との接続）に分けた。つまずき検知の設定は `stuckDetection.enabled` ではなく、学習プロファイルの `stuckDetectionEnabled` に置いた
 - 表記: **［事実］** はコードまたは `docs/` で確認した内容、**［推測］** は設計上の仮説や未検証の見込み
 - 改訂: **r2（2026-11-26）** 外部レビューの指摘7点を反映した。変更点の一覧は §11、変更した節には「〔r2〕」を付けた
 - 改訂: **r4（2026-11-26）** 言語指定の規則を2点そろえた（未登録の言語の扱いを自然文とコマンドで統一、送信する言語を1つに統一）。変更点は §11.3、変更した節には「〔r4〕」を付けた
@@ -886,6 +886,7 @@ sequenceDiagram
 | `src/views/screens/s04-conversation.tsx` | 提案チップと却下メニュー | 2〜3b |
 | `src/eval/fixtures.ts` ほか、`test/` | 評価ケースと単体テスト | 各フェーズ |
 | `docs/18-learning-profile-and-comparison.md` | Phase 1・Phase 2 の仕様書（実装済み） | 1〜2 |
+| `docs/19-stuck-detection-shadow-mode.md` | Phase 3a の仕様書（実装済み） | 3a |
 
 ### 6.5 Extension Host と Webview の責務
 

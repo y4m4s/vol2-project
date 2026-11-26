@@ -29,6 +29,11 @@ export interface LearningProfile {
   comparisonMode: ComparisonMode;
   /** 「この内容では今後出さない」を選んだ概念。キーは `${学習中の言語}:${概念ID}` */
   dismissedConcepts: string[];
+  /**
+   * つまずきの記録（Phase 3a・シャドーモード）。編集・診断の様子からつまずきの兆候を推定し、
+   * NaviCom Diagnostics にだけ記録する。表示や AI への送信はしない
+   */
+  stuckDetectionEnabled: boolean;
 }
 
 interface LanguageCatalogEntry {
@@ -95,7 +100,8 @@ export const DEFAULT_LEARNING_PROFILE: LearningProfile = {
   schemaVersion: 1,
   knownLanguages: [],
   comparisonMode: "onRequest",
-  dismissedConcepts: []
+  dismissedConcepts: [],
+  stuckDetectionEnabled: true
 };
 
 export function isLanguageFamilyId(value: unknown): value is LanguageFamilyId {
@@ -141,7 +147,8 @@ export function normalizeLearningProfile(value: unknown): LearningProfile {
     schemaVersion: 1,
     knownLanguages,
     comparisonMode: isComparisonMode(source.comparisonMode) ? source.comparisonMode : DEFAULT_LEARNING_PROFILE.comparisonMode,
-    dismissedConcepts: normalizeDismissedConcepts(source.dismissedConcepts)
+    dismissedConcepts: normalizeDismissedConcepts(source.dismissedConcepts),
+    stuckDetectionEnabled: typeof source.stuckDetectionEnabled === "boolean" ? source.stuckDetectionEnabled : DEFAULT_LEARNING_PROFILE.stuckDetectionEnabled
   };
 }
 
