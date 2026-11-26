@@ -99,3 +99,12 @@ test("the without-local command blocks local-only conversation history", async (
   assert.equal(result.status, "blocked");
   assert.deepEqual(harness.calls, []);
 });
+
+test("reference provenance blocks cloud compaction and cloud memory assembly even without legacy flags", async () => {
+  const h = createHarness("copilot", ["copilot", "lmStudio"]);
+  const derived: ConversationEntry[] = entries.map(entry => ({ ...entry, requestPlan: { kind: "manual", referenceLocalOnly: true, targetFiles: [], categories: [], excludedGlobs: [], estimatedSizeText: "" } }));
+  assert.equal((await h.coordinator.compactNow(h.settings, derived, "stream", "withoutLocal")).status, "blocked");
+  await assert.rejects(h.coordinator.assemble(h.settings, derived, "stream"), /ローカル限定/);
+  assert.equal(h.coordinator.preview(h.settings, derived, "stream"), undefined);
+  assert.deepEqual(h.calls, []);
+});

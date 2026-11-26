@@ -86,6 +86,10 @@ export class KnowledgeCoordinator {
   public async save(conversationId?: string): Promise<void> {
     const state = this.host.getState();
     if (state.requestState !== "idle") return;
+    if (state.conversationHistory.some(entry => entry.requestPlan?.referenceLocalOnly)) {
+      this.host.patchSession({ statusMessage: { kind: "warning", text: "ローカル限定の参照資料を含む会話は、共通ナレッジへ保存できません。" } });
+      return;
+    }
     const source = conversationId
       ? state.conversationHistory.find((entry) => entry.id === conversationId && entry.role === "assistant")
       : findSelectedConversation(state) ?? findLatestAssistant(state.conversationHistory);
@@ -135,6 +139,8 @@ export class KnowledgeCoordinator {
         summary: draftResult.draft.summary,
         body: draftResult.draft.body,
         sourceAdviceId: source.id,
+        referenceSourceIds: [...new Set(state.conversationHistory.flatMap(entry =>
+          entry.requestPlan?.referenceSourceIds ?? entry.requestPlan?.referenceDocuments?.map(doc => doc.sourceId) ?? []))],
         providerId: model?.providerId,
         modelId: model?.modelId,
         modelLabel,

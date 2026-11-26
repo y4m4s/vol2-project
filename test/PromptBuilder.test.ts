@@ -84,7 +84,7 @@ test("自動観測が長くても入力予算とカーソル直近の位置を�
   for (const delimiter of ["xml", "markdown"] as const) {
     const profile = { delimiter, contextBudget: 2600, terse: true };
     const prompt = buildGuidancePrompt({ kind: "always", modelProfile: profile,
-      context: createContext({ activeFileExcerpt: "broad".repeat(10000), additionalContext: "API仕様".repeat(10000) }),
+      context: createContext({ activeFileExcerpt: "broad".repeat(10000), additionalContext: "API仕様" }),
       automaticObservation: { triggerReasons: ["text_edit"], idleDurationMs: 12000, selectionPresent: false,
         cursor: { line: 10, column: 10 }, cursorExcerpt: "before".repeat(1000) + "NEAR<<<NAVICOM_CURSOR>>>NEXT" + "after".repeat(1000),
         lastEdit: { lineStart: 10, lineEnd: 10, changedLineCount: 1, insertedCharCount: 1, deletedCharCount: 0,

@@ -21,6 +21,8 @@ import { parseAutomaticFocus } from "../shared/automaticGuidance";
 import { openDatabaseWithBackup, writeFileAtomically } from "./AtomicFileStorage";
 import { SerialTaskQueue } from "./SerialTaskQueue";
 import { validateMemorySummary, type MemorySummaryItem } from "./ConversationMemory";
+import type { ContextSource } from "../shared/referenceContext";
+import { isContextSource } from "./ContextSourceRegistry";
 
 type SqlValue = string | number | Uint8Array | null;
 type SqlParams = SqlValue[] | Record<string, SqlValue>;
@@ -65,6 +67,7 @@ export interface ConversationStreamRecord {
   updatedAt: string;
   entries: ConversationEntry[];
   additionalContext?: string;
+  contextSources?: ContextSource[];
   revision: number;
 }
 
@@ -151,6 +154,7 @@ export class ConversationStore implements vscode.Disposable {
             FROM conversation_entries AS entries
            WHERE entries.stream_id = streams.id
         )
+           OR (streams.context_sources_json IS NOT NULL AND streams.context_sources_json <> '[]')
         ORDER BY streams.updated_at DESC`
     );
   }
@@ -175,6 +179,7 @@ export class ConversationStore implements vscode.Disposable {
       updatedAt: summary.updatedAt,
       entries: this.selectEntries(id),
       additionalContext: summary.additionalContext,
+      contextSources: this.getContextSources(id),
       revision: this.selectRevision(id) ?? 0
     };
   }
@@ -192,6 +197,24 @@ export class ConversationStore implements vscode.Disposable {
 
   public listEntryIds(): string[] {
     return this.selectIds("SELECT id FROM conversation_entries", []);
+  }
+
+  public getContextSources(streamId: string): ContextSource[] {
+    const stmt = this.getDb().prepare("SELECT context_sources_json FROM conversation_streams WHERE id = ?");
+    try {
+      stmt.bind([streamId]);
+      if (!stmt.step()) return [];
+      const value = this.parseJson<unknown>(stmt.getAsObject().context_sources_json);
+      return Array.isArray(value) ? value.filter(isContextSource) : [];
+    } finally { stmt.free(); }
+  }
+
+  /** Separate from entry revisions so editing attachments cannot overwrite a pending answer. */
+  public async saveContextSources(streamId: string, sources: readonly ContextSource[]): Promise<void> {
+    await this.mutationQueue.run(async () => {
+      this.getDb().run("UPDATE conversation_streams SET context_sources_json = ? WHERE id = ?", [JSON.stringify(sources.filter(isContextSource)), streamId]);
+      await this.persist();
+    });
   }
 
   public async createStream(title = DEFAULT_CONVERSATION_STREAM_TITLE): Promise<ConversationStreamRecord> {
@@ -265,6 +288,10 @@ export class ConversationStore implements vscode.Disposable {
           ]
         );
 
+        if (nextRecord.contextSources !== undefined) {
+          this.getDb().run("UPDATE conversation_streams SET context_sources_json = ? WHERE id = ?",
+            [JSON.stringify(nextRecord.contextSources.filter(isContextSource)), nextRecord.id]);
+        }
         // 以前は毎回この会話の全エントリを削除して入れ直していた。1 メッセージ増えるたびに
         // 会話全体を書き直すことになるので、いなくなった行だけ消して残りは upsert する。
         this.deleteRemovedEntries(nextRecord.id, normalizedEntries.map((entry) => entry.id));
@@ -460,6 +487,7 @@ export class ConversationStore implements vscode.Disposable {
     this.ensureColumn("conversation_streams", "additional_context", "TEXT");
     this.ensureColumn("conversation_streams", "revision", "INTEGER NOT NULL DEFAULT 0");
     this.ensureColumn("conversation_streams", "routing_json", "TEXT");
+    this.ensureColumn("conversation_streams", "context_sources_json", "TEXT");
     this.ensureColumn("conversation_entries", "assistance_depth", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command", "TEXT");
     this.ensureColumn("conversation_entries", "slash_command_scope", "TEXT");
@@ -501,7 +529,7 @@ export class ConversationStore implements vscode.Disposable {
   private deleteEmptyStreamsInMemory(): void {
     this.getDb().run(
       `DELETE FROM conversation_streams
-        WHERE NOT EXISTS (
+        WHERE (context_sources_json IS NULL OR context_sources_json = '[]') AND NOT EXISTS (
           SELECT 1
             FROM conversation_entries
            WHERE conversation_entries.stream_id = conversation_streams.id

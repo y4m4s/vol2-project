@@ -92,6 +92,7 @@ export function resolveNextProjectScope(
 
 export function hasMeaningfulContext(context: GuidanceContext): boolean {
   return Boolean(
+    context.referenceDocuments?.length ||
     context.activeFileExcerpt ||
       context.selectedText ||
       context.workspaceTree?.treeText ||
@@ -119,7 +120,7 @@ export function normalizeAdditionalContext(value?: string): string | undefined {
     return undefined;
   }
 
-  return normalized.length <= 4000 ? normalized : `${normalized.slice(0, 4000)}...`;
+  return normalized;
 }
 
 /**
@@ -145,6 +146,7 @@ export function createAutomaticFingerprint(
       // 勝手に消えるので、含めると何も操作していなくても時間経過だけで鍵が変わる。
     } : undefined,
     assistanceDepth,
+    referenceDocuments: context.referenceDocuments?.map(doc => ({ id: doc.id, hash: doc.hash, mode: doc.mode, localOnly: doc.localOnly })),
     file: context.activeFilePath,
     // activeFileExcerpt は表示範囲から作るため（ローカル推論以外）スクロールだけで変わる。
     // 同じファイルの同じ版数なら、どこを表示していても状況は同じとみなす。版数を取れない

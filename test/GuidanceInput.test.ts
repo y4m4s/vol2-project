@@ -48,12 +48,11 @@ test("プロジェクト文脈の収集範囲を深さとスコープから決�
   assert.equal(resolveNextProjectScope("low", "deep"), "deep");
 });
 
-test("追加文脈を正規化し上限文字数で切る", () => {
+test("追加文脈の改行と空白を正規化し、末尾の条件を切り捨てない", () => {
   assert.equal(normalizeAdditionalContext("  one\r\ntwo  "), "one\ntwo");
   assert.equal(normalizeAdditionalContext("   "), undefined);
   const normalized = normalizeAdditionalContext("a".repeat(4001));
-  assert.equal(normalized?.length, 4003);
-  assert.equal(normalized?.endsWith("..."), true);
+  assert.equal(normalized, "a".repeat(4001));
 });
 
 test("会話履歴用のユーザー表示文を決める", () => {

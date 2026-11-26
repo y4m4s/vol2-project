@@ -27,6 +27,7 @@ export function RequestPlanDisclosure({ userPrompt, additionalContext }: { userP
     viewModel?.providerId,
     viewModel?.modelLabel,
     viewModel?.settingsRevision,
+    viewModel?.referenceContext?.revision,
     viewModel?.currentRequestPlan.previewInput,
     userPrompt,
     additionalContext,
@@ -42,7 +43,8 @@ export function RequestPlanDisclosure({ userPrompt, additionalContext }: { userP
   const pending = plan.previewInput !== userPrompt || plan.previewAdditionalContext !== additionalContext;
   const includedCategories = visibleCategories.filter((category) => category.included);
   const includedFiles = plan.targetFiles.filter((file) => file.included);
-  const destinationLabel = viewModel.providerId === "lmStudio" ? "ローカル送信予定" : viewModel.providerId === "ollama" ? `Ollamaへ送信予定（${viewModel.providerEndpoint ?? "接続先未確定"}）` : "外部送信予定";
+  const local = viewModel.providerIsVerifiedLocal === true;
+  const destinationLabel = local ? `ローカル送信予定（${viewModel.providerEndpoint}）` : "外部送信予定";
   const summaryParts = [
     includedFiles.length > 0 ? `ファイル${includedFiles.length}件` : undefined,
     includedCategories.some((category) => category.key === "selection") ? "選択範囲" : undefined,
@@ -75,6 +77,15 @@ export function RequestPlanDisclosure({ userPrompt, additionalContext }: { userP
           <div className="request-plan-note">
             入力中のコマンド・推論強度・モデルの入力予算を反映した予定です。チェックは情報の一部でも送る場合に付きます。編集やモデル変更時は再計算されます。ファイル名は本文を送らない場合も含まれます。
           </div>
+          {!!plan.referenceDocuments?.length && <>
+            <div className="request-plan-section-title">登録資料・Skills</div>
+            <div className="request-plan-note">選択された資料だけを使用します。規約全体を確認できているとは限りません。</div>
+            <ul className="request-plan-list">{plan.referenceDocuments.map(doc => <li key={doc.id} className={doc.included ? "included" : "excluded"}>
+              <span>{doc.included ? "✓" : "−"}</span><span><strong>{doc.path} L{doc.startLine}–{doc.endLine}</strong>
+                <small>{doc.reason} · {doc.localOnly ? "ローカル限定" : "外部送信可"}{doc.kind === "skill" ? ` · ${doc.mode === "procedure" ? "手順" : "参考"}` : ""}</small>
+                {doc.note && <small>{doc.note}</small>}</span>
+            </li>)}</ul>
+          </>}
           <div className="request-plan-section-title">送信する情報</div>
           <ul className="request-plan-list">
             {visibleCategories.map((category) => (

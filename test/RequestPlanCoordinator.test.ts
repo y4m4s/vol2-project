@@ -2,12 +2,57 @@ import assert from "node:assert/strict";
 import Module from "node:module";
 import test from "node:test";
 import { RequestPlanner } from "../src/services/RequestPlanner";
+import { reconcileRequestPlan } from "../src/services/RequestPlanTransmission";
 import type { GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
 loader._load = (id, parent, isMain) => id === "vscode" ? { workspace: { workspaceFolders: [] } } : originalLoad(id, parent, isMain);
 const { RequestPlanCoordinator } = require("../src/application/coordinators/RequestPlanCoordinator") as typeof import("../src/application/coordinators/RequestPlanCoordinator");
+
+test("Ollama previews use the actual provider content depth at an atomic reference budget boundary", () => {
+  const profile = { delimiter: "xml" as const, contextBudget: 4000, terse: true };
+  const context: GuidanceContext = { referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [], referenceDocuments: [{
+    id: "skill:1", sourceId: "source", path: "docs/SKILL.md", title: "Skill", kind: "skill", hash: "v1", text: "", startLine: 1, endLine: 1, reason: "selected", localOnly: false, mode: "procedure"
+  }] };
+  const plan = { kind: "manual" as const, assistanceDepth: "low" as const, categories: [], targetFiles: [], excludedGlobs: [], estimatedSizeText: "" };
+  let found = false;
+  for (let length = 50; length < 6000; length += 10) {
+    context.referenceDocuments![0].text = "x".repeat(length);
+    const low = reconcileRequestPlan(plan, { ...plan, context, modelProfile: profile });
+    const high = reconcileRequestPlan(plan, { ...plan, assistanceDepth: "high", context, modelProfile: profile });
+    if (low.referenceDocuments?.[0].included !== high.referenceDocuments?.[0].included) { found = true; break; }
+  }
+  assert.ok(found, "the fixture must exercise a real low/high budget difference");
+  const coordinator = new RequestPlanCoordinator({} as never, new RequestPlanner(), { getSettings: () => ({ providerId: "copilot" }) } as never, {
+    getState: () => ({} as NavigatorSessionState), patchSession: () => {}, rememberSelectionContext: value => value,
+    getVisibleAdditionalContext: () => undefined, collectGuidanceContextForDepth: async () => context,
+    getProviderId: () => "ollama", getModelProfile: () => profile
+  });
+  const preview = coordinator.externalize({ context, requestPlan: plan }).requestPlan;
+  const actual = reconcileRequestPlan(plan, { ...plan, assistanceDepth: "high", context, modelProfile: profile });
+  assert.deepEqual(preview.referenceDocuments, actual.referenceDocuments);
+});
+
+test("reference previews search the same current question and hand-entered task used for generation", async () => {
+  const state = { requestState: "idle", mode: "manual", assistanceDepth: "low", contextPreview: { diagnosticsSummary: [] } } as unknown as NavigatorSessionState;
+  const context: GuidanceContext = { referencedFiles: [], diagnosticsSummary: [], recentEditsSummary: [], relatedSymbols: [] };
+  const settings = { excludedGlobs: [], protectedExcludedGlobs: [] } as unknown as NavigatorSettings;
+  const coordinator = new RequestPlanCoordinator({ collectPreview: () => state.contextPreview, collectGuidanceContext: () => context } as never,
+    new RequestPlanner(), { getSettings: () => settings } as never, {
+      getState: () => state, patchSession: () => {}, rememberSelectionContext: value => value,
+      collectGuidanceContextForDepth: async () => context, getVisibleAdditionalContext: () => undefined,
+      resolveReferenceContext: async (context, question) => {
+        assert.equal(question, "現在の質問"); assert.equal(context.additionalContext, "課題文");
+        return { ...context, referenceDocuments: [{ id: "doc:1", sourceId: "source", path: "docs/rule.md", title: "Rule", kind: "rules", hash: "v1",
+          text: "RULE", startLine: 1, endLine: 1, reason: "適用範囲", localOnly: true, mode: "reference" }] };
+      }
+    });
+  await coordinator.refresh("現在の質問", "課題文");
+  const plan = coordinator.getCurrentPlan(state);
+  assert.equal(plan.previewInput, "現在の質問");
+  assert.equal(plan.referenceDocuments?.[0].included, true);
+});
 loader._load = originalLoad;
 
 test("provider changes invalidate capture policy even when model profile is unchanged", () => {

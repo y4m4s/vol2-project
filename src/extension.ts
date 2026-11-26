@@ -15,6 +15,8 @@ import { OrcaRouterCredentialStore } from "./services/OrcaRouterCredentialStore"
 import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
+import { ContextSourceRegistry } from "./services/ContextSourceRegistry";
+import { AdditionalContextCoordinator } from "./application/coordinators/AdditionalContextCoordinator";
 import { UsageMeter } from "./services/UsageMeter";
 import {
   ASK_SELECTION_COMMAND,
@@ -42,20 +44,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   diagnostics.info(JSON.stringify({ event: "activation", policyRevision: GUIDANCE_POLICY_REVISION,
     extensionPath: context.extensionUri.fsPath }));
   const lmStudioServerService = new LmStudioServerService();
+  const settingsService = new SettingsService(context.workspaceState);
+  const referenceContext = new AdditionalContextCoordinator(new ContextSourceRegistry(context.workspaceState, context.globalState),
+    () => controller.onReferencesChanged(), () => settingsService.getSettings().excludedGlobs);
   const controller = new NavigatorController(
     contextCollector,
     connectionService,
     new AdviceService(connectionService, usageMeter, writeDiagnostic),
     new AdviceScheduler(),
     new RequestPlanner(),
-    new SettingsService(context.workspaceState),
+    settingsService,
     lmStudioServerService,
     new ConversationStore(conversationStorageUri),
     new KnowledgeStore(context.globalStorageUri),
     new FeedbackStore(context.globalStorageUri),
     new ProviderEvaluationStore(context.globalStorageUri),
     usageMeter,
-    writeDiagnostic
+    writeDiagnostic,
+    referenceContext
   );
 
   try {

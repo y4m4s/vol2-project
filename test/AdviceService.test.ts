@@ -101,6 +101,42 @@ function harness(options: {
   return { service: new AdviceService(connection, meter, (entry) => diagnostics.push(entry)), meter, requests, diagnostics, calls: () => calls, resets: () => resets };
 }
 
+test("reference planning is bounded, accounted for, and rejects unknown document IDs", async () => {
+  const h = harness({ response: '{"queries":["RetryPolicy"],"documentIds":["guide"]}', inputTokens: 120, outputTokens: 15 });
+  const token = new TestTokenSource();
+  const result = await h.service.planReferenceSearch("retryについて", "現在の課題", [{ id: "guide", path: "docs/guide.md", title: "Guide" }], token.token);
+  assert.deepEqual(result?.search, { queries: ["RetryPolicy"], documentIds: ["guide"] });
+  assert.equal(h.calls(), 1);
+  assert.equal(h.requests[0].maxOutputTokens, 512);
+  assert.equal(h.meter.getToday().requestCount, 1);
+  assert.equal(result?.usage?.inputTokens, 120);
+  const invalid = harness({ response: '{"queries":[],"documentIds":["secret"]}' });
+  assert.equal((await invalid.service.planReferenceSearch("q", undefined, [{ id: "guide", path: "guide.md", title: "Guide" }], token.token))?.search, undefined);
+});
+
+test("empty catalogs and cancelled reference plans never call the provider", async () => {
+  const h = harness(), token = new TestTokenSource();
+  await h.service.planReferenceSearch("q", undefined, [], token.token);
+  token.cancel();
+  await h.service.planReferenceSearch("q", undefined, [{ id: "guide", path: "guide.md", title: "Guide" }], token.token);
+  assert.equal(h.calls(), 0);
+});
+
+test("reference planning receives bounded code evidence without serializing private reference bodies", async () => {
+  const h = harness({ response: '{"queries":[],"documentIds":[]}' }), token = new TestTokenSource();
+  await h.service.planReferenceSearch("ここを直したい", undefined, [{ id: "guide", path: "guide.md", title: "Guide" }], token.token, {
+    activeFilePath: "C:/private/app.ts", activeFileLanguage: "typescript", selectedText: "selectedRetry()", activeFileExcerpt: "UNSELECTED_BODY",
+    referencedFiles: [], diagnosticsSummary: [{ severity: "Error", line: 2, message: "RetryPolicy is missing" }], recentEditsSummary: [], relatedSymbols: [],
+    referenceDocuments: [{ id: "private:1", sourceId: "private", path: "private.md", title: "Private", kind: "document", hash: "v1",
+      text: "PRIVATE_REFERENCE_BODY", startLine: 1, endLine: 1, reason: "private", localOnly: true, mode: "reference" }]
+  });
+  const data = JSON.parse(h.requests[0].userPrompt);
+  assert.equal(data.codeContext.code, "selectedRetry()");
+  assert.equal(data.codeContext.language, "typescript");
+  assert.equal(data.codeContext.diagnostics[0].line, 2);
+  assert.doesNotMatch(h.requests[0].userPrompt, /C:\/private|UNSELECTED_BODY|PRIVATE_REFERENCE_BODY/);
+});
+
 test("高強度は8192トークンを要求し、低強度は2048を維持する", async () => {
   for (const kind of ["manual", "always"] as const) {
     for (const assistanceDepth of ["low", "high"] as const) {

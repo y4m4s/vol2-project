@@ -14,6 +14,7 @@ import {
 import { normalizeRoutingSettings } from "../../shared/providerRouting";
 import { deriveModelProfile } from "../../services/ModelProfile";
 import { assertRequestInputLimit } from "../../services/AiRequestPolicy";
+import { isVerifiedReferenceLocalModel } from "../../shared/referenceContext";
 
 const COMPACTION_TIMEOUT_MS = 120_000;
 
@@ -43,6 +44,7 @@ export class ConversationMemoryCoordinator {
   public preview(settings: NavigatorSettings, entries: ConversationEntry[], stream?: string): string | undefined {
     const model = this.connection.getConnectedModel();
     if (!model) return undefined;
+    if (entries.some(entry => entry.requestPlan?.referenceLocalOnly) && !isVerifiedReferenceLocalModel(model)) return undefined;
     try {
       return assembleConversationMemory(filterConversationSources(entries, [...settings.protectedExcludedGlobs, ...settings.excludedGlobs]),
         model.providerId, Math.floor(deriveModelProfile(model.profileSource).contextBudget * 3 * 0.35),
@@ -54,6 +56,9 @@ export class ConversationMemoryCoordinator {
     entries = filterConversationSources(entries, [...settings.protectedExcludedGlobs, ...settings.excludedGlobs]);
     const active = this.connection.getConnectedModel();
     if (!active) return "";
+    if (entries.some(entry => entry.requestPlan?.referenceLocalOnly) && !isVerifiedReferenceLocalModel(active)) {
+      throw new Error("ローカル限定の参照資料を含む会話は、この接続先に引き継げません。");
+    }
     const profile = deriveModelProfile(active.profileSource);
     const budget = Math.floor(profile.contextBudget * 3 * 0.35);
     // Check transfer policy before any optional cloud compression call.
@@ -140,6 +145,9 @@ export class ConversationMemoryCoordinator {
     minimumNewEntries: number,
     trigger: "automatic" | "commandLocal" | "commandWithoutLocal"
   ): Promise<CompactionRunResult> {
+    if (entries.some(entry => entry.requestPlan?.referenceLocalOnly) && !isVerifiedReferenceLocalModel(model)) {
+      return { status: "blocked", reason: "ローカル限定の参照資料を含む会話は、この接続先で圧縮できません。" };
+    }
     const source = new vscode.CancellationTokenSource();
     const listener = cancellation?.onCancellationRequested?.(() => source.cancel());
     if (cancellation?.isCancellationRequested) source.cancel();

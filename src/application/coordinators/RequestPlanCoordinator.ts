@@ -38,6 +38,8 @@ export interface RequestPlanCoordinatorHost {
   ): Promise<GuidanceContext>;
   getVisibleAdditionalContext(state: NavigatorSessionState): string | undefined;
   getModelProfile?(): ModelProfile;
+  getProviderId?(): ReturnType<SettingsService["getSettings"]>["providerId"];
+  resolveReferenceContext?(context: GuidanceContext, question: string): Promise<GuidanceContext>;
   getAutomaticObservation?(): AutomaticGuidanceObservation | undefined;
   getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency" | "conversationMemory">;
 }
@@ -93,6 +95,7 @@ export class RequestPlanCoordinator {
       context: result.context,
       automaticObservation: prepared.automaticObservation,
       userPrompt,
+      assistanceDepth: guidanceContentDepth(this.host.getProviderId?.() ?? this.settingsService.getSettings().providerId, prepared.requestPlan.assistanceDepth),
       ...this.host.getPromptExtras?.(result.context, result.requestPlan),
       modelProfile: this.host.getModelProfile?.()
     });
@@ -122,9 +125,12 @@ export class RequestPlanCoordinator {
     const assistanceDepth = resolveEffectiveAssistanceDepth(kind, state.assistanceDepth, parsed.slashCommand);
     const requestPlanKey = this.createKey({ ...state, contextPreview: preview });
     const requestPlanGeneration = this.cacheGeneration;
-    const context = parsed.slashCommand && getSkill(parsed.slashCommand).usesProjectScope
+    let context = parsed.slashCommand && getSkill(parsed.slashCommand).usesProjectScope
       ? await this.contextCollector.collectNextActionContext(settings, resolveNextProjectScope(guidanceContentDepth(settings.providerId, assistanceDepth), parsed.slashCommandScope))
       : await this.host.collectGuidanceContextForDepth(settings, assistanceDepth);
+    if (this.host.resolveReferenceContext) {
+      context = await this.host.resolveReferenceContext(withAdditionalContext(context, additionalContext), parsed.userPrompt ?? "");
+    }
     const prepared = this.externalize(this.requestPlanner.prepareGuidanceRequest(
       withAdditionalContext(context, additionalContext),
       preview,

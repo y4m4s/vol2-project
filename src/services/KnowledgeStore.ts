@@ -35,6 +35,7 @@ const MAX_KNOWLEDGE_MODEL_FIELD_LENGTH = 500;
 const MAX_SOURCE_ADVICE_ID_LENGTH = 200;
 
 export interface KnowledgeRecord {
+  referenceSourceIds?: string[];
   id: string;
   title: string;
   summary: string;
@@ -49,6 +50,7 @@ export interface KnowledgeRecord {
 }
 
 export interface KnowledgeCreateInput {
+  referenceSourceIds?: string[];
   title: string;
   summary: string;
   body: string;
@@ -134,6 +136,7 @@ export class KnowledgeStore implements vscode.Disposable {
     return this.mutationQueue.run(async () => {
       const now = new Date().toISOString();
       const record: KnowledgeRecord = {
+        referenceSourceIds: this.normalizeReferenceSources(input.referenceSourceIds ?? []),
         id: this.createId(),
         title: this.normalizeTitle(input.title),
         summary: this.normalizeSummary(input.summary, input.body),
@@ -149,9 +152,9 @@ export class KnowledgeStore implements vscode.Disposable {
 
       this.getDb().run(
         `INSERT INTO knowledge
-        (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at, search_text)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [...this.toSqlParams(record), this.toSearchText(record)]
+        (id, title, summary, body, status, source_advice_id, provider_id, model_id, model_label, created_at, updated_at, search_text, reference_sources_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [...this.toSqlParams(record), this.toSearchText(record), JSON.stringify(record.referenceSourceIds)]
       );
       this.invalidateCache();
       await this.persist();
@@ -225,8 +228,8 @@ export class KnowledgeStore implements vscode.Disposable {
     });
   }
 
-  public findReusable(context: GuidanceContext, limit = 3): KnowledgeRecord[] {
-    const records = this.selectAllRecords().filter((record) => record.status === "active");
+  public findReusable(context: GuidanceContext, limit = 3, allowed: (record: KnowledgeRecord) => boolean = record => !record.referenceSourceIds?.length): KnowledgeRecord[] {
+    const records = this.selectAllRecords().filter((record) => record.status === "active" && allowed(record));
     const keywords = this.extractContextKeywords(context);
     if (keywords.length === 0) {
       return records.slice(0, limit);
@@ -241,6 +244,21 @@ export class KnowledgeStore implements vscode.Disposable {
       .sort((a, b) => b.score - a.score || b.record.updatedAt.localeCompare(a.record.updatedAt))
       .slice(0, limit)
       .map((item) => item.record);
+  }
+
+  /** Adopt provenance from older saved answers before they can be reused without a policy. */
+  public async backfillReferenceSources(resolve: (adviceId: string) => readonly string[]): Promise<void> {
+    await this.mutationQueue.run(async () => {
+      let changed = false;
+      for (const record of this.selectAllRecords()) {
+        if (record.referenceSourceIds?.length || !record.sourceAdviceId) continue;
+        const ids = this.normalizeReferenceSources([...resolve(record.sourceAdviceId)]);
+        if (!ids.length) continue;
+        this.getDb().run("UPDATE knowledge SET reference_sources_json = ? WHERE id = ?", [JSON.stringify(ids), record.id]);
+        changed = true;
+      }
+      if (changed) { this.invalidateCache(); await this.persist(); }
+    });
   }
 
   public dispose(): void {
@@ -278,6 +296,7 @@ export class KnowledgeStore implements vscode.Disposable {
     this.ensureColumn("knowledge", "provider_id", "TEXT");
     this.ensureColumn("knowledge", "model_id", "TEXT");
     this.ensureColumn("knowledge", "search_text", "TEXT");
+    this.ensureColumn("knowledge", "reference_sources_json", "TEXT");
     this.backfillSearchText();
   }
 
@@ -308,7 +327,12 @@ export class KnowledgeStore implements vscode.Disposable {
   }
 
   private fromRow(row: Record<string, unknown>): KnowledgeRecord {
+    let referenceSourceIds: string[] = [];
+    try {
+      if (row.reference_sources_json != null) referenceSourceIds = this.normalizeReferenceSources(JSON.parse(String(row.reference_sources_json)));
+    } catch { referenceSourceIds = ["invalid-reference-provenance"]; }
     return {
+      referenceSourceIds,
       id: String(row.id),
       title: this.normalizeTitle(String(row.title)),
       summary: this.normalizeSummary(String(row.summary), String(row.body)),
@@ -321,6 +345,13 @@ export class KnowledgeStore implements vscode.Disposable {
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at)
     };
+  }
+
+  private normalizeReferenceSources(value: unknown): string[] {
+    if (!Array.isArray(value) || value.length > 1000 || value.some(id => typeof id !== "string" || !id || id.length > 2000)) {
+      throw new Error("ナレッジの参照元情報が不正です。");
+    }
+    return [...new Set(value as string[])];
   }
 
   private toSqlParams(record: KnowledgeRecord): SqlValue[] {

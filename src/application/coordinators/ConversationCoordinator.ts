@@ -14,6 +14,7 @@ import {
   NavigatorSessionState
 } from "../../shared/types";
 import { normalizeAdditionalContext } from "../GuidanceInput";
+import type { ContextSource } from "../../shared/referenceContext";
 
 const MAX_CONVERSATION_STREAMS = 100;
 
@@ -24,6 +25,8 @@ export interface ConversationCoordinatorHost {
   resetAutomaticFingerprint(): void;
   createGuidanceCard(entry: ConversationEntry): GuidanceCard;
   getGuidanceAdditionalContext(state: NavigatorSessionState): string | undefined;
+  getContextSources?(streamId?: string): ContextSource[];
+  activateContextSources?(sources: readonly ContextSource[], streamId?: string): void;
 }
 
 export class ConversationCoordinator {
@@ -48,6 +51,7 @@ export class ConversationCoordinator {
     await this.enforceRetentionLimit();
     const existingStream = this.resolveInitialStream();
     if (!existingStream) {
+      this.host.activateContextSources?.([]);
       this.host.patchSession({
         conversationStreams: this.store.list(),
         activeConversationStreamId: undefined,
@@ -99,6 +103,7 @@ export class ConversationCoordinator {
     }
 
     if (deletingActiveStream) this.guidanceContexts.clear();
+    if (deletingActiveStream) this.host.activateContextSources?.([]);
     this.host.patchSession({
       conversationStreams: this.store.list(),
       statusMessage: feedbackCleanupFailed
@@ -133,6 +138,7 @@ export class ConversationCoordinator {
 
     this.guidanceContexts.clear();
     this.host.resetAutomaticFingerprint();
+    this.host.activateContextSources?.([]);
     this.host.patchSession({
       conversationStreams: [],
       activeConversationStreamId: undefined,
@@ -168,7 +174,7 @@ export class ConversationCoordinator {
   public async persist(): Promise<void> {
     const record = this.buildActiveRecord();
     if (!record) return;
-    if (record.entries.length === 0) {
+    if (record.entries.length === 0 && !record.contextSources?.length) {
       await this.store.deleteStream(record.id);
       this.host.patchSession({
         activeConversationStreamId: undefined,
@@ -211,7 +217,7 @@ export class ConversationCoordinator {
     const streamId = state.activeConversationStreamId ?? this.store.getActiveStreamId();
     if (!streamId) return;
     const existing = this.store.get(streamId);
-    if (!existing || existing.entries.length > 0) return;
+    if (!existing || existing.entries.length > 0 || existing.contextSources?.length) return;
     if (state.activeConversationStreamId === streamId && state.conversationHistory.length > 0) return;
 
     await this.store.deleteStream(streamId);
@@ -265,11 +271,13 @@ export class ConversationCoordinator {
 
   private async createNewActiveStream(): Promise<NavigatorSessionState> {
     const additionalContext = this.host.getGuidanceAdditionalContext(this.host.getState());
+    const contextSources = this.host.getContextSources?.();
     await this.discardActiveIfEmpty();
     const record = await this.store.createStream();
     await this.store.setActiveStream(record.id);
     this.host.resetAutomaticFingerprint();
-    this.hydrate({ ...record, additionalContext });
+    this.hydrate({ ...record, additionalContext, contextSources });
+    if (contextSources?.length) await this.store.saveContextSources(record.id, contextSources);
     return this.host.getState();
   }
 
@@ -294,6 +302,7 @@ export class ConversationCoordinator {
     options: { screen?: NavigatorScreen; resetNavigation?: boolean; clearStatusMessage?: boolean } = {}
   ): void {
     this.guidanceContexts.clear();
+    this.host.activateContextSources?.(record.contextSources ?? [], record.id);
     const conversationHistory = record.entries.map((entry) => ({ ...entry }));
     const latestAssistant = [...conversationHistory].reverse().find((entry) => entry.role === "assistant");
     this.host.patchSession({
@@ -322,6 +331,7 @@ export class ConversationCoordinator {
       updatedAt: existing?.updatedAt ?? now,
       entries: state.conversationHistory.map((entry) => ({ ...entry })),
       additionalContext: normalizeAdditionalContext(state.activeAdditionalContext),
+      contextSources: this.host.getContextSources?.(streamId),
       revision: existing?.revision ?? 0
     };
   }

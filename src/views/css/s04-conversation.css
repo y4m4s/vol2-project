@@ -61,6 +61,7 @@
 }
 
 .s04-bubble-wrap {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -76,9 +77,9 @@
 
 .s04-bubble-meta {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
-  overflow-x: auto;
+  max-width: 100%;
   white-space: nowrap;
   align-items: center;
   gap: 6px;
@@ -123,6 +124,10 @@
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 0.86em;
   line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .s04-meta-pill.command {
@@ -251,18 +256,30 @@
 
 .s04-response-actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
   margin-top: 4px;
   min-width: 0;
 }
 
-.s04-response-usage-row {
+.reference-documents-content { min-width: 0; color: var(--vscode-descriptionForeground); font-size: 11px; }
+.response-reference-empty, .response-reference-note { margin: 3px 0 6px; line-height: 1.6; }
+.reference-documents-content ul { list-style: none; padding: 0; margin: 0; }
+.reference-documents-content li { padding: 7px 0; }
+.reference-documents-content li + li { border-top: 1px solid var(--vscode-panel-border); }
+.response-reference-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; min-width: 0; }
+.response-reference-state, .response-reference-lines { flex-shrink: 0; font-size: 10px; }
+.response-reference-path { min-width: 0; overflow-wrap: anywhere; color: var(--vscode-foreground); }
+.reference-documents-content small { display: block; margin-top: 3px; overflow-wrap: anywhere; }
+.reference-documents-content li[data-included="false"] { opacity: .8; }
+
+.s04-response-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
@@ -270,13 +287,17 @@
   color: var(--vscode-descriptionForeground);
   font-size: 0.72em;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .s04-response-tools-row {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   min-height: 28px;
   min-width: 0;
@@ -320,11 +341,10 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  flex: 1 1 168px;
+  flex: 0 1 auto;
   min-height: 28px;
   min-width: 0;
   max-width: 100%;
-  margin-right: auto;
   align-self: center;
 }
 
@@ -345,6 +365,7 @@
   color: var(--vscode-descriptionForeground);
   background: transparent;
   font-size: 0.74em;
+  min-width: 0;
 }
 
 .referenced-files-trigger:hover,
@@ -386,6 +407,7 @@
   font-size: 0.8em;
   font-weight: 700;
 }
+.referenced-files-card-section { margin: 8px 0 5px; color: var(--vscode-descriptionForeground); font-size: 11px; }
 
 .referenced-files-card-list {
   display: grid;
@@ -522,16 +544,18 @@
 }
 
 .s04-response-usage {
-  display: inline-flex;
-  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
   min-height: 28px;
   min-width: 0;
-  max-width: 100%;
+  max-width: 60%;
   color: var(--vscode-descriptionForeground);
   font-size: 0.74em;
-  line-height: 1.4;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  line-height: 28px;
 }
 
 .s04-mermaid {
