@@ -553,7 +553,16 @@ export function S06Settings() {
         <span className="material-symbols-outlined" aria-hidden="true">account_circle</span> 学習プロファイル
       </div>
 
-      <LearningProfileSettings value={learningProfile} onChange={setLearningProfile} />
+      <LearningProfileSettings
+        value={learningProfile}
+        onChange={setLearningProfile}
+        dismissedCount={viewModel?.learningProfile?.dismissedConcepts.length ?? 0}
+        onResetDismissed={() => {
+          // 下書きではなく保存済みの値に対して、却下の一覧だけを空にする。
+          const saved = toLearningProfileDraft(viewModel?.learningProfile);
+          send({ type: "saveLearningProfile", profile: { ...saved, dismissedConcepts: [] } });
+        }}
+      />
 
       <div className="settings-section">
         <span className="material-symbols-outlined">speed</span> 助言の頻度

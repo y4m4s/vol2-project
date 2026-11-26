@@ -611,3 +611,82 @@
 .s04-mermaid-retry .material-symbols-outlined {
   font-size: 16px;
 }
+
+/* 既知言語との比較の提案（suggest モード） */
+.learning-suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 6px 12px 0;
+  padding: 5px 6px 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 34%, var(--vscode-panel-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 7%, var(--vscode-editorWidget-background));
+  font-size: 0.88em;
+  animation: chat-overlay-in 130ms ease-out;
+}
+
+.learning-suggestion-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--vscode-textLink-foreground);
+}
+
+.learning-suggestion-label {
+  flex: 1 1 160px;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.learning-suggestion-actions {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.learning-suggestion-actions button {
+  width: auto;
+  min-height: 26px;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 0.95em;
+}
+
+.learning-suggestion-accept {
+  font-weight: 700;
+}
+
+.learning-suggestion-text-button,
+.learning-suggestion-close {
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+}
+
+.learning-suggestion-text-button:hover,
+.learning-suggestion-close:hover {
+  opacity: 1;
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.learning-suggestion-close {
+  padding: 3px !important;
+}
+
+.learning-suggestion-close .material-symbols-outlined {
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-suggestion {
+    animation: none;
+  }
+}

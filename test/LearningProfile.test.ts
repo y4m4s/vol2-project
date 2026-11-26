@@ -39,7 +39,8 @@ test("正規化で VS Code の言語IDをファミリーへ寄せ、未知・重
   assert.deepEqual(normalized, {
     schemaVersion: 1,
     knownLanguages: [{ languageId: "php", level: "advanced" }, { languageId: "typescript" }],
-    comparisonMode: "onRequest"
+    comparisonMode: "onRequest",
+    dismissedConcepts: []
   });
   const many = normalizeLearningProfile({ knownLanguages: LANGUAGE_FAMILY_IDS.map(languageId => ({ languageId })) });
   assert.equal(many.knownLanguages.length, MAX_KNOWN_LANGUAGES);
@@ -47,7 +48,7 @@ test("正規化で VS Code の言語IDをファミリーへ寄せ、未知・重
 
 test("以前の保存値に残っている targetLanguage は読み捨てる", () => {
   assert.deepEqual(normalizeLearningProfile({ knownLanguages: [], targetLanguage: "go", comparisonMode: "off" }),
-    { schemaVersion: 1, knownLanguages: [], comparisonMode: "off" });
+    { schemaVersion: 1, knownLanguages: [], comparisonMode: "off", dismissedConcepts: [] });
 });
 
 test("LearningProfileService は globalState の独立キーへ正規化して保存する", async () => {
@@ -60,7 +61,7 @@ test("LearningProfileService は globalState の独立キーへ正規化して�
   assert.deepEqual(service.getProfile(), DEFAULT_LEARNING_PROFILE);
   await service.saveProfile({ knownLanguages: [{ languageId: "php" }, { languageId: "php" }], comparisonMode: "off" });
   assert.deepEqual(data.get(LEARNING_PROFILE_STORAGE_KEY), {
-    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], comparisonMode: "off"
+    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], comparisonMode: "off", dismissedConcepts: []
   });
   assert.equal(service.getProfile().comparisonMode, "off");
   await service.resetProfile();
@@ -149,4 +150,44 @@ test("saveLearningProfile メッセージは型と件数を検証する", () => 
   ]) {
     assert.equal(parseWebviewMessage({ type: "saveLearningProfile", profile }), undefined);
   }
+});
+
+test("設定画面の保存（dismissedConcepts を含まない）では「今後出さない」を消さない", async () => {
+  const data = new Map<string, unknown>();
+  const storage = {
+    get: <T>(key: string) => data.get(key) as T | undefined,
+    update: async (key: string, value: unknown) => { data.set(key, value); }
+  };
+  const service = new LearningProfileService(storage as never);
+  await service.dismissConcept("typescript:nullability");
+  await service.dismissConcept("typescript:nullability");
+  await service.saveProfile({ knownLanguages: [{ languageId: "php" }], comparisonMode: "suggest" });
+  assert.deepEqual(service.getProfile().dismissedConcepts, ["typescript:nullability"]);
+  await service.saveProfile({ knownLanguages: [{ languageId: "php" }], comparisonMode: "suggest", dismissedConcepts: [] });
+  assert.deepEqual(service.getProfile().dismissedConcepts, []);
+});
+
+test("却下の一覧は形式に合うものだけを残す", () => {
+  assert.deepEqual(normalizeLearningProfile({ dismissedConcepts: ["typescript:nullability", "bad key", 3, "typescript:nullability"] }).dismissedConcepts,
+    ["typescript:nullability"]);
+});
+
+test("auto の背景には概念と対応を含め、助言の中に短く添えるよう指示する", () => {
+  const inline: LearnerBackground = {
+    ...background, source: "inline",
+    concept: { id: "nullability", label: "null / undefined の扱い（?. ・ ??）" },
+    counterpart: { support: "partial", note: "?Type・?? は近いが、undefined に相当する値はない" }
+  };
+  const prompt = buildGuidancePrompt({ kind: "always", context, learnerBackground: inline });
+  assert.match(prompt, /- 着目する概念: null \/ undefined の扱い/);
+  assert.match(prompt, /- 対応: 一部が対応する — \?Type・\?\? は近いが/);
+  assert.match(prompt, /at most 2 sentences inside the answer/);
+  assert.doesNotMatch(buildGuidancePrompt({ kind: "manual", context, userPrompt: "?", learnerBackground: background }), /at most 2 sentences/);
+});
+
+test("提案チップのメッセージを検証する", () => {
+  assert.deepEqual(parseWebviewMessage({ type: "acceptLearningSuggestion", id: "s1" }), { type: "acceptLearningSuggestion", id: "s1" });
+  assert.deepEqual(parseWebviewMessage({ type: "dismissLearningSuggestion", id: "s1", scope: "concept" }), { type: "dismissLearningSuggestion", id: "s1", scope: "concept" });
+  assert.equal(parseWebviewMessage({ type: "dismissLearningSuggestion", id: "s1", scope: "forever" }), undefined);
+  assert.equal(parseWebviewMessage({ type: "acceptLearningSuggestion", id: "" }), undefined);
 });

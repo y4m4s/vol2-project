@@ -10,7 +10,8 @@ export type ProficiencyLevel = "basic" | "working" | "advanced";
 /**
  * - off: 学習プロファイルを使わない（`/compare` も案内だけ）
  * - onRequest: 明示的な比較要求（`/compare`・質問文での指定）のときだけ使う
- * - suggest / auto: Phase 2 で有効にする。Phase 1 では onRequest と同じに扱う
+ * - suggest: 加えて、比較が役立ちそうなときに回答の後へ控えめな提案（チップ）を出す。AI は呼ばない
+ * - auto: 加えて、比較が役立ちそうなときに助言の中へ短い比較を含める
  */
 export type ComparisonMode = "off" | "onRequest" | "suggest" | "auto";
 
@@ -26,6 +27,8 @@ export interface LearningProfile {
   /** 学習中の言語は設定せず、常に編集中のファイルの言語を使う（toLanguageFamily） */
   knownLanguages: KnownLanguage[];
   comparisonMode: ComparisonMode;
+  /** 「この内容では今後出さない」を選んだ概念。キーは `${学習中の言語}:${概念ID}` */
+  dismissedConcepts: string[];
 }
 
 interface LanguageCatalogEntry {
@@ -82,15 +85,17 @@ export const COMPARISON_MODE_LABELS: Record<ComparisonMode, string> = {
   auto: "助言に自動で含める"
 };
 
-/** Phase 1 で選択できる比較モード。suggest / auto は Phase 2 で追加する。 */
-export const AVAILABLE_COMPARISON_MODES: readonly ComparisonMode[] = ["off", "onRequest"];
+export const AVAILABLE_COMPARISON_MODES: readonly ComparisonMode[] = ["off", "onRequest", "suggest", "auto"];
+
+export const MAX_DISMISSED_CONCEPTS = 100;
 
 export const MAX_KNOWN_LANGUAGES = 8;
 
 export const DEFAULT_LEARNING_PROFILE: LearningProfile = {
   schemaVersion: 1,
   knownLanguages: [],
-  comparisonMode: "onRequest"
+  comparisonMode: "onRequest",
+  dismissedConcepts: []
 };
 
 export function isLanguageFamilyId(value: unknown): value is LanguageFamilyId {
@@ -135,6 +140,14 @@ export function normalizeLearningProfile(value: unknown): LearningProfile {
   return {
     schemaVersion: 1,
     knownLanguages,
-    comparisonMode: isComparisonMode(source.comparisonMode) ? source.comparisonMode : DEFAULT_LEARNING_PROFILE.comparisonMode
+    comparisonMode: isComparisonMode(source.comparisonMode) ? source.comparisonMode : DEFAULT_LEARNING_PROFILE.comparisonMode,
+    dismissedConcepts: normalizeDismissedConcepts(source.dismissedConcepts)
   };
+}
+
+/** 形式（`言語:概念`）に合うものだけを残し、重複を除いて新しいものを上限まで残す。 */
+function normalizeDismissedConcepts(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const keys = value.filter((item): item is string => typeof item === "string" && /^[a-z]+:[a-z_]+$/.test(item));
+  return [...new Set(keys)].slice(-MAX_DISMISSED_CONCEPTS);
 }

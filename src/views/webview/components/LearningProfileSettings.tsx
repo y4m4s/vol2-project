@@ -26,12 +26,24 @@ const LEVEL_OPTIONS: Array<SettingsSelectOption<LevelValue>> = [
 /**
  * 設定画面の「学習プロファイル」節。保存は設定画面の保存バーから行う（下書きは親が持つ）。
  */
+const MODE_DESCRIPTIONS: Record<LearningProfileDraft["comparisonMode"], string> = {
+  off: "登録した言語を、どの相談でもAIへ送りません",
+  onRequest: "/compare や言語を指定した比較の質問のときだけ使います",
+  suggest: "加えて、比較が役立ちそうな回答の後に控えめな提案を出します（押したときだけAIを呼びます）",
+  auto: "加えて、比較が役立ちそうなときに助言の中へ短い比較を含めます"
+};
+
 export function LearningProfileSettings({
   value,
-  onChange
+  onChange,
+  dismissedCount = 0,
+  onResetDismissed
 }: {
   value: LearningProfileDraft;
   onChange: (next: LearningProfileDraft) => void;
+  /** 「今後出さない」を選んだ内容の件数（保存済みの値） */
+  dismissedCount?: number;
+  onResetDismissed?: () => void;
 }) {
   const registered = new Set(value.knownLanguages.map((item) => item.languageId));
   const addableOptions = LANGUAGE_FAMILY_IDS
@@ -99,15 +111,11 @@ export function LearningProfileSettings({
       <div className="setting-item">
         <SettingTitle
           icon="tune"
-          help="「求めたときだけ」では、/compare と、言語を指定した比較の質問のときだけ使います。AIへ送るのは比較に使う言語1つの名前と習熟度だけです。「オフ」では、どの相談でも送りません。プロファイルはこのPCのVS Codeにだけ保存され、同期しません。"
+          help="「求めたときだけ」は /compare と言語を指定した比較の質問のときだけ、「控えめに提案」はそれに加えて比較が役立ちそうな回答の後に提案を出し、「自動で含める」は助言の中に短い比較を含めます。判定はこのPCの中だけで行い、AIへ送るのは比較に使う言語1つの名前と習熟度だけです。「オフ」では、どの相談でも送りません。プロファイルはこのPCのVS Codeにだけ保存され、同期しません。"
         >
           既知言語との比較
         </SettingTitle>
-        <div className="setting-desc">
-          {value.comparisonMode === "off"
-            ? "登録した言語を、どの相談でもAIへ送りません"
-            : "/compare や言語を指定した比較の質問のときだけ使います"}
-        </div>
+        <div className="setting-desc">{MODE_DESCRIPTIONS[value.comparisonMode]}</div>
         <div className="choice-options mode-options" role="group" aria-label="既知言語との比較">
           {AVAILABLE_COMPARISON_MODES.map((mode) => (
             <button
@@ -121,6 +129,12 @@ export function LearningProfileSettings({
             </button>
           ))}
         </div>
+        {dismissedCount > 0 && onResetDismissed && (
+          <div className="learning-dismissed">
+            <span>「今後出さない」にした提案: {dismissedCount}件</span>
+            <button type="button" className="learning-dismissed-reset" onClick={onResetDismissed}>すべて戻す</button>
+          </div>
+        )}
       </div>
     </>
   );

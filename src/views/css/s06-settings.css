@@ -1285,3 +1285,30 @@
 .learning-language-add .settings-select-trigger {
   border-style: dashed;
 }
+
+.learning-dismissed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.82em;
+}
+
+.learning-dismissed-reset {
+  width: auto;
+  min-height: 26px;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-size: 1em;
+}
+
+.learning-dismissed-reset:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}

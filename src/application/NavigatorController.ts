@@ -55,8 +55,20 @@ import {
 import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import { LearningProfileService } from "../services/LearningProfileService";
-import { resolveComparisonRequest, type ComparisonResolution, type LearnerBackground } from "../services/ComparisonPolicy";
-import { DEFAULT_LEARNING_PROFILE, type LearningProfile } from "../shared/learningProfile";
+import {
+  dismissedConceptKey,
+  EMPTY_COMPARISON_EVIDENCE,
+  recentlyShownKey,
+  resolveComparisonRequest,
+  checkSuggestionClick,
+  resolveSuggestionBackground,
+  type ComparisonEvidence,
+  type ComparisonResolution,
+  type ComparisonSuggestionCandidate,
+  type LearnerBackground
+} from "../services/ComparisonPolicy";
+import { DEFAULT_LEARNING_PROFILE, languageLabel, toLanguageFamily, type LanguageFamilyId, type LearningProfile } from "../shared/learningProfile";
+import { findConcept } from "../shared/languageConcepts";
 import type { AdditionalContextCoordinator } from "./coordinators/AdditionalContextCoordinator";
 import { isVerifiedReferenceLocalModel, ReferenceContextError, splitReferencesForDestination, type ReferenceAction } from "../shared/referenceContext";
 import { REFERENCE_SEARCH_LIMITS } from "../services/ReferenceRetrieval";
@@ -95,8 +107,26 @@ interface GuidanceExecutionOptions {
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
-  /** 明示的な比較要求のときだけ設定する（ComparisonPolicy）。未設定なら学習プロファイルは送らない。 */
+  /** 比較を求めたとき・auto モードで比較が役立ちそうなときだけ設定する（ComparisonPolicy）。未設定なら学習プロファイルは送らない。 */
   learnerBackground?: LearnerBackground;
+  /** suggest モードで、回答の後に出す比較チップの候補。判定した時点の文書に結び付ける */
+  comparisonSuggestion?: BoundSuggestionCandidate;
+}
+
+type BoundSuggestionCandidate = ComparisonSuggestionCandidate & { documentUri: string; documentVersion: number };
+
+/** 回答の後に出す比較チップ。提案時の文書・言語・概念に固定し、クリック時に再検証する。 */
+interface StoredLearningSuggestion {
+  id: string;
+  label: string;
+  documentUri: string;
+  documentVersion: number;
+  languageId: LanguageFamilyId;
+  conceptId: string;
+  targetLanguageId?: LanguageFamilyId;
+  sourceEntryId?: string;
+  /** 提案の判定に使った質問（質問から出た候補を、文書が変わったときに再検証するため） */
+  question?: string;
 }
 
 type GuidanceExecutionOptionsFactory = () => Promise<GuidanceExecutionOptions | undefined>;
@@ -133,6 +163,9 @@ export class NavigatorController implements vscode.Disposable {
   private routingProviderConnectionRevision = 0;
   private initialized = false;
   private lastReferenceRevision = -1;
+  /** 比較を提示した時刻（`${学習中の言語}:${概念}:${言語}`）。同じ比較を30分は繰り返さない（セッション内のみ） */
+  private readonly comparisonShownAt = new Map<string, number>();
+  private learningSuggestion?: StoredLearningSuggestion;
   /** Last stop reason shown for automatic guidance; repeated triggers do not re-announce it. */
   private lastAutomaticStopNotice?: string;
 
@@ -444,6 +477,7 @@ export class NavigatorController implements vscode.Disposable {
       currentRequestPlan,
       settings,
       learningProfile: this.getLearningProfile(),
+      learningSuggestion: this.getVisibleLearningSuggestion(),
       knowledgeItems: this.initialized ? this.knowledgeCoordinator.buildItems(state) : [],
       selectedKnowledge: this.initialized ? this.knowledgeCoordinator.buildSelected(state) : undefined,
       savedKnowledgeSourceIds: this.initialized ? this.knowledgeStore.listSourceAdviceIds() : [],
@@ -576,19 +610,23 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public async createConversationStream(): Promise<void> {
+    this.learningSuggestion = undefined;
     await this.conversationCoordinator.createStream();
   }
 
   public async selectConversationStream(streamId: string): Promise<void> {
+    this.learningSuggestion = undefined;
     await this.conversationCoordinator.selectStream(streamId);
   }
 
   public async deleteConversationStream(streamId: string): Promise<void> {
+    this.learningSuggestion = undefined;
     await this.conversationCoordinator.deleteStream(streamId);
     this.providerRoutingCoordinator.forget(streamId);
   }
 
   public async deleteAllConversationStreams(): Promise<void> {
+    this.learningSuggestion = undefined;
     await this.conversationCoordinator.deleteAllStreams();
     this.providerRoutingCoordinator.forget();
   }
@@ -619,7 +657,7 @@ export class NavigatorController implements vscode.Disposable {
           parsed.slashCommand,
           parsed.slashCommandScope
         );
-        return { ...options, learnerBackground: comparison.background };
+        return { ...options, learnerBackground: comparison.background, comparisonSuggestion: comparison.suggestion };
       });
       return;
     }
@@ -627,6 +665,7 @@ export class NavigatorController implements vscode.Disposable {
     await this.executeGuidanceRequest({
       kind: guidanceKind,
       learnerBackground: comparison.background,
+      comparisonSuggestion: comparison.suggestion,
       userPrompt: comparedPrompt,
       additionalContext: additionalContext !== undefined
         ? additionalContext
@@ -658,7 +697,7 @@ export class NavigatorController implements vscode.Disposable {
         parsed.slashCommand,
         parsed.slashCommandScope
       );
-      return { ...options, learnerBackground: comparison.background };
+      return { ...options, learnerBackground: comparison.background, comparisonSuggestion: comparison.suggestion };
     });
   }
 
@@ -684,17 +723,148 @@ export class NavigatorController implements vscode.Disposable {
     userPrompt: string | undefined,
     activeLanguageId: string | undefined,
     record = false
-  ): { background?: LearnerBackground; notice?: string; userPrompt?: string } {
+  ): { background?: LearnerBackground; suggestion?: BoundSuggestionCandidate; notice?: string; userPrompt?: string } {
+    const profile = this.getLearningProfile();
+    // 未登録なら証拠も集めない（ほとんどのユーザーで余計な処理をしない）。
+    const evidence = profile.knownLanguages.length ? this.collectComparisonEvidence() : undefined;
     const resolution: ComparisonResolution = resolveComparisonRequest({
-      profile: this.getLearningProfile(), kind, slashCommand, userPrompt, activeLanguageId
+      profile, kind, slashCommand, userPrompt, activeLanguageId, evidence, recentlyShown: this.comparisonShownAt
     });
     if (resolution.action === "notice") return { notice: resolution.message, userPrompt };
     if (resolution.action === "background") {
       if (record) this.diagnostic({ event: "learning_profile_comparison", source: resolution.background.source,
-        language: resolution.background.compareLanguageId, target: resolution.background.targetLanguageId });
+        language: resolution.background.compareLanguageId, target: resolution.background.targetLanguageId,
+        concept: resolution.background.concept?.id });
       return { background: resolution.background, userPrompt: resolution.userPrompt };
     }
+    if (resolution.action === "suggest") {
+      // 回答が出るまでに別のファイルへ移っても、判定に使った文書へ結び付けておく。
+      const document = vscode.window?.activeTextEditor?.document;
+      return document
+        ? { suggestion: { ...resolution.suggestion, documentUri: document.uri.toString(), documentVersion: document.version }, userPrompt: resolution.userPrompt }
+        : { userPrompt: resolution.userPrompt };
+    }
     return { userPrompt: resolution.userPrompt };
+  }
+
+  /** 比較の判定に使うローカルの証拠。送信対象から除外したファイルでは集めない。 */
+  private collectComparisonEvidence(): ComparisonEvidence {
+    return this.contextCollector.collectComparisonEvidence?.((filePath) => this.isComparisonFileExcluded(filePath))
+      ?? EMPTY_COMPARISON_EVIDENCE;
+  }
+
+  /** 送信対象の判定と同じ除外規則（保護パターン・追加の除外パターン）。その時点の設定で判定する。 */
+  private isComparisonFileExcluded(filePath: string): boolean {
+    return this.requestPlanner.isFileExcluded?.(filePath, this.settingsService.getSettings()) ?? false;
+  }
+
+  /** 提案チップは、提案した文書を開いているときだけ表示する（別のファイルへ移ったら隠し、戻れば再表示する）。 */
+  private getVisibleLearningSuggestion(): NavigatorViewModel["learningSuggestion"] {
+    const suggestion = this.learningSuggestion;
+    if (!suggestion) return undefined;
+    const document = vscode.window?.activeTextEditor?.document;
+    if (document?.uri.toString() !== suggestion.documentUri) return undefined;
+    // 表示後に除外パターンへ追加されたファイルでは、チップを見せない（クリック時にも取り下げる）。
+    return this.isComparisonFileExcluded(document.uri.fsPath) ? undefined : { id: suggestion.id, label: suggestion.label };
+  }
+
+  /**
+   * 回答の後始末。比較を実際に提示した（回答に比較の言語名が含まれる）ときと、チップを出したときに、
+   * 同じ比較を繰り返さないよう時刻を記録する。新しい回答が出たら、前のチップは消す。
+   */
+  private completeComparison(options: GuidanceExecutionOptions, adviceText: string | undefined, entryId: string): void {
+    this.learningSuggestion = undefined;
+    if (!adviceText) return;
+    const now = Date.now();
+    const background = options.learnerBackground;
+    if (background?.concept && adviceText.includes(background.compareLanguageLabel)) {
+      this.comparisonShownAt.set(recentlyShownKey(background.targetLanguageId, background.concept.id, background.compareLanguageId), now);
+    }
+    const candidate = options.comparisonSuggestion;
+    if (!candidate) return;
+    const targetLanguageId = toLanguageFamily(vscode.workspace?.textDocuments?.find((item) => item.uri.toString() === candidate.documentUri)?.languageId)
+      ?? options.learnerBackground?.targetLanguageId ?? toLanguageFamily(options.prepared?.context.activeFileLanguage);
+    this.comparisonShownAt.set(recentlyShownKey(targetLanguageId, candidate.conceptId, candidate.languageId), now);
+    this.learningSuggestion = {
+      id: randomUUID(),
+      label: candidate.label,
+      documentUri: candidate.documentUri,
+      documentVersion: candidate.documentVersion,
+      languageId: candidate.languageId,
+      conceptId: candidate.conceptId,
+      targetLanguageId,
+      sourceEntryId: entryId,
+      ...(options.kind !== "always" && options.userPrompt ? { question: options.userPrompt } : {})
+    };
+    this.diagnostic({ event: "learning_profile_suggestion_shown", language: candidate.languageId, concept: candidate.conceptId, target: targetLanguageId });
+  }
+
+  /**
+   * 提案チップのクリック（R8）。提案時の文書・言語・概念で、比較の説明を1回だけ生成する。
+   * 別のファイルを開いていれば提案元を開き直し、開けなければ案内だけを出す。
+   */
+  public async acceptLearningSuggestion(id: string): Promise<void> {
+    const suggestion = this.learningSuggestion;
+    if (!suggestion || suggestion.id !== id) return;
+    if (this.sessionStore.getState().requestState !== "idle") return;
+    let document = vscode.window.activeTextEditor?.document;
+    if (document?.uri.toString() !== suggestion.documentUri) {
+      try {
+        document = await vscode.workspace.openTextDocument(vscode.Uri.parse(suggestion.documentUri));
+        await vscode.window.showTextDocument(document, { preserveFocus: false });
+      } catch {
+        this.learningSuggestion = undefined;
+        this.patchGuidanceSession({ statusMessage: { kind: "info", text: "提案元のファイルを開けないため、比較の説明を中止しました。" } });
+        return;
+      }
+    }
+    // 現在の除外設定は毎回確かめる（版数が同じでも、表示後に除外パターンへ追加された場合がある）。
+    // 文書が変わっていれば、提案時の概念がまだ当てはまるかも確かめ直す。
+    const check = checkSuggestionClick({
+      fileExcluded: this.isComparisonFileExcluded(document.uri.fsPath),
+      documentVersion: document.version,
+      suggestedVersion: suggestion.documentVersion,
+      activeLanguageId: document.languageId,
+      evidence: this.collectComparisonEvidence(),
+      conceptId: suggestion.conceptId,
+      question: suggestion.question
+    });
+    if (!check.ok) {
+      this.learningSuggestion = undefined;
+      this.diagnostic({ event: "learning_profile_suggestion_withdrawn", concept: suggestion.conceptId, reason: check.reason });
+      this.patchGuidanceSession({ statusMessage: { kind: "info", text: check.reason === "excluded"
+        ? "提案元のファイルが送信対象から除外されているため、比較の提案を取り下げました。"
+        : "コードが変わり、この比較の提案は当てはまらなくなったため取り下げました。" } });
+      return;
+    }
+    const resolution = resolveSuggestionBackground(this.getLearningProfile(), suggestion, document.languageId);
+    this.learningSuggestion = undefined;
+    if (resolution.action !== "background") {
+      if (resolution.action === "notice") this.patchGuidanceSession({ statusMessage: { kind: "info", text: resolution.message } });
+      return;
+    }
+    const concept = findConcept(suggestion.conceptId);
+    const question = `${languageLabel(suggestion.languageId)}と比べて${concept ? `「${concept.label}」を` : ""}説明してください`;
+    this.diagnostic({ event: "learning_profile_comparison", source: "chip", language: suggestion.languageId,
+      target: resolution.background.targetLanguageId, concept: suggestion.conceptId });
+    await this.executeGuidanceRequest(async () => {
+      const options = await this.buildCurrentContextGuidanceOptions(question, false, undefined, "compare", "standard");
+      return { ...options, learnerBackground: resolution.background };
+    });
+  }
+
+  /** 提案チップの却下。concept は「この内容では今後出さない」（学習プロファイルに保存する）。 */
+  public async dismissLearningSuggestion(id: string, scope: "once" | "concept"): Promise<void> {
+    const suggestion = this.learningSuggestion;
+    if (!suggestion || suggestion.id !== id) return;
+    this.learningSuggestion = undefined;
+    if (scope === "concept" && this.learningProfileService) {
+      await this.learningProfileService.dismissConcept(dismissedConceptKey(suggestion.targetLanguageId, suggestion.conceptId));
+      this.invalidateRequestPlan();
+      this.patchSession({ statusMessage: { kind: "info", text: "この内容の比較は今後提案しません。設定の「学習プロファイル」から戻せます。" } });
+      return;
+    }
+    this.didChangeStateEmitter.fire();
   }
 
   public cancelGuidanceRequest(): void {
@@ -1045,10 +1215,14 @@ export class NavigatorController implements vscode.Disposable {
         return undefined;
       }
 
+      // R5: suggest ならチップの候補、auto なら助言に短く含める背景。fingerprint には含めない（同じ文脈では再送しない）。
+      const comparison = this.resolveComparison("always", undefined, undefined, baseContext.activeFileLanguage);
       return {
         automaticTriggerEvent: event,
         automaticDocumentSnapshot,
         automaticFilePath: baseContext.activeFilePath,
+        learnerBackground: comparison.background,
+        comparisonSuggestion: comparison.suggestion,
         kind: "always",
         automaticObservation: prepared.automaticObservation,
         prepared,
@@ -1722,6 +1896,7 @@ export class NavigatorController implements vscode.Disposable {
             errorName: error instanceof Error ? error.name : "unknown" });
         }
       }
+      this.completeComparison(options, isNoAdvice ? undefined : result.text, assistantEntry.id);
       // Stream creation resets these caches, so record the displayed focus only
       // after the stream has been created and its answer persisted.
       this.rememberAutomaticFocus(options, result.focus);

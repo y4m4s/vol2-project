@@ -534,6 +534,8 @@ export interface NavigatorViewModel {
   settings: NavigatorSettings;
   /** 学習プロファイル（globalState）。設定画面の「学習プロファイル」で編集する */
   learningProfile?: LearningProfile;
+  /** 回答の後に出す比較の提案（suggest モード）。提案元の文書を開いているときだけ設定される */
+  learningSuggestion?: { id: string; label: string };
   knowledgeItems: KnowledgeListItem[];
   selectedKnowledge?: KnowledgeDetailViewData;
   savedKnowledgeSourceIds: string[];

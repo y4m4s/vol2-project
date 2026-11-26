@@ -15,6 +15,7 @@ import {
   NavigatorContextPreview
 } from "../shared/types";
 import type { AutoAdviceTriggerEvent } from "./AdviceScheduler";
+import type { ComparisonEvidence, DiagnosticEvidence } from "./ComparisonPolicy";
 
 const MAX_PREVIEW_TEXT_LENGTH = 240;
 const MAX_SELECTED_TEXT_LENGTH = 4000;
@@ -36,6 +37,15 @@ const NEXT_MANIFEST_MAX_FILE_BYTES = 200_000;
 const NEXT_DOC_MAX_FILE_BYTES = 200_000;
 const MAX_DOCUMENT_SNAPSHOT_CHARS = 200_000;
 const REFERENCED_FILE_CONTEXT_RADIUS = 20;
+// 既知言語との比較の判定に使う証拠の上限。キー入力のたびではないが、同期処理なので読み取り量を固定する。
+const COMPARISON_DIAGNOSTIC_LIMIT = 20;
+const COMPARISON_NEARBY_LINES_BEFORE = 2;
+const COMPARISON_NEARBY_LINES_AFTER = 2;
+/** 診断1件あたりの周辺コードの行数。複数行に広がる診断でも、開始位置の近くだけを読む */
+const COMPARISON_NEARBY_MAX_LINES = 7;
+/** 証拠全体で読む行数の上限（診断の周辺コードとカーソル付近の合計） */
+const COMPARISON_TOTAL_LINE_BUDGET = 120;
+const COMPARISON_LINE_MAX_CHARS = 400;
 
 interface RecentEditRecord {
   observation: AutomaticEditObservation;
@@ -180,6 +190,19 @@ export class ContextCollector {
       selectedTextPreview: this.toPreviewText(selectedText),
       diagnosticsSummary: this.collectDiagnostics(editor.document.uri)
     };
+  }
+
+  /**
+   * 既知言語との比較の判定（ComparisonPolicy）に使う、ローカル専用の証拠。
+   * 診断コードと周辺のコードはこの判定にだけ使い、プロンプトには入れない。
+   * 送信用の DiagnosticSummary（自動助言の観測としてそのままプロンプトへ入る）は変えない。
+   */
+  public collectComparisonEvidence(isExcluded?: (filePath: string) => boolean): ComparisonEvidence {
+    const editor = vscode.window?.activeTextEditor;
+    if (!editor || !this.isWorkspaceFile(editor.document.uri)) return { diagnostics: [] };
+    // 送信対象から除外したファイル（保護・追加の除外パターン）は、比較の判定にも使わない。
+    if (isExcluded?.(editor.document.uri.fsPath)) return { diagnostics: [] };
+    return collectComparisonEvidenceFrom(editor.document, editor.selection.active.line, this.getSelectedText(editor));
   }
 
   public collectGuidanceContext(providerId?: NavigatorSettings["providerId"]): GuidanceContext {
@@ -1067,4 +1090,51 @@ export class ContextCollector {
   private isSymbolCandidate(value: string): boolean {
     return /^[A-Za-z_][A-Za-z0-9_]{1,63}$/.test(value);
   }
+}
+
+/** Diagnostic.code（string | number | { value, target }）を文字列へ。target（ドキュメントの URL）は捨てる。 */
+export function normalizeDiagnosticCode(code: vscode.Diagnostic["code"]): string | undefined {
+  const value = typeof code === "object" && code !== null ? code.value : code;
+  return value === undefined || value === null || value === "" ? undefined : String(value);
+}
+
+/**
+ * 比較の判定に使う証拠を、読み取り量を固定して集める（vscode.TextDocument の lineCount / lineAt だけを使う）。
+ * - 診断は先頭20件。周辺コードは「開始行の2行前〜終了行の2行後」を、1件あたり最大7行に切る
+ * - 診断の周辺コードとカーソル付近を合わせて、読む行数は全体で120行まで。1行は400文字まで
+ */
+export function collectComparisonEvidenceFrom(
+  document: Pick<vscode.TextDocument, "uri" | "lineCount" | "lineAt">,
+  cursorLine: number,
+  selectedText?: string,
+  diagnosticsSource: readonly Pick<vscode.Diagnostic, "source" | "code" | "message" | "range">[] = vscode.languages.getDiagnostics(document.uri)
+): ComparisonEvidence {
+  let budget = COMPARISON_TOTAL_LINE_BUDGET;
+  const lineText = (line: number): string => line >= 0 && line < document.lineCount ? document.lineAt(line).text.slice(0, COMPARISON_LINE_MAX_CHARS) : "";
+  const linesAround = (start: number, end: number, maxLines: number): string => {
+    const lines: string[] = [];
+    const first = Math.max(0, start);
+    const last = Math.min(document.lineCount - 1, end, first + maxLines - 1);
+    for (let line = first; line <= last && budget > 0; line++, budget--) lines.push(lineText(line));
+    return lines.join("\n");
+  };
+  // カーソル付近は質問からの候補の裏付けに使うので、診断より先に予算を確保する。
+  const cursorWindow = linesAround(cursorLine - 3, cursorLine + 3, 7);
+  const diagnostics: DiagnosticEvidence[] = diagnosticsSource.slice(0, COMPARISON_DIAGNOSTIC_LIMIT).map((diagnostic) => {
+    const nearbyCode = linesAround(diagnostic.range.start.line - COMPARISON_NEARBY_LINES_BEFORE,
+      diagnostic.range.end.line + COMPARISON_NEARBY_LINES_AFTER, COMPARISON_NEARBY_MAX_LINES);
+    return {
+      source: diagnostic.source,
+      code: normalizeDiagnosticCode(diagnostic.code),
+      message: diagnostic.message.slice(0, 500),
+      ...(nearbyCode ? { nearbyCode } : {})
+    };
+  });
+  const selectionText = selectedText?.slice(0, 2000);
+  return {
+    diagnostics,
+    ...(selectionText ? { selectionText } : {}),
+    cursorLine: lineText(cursorLine),
+    cursorWindow
+  };
 }

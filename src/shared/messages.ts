@@ -10,7 +10,7 @@ import type {
 import { BAD_FEEDBACK_REASONS, GOOD_FEEDBACK_REASONS } from "./feedback";
 import type { AutomaticRoutingSettings } from "./types";
 import type { ReferenceAction } from "./referenceContext";
-import { isLanguageFamilyId, MAX_KNOWN_LANGUAGES, type LearningProfile } from "./learningProfile";
+import { isLanguageFamilyId, MAX_DISMISSED_CONCEPTS, MAX_KNOWN_LANGUAGES, type LearningProfile } from "./learningProfile";
 
 export type WebviewToExtension =
   | ReferenceAction
@@ -61,9 +61,14 @@ export type WebviewToExtension =
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
   | { type: "setComposerActive"; active: boolean }
-  | { type: "saveLearningProfile"; profile: SaveLearningProfilePayload };
+  | { type: "saveLearningProfile"; profile: SaveLearningProfilePayload }
+  | { type: "acceptLearningSuggestion"; id: string }
+  | { type: "dismissLearningSuggestion"; id: string; scope: "once" | "concept" };
 
-export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "comparisonMode">;
+export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "comparisonMode"> & {
+  /** 指定したときだけ置き換える（設定画面の「すべて戻す」） */
+  dismissedConcepts?: string[];
+};
 
 export interface SaveSettingsPayload {
   routing?: AutomaticRoutingSettings;
@@ -177,6 +182,10 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
         ? value as WebviewToExtension : undefined;
     case "saveSettings":
       return isSaveSettingsPayload(value.payload) ? value as WebviewToExtension : undefined;
+    case "acceptLearningSuggestion":
+      return isBoundedString(value.id, 1, 200) ? value as WebviewToExtension : undefined;
+    case "dismissLearningSuggestion":
+      return isBoundedString(value.id, 1, 200) && (value.scope === "once" || value.scope === "concept") ? value as WebviewToExtension : undefined;
     case "saveLearningProfile":
       return isSaveLearningProfilePayload(value.profile) ? value as WebviewToExtension : undefined;
     case "searchKnowledge":
@@ -213,7 +222,9 @@ function isSaveLearningProfilePayload(value: unknown): value is SaveLearningProf
   if (!isRecord(value) || !Array.isArray(value.knownLanguages) || value.knownLanguages.length > MAX_KNOWN_LANGUAGES) return false;
   const levels = new Set<unknown>([undefined, "basic", "working", "advanced"]);
   return value.knownLanguages.every((item) => isRecord(item) && isLanguageFamilyId(item.languageId) && levels.has(item.level)) &&
-    ["off", "onRequest", "suggest", "auto"].includes(String(value.comparisonMode));
+    ["off", "onRequest", "suggest", "auto"].includes(String(value.comparisonMode)) &&
+    (value.dismissedConcepts === undefined || (Array.isArray(value.dismissedConcepts) && value.dismissedConcepts.length <= MAX_DISMISSED_CONCEPTS &&
+      value.dismissedConcepts.every((item) => isBoundedString(item, 1, 100))));
 }
 
 function isRoutingSettings(value: unknown): boolean {

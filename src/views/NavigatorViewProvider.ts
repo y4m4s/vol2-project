@@ -133,6 +133,12 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "saveLearningProfile":
             await this.controller.saveLearningProfile(message.profile);
             return;
+          case "acceptLearningSuggestion":
+            await this.controller.acceptLearningSuggestion(message.id);
+            return;
+          case "dismissLearningSuggestion":
+            await this.controller.dismissLearningSuggestion(message.id, message.scope);
+            return;
           case "testRoutingProvider":
             await this.controller.testRoutingProvider(message.providerId);
             return;

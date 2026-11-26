@@ -430,6 +430,11 @@ export class RequestPlanner {
   }
 
   // 一致判定は globMatch に集約する（ContextCollector と同じ実装を使うため）。
+  /** 保護パターンと追加の除外パターンのどちらかに一致するか（送信対象の判定と同じ規則）。 */
+  public isFileExcluded(filePath: string, settings: NavigatorSettings): boolean {
+    return this.isPathExcluded(filePath, this.getEffectiveExcludedGlobs(settings));
+  }
+
   private isPathExcluded(filePath: string, patterns: readonly string[]): boolean {
     return isPathExcluded(filePath, patterns);
   }

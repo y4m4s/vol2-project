@@ -23,7 +23,7 @@ loader._load = (id, parent, main) => id === "vscode" ? {
   workspace: {getWorkspaceFolder: () => inWorkspace ? {name:"workspace"} : undefined},
   languages: {getDiagnostics: () => []}
 } : original(id,parent,main);
-const {ContextCollector} = require("../src/services/ContextCollector") as typeof import("../src/services/ContextCollector");
+const {ContextCollector, collectComparisonEvidenceFrom} = require("../src/services/ContextCollector") as typeof import("../src/services/ContextCollector");
 loader._load = original;
 
 function editor(text: string, visibleLine: number, selected = false): vscode.TextEditor {
@@ -85,4 +85,32 @@ test("cloud and unspecified providers retain viewport/selection without reading 
     }
   }
   state.activeTextEditor=undefined;
+});
+
+test("比較の証拠: 送信対象から除外したファイルでは集めない", () => {
+  state.activeTextEditor = editor("const name = user?.name;\nconsole.log(name);", 0);
+  const collector = new ContextCollector();
+  const evidence = collector.collectComparisonEvidence((filePath) => filePath.endsWith("example.ts"));
+  assert.deepEqual(evidence, { diagnostics: [] });
+  const included = collector.collectComparisonEvidence(() => false);
+  assert.equal(included.cursorLine, "const name = user?.name;");
+  state.activeTextEditor = undefined;
+});
+
+test("比較の証拠: 文書全体を覆う診断でも、読む行数に上限がある", () => {
+  let reads = 0;
+  const lineCount = 100_000;
+  const document = {
+    uri: { toString: () => "big.ts" },
+    lineCount,
+    lineAt: (line: number) => { reads++; return { text: "x".repeat(1000) + line }; }
+  } as unknown as vscode.TextDocument;
+  const whole = { start: { line: 0, character: 0 }, end: { line: lineCount - 1, character: 0 } };
+  const diagnostics = Array.from({ length: 30 }, () => ({ source: "ts", code: { value: 2322, target: {} }, message: "m", range: whole })) as unknown as vscode.Diagnostic[];
+  const evidence = collectComparisonEvidenceFrom(document, 50_000, undefined, diagnostics);
+  assert.ok(reads <= 121, `lineAt was called ${reads} times`);
+  assert.equal(evidence.diagnostics.length, 20);
+  assert.equal(evidence.diagnostics[0].code, "2322");
+  assert.ok((evidence.diagnostics[0].nearbyCode ?? "").split("\n").length <= 7);
+  assert.ok((evidence.cursorLine ?? "").length <= 400);
 });

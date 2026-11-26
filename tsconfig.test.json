@@ -100,6 +100,7 @@
     "test/ConnectionService.test.ts",
     "test/EvalRunner.test.ts",
     "src/shared/learningProfile.ts",
+    "src/shared/languageConcepts.ts",
     "src/services/ComparisonPolicy.ts",
     "src/services/LearningProfileService.ts",
     "test/ComparisonPolicy.test.ts",
