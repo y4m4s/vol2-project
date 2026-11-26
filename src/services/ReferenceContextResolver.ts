@@ -28,6 +28,17 @@ export function referenceQueryTerms(value: string): string[] {
   return [...terms].slice(0, 80);
 }
 
+/** Status metadata applies to ordinary attachments too; source permissions and scope are checked separately. */
+export function isExcludedByReferenceStatus(source: ContextSource, document: ReferenceDocument, question: string, additionalContext = ""): boolean {
+  if (document.skill || source.alwaysInclude || source.selectedPaths.includes(document.relativePath)) return false;
+  const status = document.status?.normalize("NFKC").trim();
+  const obsolete = /^(?:superseded|deprecated|rejected)\b|^(?:廃止|置換|却下)(?:済み|済)?(?:$|[\s:：()])/i.test(status ?? "");
+  // Only user-authored inputs may enable historical references; AI search queries and code cannot.
+  // Match explicit old-document phrases rather than the character 旧 (also present in 復旧).
+  const historical = /過去|経緯|廃止|履歴|旧(?:方針|仕様|設計|決定|資料|規約|実装|バージョン|版|ADR)|\b(?:history|historical|superseded|deprecated)\b/i;
+  return obsolete && ![question, additionalContext].some(text => historical.test(text.normalize("NFKC")));
+}
+
 export function resolveReferenceContext(sources: readonly ContextSource[], documents: readonly ReferenceDocument[], context: GuidanceContext,
   question: string, activeRelativePath: string, activeRoot?: string, preferredDocumentIds: readonly string[] = [], searchQueries: readonly string[] = []): ReferenceExcerpt[] {
   // Each bounded AI query gets its own extraction budget, independent of long questions or task text.
@@ -43,8 +54,7 @@ export function resolveReferenceContext(sources: readonly ContextSource[], docum
       const requested = preferredDocumentIds.includes(doc.id);
       if ((doc.skill || source.kind === "skill") && (!doc.skill || (!pinned && !requested))) continue;
       const required = pinned || Boolean(source.alwaysInclude) || Boolean(doc.skill && requested);
-      const obsolete = /superseded|deprecated|rejected|廃止|置換|却下/i.test(doc.status ?? "");
-      if (source.kind === "adr" && obsolete && !required && !/過去|経緯|旧|廃止|履歴|history|superseded|deprecated/i.test(question)) continue;
+      if (isExcludedByReferenceStatus(source, doc, question, context.additionalContext)) continue;
       const chunks = required ? [{ text: doc.text, start: 1, end: doc.text.split("\n").length }] : chunkReferenceText(doc.text);
       for (const chunk of chunks) {
         const meta = normalizeKnowledgeSearchText(doc.relativePath, doc.title, doc.skill?.description ?? "");
@@ -55,7 +65,7 @@ export function resolveReferenceContext(sources: readonly ContextSource[], docum
         ranked.push({ score, priority: required ? 2 : requested ? 1.5 : source.kind === "rules" ? 1 : 0, excerpt: {
           id: `${doc.id}:${chunk.start}`, sourceId: source.id, path: `${source.label}/${doc.relativePath}`, title: doc.title,
           kind: doc.skill ? "skill" : source.kind, hash: doc.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end, required,
-          reason: pinned || source.alwaysInclude ? "常に含める" : requested ? "AIが参照を要求" : source.kind === "rules" ? "言語・パスの適用範囲に一致" : `関連語の一致${doc.status ? ` / 状態: ${doc.status}` : ""}`,
+          reason: `${pinned || source.alwaysInclude ? "常に含める" : requested ? "AIが参照を要求" : source.kind === "rules" ? "言語・パスの適用範囲に一致" : "関連語の一致"}${doc.status ? ` / 状態: ${doc.status}` : ""}`,
           localOnly: source.localOnly, mode: doc.skill ? source.kind === "skill" ? source.skillMode : "procedure" : "reference"
         } });
       }
@@ -77,12 +87,15 @@ export function resolveReferenceContext(sources: readonly ContextSource[], docum
     if (!selected.some(item => item.id === excerpt.id)) selected.push(excerpt);
   }
   for (const skill of [...selected].filter(item => item.kind === "skill")) {
+    const source = sources.find(source => source.id === skill.sourceId);
+    if (!source) continue;
     const doc = documents.find(doc => `${doc.id}:1` === skill.id);
     const base = doc?.relativePath.replace(/[^/]+$/, "");
     const linkedDocuments = new Map<string, ReferenceDocument>();
     for (const resource of doc?.skill?.resources ?? []) {
       const target = base + resource.replace(/\/+$/, "");
       for (const linked of documents.filter(item => item.sourceId === skill.sourceId && !item.skill &&
+        !isExcludedByReferenceStatus(source, item, question, context.additionalContext) &&
         (item.relativePath === target || item.relativePath.startsWith(`${target}/`)))) linkedDocuments.set(linked.id, linked);
     }
     // A directory link can contain many files. Rank all their representative chunks before taking the bounded set.
@@ -93,14 +106,14 @@ export function resolveReferenceContext(sources: readonly ContextSource[], docum
       }).sort((a, b) => b.score - a.score || a.chunk.start - b.chunk.start)[0];
       return { linked, best };
     }).sort((a, b) => (b.best?.score ?? 0) - (a.best?.score ?? 0) || a.linked.relativePath.localeCompare(b.linked.relativePath));
-    const source = sources.find(source => source.id === skill.sourceId);
     for (const { linked, best } of candidates) {
       if (selected.filter(item => !item.required).length >= 8) break;
-      const resourcePath = `${source?.label}/${linked.relativePath}`;
+      const resourcePath = `${source.label}/${linked.relativePath}`;
       if (selected.some(item => item.sourceId === linked.sourceId && item.path === resourcePath)) continue;
       const chunk = best?.chunk;
       if (chunk) selected.push({ ...skill, id: `${linked.id}:${chunk.start}`, kind: "document", mode: "reference", required: false, path: resourcePath,
-        title: linked.title, hash: linked.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end, reason: "選択Skillの関連資料" });
+        title: linked.title, hash: linked.hash, text: chunk.text, startLine: chunk.start, endLine: chunk.end,
+        reason: `選択Skillの関連資料${linked.status ? ` / 状態: ${linked.status}` : ""}` });
     }
   }
   return selected;

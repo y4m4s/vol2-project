@@ -51,6 +51,33 @@ async function setup(t: TestContext, localOnly = true) {
   return { root, coordinator, data, notifications: () => notifications };
 }
 
+test("ordinary retired ADRs are excluded from both AI catalogs and final retrieval", async t => {
+  const h = await setup(t, false);
+  await fs.mkdir(path.join(h.root, "adr"));
+  await fs.writeFile(path.join(h.root, "adr", "old.md"), "---\nstatus: superseded\n---\n# TypeScript\n旧方針");
+  await fs.writeFile(path.join(h.root, "adr", "current.md"), "---\nstatus: accepted\n---\n# TypeScript\n現方針");
+  const current = await h.coordinator.catalog(context, "TypeScript", false, 8000);
+  assert.ok(!current.some(item => item.path.endsWith("old.md")));
+  assert.ok(current.some(item => item.path.endsWith("current.md")));
+  const history = await h.coordinator.catalog(context, "TypeScriptの経緯", false, 8000);
+  const old = history.find(item => item.path.endsWith("old.md"));
+  assert.ok(old);
+  const requested = await h.coordinator.resolve(context, "TypeScript", undefined, false, { queries: ["history"], documentIds: [old.id] });
+  assert.ok(!requested.some(item => item.path.endsWith("old.md")));
+  const historical = await h.coordinator.resolve(context, "TypeScriptの経緯", undefined, false, { queries: [], documentIds: [old.id] });
+  assert.ok(historical.some(item => item.path.endsWith("old.md") && item.reason.includes("状態: superseded")));
+  const withHistory = { ...context, additionalContext: "廃止済みADRも参照して過去の経緯を調べてください" };
+  const contextualCatalog = await h.coordinator.catalog(withHistory, "TypeScriptの方針を説明して", false, 8000);
+  assert.ok(contextualCatalog.some(item => item.id === old.id));
+  const contextual = await h.coordinator.resolve(withHistory, "TypeScriptの方針を説明して");
+  assert.ok(contextual.some(item => item.path.endsWith("old.md") && item.reason.includes("状態: superseded")));
+  const recoveryContext = { ...context, additionalContext: "TypeScriptの障害復旧を支援してください" };
+  const recoveryCatalog = await h.coordinator.catalog(recoveryContext, "TypeScriptの復旧方法", false, 8000);
+  assert.ok(!recoveryCatalog.some(item => item.id === old.id));
+  const recovery = await h.coordinator.resolve(recoveryContext, "TypeScriptの復旧方法", undefined, false, { queries: ["history"], documentIds: [old.id] });
+  assert.ok(!recovery.some(item => item.path.endsWith("old.md")));
+});
+
 test("conversation attachments can open file and folder pickers without a workspace", async t => {
   const h = await setup(t);
   assert.equal(h.coordinator.view().workspaceAvailable, false);

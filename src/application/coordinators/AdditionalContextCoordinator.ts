@@ -8,7 +8,7 @@ import { ContextSourceRegistry } from "../../services/ContextSourceRegistry";
 import { isInsideReferenceRoot, ReferenceDocumentService } from "../../services/ReferenceDocumentService";
 import { isPathExcluded, PATH_CASE_INSENSITIVE } from "../../services/globMatch";
 import { PROTECTED_EXCLUDED_GLOBS } from "../../services/protectedGlobs";
-import { parseReferencePatterns, referenceQueryTerms, resolveReferenceContext } from "../../services/ReferenceContextResolver";
+import { isExcludedByReferenceStatus, parseReferencePatterns, referenceQueryTerms, resolveReferenceContext } from "../../services/ReferenceContextResolver";
 import { boundReferenceCatalog, type ReferenceCatalogItem, type ReferenceSearchRequest } from "../../services/ReferenceRetrieval";
 import { ReferenceContextError } from "../../shared/referenceContext";
 import { isReferenceTextPath, REFERENCE_TEXT_EXTENSIONS } from "../../shared/referenceFiles";
@@ -183,7 +183,7 @@ export class AdditionalContextCoordinator implements vscode.Disposable {
     const sources = this.registry.list().filter(source => source.enabled && (verifiedLocal || !source.localOnly));
     // Metadata can be confidential too. Never expose private paths or Skill descriptions to cloud models.
     const items = this.documents.filter(doc => sources.some(source => source.id === doc.sourceId && !source.alwaysInclude &&
-      !source.selectedPaths.includes(doc.relativePath) && (source.kind !== "skill" || doc.skill))).map(doc => {
+      !source.selectedPaths.includes(doc.relativePath) && !isExcludedByReferenceStatus(source, doc, question, context.additionalContext) && (source.kind !== "skill" || doc.skill))).map(doc => {
       const source = sources.find(source => source.id === doc.sourceId)!;
       const item = { id: doc.id, path: `${source.label}/${doc.relativePath}`, title: doc.title, description: doc.skill?.description, sourceId: source.id, localOnly: source.localOnly };
       const text = `${item.path}\n${item.title}\n${item.description ?? ""}`.normalize("NFKC").toLowerCase();

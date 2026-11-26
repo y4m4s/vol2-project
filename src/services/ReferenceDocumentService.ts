@@ -148,11 +148,13 @@ export class ReferenceDocumentService {
           try {
             const skill = skillFile ? loadAgentSkill(text, path.basename(path.dirname(real))) : undefined;
             let parsed: ReturnType<typeof parseReferenceFrontmatter> | undefined;
-            if (!skill && /\.(md|markdown)$/i.test(real)) {
+            if (!skill && /\.(md|markdown|mdx)$/i.test(real)) {
               try { parsed = parseReferenceFrontmatter(text); }
               catch { issue(`${relativePath}: メタデータを認識できないため本文のみ参照します。`); }
             }
-            const status = parsed?.metadata.status ?? /^\s*(?:status|状態)\s*:\s*(.+)$/im.exec(text)?.[1];
+            // For ordinary attachments only explicit frontmatter is document metadata.
+            // A status field inside a code/config example must not retire the entire document.
+            const status = parsed?.metadata.status ?? (source.kind === "adr" ? /^\s*(?:status|状態)\s*:\s*(.+)$/im.exec(text)?.[1] : undefined);
             documents.push({ id: createHash("sha256").update(`${source.id}\0${relativePath}`).digest("hex").slice(0, 24), sourceId: source.id,
               relativePath, title: skill?.name ?? /^#\s+(.+)$/m.exec(text)?.[1]?.slice(0, 160) ?? path.basename(real),
               text, hash: createHash("sha256").update(data).digest("hex"), kind: skill ? "skill" : source.kind,

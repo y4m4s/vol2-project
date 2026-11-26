@@ -32,6 +32,82 @@ async function fixture(t: TestContext) {
   return root;
 }
 
+test("ordinary attachments exclude retired statuses even when AI requests them", () => {
+  for (const status of ["superseded", "Deprecated", "rejected", "superseded by ADR-005", "廃止", "置換済み", "却下済"]) {
+    const doc = document({ status });
+    assert.deepEqual(resolveReferenceContext([source()], [doc], context(), "TypeScript", "", undefined, [doc.id], ["history"]), [], status);
+  }
+  for (const status of [undefined, "accepted", "unknown", "not superseded", "undeprecated", "廃止予定"]) {
+    assert.equal(resolveReferenceContext([source()], [document({ status })], context(), "TypeScript", "").length, 1, status);
+  }
+});
+
+test("recovery questions do not enable retired references even with historical AI queries or code", () => {
+  const doc = document({ status: "superseded" });
+  for (const additionalContext of [undefined, "TypeScriptの障害復旧を支援してください"]) {
+    const selected = resolveReferenceContext([source()], [doc], context({ additionalContext, selectedText: "// 過去の履歴" }),
+      "TypeScriptの障害復旧方法を教えて", "", undefined, [doc.id], ["history", "旧方針"]);
+    assert.deepEqual(selected, []);
+  }
+});
+
+test("historical intent in either user input enables retired references", () => {
+  const doc = document({ status: "superseded" });
+  for (const instruction of ["TypeScriptの旧方針を教えて", "TypeScriptの廃止済みADRも参照して過去の経緯を調べて", "TypeScript historical decisions", "TypeScriptの旧ＡＤＲを参照して"]) {
+    for (const inAdditionalContext of [false, true]) {
+      const selected = resolveReferenceContext([source()], [doc], context({ additionalContext: inAdditionalContext ? instruction : undefined }),
+        inAdditionalContext ? "TypeScriptの方針を説明して" : instruction, "");
+      assert.equal(selected.length, 1, instruction);
+      assert.match(selected[0].reason, /状態: superseded/);
+    }
+  }
+});
+
+test("manual inclusion and historical questions preserve retired documents and their status", () => {
+  const doc = document({ status: "superseded" });
+  for (const [attachment, question] of [
+    [source({ selectedPaths: [doc.relativePath] }), "TypeScript"],
+    [source({ alwaysInclude: true }), "TypeScript"],
+    [source(), "TypeScriptの過去の経緯"]
+  ] as const) {
+    const selected = resolveReferenceContext([attachment], [doc], context(), question, "", undefined, [doc.id]);
+    assert.equal(selected.length, 1);
+    assert.match(selected[0].reason, /状態: superseded/);
+  }
+});
+
+test("retired Skill resources require historical intent or explicit inclusion", () => {
+  const skills = source({ kind: "skill", selectedPaths: ["SKILL.md"] });
+  const skill = document({ id: "skill", relativePath: "SKILL.md", text: "Instructions", skill: { name: "guide", description: "Guide", resources: ["references/"] } });
+  const old = document({ id: "old", relativePath: "references/old.md", status: "deprecated" });
+  assert.deepEqual(resolveReferenceContext([skills], [skill, old], context(), "TypeScript", "").map(item => item.id), ["skill:1"]);
+  const historical = resolveReferenceContext([skills], [skill, old], context(), "TypeScriptの履歴", "");
+  assert.ok(historical.some(item => item.id === "old:1" && item.reason.includes("状態: deprecated")));
+  const fromAdditionalContext = resolveReferenceContext([skills], [skill, old], context({ additionalContext: "過去の経緯を調べて" }), "TypeScript", "");
+  assert.ok(fromAdditionalContext.some(item => item.id === "old:1" && item.reason.includes("状態: deprecated")));
+  const recovery = resolveReferenceContext([skills], [skill, old], context({ additionalContext: "TypeScriptの復旧方法" }), "TypeScriptの復旧", "");
+  assert.deepEqual(recovery.map(item => item.id), ["skill:1"]);
+  const pinned = resolveReferenceContext([{ ...skills, selectedPaths: ["SKILL.md", old.relativePath] }], [skill, old], context(), "TypeScript", "");
+  assert.ok(pinned.some(item => item.id === "old:1"));
+});
+
+test("ordinary Markdown status comes from frontmatter rather than config examples", async t => {
+  const root = await fixture(t);
+  await fs.mkdir(path.join(root, "adr"));
+  await fs.writeFile(path.join(root, "adr", "old.mdx"), "---\nstatus: superseded\n---\n# TypeScript\n旧方針");
+  await fs.writeFile(path.join(root, "adr", "current.md"), "---\nstatus: accepted\n---\n# TypeScript\n現方針");
+  await fs.writeFile(path.join(root, "example.md"), "# TypeScript\n```yaml\nstatus: superseded\n```\n設定例");
+  const attachment = source({ uri: pathToFileURL(root).href });
+  const result = await new ReferenceDocumentService().scan([attachment]);
+  assert.equal(result.documents.find(doc => doc.relativePath === "adr/old.mdx")?.status, "superseded");
+  assert.equal(result.documents.find(doc => doc.relativePath === "adr/current.md")?.status, "accepted");
+  assert.equal(result.documents.find(doc => doc.relativePath === "example.md")?.status, undefined);
+  const selected = resolveReferenceContext([attachment], result.documents, context(), "TypeScript", "");
+  assert.ok(!selected.some(item => item.path.includes("old.mdx")));
+  assert.ok(selected.some(item => item.path.includes("current.md")));
+  assert.ok(selected.some(item => item.path.includes("example.md")));
+});
+
 test("reference pattern lists preserve brace alternatives instead of splitting valid globs", () => {
   const patterns = parseReferencePatterns(" src/**/*.{ts,tsx}, test/** ");
   assert.deepEqual(patterns, ["src/**/*.{ts,tsx}", "test/**"]);
