@@ -130,6 +130,9 @@ export class NavigatorViewProvider implements vscode.WebviewViewProvider, vscode
           case "saveSettings":
             await this.controller.saveSettings(message.payload);
             return;
+          case "saveLearningProfile":
+            await this.controller.saveLearningProfile(message.profile);
+            return;
           case "testRoutingProvider":
             await this.controller.testRoutingProvider(message.providerId);
             return;

@@ -149,6 +149,36 @@ export const SKILLS = {
         ? "Organize the test perspectives, split into happy path, boundary values, failure cases, and regression checks. Do not write test code; focus on what to verify."
         // 今の変更に対して確認するとよいテスト観点を3個以内で短く示してください。テストコードは書かないでください。
         : "Briefly point out up to 3 test perspectives worth checking for the current change. Do not write test code."
+  },
+  compare: {
+    description: "Explain the current code by comparing it with a language the user already knows (learning profile).",
+    // 比較の対象は手元のコード。構造系や関連ファイルは送らない。比較に使う言語は学習プロファイルから1つだけ送る。
+    contextPreset: ["activeFile", "selection", "diagnostics", "recentEdits"],
+    suggestions: [
+      { commandText: "/compare", title: "既知言語と比較", description: "経験のある言語と比べて説明", icon: "code" }
+    ],
+    // 既知の言語と比べて説明してください
+    userEntryText: () => "既知の言語と比べて説明してください",
+    buildInstruction: (depth) =>
+      [
+        // 学習者背景に書かれた既知の言語1つと比べながら、学習中の言語での現在のコード（選択範囲があればそこ）を説明してください。
+        "Explain the current code (the selection, if any) in the language being learned by comparing it with the single known language given in the learner background.",
+        // 構成: (1) 既知の言語での対応する書き方・考え方、(2) 実行時の挙動・型・エラー処理などの具体的な違い、(3) 学習中の言語で気をつける点。
+        "Structure: (1) the corresponding way of writing or thinking in the known language, (2) concrete differences in runtime behavior, typing, or error handling, (3) what to watch for in the language being learned.",
+        // 構文が似ているだけで同じだと言わないでください。違いを少なくとも1つ具体的に述べてください。
+        "Never claim equivalence from similar syntax alone; state at least one concrete difference.",
+        // 既知の言語に直接対応する仕組みがなければ、無理に対応付けず、対応がないことと理由を短く述べてください。
+        "If the known language has no direct counterpart, do not force a mapping; briefly say there is none and why.",
+        // 比較のコード例は各言語で短い断片1つまで。完成した解答コードは書かないでください。
+        "Code examples are limited to one short fragment per language; do not write a complete solution.",
+        // 学習者背景に書かれていない言語は持ち出さないでください。
+        "Do not bring in languages other than the one in the learner background.",
+        depth === "high"
+          // 各項目に短い理由を添えてください。
+          ? "Add a brief reason to each part."
+          // 各項目は1〜2文で短くしてください。
+          : "Keep each part to 1-2 sentences."
+      ].join("\n")
   }
 } satisfies Record<string, SkillDefinition>;
 

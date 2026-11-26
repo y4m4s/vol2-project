@@ -30,6 +30,7 @@ import {
   validateGuidanceResponse
 } from "./GuidanceResponsePolicy";
 import { buildGuidancePromptMessages, formatReferencedFileReason, GUIDANCE_POLICY_REVISION } from "./PromptBuilder";
+import type { LearnerBackground } from "./ComparisonPolicy";
 import type { KnowledgeRecord } from "./KnowledgeStore";
 import type { UsageMeter } from "./UsageMeter";
 import { waitWithFallback } from "./BoundedWait";
@@ -85,6 +86,7 @@ export interface GuidanceRequestInput {
   slashCommandScope?: SlashCommandScope;
   knowledgeItems?: KnowledgeRecord[];
   feedbackTendency?: FeedbackTendencySummary;
+  learnerBackground?: LearnerBackground;
 }
 
 export interface KnowledgeDraft {

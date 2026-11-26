@@ -1,4 +1,5 @@
 import type { ReferenceContextView, ReferenceExcerpt, ReferenceProvenance } from "./referenceContext";
+import type { LearningProfile } from "./learningProfile";
 
 export type ConnectionState =
   | "disconnected"
@@ -185,6 +186,7 @@ export type ContextCategoryKey =
   | "feedback"
   | "additionalContext"
   | "referenceDocuments"
+  | "learningProfile"
   | "conversationHistory";
 
 export interface DiagnosticSummary {
@@ -530,6 +532,8 @@ export interface NavigatorViewModel {
   pendingFeedbackRating?: FeedbackRating;
   currentRequestPlan: RequestPlanSnapshot;
   settings: NavigatorSettings;
+  /** 学習プロファイル（globalState）。設定画面の「学習プロファイル」で編集する */
+  learningProfile?: LearningProfile;
   knowledgeItems: KnowledgeListItem[];
   selectedKnowledge?: KnowledgeDetailViewData;
   savedKnowledgeSourceIds: string[];

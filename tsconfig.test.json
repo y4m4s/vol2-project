@@ -98,6 +98,11 @@
     "test/AdviceService.test.ts",
     "test/AutomaticGuidance.test.ts",
     "test/ConnectionService.test.ts",
-    "test/EvalRunner.test.ts"
+    "test/EvalRunner.test.ts",
+    "src/shared/learningProfile.ts",
+    "src/services/ComparisonPolicy.ts",
+    "src/services/LearningProfileService.ts",
+    "test/ComparisonPolicy.test.ts",
+    "test/LearningProfile.test.ts"
   ]
 }

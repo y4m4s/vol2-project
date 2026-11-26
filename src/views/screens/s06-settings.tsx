@@ -3,6 +3,8 @@ import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader"
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { RoutingSettings } from "../webview/components/RoutingSettings";
 import { AutoModeIcon } from "../webview/components/AutoModeIcon";
+import { LearningProfileSettings, type LearningProfileDraft } from "../webview/components/LearningProfileSettings";
+import { DEFAULT_LEARNING_PROFILE } from "../../shared/learningProfile";
 import { applyRoutingModeSelection, normalizeRoutingSettings, PROVIDER_LABELS, routingConnectionProviderIds } from "../../shared/providerRouting";
 import { useApp } from "../webview/state/AppContext";
 import { useAutoResizeTextarea } from "../webview/hooks/useAutoResizeTextarea";
@@ -70,6 +72,11 @@ export function S06Settings() {
   const [dailyTokenLimit, setDailyTokenLimit] = useState(savedDailyTokenLimit);
   const [excludeGlobs, setExcludeGlobs] = useState(savedExcludeGlobs);
   const excludeTextareaRef = useAutoResizeTextarea(excludeGlobs);
+  // 学習プロファイルは別の保存先（globalState）なので、設定とは別に変更を追跡して保存する。
+  const savedLearningProfile = JSON.stringify(toLearningProfileDraft(viewModel?.learningProfile));
+  const [learningProfile, setLearningProfile] = useState<LearningProfileDraft>(() => JSON.parse(savedLearningProfile));
+  useEffect(() => { setLearningProfile(JSON.parse(savedLearningProfile)); }, [savedLearningProfile]);
+  const hasLearningProfileChanges = JSON.stringify(learningProfile) !== savedLearningProfile;
   const providerSettingsIds = routing.mode === "automatic"
     ? routingConnectionProviderIds(routing)
     : [providerId];
@@ -129,7 +136,7 @@ export function S06Settings() {
     ...(lmStudioModelOptions.length > 0 ? ["lmStudio" as const] : []),
     ...(ollamaModelOptions.length > 0 ? ["ollama" as const] : [])
   ];
-  const hasPendingChanges =
+  const hasSettingsChanges =
     JSON.stringify(routing) !== savedRouting ||
     ollamaBaseUrl !== savedOllamaBaseUrl || ollamaModelKey !== savedOllamaModelKey ||
     providerId !== savedProviderId ||
@@ -142,11 +149,17 @@ export function S06Settings() {
     requestIntervalSec !== savedRequestIntervalSec ||
     dailyTokenLimit !== savedDailyTokenLimit ||
     normalizeExcludeGlobs(excludeGlobs) !== normalizeExcludeGlobs(savedExcludeGlobs);
+  const hasPendingChanges = hasSettingsChanges || hasLearningProfileChanges;
   const stopBlockedByPendingChanges =
-    hasPendingChanges && savedProviderId === "lmStudio" && lmStudioServer.canStop;
+    hasSettingsChanges && savedProviderId === "lmStudio" && lmStudioServer.canStop;
   const lmStudioServerRunning = lmStudioServer.state === "running";
 
   function handleSave() {
+    if (hasLearningProfileChanges) {
+      send({ type: "saveLearningProfile", profile: learningProfile });
+    }
+    // 学習プロファイルだけを変えたときは、接続の再確認を伴う設定保存を送らない。
+    if (!hasSettingsChanges) return;
     send({
       type: "saveSettings",
       payload: {
@@ -168,6 +181,7 @@ export function S06Settings() {
   }
 
   function handleRevertDraft() {
+    setLearningProfile(JSON.parse(savedLearningProfile));
     setRouting(normalizeRoutingSettings(JSON.parse(savedRouting)));
     setProviderId(savedProviderId);
     setDefaultMode(savedDefaultMode);
@@ -535,6 +549,12 @@ export function S06Settings() {
       </div>
 
       <div className="settings-section">
+        <span className="material-symbols-outlined" aria-hidden="true">account_circle</span> 学習プロファイル
+      </div>
+
+      <LearningProfileSettings value={learningProfile} onChange={setLearningProfile} />
+
+      <div className="settings-section">
         <span className="material-symbols-outlined">speed</span> 助言の頻度
       </div>
 
@@ -687,6 +707,15 @@ function ProviderSettingsHeading({ providerId }: { providerId: AiProviderId }) {
       {PROVIDER_LABELS[providerId]} の設定
     </div>
   );
+}
+
+function toLearningProfileDraft(profile?: LearningProfileDraft): LearningProfileDraft {
+  const source = profile ?? DEFAULT_LEARNING_PROFILE;
+  return {
+    knownLanguages: source.knownLanguages.map((item) => item.level ? { languageId: item.languageId, level: item.level } : { languageId: item.languageId }),
+    targetLanguage: source.targetLanguage,
+    comparisonMode: source.comparisonMode
+  };
 }
 
 function normalizeExcludeGlobs(value: string): string {

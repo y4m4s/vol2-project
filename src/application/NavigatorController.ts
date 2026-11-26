@@ -54,6 +54,9 @@ import {
 } from "./GuidanceInput";
 import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
+import { LearningProfileService } from "../services/LearningProfileService";
+import { resolveComparisonRequest, type ComparisonResolution, type LearnerBackground } from "../services/ComparisonPolicy";
+import { DEFAULT_LEARNING_PROFILE, type LearningProfile } from "../shared/learningProfile";
 import type { AdditionalContextCoordinator } from "./coordinators/AdditionalContextCoordinator";
 import { isVerifiedReferenceLocalModel, ReferenceContextError, splitReferencesForDestination, type ReferenceAction } from "../shared/referenceContext";
 import { REFERENCE_SEARCH_LIMITS } from "../services/ReferenceRetrieval";
@@ -92,6 +95,8 @@ interface GuidanceExecutionOptions {
   assistanceDepth?: AssistanceDepth;
   slashCommand?: SlashCommand;
   slashCommandScope?: SlashCommandScope;
+  /** 明示的な比較要求のときだけ設定する（ComparisonPolicy）。未設定なら学習プロファイルは送らない。 */
+  learnerBackground?: LearnerBackground;
 }
 
 type GuidanceExecutionOptionsFactory = () => Promise<GuidanceExecutionOptions | undefined>;
@@ -147,7 +152,8 @@ export class NavigatorController implements vscode.Disposable {
     private readonly providerEvaluationStore: ProviderEvaluationStore,
     private readonly usageMeter: UsageMeter,
     private readonly diagnostic: (entry: Record<string, unknown>) => void = () => {},
-    private readonly referenceContext?: AdditionalContextCoordinator
+    private readonly referenceContext?: AdditionalContextCoordinator,
+    private readonly learningProfileService?: LearningProfileService
   ) {
     this.sessionStore = new SessionStore(this.createInitialState());
     this.providerRoutingCoordinator = new ProviderRoutingCoordinator(
@@ -176,13 +182,14 @@ export class NavigatorController implements vscode.Disposable {
           const { sent, withheld } = splitReferencesForDestination(resolved, this.isConnectedModelVerifiedLocal());
           return { ...context, referenceDocuments: sent, withheldReferenceDocuments: withheld, referenceRevision: this.referenceContext.revision };
         },
-        getPromptExtras: (context, plan) => ({
+        getPromptExtras: (context, plan, userPrompt) => ({
           conversationMemory: plan.kind === "always" || this.sessionStore.getState().screen === "main" ? undefined : this.conversationMemoryCoordinator.preview(
             this.settingsService.getSettings(), this.protectReferenceHistory(this.sessionStore.getState().conversationHistory), this.sessionStore.getState().activeConversationStreamId),
           knowledgeItems: this.findReusableKnowledge(context),
           feedbackTendency: plan.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({
             kind: plan.kind, assistanceDepth: plan.assistanceDepth, slashCommand: plan.slashCommand
-          })
+          }),
+          learnerBackground: this.resolveComparison(plan.kind, plan.slashCommand, userPrompt, context.activeFileLanguage).background
         })
       }
     );
@@ -436,6 +443,7 @@ export class NavigatorController implements vscode.Disposable {
       pendingFeedbackRating: state.pendingFeedbackRating,
       currentRequestPlan,
       settings,
+      learningProfile: this.getLearningProfile(),
       knowledgeItems: this.initialized ? this.knowledgeCoordinator.buildItems(state) : [],
       selectedKnowledge: this.initialized ? this.knowledgeCoordinator.buildSelected(state) : undefined,
       savedKnowledgeSourceIds: this.initialized ? this.knowledgeStore.listSourceAdviceIds() : [],
@@ -593,23 +601,33 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     const parsed = parseSlashInput(userPrompt);
-    const guidanceKind = kind ?? (parsed.userPrompt ? "manual" : "context");
+    // 比較の要否は送信前に決める。案内（未登録の言語など）は LLM を呼ばずに表示して終える。
+    const comparison = this.resolveComparison(kind ?? "manual", parsed.slashCommand, parsed.userPrompt,
+      vscode.window?.activeTextEditor?.document.languageId, true);
+    if (comparison.notice) {
+      this.patchGuidanceSession({ statusMessage: { kind: "info", text: comparison.notice } });
+      return;
+    }
+    const comparedPrompt = comparison.userPrompt;
+    const guidanceKind = kind ?? (comparedPrompt ? "manual" : "context");
     if (guidanceKind === "context") {
-      await this.executeGuidanceRequest(() =>
-        this.buildCurrentContextGuidanceOptions(
-          parsed.userPrompt,
+      await this.executeGuidanceRequest(async () => {
+        const options = await this.buildCurrentContextGuidanceOptions(
+          comparedPrompt,
           true,
           additionalContext,
           parsed.slashCommand,
           parsed.slashCommandScope
-        )
-      );
+        );
+        return { ...options, learnerBackground: comparison.background };
+      });
       return;
     }
 
     await this.executeGuidanceRequest({
       kind: guidanceKind,
-      userPrompt: parsed.userPrompt,
+      learnerBackground: comparison.background,
+      userPrompt: comparedPrompt,
       additionalContext: additionalContext !== undefined
         ? additionalContext
         : resolveAdditionalContext(undefined, this.getStreamAdditionalContext(this.sessionStore.getState())),
@@ -626,15 +644,57 @@ export class NavigatorController implements vscode.Disposable {
     }
 
     const parsed = parseSlashInput(userPrompt);
-    await this.executeGuidanceRequest(() =>
-      this.buildCurrentContextGuidanceOptions(
-        parsed.userPrompt,
+    const comparison = this.resolveComparison("manual", parsed.slashCommand, parsed.userPrompt,
+      vscode.window?.activeTextEditor?.document.languageId, true);
+    if (comparison.notice) {
+      this.patchGuidanceSession({ statusMessage: { kind: "info", text: comparison.notice } });
+      return;
+    }
+    await this.executeGuidanceRequest(async () => {
+      const options = await this.buildCurrentContextGuidanceOptions(
+        comparison.userPrompt,
         false,
         additionalContext,
         parsed.slashCommand,
         parsed.slashCommandScope
-      )
-    );
+      );
+      return { ...options, learnerBackground: comparison.background };
+    });
+  }
+
+  public getLearningProfile(): LearningProfile {
+    return this.learningProfileService?.getProfile() ?? { ...DEFAULT_LEARNING_PROFILE, knownLanguages: [] };
+  }
+
+  public async saveLearningProfile(profile: unknown): Promise<void> {
+    if (!this.learningProfileService) return;
+    await this.learningProfileService.saveProfile(profile);
+    // 送信予定の「学習プロファイル」の表示は、保存したプロファイルで作り直す。
+    this.invalidateRequestPlan();
+    this.patchSession({ statusMessage: { kind: "info", text: "学習プロファイルを保存しました。" } });
+  }
+
+  /**
+   * 比較の要否（ComparisonPolicy）を呼び出し元の形へまとめる。
+   * notice があれば LLM を呼ばずに案内だけを出す。background があれば、そのリクエストでだけ学習プロファイルを送る。
+   */
+  private resolveComparison(
+    kind: GuidanceKind,
+    slashCommand: SlashCommand | undefined,
+    userPrompt: string | undefined,
+    activeLanguageId: string | undefined,
+    record = false
+  ): { background?: LearnerBackground; notice?: string; userPrompt?: string } {
+    const resolution: ComparisonResolution = resolveComparisonRequest({
+      profile: this.getLearningProfile(), kind, slashCommand, userPrompt, activeLanguageId
+    });
+    if (resolution.action === "notice") return { notice: resolution.message, userPrompt };
+    if (resolution.action === "background") {
+      if (record) this.diagnostic({ event: "learning_profile_comparison", source: resolution.background.source,
+        language: resolution.background.compareLanguageId, target: resolution.background.targetLanguageId });
+      return { background: resolution.background, userPrompt: resolution.userPrompt };
+    }
+    return { userPrompt: resolution.userPrompt };
   }
 
   public cancelGuidanceRequest(): void {
@@ -1434,7 +1494,8 @@ export class NavigatorController implements vscode.Disposable {
       assistanceDepth: guidanceContentDepth(this.connectionService.getProviderId(), assistanceDepth),
       modelProfile: deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
       knowledgeItems,
-      feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({ kind: options.kind, assistanceDepth, slashCommand: options.slashCommand })
+      feedbackTendency: options.kind === "always" ? undefined : this.feedbackStore.getTendencySummary({ kind: options.kind, assistanceDepth, slashCommand: options.slashCommand }),
+      learnerBackground: options.learnerBackground
     });
 
     // 文脈収集の await をまたいでいるので、履歴は積む直前の最新状態から組み直す。
@@ -1499,7 +1560,8 @@ export class NavigatorController implements vscode.Disposable {
               kind: options.kind,
               assistanceDepth,
               slashCommand: options.slashCommand
-            })
+            }),
+        learnerBackground: options.learnerBackground
       },
       tokenSource.token
     );

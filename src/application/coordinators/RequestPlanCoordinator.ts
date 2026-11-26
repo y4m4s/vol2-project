@@ -41,7 +41,7 @@ export interface RequestPlanCoordinatorHost {
   getProviderId?(): ReturnType<SettingsService["getSettings"]>["providerId"];
   resolveReferenceContext?(context: GuidanceContext, question: string): Promise<GuidanceContext>;
   getAutomaticObservation?(): AutomaticGuidanceObservation | undefined;
-  getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency" | "conversationMemory">;
+  getPromptExtras?(context: GuidanceContext, plan: RequestPlanSnapshot, userPrompt?: string): Pick<GuidancePromptInput, "knowledgeItems" | "feedbackTendency" | "conversationMemory" | "learnerBackground">;
 }
 
 export class RequestPlanCoordinator {
@@ -96,7 +96,7 @@ export class RequestPlanCoordinator {
       automaticObservation: prepared.automaticObservation,
       userPrompt,
       assistanceDepth: guidanceContentDepth(this.host.getProviderId?.() ?? this.settingsService.getSettings().providerId, prepared.requestPlan.assistanceDepth),
-      ...this.host.getPromptExtras?.(result.context, result.requestPlan),
+      ...this.host.getPromptExtras?.(result.context, result.requestPlan, userPrompt),
       modelProfile: this.host.getModelProfile?.()
     });
     return { ...result, automaticObservation: prepared.automaticObservation };

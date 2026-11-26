@@ -15,6 +15,7 @@ import { OrcaRouterCredentialStore } from "./services/OrcaRouterCredentialStore"
 import { LmStudioServerService } from "./services/LmStudioServerService";
 import { RequestPlanner } from "./services/RequestPlanner";
 import { SettingsService } from "./services/SettingsService";
+import { LearningProfileService } from "./services/LearningProfileService";
 import { ContextSourceRegistry } from "./services/ContextSourceRegistry";
 import { AdditionalContextCoordinator } from "./application/coordinators/AdditionalContextCoordinator";
 import { UsageMeter } from "./services/UsageMeter";
@@ -61,7 +62,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     new ProviderEvaluationStore(context.globalStorageUri),
     usageMeter,
     writeDiagnostic,
-    referenceContext
+    referenceContext,
+    // 学習プロファイルはユーザー単位の情報なので globalState に保存する（設定は workspaceState）。
+    new LearningProfileService(context.globalState)
   );
 
   try {

@@ -1122,3 +1122,79 @@
   border: 1px solid var(--vscode-input-border, transparent);
   border-radius: 4px;
 }
+
+/* 学習プロファイル */
+.learning-profile-languages {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.learning-profile-language {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.learning-profile-language-name {
+  flex: 0 0 auto;
+  min-width: 72px;
+  font-weight: 600;
+}
+
+.learning-profile-language select,
+.learning-profile-add select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+
+.learning-profile-remove {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+}
+
+.learning-profile-remove:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.learning-profile-remove .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.learning-profile-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.learning-profile-add .btn-gray {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.learning-profile-empty {
+  margin-top: 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.88em;
+}
+
+.learning-profile-privacy {
+  margin-top: 8px;
+}

@@ -10,6 +10,7 @@ import type {
 import { BAD_FEEDBACK_REASONS, GOOD_FEEDBACK_REASONS } from "./feedback";
 import type { AutomaticRoutingSettings } from "./types";
 import type { ReferenceAction } from "./referenceContext";
+import { isLanguageFamilyId, MAX_KNOWN_LANGUAGES, type LearningProfile } from "./learningProfile";
 
 export type WebviewToExtension =
   | ReferenceAction
@@ -59,7 +60,10 @@ export type WebviewToExtension =
   | { type: "resetSettings" }
   | { type: "searchKnowledge"; query: string }
   | { type: "setAdditionalContext"; additionalContext: string }
-  | { type: "setComposerActive"; active: boolean };
+  | { type: "setComposerActive"; active: boolean }
+  | { type: "saveLearningProfile"; profile: SaveLearningProfilePayload };
+
+export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "targetLanguage" | "comparisonMode">;
 
 export interface SaveSettingsPayload {
   routing?: AutomaticRoutingSettings;
@@ -173,6 +177,8 @@ export function parseWebviewMessage(value: unknown): WebviewToExtension | undefi
         ? value as WebviewToExtension : undefined;
     case "saveSettings":
       return isSaveSettingsPayload(value.payload) ? value as WebviewToExtension : undefined;
+    case "saveLearningProfile":
+      return isSaveLearningProfilePayload(value.profile) ? value as WebviewToExtension : undefined;
     case "searchKnowledge":
       return isBoundedString(value.query, 0, 500) ? value as WebviewToExtension : undefined;
     case "openReferencedFile":
@@ -201,6 +207,14 @@ function isSaveSettingsPayload(value: unknown): value is SaveSettingsPayload {
     isFiniteInRange(value.requestIntervalSec, 20, 180) &&
     isFiniteInRange(value.dailyTokenLimit, 0, 1_000_000) &&
     isBoundedString(value.excludeGlobs, 0, 10_000);
+}
+
+function isSaveLearningProfilePayload(value: unknown): value is SaveLearningProfilePayload {
+  if (!isRecord(value) || !Array.isArray(value.knownLanguages) || value.knownLanguages.length > MAX_KNOWN_LANGUAGES) return false;
+  const levels = new Set<unknown>([undefined, "basic", "working", "advanced"]);
+  return value.knownLanguages.every((item) => isRecord(item) && isLanguageFamilyId(item.languageId) && levels.has(item.level)) &&
+    (value.targetLanguage === "auto" || isLanguageFamilyId(value.targetLanguage)) &&
+    ["off", "onRequest", "suggest", "auto"].includes(String(value.comparisonMode));
 }
 
 function isRoutingSettings(value: unknown): boolean {
