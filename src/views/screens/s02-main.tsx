@@ -1,5 +1,6 @@
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
+import { CurrentLearningSuggestion } from "../webview/components/LearningSuggestionChip";
 import { useApp } from "../webview/state/AppContext";
 import { formatTokenCount } from "../webview/utils/formatUsage";
 
@@ -116,6 +117,7 @@ export function S02Main() {
         </div>
       )}
 
+      <CurrentLearningSuggestion />
       <ChatInputComposer />
     </div>
   );

@@ -34,6 +34,8 @@ export interface LearningProfile {
    * NaviCom Diagnostics にだけ記録する。表示や AI への送信はしない
    */
   stuckDetectionEnabled: boolean;
+  /** Phase 3b の提案・再判定。記録だけの既存設定を維持するため既定は false */
+  stuckInterventionEnabled: boolean;
 }
 
 interface LanguageCatalogEntry {
@@ -101,7 +103,8 @@ export const DEFAULT_LEARNING_PROFILE: LearningProfile = {
   knownLanguages: [],
   comparisonMode: "onRequest",
   dismissedConcepts: [],
-  stuckDetectionEnabled: true
+  stuckDetectionEnabled: true,
+  stuckInterventionEnabled: false
 };
 
 export function isLanguageFamilyId(value: unknown): value is LanguageFamilyId {
@@ -148,7 +151,8 @@ export function normalizeLearningProfile(value: unknown): LearningProfile {
     knownLanguages,
     comparisonMode: isComparisonMode(source.comparisonMode) ? source.comparisonMode : DEFAULT_LEARNING_PROFILE.comparisonMode,
     dismissedConcepts: normalizeDismissedConcepts(source.dismissedConcepts),
-    stuckDetectionEnabled: typeof source.stuckDetectionEnabled === "boolean" ? source.stuckDetectionEnabled : DEFAULT_LEARNING_PROFILE.stuckDetectionEnabled
+    stuckDetectionEnabled: typeof source.stuckDetectionEnabled === "boolean" ? source.stuckDetectionEnabled : DEFAULT_LEARNING_PROFILE.stuckDetectionEnabled,
+    stuckInterventionEnabled: typeof source.stuckInterventionEnabled === "boolean" ? source.stuckInterventionEnabled : false
   };
 }
 

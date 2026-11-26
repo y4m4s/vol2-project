@@ -3,7 +3,7 @@ import { automaticGuidanceLabel } from "../../shared/automaticGuidance";
 import type { ReactNode, UIEvent } from "react";
 import { PageHeader } from "../webview/components/BackHeader";
 import { ChatInputComposer } from "../webview/components/ChatInputComposer";
-import { LearningSuggestionChip } from "../webview/components/LearningSuggestionChip";
+import { CurrentLearningSuggestion } from "../webview/components/LearningSuggestionChip";
 import { MermaidDiagram } from "../webview/components/MermaidDiagram";
 import { ReferencedFilesBadge } from "../webview/components/ReferencedFilesBadge";
 import { useApp } from "../webview/state/AppContext";
@@ -111,15 +111,7 @@ export function S04Conversation() {
         <div ref={chatBottomRef} />
       </div>
 
-      {viewModel.learningSuggestion && (
-        <LearningSuggestionChip
-          label={viewModel.learningSuggestion.label}
-          disabled={requestState !== "idle"}
-          onAccept={() => send({ type: "acceptLearningSuggestion", id: viewModel.learningSuggestion!.id })}
-          onDismiss={() => send({ type: "dismissLearningSuggestion", id: viewModel.learningSuggestion!.id, scope: "once" })}
-          onDismissConcept={() => send({ type: "dismissLearningSuggestion", id: viewModel.learningSuggestion!.id, scope: "concept" })}
-        />
-      )}
+      <CurrentLearningSuggestion />
 
       <div className="s04-stateless-note">
         各質問では、その時点の作業文脈、入力内容、入力予算内の会話メモリをAIへ送信します。

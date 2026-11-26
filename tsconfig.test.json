@@ -106,6 +106,7 @@
     "src/services/StuckSignalTracker.ts",
     "test/StuckSignalTracker.test.ts",
     "test/StuckDetectionCoordinator.test.ts",
+    "test/LearningSupport.test.ts",
     "test/ComparisonPolicy.test.ts",
     "test/LearningProfile.test.ts"
   ]

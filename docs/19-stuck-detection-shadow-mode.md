@@ -11,7 +11,7 @@
 
 ## 有効・無効
 
-- 学習プロファイルの `stuckDetectionEnabled`（既定 `true`）。設定画面の学習プロファイル節「つまずきの記録（試験中）」で「記録する／記録しない」を切り替える
+- 学習プロファイルの `stuckDetectionEnabled`（既定 `true`）。設定画面の学習プロファイル節「つまずきの検知（試験中）」で「記録する／記録しない」を切り替える
 - 無効にすると、イベントの購読を止め、メモリ上の追跡状態をすべて捨てる。切り替えは `stuck_detection_toggled` として記録する
 - 追跡を始めた後に除外パターンへ追加したファイルは、次の評価（タイマーを含む）か設定の保存の時点で状態を捨て、以後は記録しない
 - 除外パターンに一致するファイル、ワークスペース外のファイル、保存されていない文書など `file` 以外のスキームの文書は追跡しない
@@ -74,3 +74,5 @@ NaviCom Diagnostics に次を記録する。コード・診断メッセージ・
 | 配線 | `src/application/NavigatorController.ts`（文書の変更・選択・診断・閉じる・名前の変更・質問・学習プロファイルの保存） |
 | 設定 | `src/shared/learningProfile.ts`（`stuckDetectionEnabled`）、`LearningProfileSettings.tsx`、`s06-settings.tsx` |
 | テスト | `test/StuckSignalTracker.test.ts`（設計書のシナリオ S1〜S20 のうちロジックで確かめられるもの、減衰・ヒステリシス、性能）、`test/StuckDetectionCoordinator.test.ts`（記録の内容、有効・無効、除外） |
+
+Phase 3b では、この検知結果を使う任意の支援を追加した。`stuckInterventionEnabled` を有効にしない限り、この文書どおり記録のみで動く。詳細は [20. つまずき時の支援](20-stuck-interventions.md)。

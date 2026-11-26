@@ -4,16 +4,18 @@ import {
   StuckSignalTracker,
   diagnosticKindKey,
   type StuckDiagnosticInput,
-  type StuckEvent
+  type StuckEvent,
+  type StuckTopicSnapshot
 } from "../../services/StuckSignalTracker";
 
 export interface StuckDetectionHost {
-  /** 学習プロファイルの「つまずきの記録」がオンか */
+  /** 学習プロファイルの「つまずきの検知」がオンか */
   isEnabled(): boolean;
   /** 送信対象から除外したファイル（保護・追加の除外パターン）か */
   isExcluded(filePath: string): boolean;
   /** NaviCom Diagnostics への記録 */
   log(entry: Record<string, unknown>): void;
+  onAssessment?(topics: readonly StuckTopicSnapshot[], knownKeys: readonly string[]): void;
 }
 
 const MAX_DIAGNOSTICS_PER_DOCUMENT = 50;
@@ -59,8 +61,10 @@ export class StuckDetectionCoordinator implements vscode.Disposable {
         this.clearTimer();
       }
       this.host.log({ event: "stuck_detection_toggled", enabled });
+      if (enabled) this.noteDiagnostics((vscode.workspace?.textDocuments ?? []).map(document => document.uri));
     }
-    if (this.enabled && this.releaseExcluded()) this.schedule();
+    if (this.enabled) this.evaluate();
+    else this.host.onAssessment?.([], []);
   }
 
   public noteTextChange(event: vscode.TextDocumentChangeEvent): void {
@@ -80,7 +84,7 @@ export class StuckDetectionCoordinator implements vscode.Disposable {
     const key = this.trackedKey(document);
     if (!key) return;
     this.tracker.noteActivity(key, this.now());
-    this.schedule();
+    this.evaluate();
   }
 
   /** 診断の変化。対象は開いている文書だけ（ワークスペース全体の再解析で大量の URI が来ても読まない）。 */
@@ -116,8 +120,11 @@ export class StuckDetectionCoordinator implements vscode.Disposable {
 
   public releaseDocument(uri: vscode.Uri): void {
     this.forget(uri.toString());
-    this.schedule();
+    this.evaluate();
   }
+
+  public refreshAssessments(): void { this.evaluate(); }
+  public idleDuration(): number { return this.tracker.idleDuration(this.now()); }
 
   public dispose(): void {
     this.clearTimer();
@@ -163,6 +170,7 @@ export class StuckDetectionCoordinator implements vscode.Disposable {
       focused: this.focused,
       debugging: Boolean(vscode.debug?.activeDebugSession)
     }));
+    this.host.onAssessment?.(this.tracker.getAssessments(), this.tracker.getKnownTopicKeys());
     this.schedule();
   }
 

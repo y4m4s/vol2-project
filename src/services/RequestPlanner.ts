@@ -91,10 +91,10 @@ export class RequestPlanner {
           slashCommand
         ), ...(kind === "always" ? [{
           key: "automaticObservation" as const, label: "自動判断情報",
-          description: "発火理由・カーソル周辺・編集範囲・診断の増減・選択範囲",
+          description: "発火理由・カーソル周辺・編集範囲・診断の増減・選択範囲" + (observation?.struggle ? "・つまずきの推定（信号・対象行・経過時間）" : ""),
           enabled: !fileExcluded, included: Boolean(observation),
           note: observation
-            ? `${observation.triggerReasons.join(", ")} / L${observation.cursor?.line ?? "?"} / 選択${observation.selectionPresent ? "あり" : "なし"} / 診断追加${observation.diagnostics?.added.length ?? 0}・解消${observation.diagnostics?.resolvedCount ?? 0}`
+            ? `${observation.triggerReasons.join(", ")} / L${observation.cursor?.line ?? "?"} / 選択${observation.selectionPresent ? "あり" : "なし"} / 診断追加${observation.diagnostics?.added.length ?? 0}・解消${observation.diagnostics?.resolvedCount ?? 0}` + (observation.struggle ? " / つまずき推定あり" : "")
             : "対象の観測情報がないか、除外設定に一致したため送信しません"
         }] : [])],
         targetFiles: this.buildTargetFiles(context, finalContext, fileExcluded, excludedGlobs).map((file) =>

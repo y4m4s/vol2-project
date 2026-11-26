@@ -97,6 +97,14 @@ test("比較の証拠: 送信対象から除外したファイルでは集めな
   state.activeTextEditor = undefined;
 });
 
+test("つまずきの比較は、現在の選択ではなく論題の行から証拠を集める", () => {
+  state.activeTextEditor = editor("const selected = items.map(x => x);\nconst name = user?.name;", 0, true);
+  const evidence = new ContextCollector().collectComparisonEvidence(() => false, 1);
+  assert.equal(evidence.selectionText, undefined);
+  assert.equal(evidence.cursorLine, "const name = user?.name;");
+  state.activeTextEditor = undefined;
+});
+
 test("比較の証拠: 文書全体を覆う診断でも、読む行数に上限がある", () => {
   let reads = 0;
   const lineCount = 100_000;

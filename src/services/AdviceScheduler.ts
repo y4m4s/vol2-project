@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelay
 export class AdviceScheduler implements vscode.Disposable {
   private readonly didTriggerAdviceEmitter = new vscode.EventEmitter<AutoAdviceTriggerEvent>();
   private readonly didChangeStateEmitter = new vscode.EventEmitter<void>();
+  private readonly didDropReevaluationEmitter = new vscode.EventEmitter<string>();
 
   private settings = DEFAULT_SETTINGS;
   private runtimeState: SchedulerRuntimeState = {
@@ -47,6 +48,7 @@ export class AdviceScheduler implements vscode.Disposable {
 
   public readonly onDidTriggerAdvice = this.didTriggerAdviceEmitter.event;
   public readonly onDidChangeState = this.didChangeStateEmitter.event;
+  public readonly onDidDropReevaluation = this.didDropReevaluationEmitter.event;
 
   public configure(
     settings: Pick<NavigatorSettings, "requestIntervalMs" | "idleDelayMs">,
@@ -55,7 +57,7 @@ export class AdviceScheduler implements vscode.Disposable {
     this.settings = settings;
     this.runtimeState = runtimeState;
 
-    if (!this.isModeActive()) {
+    if (!this.isModeEnabledForUi() || this.paused) {
       this.clearPending();
     } else {
       this.ensureScheduled();
@@ -80,7 +82,7 @@ export class AdviceScheduler implements vscode.Disposable {
 
     this.lastActivityAt = Date.now();
     // An editor switch starts a new document context; never mix signals from two files.
-    if (reason === "editor_change") this.signals = [];
+    if (reason === "editor_change") { this.dropReevaluations(); this.signals = []; }
     this.signals = [...this.signals.filter((signal) => signal.reason !== reason),
       { reason, occurredAt: this.lastActivityAt }].slice(-5);
     this.pendingTriggerReason = reason;
@@ -113,6 +115,30 @@ export class AdviceScheduler implements vscode.Disposable {
     this.syncTicker();
     this.didChangeStateEmitter.fire();
   }
+
+  /** 操作時刻と入力中フラグを変更せず、既存の待機規則で再判定を予約する。 */
+  public requestReevaluation(topicKey: string): boolean {
+    if (!this.isModeEnabledForUi() || this.paused) return false;
+    if (!this.signals.some(signal => signal.reason === "stuck_reevaluation" && signal.topicKey === topicKey)) {
+      this.signals.push({ reason: "stuck_reevaluation", occurredAt: Date.now(), topicKey });
+    }
+    this.pendingTriggerReason ??= "stuck_reevaluation";
+    this.ensureScheduled();
+    this.syncTicker();
+    this.didChangeStateEmitter.fire();
+    return true;
+  }
+
+  public cancelReevaluation(topicKey: string): void {
+    this.signals = this.signals.filter(signal => signal.topicKey !== topicKey);
+    if (this.pendingTriggerReason === "stuck_reevaluation" && !this.signals.some(signal => signal.reason === "stuck_reevaluation")) {
+      this.pendingTriggerReason = this.signals.at(-1)?.reason;
+    }
+    if (!this.pendingTriggerReason) this.clearEligibilityTimer();
+    this.syncTicker();
+  }
+
+  public isComposerActive(): boolean { return this.composerActive; }
 
   public handleCursorActivity(): void {
     if (this.pendingTriggerReason && this.isModeActive()) {
@@ -199,6 +225,7 @@ export class AdviceScheduler implements vscode.Disposable {
     this.clearTimers();
     this.didTriggerAdviceEmitter.dispose();
     this.didChangeStateEmitter.dispose();
+    this.didDropReevaluationEmitter.dispose();
   }
 
   private ensureScheduled(): void {
@@ -304,10 +331,15 @@ export class AdviceScheduler implements vscode.Disposable {
   }
 
   private clearPending(): void {
+    this.dropReevaluations();
     this.signals = [];
     this.pendingTriggerReason = undefined;
     this.lastActivityAt = undefined;
     this.clearTimers();
+  }
+
+  private dropReevaluations(): void {
+    for (const signal of this.signals) if (signal.topicKey) this.didDropReevaluationEmitter.fire(signal.topicKey);
   }
 
   private clearTimers(): void {

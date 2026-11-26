@@ -56,6 +56,8 @@ import { parseProviderCommand } from "../shared/providerCommands";
 import { getSkill } from "../shared/skills";
 import { LearningProfileService } from "../services/LearningProfileService";
 import { StuckDetectionCoordinator } from "./coordinators/StuckDetectionCoordinator";
+import { LearningSupportCoordinator, interventionKey, type InterventionOutcome } from "./coordinators/LearningSupportCoordinator";
+import type { StuckTopicSnapshot } from "../services/StuckSignalTracker";
 import {
   dismissedConceptKey,
   EMPTY_COMPARISON_EVIDENCE,
@@ -63,6 +65,7 @@ import {
   resolveComparisonRequest,
   checkSuggestionClick,
   resolveSuggestionBackground,
+  suggestionStillApplies,
   type ComparisonEvidence,
   type ComparisonResolution,
   type ComparisonSuggestionCandidate,
@@ -96,6 +99,7 @@ import {
 const SUPPRESS_DUPLICATE_AUTO_ADVICE = true;
 
 interface GuidanceExecutionOptions {
+  learningTopicKey?: string;
   automaticTriggerEvent?: AutoAdviceTriggerEvent;
   automaticDocumentSnapshot?: string;
   automaticFilePath?: string;
@@ -128,6 +132,23 @@ interface StoredLearningSuggestion {
   sourceEntryId?: string;
   /** 提案の判定に使った質問（質問から出た候補を、文書が変わったときに再検証するため） */
   question?: string;
+}
+
+interface StoredStuckSuggestion {
+  id: string;
+  label: string;
+  documentUri: string;
+  topicKey: string;
+  comparison?: ComparisonSuggestionCandidate;
+}
+
+function struggleObservation(topic: StuckTopicSnapshot): NonNullable<AutomaticGuidanceObservation["struggle"]> {
+  return {
+    level: "likely",
+    signals: topic.groups.map(group => ({ A: "persistent_error", B: "recurring_error", C: "edit_churn", D: "repeated_question", E: "idle_with_error" })[group]),
+    topic: { kind: topic.kind, lineStart: (topic.lineStart ?? 0) + 1, lineEnd: (topic.lineEnd ?? topic.lineStart ?? 0) + 1, code: topic.code },
+    durationSec: Math.round(topic.durationMs / 1000)
+  };
 }
 
 type GuidanceExecutionOptionsFactory = () => Promise<GuidanceExecutionOptions | undefined>;
@@ -169,6 +190,8 @@ export class NavigatorController implements vscode.Disposable {
   private learningSuggestion?: StoredLearningSuggestion;
   /** つまずき検知（Phase 3a・シャドーモード）。記録だけで、表示や介入はしない */
   private readonly stuckDetection?: StuckDetectionCoordinator;
+  private readonly learningSupport?: LearningSupportCoordinator;
+  private stuckSuggestion?: StoredStuckSuggestion;
   /** Last stop reason shown for automatic guidance; repeated triggers do not re-announce it. */
   private lastAutomaticStopNotice?: string;
 
@@ -195,7 +218,28 @@ export class NavigatorController implements vscode.Disposable {
     this.stuckDetection = new StuckDetectionCoordinator({
       isEnabled: () => Boolean(this.learningProfileService) && this.getLearningProfile().stuckDetectionEnabled,
       isExcluded: (filePath) => this.isComparisonFileExcluded(filePath),
-      log: (entry) => this.diagnostic(entry)
+      log: (entry) => this.diagnostic(entry),
+      onAssessment: (topics, knownKeys) => this.learningSupport?.update(topics, knownKeys)
+    });
+    this.learningSupport = new LearningSupportCoordinator({
+      runtime: () => {
+        const state = this.sessionStore.getState(), profile = this.getLearningProfile(), settings = this.settingsService.getSettings();
+        return {
+          enabled: profile.stuckDetectionEnabled && profile.stuckInterventionEnabled && vscode.workspace.isTrusted,
+          mode: state.mode, connected: state.connectionState === "connected", requestIdle: state.requestState === "idle",
+          composerActive: this.adviceScheduler.isComposerActive(), paused: this.adviceScheduler.getState().paused,
+          focused: vscode.window.state?.focused ?? true, documentKey: vscode.window.activeTextEditor?.document.uri.toString(),
+          editorIdleMs: this.stuckDetection?.idleDuration() ?? 0,
+          idleDelayMs: settings.idleDelayMs, requestIntervalMs: settings.requestIntervalMs
+        };
+      },
+      requestReevaluation: topic => this.adviceScheduler.requestReevaluation(interventionKey(topic)),
+      cancelReevaluation: key => this.adviceScheduler.cancelReevaluation(key),
+      showSuggestion: topic => {
+        this.stuckSuggestion = topic ? this.createStuckSuggestion(topic) : undefined;
+        this.didChangeStateEmitter.fire();
+      },
+      log: entry => this.writeDiagnostic(entry)
     });
     this.providerRoutingCoordinator = new ProviderRoutingCoordinator(
       this.connectionService, this.usageMeter, conversationStore, this.providerEvaluationStore, this.diagnostic
@@ -216,7 +260,14 @@ export class NavigatorController implements vscode.Disposable {
         getVisibleAdditionalContext: (state) => this.getVisibleAdditionalContext(state),
         getModelProfile: () => deriveModelProfile(this.connectionService.getConnectedModel()?.profileSource),
         getProviderId: () => this.connectionService.getProviderId(),
-        getAutomaticObservation: () => this.contextCollector.collectAutomaticObservation(this.adviceScheduler.getTriggerSnapshot()),
+        getAutomaticObservation: () => {
+          const event = this.adviceScheduler.getTriggerSnapshot();
+          const observation = this.contextCollector.collectAutomaticObservation(event);
+          const key = event.signals.find(signal => signal.reason === "stuck_reevaluation")?.topicKey;
+          const topic = key ? this.currentLearningTopic(key) : undefined;
+          if (observation && topic) observation.struggle = struggleObservation(topic);
+          return observation;
+        },
         resolveReferenceContext: async (context, question) => {
           if (!this.referenceContext) return context;
           const resolved = await this.referenceContext.resolve(context, question, context.activeFilePath);
@@ -324,8 +375,10 @@ export class NavigatorController implements vscode.Disposable {
         this.didChangeStateEmitter.fire();
       }),
       this.adviceScheduler.onDidChangeState(() => {
+        this.learningSupport?.refresh();
         this.didChangeStateEmitter.fire();
       }),
+      this.adviceScheduler.onDidDropReevaluation(key => this.learningSupport?.dropped(key)),
       this.adviceScheduler.onDidTriggerAdvice((event) => {
         void this.handleAutomaticGuidance(event);
       })
@@ -354,6 +407,7 @@ export class NavigatorController implements vscode.Disposable {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor) {
           this.contextCollector.primeDocument(editor.document);
+          this.stuckDetection?.noteSelection(editor.document);
         }
         this.refreshContextPreview();
         if (!editor) return;
@@ -366,6 +420,7 @@ export class NavigatorController implements vscode.Disposable {
       }),
       vscode.workspace.onDidOpenTextDocument((document) => {
         this.contextCollector.primeDocument(document);
+        this.stuckDetection?.noteDiagnostics([document.uri]);
         this.invalidateRequestPlan();
       }),
       vscode.workspace.onDidCloseTextDocument((document) => {
@@ -432,6 +487,8 @@ export class NavigatorController implements vscode.Disposable {
     this.referenceContext?.activate([]);
     this.refreshContextPreview();
     void this.connectionSettingsCoordinator.refreshCopilotModelOptions();
+    if (vscode.window.activeTextEditor) this.stuckDetection?.noteSelection(vscode.window.activeTextEditor.document);
+    this.stuckDetection?.noteDiagnostics(vscode.workspace.textDocuments.map(document => document.uri));
   }
 
   public getViewModel(): NavigatorViewModel {
@@ -726,6 +783,7 @@ export class NavigatorController implements vscode.Disposable {
     if (!this.learningProfileService) return;
     await this.learningProfileService.saveProfile(profile);
     this.stuckDetection?.refresh();
+    this.learningSupport?.invalidateSuggestion();
     // 送信予定の「学習プロファイル」の表示は、保存したプロファイルで作り直す。
     this.invalidateRequestPlan();
     this.patchSession({ statusMessage: { kind: "info", text: "学習プロファイルを保存しました。" } });
@@ -740,11 +798,12 @@ export class NavigatorController implements vscode.Disposable {
     slashCommand: SlashCommand | undefined,
     userPrompt: string | undefined,
     activeLanguageId: string | undefined,
-    record = false
+    record = false,
+    topic?: StuckTopicSnapshot
   ): { background?: LearnerBackground; suggestion?: BoundSuggestionCandidate; notice?: string; userPrompt?: string } {
     const profile = this.getLearningProfile();
     // 未登録なら証拠も集めない（ほとんどのユーザーで余計な処理をしない）。
-    const evidence = profile.knownLanguages.length ? this.collectComparisonEvidence() : undefined;
+    const evidence = profile.knownLanguages.length ? this.collectComparisonEvidence(topic) : undefined;
     const resolution: ComparisonResolution = resolveComparisonRequest({
       profile, kind, slashCommand, userPrompt, activeLanguageId, evidence, recentlyShown: this.comparisonShownAt
     });
@@ -766,8 +825,8 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   /** 比較の判定に使うローカルの証拠。送信対象から除外したファイルでは集めない。 */
-  private collectComparisonEvidence(): ComparisonEvidence {
-    return this.contextCollector.collectComparisonEvidence?.((filePath) => this.isComparisonFileExcluded(filePath))
+  private collectComparisonEvidence(topic?: StuckTopicSnapshot): ComparisonEvidence {
+    return this.contextCollector.collectComparisonEvidence?.((filePath) => this.isComparisonFileExcluded(filePath), topic?.lineStart)
       ?? EMPTY_COMPARISON_EVIDENCE;
   }
 
@@ -778,6 +837,11 @@ export class NavigatorController implements vscode.Disposable {
 
   /** 提案チップは、提案した文書を開いているときだけ表示する（別のファイルへ移ったら隠し、戻れば再表示する）。 */
   private getVisibleLearningSuggestion(): NavigatorViewModel["learningSuggestion"] {
+    const stuck = this.stuckSuggestion;
+    const currentDocument = vscode.window?.activeTextEditor?.document;
+    if (stuck && currentDocument?.uri.toString() === stuck.documentUri && !this.isComparisonFileExcluded(currentDocument.uri.fsPath)) {
+      return { id: stuck.id, label: stuck.label, canDismissConcept: Boolean(stuck.comparison), kind: stuck.comparison ? "comparison" : "consultation" };
+    }
     const suggestion = this.learningSuggestion;
     if (!suggestion) return undefined;
     const document = vscode.window?.activeTextEditor?.document;
@@ -821,7 +885,72 @@ export class NavigatorController implements vscode.Disposable {
    * 提案チップのクリック（R8）。提案時の文書・言語・概念で、比較の説明を1回だけ生成する。
    * 別のファイルを開いていれば提案元を開き直し、開けなければ案内だけを出す。
    */
+  private createStuckSuggestion(topic: StuckTopicSnapshot): StoredStuckSuggestion | undefined {
+    const document = vscode.window.activeTextEditor?.document;
+    if (!document || document.uri.toString() !== topic.documentKey || this.isComparisonFileExcluded(document.uri.fsPath)) return undefined;
+    const comparison = this.resolveComparison("manual", undefined, undefined, document.languageId, false, topic).suggestion;
+    return {
+      id: randomUUID(), documentUri: topic.documentKey, topicKey: interventionKey(topic),
+      label: comparison?.label ?? (topic.kind === "diagnostic" ? "このエラーについて相談する" : "この箇所について相談する"),
+      comparison
+    };
+  }
+
+  private currentLearningTopic(key: string): StuckTopicSnapshot | undefined {
+    const topic = this.activeLearningTopic(key);
+    return topic?.state === "Struggling" ? topic : undefined;
+  }
+
+  private activeLearningTopic(key: string): StuckTopicSnapshot | undefined {
+    const document = vscode.window?.activeTextEditor?.document;
+    if (!document || this.isComparisonFileExcluded(document.uri.fsPath)) return undefined;
+    const topic = this.learningSupport?.getActiveTopic(key);
+    return topic?.documentKey === document.uri.toString() ? topic : undefined;
+  }
+
+  private async acceptStuckSuggestion(suggestion: StoredStuckSuggestion): Promise<void> {
+    if (this.sessionStore.getState().requestState !== "idle") return;
+    let document = vscode.window.activeTextEditor?.document;
+    if (document?.uri.toString() !== suggestion.documentUri) {
+      try {
+        document = await vscode.workspace.openTextDocument(vscode.Uri.parse(suggestion.documentUri));
+        await vscode.window.showTextDocument(document);
+      } catch { this.learningSupport?.dismiss(suggestion.topicKey); return; }
+    }
+    this.stuckDetection?.refreshAssessments();
+    let topic = this.currentLearningTopic(suggestion.topicKey);
+    if (!topic || !document) { this.learningSupport?.refresh(); return; }
+    const line = Math.min(Math.max(0, topic.lineStart ?? 0), document.lineCount - 1);
+    await vscode.window.showTextDocument(document, { selection: new vscode.Range(line, 0, line, 0) });
+    this.stuckDetection?.refreshAssessments();
+    topic = this.currentLearningTopic(suggestion.topicKey);
+    if (!topic) return;
+    if (suggestion.comparison && !suggestionStillApplies(document.languageId, this.collectComparisonEvidence(topic), suggestion.comparison.conceptId)) {
+      this.learningSupport?.invalidateSuggestion();
+      return;
+    }
+    if (!this.learningSupport?.begin(suggestion.topicKey)) return;
+    const snapshot = this.contextCollector.automaticDocumentSnapshot();
+    const comparison = this.resolveComparison("manual", undefined, undefined, document.languageId, false, topic);
+    const compare = suggestion.comparison && this.getLearningProfile().comparisonMode === "suggest"
+      ? resolveSuggestionBackground(this.getLearningProfile(), suggestion.comparison, document.languageId) : undefined;
+    const background = compare?.action === "background" ? compare.background : comparison.background;
+    const question = compare?.action === "background"
+      ? `${compare.background.compareLanguageLabel}と比べて、この箇所を説明してください`
+      : topic.kind === "diagnostic" ? `L${line + 1}付近のエラーについて、解決に向けた着目点を教えてください` : `L${line + 1}付近のコードについて、次に確認する点を教えてください`;
+    let outcome: InterventionOutcome = "skipped";
+    try {
+      const result = await this.executeGuidanceRequest(async () => {
+        const options = await this.buildCurrentContextGuidanceOptions(question, false, undefined, compare?.action === "background" ? "compare" : undefined, "standard");
+        return { ...options, learnerBackground: background, learningTopicKey: suggestion.topicKey, automaticDocumentSnapshot: snapshot };
+      });
+      // 処理中・接続の確認・送信前の停止は試行に数えない。通信エラーは result.outcome が "error" になる。
+      outcome = result.outcome ?? (result.ok ? "advice" : "skipped");
+    } finally { this.learningSupport?.finish(suggestion.topicKey, outcome); }
+  }
+
   public async acceptLearningSuggestion(id: string): Promise<void> {
+    if (this.stuckSuggestion?.id === id) { await this.acceptStuckSuggestion(this.stuckSuggestion); return; }
     const suggestion = this.learningSuggestion;
     if (!suggestion || suggestion.id !== id) return;
     if (this.sessionStore.getState().requestState !== "idle") return;
@@ -873,6 +1002,16 @@ export class NavigatorController implements vscode.Disposable {
 
   /** 提案チップの却下。concept は「この内容では今後出さない」（学習プロファイルに保存する）。 */
   public async dismissLearningSuggestion(id: string, scope: "once" | "concept"): Promise<void> {
+    const stuck = this.stuckSuggestion;
+    if (stuck?.id === id) {
+      if (scope === "concept" && stuck.comparison && this.learningProfileService) {
+        const target = toLanguageFamily(vscode.window.activeTextEditor?.document.languageId);
+        await this.learningProfileService.dismissConcept(dismissedConceptKey(target, stuck.comparison.conceptId));
+        this.invalidateRequestPlan();
+      }
+      this.learningSupport?.dismiss(stuck.topicKey);
+      return;
+    }
     const suggestion = this.learningSuggestion;
     if (!suggestion || suggestion.id !== id) return;
     this.learningSuggestion = undefined;
@@ -886,6 +1025,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public cancelGuidanceRequest(): void {
+    this.learningSupport?.cancelActive();
     this.adviceScheduler.cancelPending();
     const activeRequest = this.activeGuidanceRequest;
     if (!activeRequest && this.sessionStore.getState().requestState !== "preparing_guidance") {
@@ -1158,6 +1298,7 @@ export class NavigatorController implements vscode.Disposable {
   }
 
   public dispose(): void {
+    this.learningSupport?.dispose();
     this.stuckDetection?.dispose();
     this.referenceContext?.dispose();
     for (const disposable of this.disposables) {
@@ -1167,97 +1308,130 @@ export class NavigatorController implements vscode.Disposable {
 
   private async handleAutomaticGuidance(event: AutoAdviceTriggerEvent = { signals: [], idleDurationMs: 0 }): Promise<void> {
     let fingerprint: string | undefined;
+    const requestedKey = event.signals.find(signal => signal.reason === "stuck_reevaluation")?.topicKey;
+    this.stuckDetection?.refreshAssessments();
+    const topic = requestedKey ? this.currentLearningTopic(requestedKey) : undefined;
+    if (requestedKey && !topic) {
+      this.learningSupport?.finish(requestedKey, "skipped");
+      event = { ...event, signals: event.signals.filter(signal => signal.reason !== "stuck_reevaluation") };
+      if (!event.signals.length) return;
+    }
+    const learningKey = topic && requestedKey && this.learningSupport?.begin(requestedKey) ? requestedKey : undefined;
+    if (requestedKey && !learningKey) {
+      event = { ...event, signals: event.signals.filter(signal => signal.reason !== "stuck_reevaluation") };
+      if (!event.signals.length) return;
+    }
+    let preparationStale = false;
+    /** 準備の段階で送らないと決めた理由（送信前の停止は通信エラーとして数えない） */
+    let preparationOutcome: InterventionOutcome | undefined;
+    let executionOutcome: InterventionOutcome = "skipped";
     // 「触っていないのに自動助言が動いた」を後から追えるよう、何が引き金になったかを残す。
     this.writeDiagnostic({
       event: "automatic_guidance_triggered",
       reasons: event.signals.map((signal) => signal.reason),
       idleDurationMs: event.idleDurationMs
     });
-    await this.executeGuidanceRequest(async () => {
-      const state = this.sessionStore.getState();
-      const settings = this.settingsService.getSettings();
+    try {
+      const execution = await this.executeGuidanceRequest(async () => {
+        const state = this.sessionStore.getState();
+        const settings = this.settingsService.getSettings();
 
-      if (normalizeRoutingSettings(settings.routing).mode === "manual" && this.usageMeter.isTokenLimitExceeded(
-        this.connectionSettingsCoordinator.getCurrentProviderId(),
-        settings.dailyTokenLimit
-      )) {
-        this.pauseAutoAdviceForTokenLimit();
-        return undefined;
-      }
+        if (normalizeRoutingSettings(settings.routing).mode === "manual" && this.usageMeter.isTokenLimitExceeded(
+          this.connectionSettingsCoordinator.getCurrentProviderId(),
+          settings.dailyTokenLimit
+        )) {
+          this.pauseAutoAdviceForTokenLimit();
+          preparationOutcome = "skipped";
+          return undefined;
+        }
 
-      const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
-      const additionalContext = this.getGuidanceAdditionalContext(state);
-      const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
-      const baseContext = this.contextCollector.collectGuidanceContext(settings.providerId);
-      const automaticEditorSnapshot = this.contextCollector.automaticEditorSnapshot();
-      const automaticDocumentSnapshot = this.contextCollector.automaticDocumentSnapshot();
-      const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
-      this.contextCollector.resetAutomaticDiagnosticsBaseline();
-      const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext);
-      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
-        this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
-        return undefined;
-      }
-      if (automaticObservation && baseContext.activeFilePath) {
-        automaticObservation.previousFocus = this.automaticFocusByFile.get(baseContext.activeFilePath);
-        automaticObservation.overviewAlreadyShown = automaticDocumentSnapshot !== undefined && this.automaticOverviewByFile.get(baseContext.activeFilePath) === automaticDocumentSnapshot;
-      }
-      let prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
-        withAdditionalContext(guidanceContext, additionalContext),
-        preview,
-        settings,
-        "always",
-        assistanceDepth,
-        undefined,
-        undefined,
-        automaticObservation
-      ));
+        const preview = this.rememberSelectionContext(this.contextCollector.collectPreview());
+        const additionalContext = this.getGuidanceAdditionalContext(state);
+        const assistanceDepth = resolveEffectiveAssistanceDepth("always", state.assistanceDepth);
+        const baseContext = this.contextCollector.collectGuidanceContext(settings.providerId);
+        const automaticEditorSnapshot = this.contextCollector.automaticEditorSnapshot();
+        const automaticDocumentSnapshot = this.contextCollector.automaticDocumentSnapshot();
+        const automaticObservation = this.contextCollector.collectAutomaticObservation(event);
+        this.contextCollector.resetAutomaticDiagnosticsBaseline();
+        const guidanceContext = await this.collectGuidanceContextForDepth(settings, assistanceDepth, baseContext);
+        if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
+          preparationStale = true;
+          this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
+          return undefined;
+        }
+        if (automaticObservation && baseContext.activeFilePath) {
+          automaticObservation.previousFocus = this.automaticFocusByFile.get(baseContext.activeFilePath);
+          automaticObservation.overviewAlreadyShown = automaticDocumentSnapshot !== undefined && this.automaticOverviewByFile.get(baseContext.activeFilePath) === automaticDocumentSnapshot;
+          if (learningKey && topic) automaticObservation.struggle = struggleObservation(topic);
+        }
+        let prepared = this.requestPlanCoordinator.externalize(this.requestPlanner.prepareGuidanceRequest(
+          withAdditionalContext(guidanceContext, additionalContext),
+          preview,
+          settings,
+          "always",
+          assistanceDepth,
+          undefined,
+          undefined,
+          automaticObservation
+        ));
 
-      prepared = await this.attachReferenceContext(prepared, "", preview.activeFilePath);
-      if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
-        this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
-        return undefined;
-      }
+        prepared = await this.attachReferenceContext(prepared, "", preview.activeFilePath);
+        if (this.contextCollector.automaticEditorSnapshot() !== automaticEditorSnapshot) {
+          preparationStale = true;
+          this.requeueStaleAutomaticTrigger(event, automaticDocumentSnapshot);
+          return undefined;
+        }
 
-      if (!hasMeaningfulContext(prepared.context)) {
-        this.patchGuidanceSession({ contextPreview: preview });
-        return undefined;
-      }
+        if (!hasMeaningfulContext(prepared.context)) {
+          this.patchGuidanceSession({ contextPreview: preview });
+          preparationOutcome = "nothing_to_send";
+          return undefined;
+        }
 
-      fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation, automaticDocumentSnapshot);
-      if (SUPPRESS_DUPLICATE_AUTO_ADVICE && (fingerprint === this.lastAutomaticContextFingerprint || this.automaticFingerprints.has(fingerprint))) {
-        this.writeDiagnostic({ event: "automatic_guidance_suppressed", cause: "duplicate_context" });
-        this.patchGuidanceSession({
-          contextPreview: preview,
-          statusMessage: {
-            kind: "info",
-            text: "類似した文脈のため、自動アドバイスを今回は控えました。"
-          }
-        });
-        return undefined;
-      }
+        fingerprint = createAutomaticFingerprint(prepared.context, assistanceDepth, prepared.automaticObservation, automaticDocumentSnapshot);
+        if (learningKey) fingerprint += `|struggle:${learningKey}:likely`;
+        if (SUPPRESS_DUPLICATE_AUTO_ADVICE && (fingerprint === this.lastAutomaticContextFingerprint || this.automaticFingerprints.has(fingerprint))) {
+          this.writeDiagnostic({ event: "automatic_guidance_suppressed", cause: "duplicate_context" });
+          // 同じ論題・同じ文脈で一度相談済み。これ以上は再判定しない。
+          preparationOutcome = "nothing_to_send";
+          this.patchGuidanceSession({
+            contextPreview: preview,
+            statusMessage: {
+              kind: "info",
+              text: "類似した文脈のため、自動アドバイスを今回は控えました。"
+            }
+          });
+          return undefined;
+        }
 
-      // R5: suggest ならチップの候補、auto なら助言に短く含める背景。fingerprint には含めない（同じ文脈では再送しない）。
-      const comparison = this.resolveComparison("always", undefined, undefined, baseContext.activeFileLanguage);
-      return {
-        automaticTriggerEvent: event,
-        automaticDocumentSnapshot,
-        automaticFilePath: baseContext.activeFilePath,
-        learnerBackground: comparison.background,
-        comparisonSuggestion: comparison.suggestion,
-        kind: "always",
-        automaticObservation: prepared.automaticObservation,
-        prepared,
-        preview,
-        additionalContext,
-        assistanceDepth
-      };
-    }, true, () => {
-      if (!fingerprint) return;
-      this.lastAutomaticContextFingerprint = fingerprint;
-      this.automaticFingerprints.add(fingerprint);
-      if (this.automaticFingerprints.size > 50) this.automaticFingerprints.delete(this.automaticFingerprints.values().next().value!);
-    });
+        // R5: suggest ならチップの候補、auto なら助言に短く含める背景。fingerprint には含めない（同じ文脈では再送しない）。
+        const comparison = this.resolveComparison("always", undefined, undefined, baseContext.activeFileLanguage, false, learningKey ? topic : undefined);
+        return {
+          learningTopicKey: learningKey,
+          automaticTriggerEvent: event,
+          automaticDocumentSnapshot,
+          automaticFilePath: baseContext.activeFilePath,
+          learnerBackground: comparison.background,
+          comparisonSuggestion: comparison.suggestion,
+          kind: "always",
+          automaticObservation: prepared.automaticObservation,
+          prepared,
+          preview,
+          additionalContext,
+          assistanceDepth
+        };
+      }, true, () => {
+        if (!fingerprint) return;
+        this.lastAutomaticContextFingerprint = fingerprint;
+        this.automaticFingerprints.add(fingerprint);
+        if (this.automaticFingerprints.size > 50) this.automaticFingerprints.delete(this.automaticFingerprints.values().next().value!);
+      });
+      executionOutcome = execution.outcome ?? (execution.ok ? "advice" : preparationStale ? "stale" : preparationOutcome ?? "skipped");
+    } finally {
+      if (learningKey && preparationStale) this.learningSupport?.deferPreparation(learningKey,
+        this.adviceScheduler.getTriggerSnapshot().signals.some(signal => signal.topicKey === learningKey));
+      else if (learningKey) this.learningSupport?.finish(learningKey, executionOutcome);
+    }
   }
 
   private buildUsageToday(settings: NavigatorSettings): UsageTodayViewData {
@@ -1393,7 +1567,7 @@ export class NavigatorController implements vscode.Disposable {
     optionsOrFactory: GuidanceExecutionOptions | GuidanceExecutionOptionsFactory,
     automatic = false,
     onSuccess?: () => void
-  ): Promise<{ ok: boolean }> {
+  ): Promise<{ ok: boolean; outcome?: InterventionOutcome }> {
     const state = this.sessionStore.getState();
     if (state.requestState !== "idle") {
       if (!automatic) {
@@ -1497,9 +1671,11 @@ export class NavigatorController implements vscode.Disposable {
   private async runGuidanceRequest(
     options: GuidanceExecutionOptions,
     initialState: NavigatorSessionState
-  ): Promise<{ ok: boolean }> {
+  ): Promise<{ ok: boolean; outcome?: InterventionOutcome }> {
     const preparationState = this.sessionStore.getState().requestState;
     const startsNewAutomaticConversation = options.kind === "always" && initialState.screen === "main";
+    /** つまずきの相談を取りやめたときに戻す画面（質問を積む前の画面） */
+    const screenBeforeRequest = initialState.screen;
     let state = await this.prepareConversationForGuidance(initialState, options.kind);
 
     const fallbackAdditionalContext = this.getGuidanceAdditionalContext(state);
@@ -1694,9 +1870,23 @@ export class NavigatorController implements vscode.Disposable {
       learnerBackground: options.learnerBackground
     });
 
+    // つまずきの相談は、質問を会話に積む前に送ってよいかを確かめる（送らない場合に、回答のない質問を残さない）。
+    if (options.learningTopicKey) {
+      this.stuckDetection?.refreshAssessments();
+      if (options.kind === "always" && (this.sessionStore.getState().mode !== "always" || this.adviceScheduler.isComposerActive() || this.adviceScheduler.getState().paused || vscode.window.state?.focused === false)) {
+        return { ok: false, outcome: "skipped" };
+      }
+      if (!this.currentLearningTopic(options.learningTopicKey) ||
+        options.automaticDocumentSnapshot !== this.contextCollector.automaticDocumentSnapshot()) {
+        await this.discardLearningConsultation(options, screenBeforeRequest, undefined, preview, "相談の準備中にコードが変わったため、送信しませんでした。");
+        return { ok: false, outcome: "stale" };
+      }
+    }
+
     // 文脈収集の await をまたいでいるので、履歴は積む直前の最新状態から組み直す。
     // 古い state から組むと、その間に入った更新を巻き戻してしまう。
     const nextHistory = this.protectReferenceHistory(this.sessionStore.getState().conversationHistory);
+    let pushedUserEntry: NavigatorSessionState["conversationHistory"][number] | undefined;
     const userEntryText = resolveUserEntryText(
       options.kind,
       options.userPrompt,
@@ -1716,6 +1906,7 @@ export class NavigatorController implements vscode.Disposable {
         options.slashCommandScope
       ));
       const userEntry = nextHistory.at(-1)!;
+      pushedUserEntry = userEntry;
       userEntry.providerId = this.connectionService.getProviderId();
       userEntry.transmissionClass = referenceLocalOnly || userEntry.providerId === "ollama" || userEntry.providerId === "lmStudio" ? "localOnly" : "cloudAllowed";
       if (prepared.context.referenceDocuments?.length || referenceLocalOnly || prepared.requestPlan.referenceSourceIds?.length) userEntry.requestPlan = prepared.requestPlan;
@@ -1793,7 +1984,7 @@ export class NavigatorController implements vscode.Disposable {
           }
         });
       }
-      return { ok: false };
+      return { ok: false, ...(options.learningTopicKey ? { outcome: "cancelled" as const } : {}) };
     }
 
     const rawRefreshedPreview = this.contextCollector.collectPreview();
@@ -1806,12 +1997,19 @@ export class NavigatorController implements vscode.Disposable {
     // Only successful content can become stale. Failures must still update the
     // connection state and stop automatic guidance through the normal error path.
     //
-    // 生成済みの回答が古くなるのは、対象のコードが変わったときだけ。カーソル移動や
+    // 生成済みの回答は、対象のコードが変わったときに破棄する。カーソル移動や
     // 選択の変化まで陳腐化に含めると、回答を読むために操作しただけで答えを捨てて
-    // 再送してしまい、コード未変更のまま生成が続く。対象が本当に変わった場合は
+    // 再送してしまい、コード未変更のまま生成が続く。検知スコアの減衰も回答を無効化
+    // しないが、つまずきの論題の消失・除外・支援の無効化は確認する。対象が本当に変わった場合は
     // text_edit / editor_change が新しいトリガーを立てるので、ここでの再キューは不要。
-    if (result.ok && options.kind === "always" &&
-      options.automaticDocumentSnapshot !== this.contextCollector.automaticDocumentSnapshot()) {
+    if (result.ok && (options.kind === "always" || options.learningTopicKey) &&
+      (options.automaticDocumentSnapshot !== this.contextCollector.automaticDocumentSnapshot() ||
+        (options.learningTopicKey && !this.activeLearningTopic(options.learningTopicKey)))) {
+      if (options.learningTopicKey) {
+        await this.discardLearningConsultation(options, screenBeforeRequest, pushedUserEntry, refreshedPreview,
+          "回答の生成中にコードが変わったか、エラーが解消したため、回答を表示しませんでした。");
+        return { ok: false, outcome: "stale" };
+      }
       this.patchGuidanceSession({ contextPreview: refreshedPreview });
       return { ok: false };
     }
@@ -1835,7 +2033,7 @@ export class NavigatorController implements vscode.Disposable {
           : { activeAdditionalContext: nextActiveAdditionalContext }),
         statusMessage: { kind: "info", text: noAdviceText }
       });
-      return { ok: true };
+      return { ok: true, ...(options.learningTopicKey ? { outcome: "no_advice" as const } : {}) };
     }
 
     if (result.ok) {
@@ -1922,7 +2120,7 @@ export class NavigatorController implements vscode.Disposable {
       // Stream creation resets these caches, so record the displayed focus only
       // after the stream has been created and its answer persisted.
       this.rememberAutomaticFocus(options, result.focus);
-      return { ok: true };
+      return { ok: true, ...(options.learningTopicKey ? { outcome: isNoAdvice ? "no_advice" as const : "advice" as const } : {}) };
     }
 
     const nextConnectionState = result.connectionState;
@@ -1966,7 +2164,8 @@ export class NavigatorController implements vscode.Disposable {
           errorName: error instanceof Error ? error.name : "unknown" });
       }
     }
-    return { ok: false };
+    // 試行回数に数える「通信エラー」は、AIへの要求が失敗したここだけ。
+    return { ok: false, ...(options.learningTopicKey ? { outcome: "error" as const } : {}) };
   }
 
   private requeueStaleAutomaticTrigger(event?: AutoAdviceTriggerEvent, documentSnapshot?: string): void {
@@ -2000,6 +2199,28 @@ export class NavigatorController implements vscode.Disposable {
   private invalidateRequestPlan(): void {
     this.requestPlanCoordinator.invalidate();
     this.didChangeStateEmitter.fire();
+  }
+
+  /**
+   * つまずきの相談を送らない・表示しないと決めたときの後始末。自分で積んだ質問を取り除き、
+   * 提案から始めた相談（必要時モード）なら理由を表示する。空になった新しい会話は残さない。
+   */
+  private async discardLearningConsultation(
+    options: GuidanceExecutionOptions,
+    screenBeforeRequest: NavigatorSessionState["screen"],
+    userEntry: NavigatorSessionState["conversationHistory"][number] | undefined,
+    contextPreview: NavigatorSessionState["contextPreview"],
+    message: string
+  ): Promise<void> {
+    const history = this.sessionStore.getState().conversationHistory.filter((entry) => entry !== userEntry);
+    const manual = options.kind !== "always";
+    this.patchGuidanceSession({
+      contextPreview,
+      conversationHistory: history,
+      ...(manual && history.length === 0 ? { screen: screenBeforeRequest } : {}),
+      ...(manual ? { statusMessage: { kind: "info" as const, text: message } } : {})
+    });
+    if (history.length === 0) await this.persistActiveConversationState();
   }
 
   private async prepareConversationForGuidance(

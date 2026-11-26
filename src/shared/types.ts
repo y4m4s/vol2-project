@@ -74,13 +74,15 @@ export type SlashCommandScope = "standard" | "deep";
 
 export type ProjectContextScope = "project-lite" | "project" | "deep";
 
-export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change";
+export type AdviceTriggerReason = "text_edit" | "selection_change" | "editor_change" | "diagnostics_change" | "stuck_reevaluation";
 
 export type AutomaticGuidanceFocus = "continue" | "review" | "explain" | "overview" | "none";
 
 export interface AutomaticTriggerSignal {
   reason: AdviceTriggerReason;
   occurredAt: number;
+  /** ローカルの再判定予約用。通常の操作には付けない */
+  topicKey?: string;
 }
 
 export interface AutomaticEditObservation {
@@ -111,6 +113,12 @@ export interface AutomaticGuidanceObservation {
   diagnostics?: AutomaticDiagnosticsObservation;
   previousFocus?: AutomaticGuidanceFocus;
   overviewAlreadyShown?: boolean;
+  struggle?: {
+    level: "likely";
+    signals: string[];
+    topic: { kind: "diagnostic" | "region"; lineStart: number; lineEnd: number; code?: string };
+    durationSec: number;
+  };
 }
 
 export type NavigatorScreen =
@@ -535,7 +543,8 @@ export interface NavigatorViewModel {
   /** 学習プロファイル（globalState）。設定画面の「学習プロファイル」で編集する */
   learningProfile?: LearningProfile;
   /** 回答の後に出す比較の提案（suggest モード）。提案元の文書を開いているときだけ設定される */
-  learningSuggestion?: { id: string; label: string };
+  /** kind が "consultation" のときは、つまずいたときの相談の提案（比較ではない） */
+  learningSuggestion?: { id: string; label: string; canDismissConcept?: boolean; kind?: "comparison" | "consultation" };
   knowledgeItems: KnowledgeListItem[];
   selectedKnowledge?: KnowledgeDetailViewData;
   savedKnowledgeSourceIds: string[];

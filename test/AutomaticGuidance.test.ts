@@ -10,10 +10,14 @@ import type { GuidanceRequestInput } from "../src/services/AdviceService";
 import type { AiProviderId, AssistanceDepth, GuidanceContext, NavigatorSessionState, NavigatorSettings } from "../src/shared/types";
 import { classifyRoutingTask } from "../src/shared/adaptiveProviderRouting";
 import { ReferenceContextError, type ReferenceAction, type ReferenceExcerpt, type ContextSource } from "../src/shared/referenceContext";
+import { LearningSupportCoordinator, interventionKey } from "../src/application/coordinators/LearningSupportCoordinator";
+import { normalizeLearningProfile } from "../src/shared/learningProfile";
+import type { StuckTopicSnapshot } from "../src/services/StuckSignalTracker";
 
 const loader = Module as unknown as { _load(id: string, parent: unknown, isMain: boolean): unknown };
 const originalLoad = loader._load;
 let workspaceTrusted = true;
+let learningEditor: vscode.TextEditor | undefined;
 class Emitter<T> {
   private listeners: ((value: T) => void)[] = [];
   public event = (listener: (value: T) => void) => {
@@ -26,6 +30,8 @@ class Emitter<T> {
 loader._load = (id, parent, isMain) => id === "vscode" ? {
   EventEmitter: Emitter,
   workspace: { get isTrusted() { return workspaceTrusted; } },
+  window: { get activeTextEditor() { return learningEditor; }, showTextDocument: async () => learningEditor },
+  Range: class { public constructor(_a: number, _b: number, _c: number, _d: number) {} },
   CancellationTokenSource: class {
     public token = { isCancellationRequested: false };
     public cancel(): void { this.token.isCancellationRequested = true; }
@@ -45,6 +51,7 @@ loader._load = originalLoad;
 
 interface Options { kind: "always"; prepared: PreparedGuidanceRequest; assistanceDepth: AssistanceDepth }
 interface Driver {
+  acceptLearningSuggestion(id: string): Promise<void>;
   cancelGuidanceRequest(): void;
   manageReferenceContext(action: ReferenceAction): Promise<void>;
   askForGuidanceWithCurrentContext(userPrompt: string, additionalContext?: string): Promise<void>;
@@ -1267,4 +1274,160 @@ test("自動助言の収集・送信・保存ラベルが高→低の切替に�
     assert.equal(sent.length, 3);
     assert.equal(state.conversationHistory.length, 2, "an answer for code edited during the response must not be displayed or saved");
   }
+});
+
+
+function attachLearningSupport(h: Awaited<ReturnType<typeof lifecycleHarness>>, mode: "manual" | "always") {
+  const documentKey = "file:///repo/app.ts";
+  learningEditor = { document: { uri: { fsPath: "/repo/app.ts", toString: () => documentKey }, languageId: "typescript", lineCount: 100, version: 1 } } as unknown as vscode.TextEditor;
+  h.state.mode = mode;
+  h.context.activeFileLanguage = "typescript";
+  const topic: StuckTopicSnapshot = { documentKey, topicId: "occ-learning", state: "Struggling", kind: "diagnostic", score: 6,
+    groups: ["A", "C"], durationMs: 100000, lineStart: 10, lineEnd: 10, code: "2322" };
+  const driver = h.driver as unknown as { stuckSuggestion?: { id: string }; createStuckSuggestion(topic: StuckTopicSnapshot): { id: string } | undefined };
+  const completions: Record<string, unknown>[] = [];
+  const support = new LearningSupportCoordinator({
+    runtime: () => ({ enabled: true, mode: h.state.mode, connected: true, requestIdle: h.state.requestState === "idle",
+      composerActive: false, paused: false, focused: true, documentKey, editorIdleMs: 20000, idleDelayMs: 100, requestIntervalMs: 200 }),
+    requestReevaluation: () => true, cancelReevaluation: () => {}, log: entry => { completions.push(entry); },
+    showSuggestion: value => { driver.stuckSuggestion = value ? driver.createStuckSuggestion(value) : undefined; }
+  });
+  Object.assign(h.driver, { learningSupport: support, feedbackStore: { getTendencySummary: () => ({ goodPatterns: [], badAvoidPatterns: [] }) }, learningProfileService: { getProfile: () => normalizeLearningProfile({
+    knownLanguages: [{ languageId: "php" }], stuckDetectionEnabled: true, stuckInterventionEnabled: true }) } });
+  return { support, topic, completions, key: interventionKey(topic), suggestion: () => driver.stuckSuggestion,
+    dispose: () => { support.dispose(); learningEditor = undefined; h.dispose(); } };
+}
+
+test("Phase 3b: no_advice 後の同じ文脈を1回だけ再判定し、観測に推定を付ける", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "", outcome: "no_advice", focus: "none" }; });
+  const l = attachLearningSupport(h, "always"); t.after(l.dispose);
+  await h.driver.handleAutomaticGuidance(); assert.equal(sent.length, 1); assert.equal(sent[0].automaticObservation?.struggle, undefined);
+  l.support.update([l.topic], [l.key]);
+  const event: AutoAdviceTriggerEvent = { signals: [{ reason: "stuck_reevaluation", topicKey: l.key, occurredAt: Date.now() }], idleDurationMs: 100000 };
+  await h.driver.handleAutomaticGuidance(event); assert.equal(sent.length, 2);
+  assert.equal(sent[1].automaticObservation?.struggle?.level, "likely");
+  assert.equal(sent[1].automaticObservation?.struggle?.topic.lineStart, 11);
+  await h.driver.handleAutomaticGuidance(event); assert.equal(sent.length, 2);
+});
+
+test("Phase 3b: 再判定の発火前に論題が解消していれば、生成しない", async t => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言" }; });
+  const l = attachLearningSupport(h, "always"); t.after(l.dispose);
+  l.support.update([l.topic], [l.key]); l.support.update([], [l.key]);
+  await h.driver.handleAutomaticGuidance({ signals: [{ reason: "stuck_reevaluation", topicKey: l.key, occurredAt: Date.now() }], idleDurationMs: 100000 });
+  assert.equal(requests, 0);
+});
+
+test("Phase 3b: 文脈収集中に必要時モードへ切り替えたら、自動再判定を送らない", async t => {
+  let requests = 0;
+  const h = await lifecycleHarness(async () => { requests++; return { ok: true, text: "助言" }; });
+  const l = attachLearningSupport(h, "always"); t.after(l.dispose);
+  l.support.update([l.topic], [l.key]);
+  Object.assign(h.driver, { collectGuidanceContextForDepth: async () => { h.state.mode = "manual"; return h.context; } });
+  await h.driver.handleAutomaticGuidance({ signals: [{ reason: "stuck_reevaluation", topicKey: l.key, occurredAt: Date.now() }], idleDurationMs: 100000 });
+  assert.equal(requests, 0);
+});
+
+test("Phase 3b: manual はローカルの提案だけを表示し、クリックで初めて相談する", async t => {
+  const sent: GuidanceRequestInput[] = [];
+  const h = await lifecycleHarness(async input => { sent.push(input); return { ok: true, text: "確認する点", focus: "review" }; });
+  const l = attachLearningSupport(h, "manual"); t.after(l.dispose);
+  l.support.update([l.topic], [l.key]); assert.equal(sent.length, 0); assert.ok(l.suggestion());
+  await h.driver.acceptLearningSuggestion(l.suggestion()!.id);
+  assert.equal(sent.length, 1); assert.equal(sent[0].learnerBackground, undefined); assert.equal(h.state.screen, "conversation");
+});
+
+for (const mode of ["manual", "always"] as const) {
+  for (const state of ["Watching", "Calm"] as const) {
+    test(`Phase 3b: ${mode} の生成中に ${state} へ減衰しても、同じ論題の回答を表示・保存する`, async t => {
+      let learning: ReturnType<typeof attachLearningSupport>;
+      const h = await lifecycleHarness(async () => {
+        learning.support.update([{ ...learning.topic, state, score: state === "Watching" ? 3.5 : 1 }], [learning.key]);
+        return { ok: true, text: "エラーの確認ポイント", focus: "review" };
+      });
+      learning = attachLearningSupport(h, mode); t.after(learning.dispose);
+      learning.support.update([learning.topic], [learning.key]);
+      if (mode === "manual") await h.driver.acceptLearningSuggestion(learning.suggestion()!.id);
+      else await h.driver.handleAutomaticGuidance({ signals: [{ reason: "stuck_reevaluation", topicKey: learning.key, occurredAt: Date.now() }], idleDurationMs: 100000 });
+      assert.deepEqual(h.state.conversationHistory.filter(entry => entry.role === "assistant").map(entry => entry.text), ["エラーの確認ポイント"]);
+      assert.equal(learning.completions.at(-1)?.outcome, "advice");
+      assert.equal(learning.completions.at(-1)?.staleDiscards, 0);
+    });
+  }
+
+  for (const change of ["resolved", "edited"] as const) {
+    test(`Phase 3b: ${mode} の生成中に ${change} になった回答は破棄する`, async t => {
+      let learning: ReturnType<typeof attachLearningSupport>;
+      const h = await lifecycleHarness(async () => {
+        if (change === "resolved") learning.support.update([], [learning.key]);
+        else h.editCode("const x = 2;");
+        return { ok: true, text: "古い回答", focus: "review" };
+      });
+      learning = attachLearningSupport(h, mode); t.after(learning.dispose);
+      learning.support.update([learning.topic], [learning.key]);
+      if (mode === "manual") await h.driver.acceptLearningSuggestion(learning.suggestion()!.id);
+      else await h.driver.handleAutomaticGuidance({ signals: [{ reason: "stuck_reevaluation", topicKey: learning.key, occurredAt: Date.now() }], idleDurationMs: 100000 });
+      assert.equal(h.state.conversationHistory.filter(entry => entry.role === "assistant").length, 0);
+      assert.equal(learning.completions.at(-1)?.outcome, "stale");
+      assert.equal(learning.completions.at(-1)?.staleDiscards, 1);
+    });
+  }
+}
+
+test("Phase 3b: manual の相談を送信前に取りやめたら、質問を会話に残さず理由を表示する", async t => {
+  let sent = 0;
+  const h = await lifecycleHarness(async () => { sent++; return { ok: true, text: "回答", focus: "review" }; });
+  const learning = attachLearningSupport(h, "manual"); t.after(learning.dispose);
+  learning.support.update([learning.topic], [learning.key]);
+  Object.assign(h.driver, { buildCurrentContextGuidanceOptions: async (question: string) => {
+    h.editCode("const y = 3;");
+    return { kind: "manual", userPrompt: question, assistanceDepth: "standard" };
+  } });
+  await h.driver.acceptLearningSuggestion(learning.suggestion()!.id);
+  assert.equal(sent, 0);
+  assert.equal(h.state.conversationHistory.length, 0);
+  assert.equal(h.state.screen, "main");
+  assert.match(h.state.statusMessage?.text ?? "", /送信しませんでした/);
+  assert.equal(learning.completions.at(-1)?.outcome, "stale");
+});
+
+test("Phase 3b: manual の回答を生成後に破棄したら、質問も取り除き理由を表示する", async t => {
+  const h = await lifecycleHarness(async () => { h.editCode("const x = 2;"); return { ok: true, text: "古い回答", focus: "review" }; });
+  const learning = attachLearningSupport(h, "manual"); t.after(learning.dispose);
+  learning.support.update([learning.topic], [learning.key]);
+  await h.driver.acceptLearningSuggestion(learning.suggestion()!.id);
+  assert.equal(h.state.conversationHistory.length, 0);
+  assert.equal(h.state.screen, "main");
+  assert.match(h.state.statusMessage?.text ?? "", /回答を表示しませんでした/);
+});
+
+test("Phase 3b: 日次上限で止めた再判定は試行に数えず、上限解除後に再び相談できる", async t => {
+  let limited = true, sent = 0;
+  const h = await lifecycleHarness(async () => { sent++; return { ok: true, text: "確認する点", focus: "review" }; });
+  const l = attachLearningSupport(h, "always"); t.after(l.dispose);
+  Object.assign(h.driver, { usageMeter: { isTokenLimitExceeded: () => limited }, pauseAutoAdviceForTokenLimit: () => {} });
+  l.support.update([l.topic], [l.key]);
+  const event: AutoAdviceTriggerEvent = { signals: [{ reason: "stuck_reevaluation", topicKey: l.key, occurredAt: Date.now() }], idleDurationMs: 100000 };
+  const records = (l.support as unknown as { records: Map<string, { phase: string; retryAfter: number }> }).records;
+  for (let i = 0; i < 3; i++) {
+    records.get(l.key)!.phase = "scheduled";
+    await h.driver.handleAutomaticGuidance(event);
+  }
+  assert.deepEqual(l.completions.map(entry => [entry.outcome, entry.attempts]), [["skipped", 0], ["skipped", 0], ["skipped", 0]]);
+  limited = false;
+  records.get(l.key)!.phase = "scheduled";
+  await h.driver.handleAutomaticGuidance(event);
+  assert.equal(sent, 1);
+  assert.equal(l.completions.at(-1)?.outcome, "advice");
+});
+
+test("Phase 3b: AIへの要求の失敗だけを通信エラーとして数える", async t => {
+  const h = await lifecycleHarness(async () => ({ ok: false, message: "接続できません", connectionState: "connected" }) as unknown as GuidanceRequestResult);
+  const l = attachLearningSupport(h, "always"); t.after(l.dispose);
+  l.support.update([l.topic], [l.key]);
+  await h.driver.handleAutomaticGuidance({ signals: [{ reason: "stuck_reevaluation", topicKey: l.key, occurredAt: Date.now() }], idleDurationMs: 100000 });
+  assert.equal(l.completions.at(-1)?.outcome, "error");
+  assert.equal(l.completions.at(-1)?.attempts, 1);
 });

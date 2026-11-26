@@ -724,7 +724,8 @@ function toLearningProfileDraft(profile?: LearningProfileDraft): LearningProfile
   return {
     knownLanguages: source.knownLanguages.map((item) => item.level ? { languageId: item.languageId, level: item.level } : { languageId: item.languageId }),
     comparisonMode: source.comparisonMode,
-    stuckDetectionEnabled: source.stuckDetectionEnabled ?? true
+    stuckDetectionEnabled: source.stuckDetectionEnabled ?? true,
+    stuckInterventionEnabled: source.stuckInterventionEnabled ?? false
   };
 }
 

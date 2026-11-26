@@ -3,7 +3,7 @@
 - 作成日: 2026-11-26
 - 対象リポジトリ: `C:\vol2`（`y4m4s/vol2-project`）
 - 位置づけ: Phase 1〜4 全体の調査と技術設計。Phase 1・2 で実装した範囲の仕様は [18. 学習プロファイルと既知言語との比較](18-learning-profile-and-comparison.md)、Phase 3a の仕様は [19. つまずき検知のシャドーモード](19-stuck-detection-shadow-mode.md) を参照
-- 状況: Phase 1（学習プロファイル・`/compare`・質問文での明示要求）と Phase 2（比較の自動判定・提案チップ・自動で含める）、Phase 3a（つまずき検知のシャドーモード。仕様は [19](19-stuck-detection-shadow-mode.md)）は実装済み。Phase 3b 以降は未着手
+- 状況: Phase 1（学習プロファイル・`/compare`・質問文での明示要求）と Phase 2（比較の自動判定・提案チップ・自動で含める）、Phase 3a（つまずき検知のシャドーモード。仕様は [19](19-stuck-detection-shadow-mode.md)）と Phase 3b（介入。仕様は [20](20-stuck-interventions.md)）は実装済み。Phase 4 は未着手
 - 実装時の変更: §3.4 の「学習中の言語」の固定は採用せず、常に編集中のファイルの言語を使う（詳細は 18 を参照）
 - 実装時の変更: Phase 2 では `LearningSupportCoordinator` を設けず、比較の判定は `ComparisonPolicy`（純関数）、チップの状態は `NavigatorController` に置いた。Phase 3a でも設けず、つまずき検知は `StuckSignalTracker`（純粋ロジック）と `StuckDetectionCoordinator`（VS Code との接続）に分けた。つまずき検知の設定は `stuckDetection.enabled` ではなく、学習プロファイルの `stuckDetectionEnabled` に置いた
 - 表記: **［事実］** はコードまたは `docs/` で確認した内容、**［推測］** は設計上の仮説や未検証の見込み
@@ -1306,3 +1306,7 @@ Phase 1 は、上の決定のもとで着手できる。
 | 〔r3〕H-2（再掲） | 再発の時間窓。消滅した時刻から数え、墓標の保持期間も兼ねる | 3 分 |
 | 〔r3〕H-16 | 生成後の陳腐化による破棄の上限 | 2 回 |
 | 〔r3〕H-17 | 再判定の試行回数の上限（初回を含む） | 2 回 |
+
+## Phase 3b の実装注記
+
+介入の状態管理は `LearningSupportCoordinator` に置き、検知の `StuckState` とは分離した。`stuckInterventionEnabled`（既定 false）で有効化する。既定では従来のシャドーモードを維持する。実装上の詳細と検証の入口は [20. つまずき時の支援](20-stuck-interventions.md) を参照。

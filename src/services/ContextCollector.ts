@@ -197,11 +197,16 @@ export class ContextCollector {
    * 診断コードと周辺のコードはこの判定にだけ使い、プロンプトには入れない。
    * 送信用の DiagnosticSummary（自動助言の観測としてそのままプロンプトへ入る）は変えない。
    */
-  public collectComparisonEvidence(isExcluded?: (filePath: string) => boolean): ComparisonEvidence {
+  public collectComparisonEvidence(isExcluded?: (filePath: string) => boolean, focusLine?: number): ComparisonEvidence {
     const editor = vscode.window?.activeTextEditor;
     if (!editor || !this.isWorkspaceFile(editor.document.uri)) return { diagnostics: [] };
     // 送信対象から除外したファイル（保護・追加の除外パターン）は、比較の判定にも使わない。
     if (isExcluded?.(editor.document.uri.fsPath)) return { diagnostics: [] };
+    if (focusLine !== undefined) {
+      const diagnostics = vscode.languages.getDiagnostics(editor.document.uri).slice(0, 50).filter(diagnostic =>
+        diagnostic.range.start.line - 5 <= focusLine && diagnostic.range.end.line + 5 >= focusLine);
+      return collectComparisonEvidenceFrom(editor.document, focusLine, undefined, diagnostics);
+    }
     return collectComparisonEvidenceFrom(editor.document, editor.selection.active.line, this.getSelectedText(editor));
   }
 

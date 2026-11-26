@@ -99,6 +99,9 @@ export interface StuckTopicSnapshot {
   code?: string;
   /** 論題が始まってからの時間 */
   durationMs: number;
+  /** 現在の追随後の範囲（0始まり）。介入の文脈確認に使う */
+  lineStart?: number;
+  lineEnd?: number;
 }
 
 export type StuckEvent =
@@ -151,6 +154,7 @@ interface DocumentState {
 
 export class StuckSignalTracker {
   private readonly documents = new Map<string, DocumentState>();
+  private readonly assessments = new Map<string, StuckTopicSnapshot>();
   private nextId = 1;
   private lastActivityAt?: number;
   private lastActivityDocument?: string;
@@ -288,11 +292,13 @@ export class StuckSignalTracker {
 
   public releaseDocument(documentKey: string): void {
     this.documents.delete(documentKey);
+    for (const [key, topic] of this.assessments) if (topic.documentKey === documentKey) this.assessments.delete(key);
     if (this.lastActivityDocument === documentKey) this.lastActivityDocument = undefined;
   }
 
   public clear(): void {
     this.documents.clear();
+    this.assessments.clear();
     this.lastActivityAt = undefined;
     this.lastActivityDocument = undefined;
   }
@@ -303,6 +309,7 @@ export class StuckSignalTracker {
    */
   public evaluate(now: number, environment: StuckEnvironment): StuckEvent[] {
     const events: StuckEvent[] = [];
+    this.assessments.clear();
     for (const [documentKey, doc] of this.documents) {
       this.pruneChurn(doc, now);
       doc.questions = doc.questions.filter((item) => now - item.at <= this.heuristics.questionWindowMs);
@@ -337,6 +344,11 @@ export class StuckSignalTracker {
         const groups = this.groupsOf(contributions, occurrence);
         const score = contributions.reduce((sum, [, points]) => sum + points, 0);
         const next = this.nextState(occurrence.state, score, groups.filter((group) => group !== "E").length);
+        this.assessments.set(JSON.stringify([documentKey, occurrence.id]), {
+          documentKey, topicId: occurrence.id, kind: "diagnostic", state: next, score: round(score), groups,
+          code: occurrence.code, durationMs: now - occurrence.firstSeenAt,
+          lineStart: occurrence.startLine, lineEnd: occurrence.endLine
+        });
         if (next !== occurrence.state) {
           events.push({ type: "transition", from: occurrence.state, to: next, documentKey, topicId: occurrence.id, kind: "diagnostic",
             state: next, score: round(score), groups, code: occurrence.code, durationMs: now - occurrence.firstSeenAt });
@@ -357,6 +369,10 @@ export class StuckSignalTracker {
         const score = contributions.reduce((sum, [, points]) => sum + points, 0);
         const groups = contributions.filter(([, points]) => points >= 1).map(([group]) => group);
         const next = this.nextState(current.state, score, groups.length);
+        this.assessments.set(JSON.stringify([documentKey, `region-${bucket}`]), {
+          documentKey, topicId: `region-${bucket}`, kind: "region", state: next, score: round(score), groups,
+          durationMs: now - current.since, lineStart: start, lineEnd: start + this.heuristics.churnBucketLines - 1
+        });
         if (next !== current.state) {
           events.push({ type: "transition", from: current.state, to: next, documentKey, topicId: `region-${bucket}`, kind: "region",
             state: next, score: round(score), groups, durationMs: now - current.since });
@@ -413,6 +429,22 @@ export class StuckSignalTracker {
   public hasTombstone(documentKey: string, topicId: string): boolean {
     return Boolean(this.documents.get(documentKey)?.tombstones.some((item) => item.occurrence.id === topicId));
   }
+
+  /** 直近の評価結果。介入側はスコアを再計算せず、この値だけを見る。 */
+  public getAssessments(): StuckTopicSnapshot[] { return [...this.assessments.values()]; }
+
+  /** 墓標を含む識別子。短い再発で介入済みの記録を失わないために使う。 */
+  public getKnownTopicKeys(): string[] {
+    const keys: string[] = [];
+    for (const [documentKey, doc] of this.documents) {
+      for (const occurrence of doc.occurrences.values()) keys.push(JSON.stringify([documentKey, occurrence.id]));
+      for (const tombstone of doc.tombstones) keys.push(JSON.stringify([documentKey, tombstone.occurrence.id]));
+      for (const bucket of new Set([...doc.regionStates.keys(), ...doc.churn.keys()])) keys.push(JSON.stringify([documentKey, `region-${bucket}`]));
+    }
+    return keys;
+  }
+
+  public idleDuration(now: number): number { return this.lastActivityAt === undefined ? 0 : Math.max(0, now - this.lastActivityAt); }
 
   private document(documentKey: string): DocumentState {
     let doc = this.documents.get(documentKey);

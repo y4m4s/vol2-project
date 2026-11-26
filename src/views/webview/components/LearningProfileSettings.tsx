@@ -12,7 +12,7 @@ import {
 import { SettingTitle } from "./SettingTitle";
 import { SettingsSelect, type SettingsSelectOption } from "./SettingsSelect";
 
-export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "comparisonMode" | "stuckDetectionEnabled">;
+export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "comparisonMode" | "stuckDetectionEnabled" | "stuckInterventionEnabled">;
 
 type LevelValue = ProficiencyLevel | "unspecified";
 
@@ -140,12 +140,12 @@ export function LearningProfileSettings({
       <div className="setting-item">
         <SettingTitle
           icon="timer"
-          help="試験中の機能です。同じエラーが直らない・同じ所を書いては消す・同じ質問を繰り返す、といった様子から、つまずいている可能性を推定し、「出力」の NaviCom Diagnostics にだけ記録します。画面への表示やAIへの送信はしません。コードやエラーメッセージ、ファイル名は記録せず、推定の材料はメモリ上だけで扱います。"
+          help="試験中の機能です。同じエラーが直らない・同じ所を書いては消す・同じ質問を繰り返す、といった様子から、つまずいている可能性を推定し、「出力」の NaviCom Diagnostics にだけ記録します。「記録のみ」では画面への表示やAIへの送信はしません。コードやエラーメッセージ、ファイル名は記録せず、推定の材料はメモリ上だけで扱います。"
         >
-          つまずきの記録（試験中）
+          つまずきの検知（試験中）
         </SettingTitle>
-        <div className="setting-desc">つまずきの兆候を推定し、NaviCom Diagnostics にだけ記録します。表示やAIへの送信はしません</div>
-        <div className="choice-options mode-options" role="group" aria-label="つまずきの記録">
+        <div className="setting-desc">つまずきの兆候をローカルで検知し、状態の変化をNaviCom Diagnosticsに記録します</div>
+        <div className="choice-options mode-options" role="group" aria-label="つまずきの検知">
           {[true, false].map((enabled) => (
             <button
               key={String(enabled)}
@@ -157,6 +157,25 @@ export function LearningProfileSettings({
               {enabled ? "記録する" : "記録しない"}
             </button>
           ))}
+        </div>
+      </div>
+      <div className="setting-item">
+        <SettingTitle icon="lightbulb" help="検知が有効なときに使えます。必要時モードでは相談の提案だけを表示し、押すまでAIは呼びません。常時モードでは既存の待機・一時停止に従い、同じ問題を1回だけ再確認します。論題をまたぐ介入は10分以上空けます。">
+          つまずいたときの支援
+        </SettingTitle>
+        <div className="setting-desc">
+          {value.stuckDetectionEnabled
+            ? "必要時は相談を提案し、常時モードではAIが再確認します。既定は記録のみです"
+            : "つまずきの検知を「記録する」にすると選べます"}
+        </div>
+        <div className="choice-options mode-options" role="group" aria-label="つまずいたときの支援">
+          {[false, true].map(enabled => <button key={String(enabled)} type="button"
+            className={`choice-option ${value.stuckInterventionEnabled === enabled ? "selected" : ""}`}
+            aria-pressed={value.stuckInterventionEnabled === enabled}
+            disabled={!value.stuckDetectionEnabled}
+            onClick={() => update({ stuckInterventionEnabled: enabled })}>
+            {enabled ? "支援を有効にする" : "記録のみ"}
+          </button>)}
         </div>
       </div>
     </>
