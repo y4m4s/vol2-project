@@ -10,7 +10,7 @@ import {
 import { normalizeLearningProfile, type LearningProfile } from "../src/shared/learningProfile";
 
 function profile(partial: Partial<LearningProfile> = {}): LearningProfile {
-  return normalizeLearningProfile({ knownLanguages: [], targetLanguage: "auto", comparisonMode: "onRequest", ...partial });
+  return normalizeLearningProfile({ knownLanguages: [], comparisonMode: "onRequest", ...partial });
 }
 
 const PHP_ONLY = profile({ knownLanguages: [{ languageId: "php", level: "advanced" }] });
@@ -118,10 +118,9 @@ test("学習中の言語と同じ言語は比較に使わない", () => {
   assert.equal(noCandidate.action === "notice" && noCandidate.reason, "no_candidate");
 });
 
-test("固定した学習中の言語を、編集中の言語より優先する", () => {
-  const fixed = profile({ knownLanguages: [{ languageId: "php" }], targetLanguage: "go" });
-  const result = resolve({ profile: fixed, slashCommand: "compare", activeLanguageId: "json" });
-  assert.equal(result.action === "background" && result.background.targetLanguageId, "go");
+test("学習中の言語は編集中のファイルの言語で、カタログ外の言語なら未指定として扱う", () => {
+  const react = resolve({ slashCommand: "compare", activeLanguageId: "typescriptreact" });
+  assert.equal(react.action === "background" && react.background.targetLanguageId, "typescript");
   const unknownTarget = resolve({ slashCommand: "compare", activeLanguageId: "json" });
   assert.equal(unknownTarget.action === "background" && unknownTarget.background.targetLanguageId, undefined);
 });

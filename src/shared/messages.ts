@@ -63,7 +63,7 @@ export type WebviewToExtension =
   | { type: "setComposerActive"; active: boolean }
   | { type: "saveLearningProfile"; profile: SaveLearningProfilePayload };
 
-export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "targetLanguage" | "comparisonMode">;
+export type SaveLearningProfilePayload = Pick<LearningProfile, "knownLanguages" | "comparisonMode">;
 
 export interface SaveSettingsPayload {
   routing?: AutomaticRoutingSettings;
@@ -213,7 +213,6 @@ function isSaveLearningProfilePayload(value: unknown): value is SaveLearningProf
   if (!isRecord(value) || !Array.isArray(value.knownLanguages) || value.knownLanguages.length > MAX_KNOWN_LANGUAGES) return false;
   const levels = new Set<unknown>([undefined, "basic", "working", "advanced"]);
   return value.knownLanguages.every((item) => isRecord(item) && isLanguageFamilyId(item.languageId) && levels.has(item.level)) &&
-    (value.targetLanguage === "auto" || isLanguageFamilyId(value.targetLanguage)) &&
     ["off", "onRequest", "suggest", "auto"].includes(String(value.comparisonMode));
 }
 

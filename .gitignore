@@ -8,3 +8,4 @@ out/
 .claude/settings.local.json
 output/
 tmp/
+Claude outputs/

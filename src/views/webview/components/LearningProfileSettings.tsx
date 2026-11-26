@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   AVAILABLE_COMPARISON_MODES,
   COMPARISON_MODE_LABELS,
@@ -10,11 +9,15 @@ import {
   type LearningProfile,
   type ProficiencyLevel
 } from "../../../shared/learningProfile";
+import { SettingTitle } from "./SettingTitle";
+import { SettingsSelect, type SettingsSelectOption } from "./SettingsSelect";
 
-export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "targetLanguage" | "comparisonMode">;
+export type LearningProfileDraft = Pick<LearningProfile, "knownLanguages" | "comparisonMode">;
 
-const LEVEL_OPTIONS: Array<{ value: ProficiencyLevel | ""; label: string }> = [
-  { value: "", label: "習熟度: 指定なし" },
+type LevelValue = ProficiencyLevel | "unspecified";
+
+const LEVEL_OPTIONS: Array<SettingsSelectOption<LevelValue>> = [
+  { value: "unspecified", label: "習熟度: 指定なし" },
   { value: "basic", label: PROFICIENCY_LABELS.basic },
   { value: "working", label: PROFICIENCY_LABELS.working },
   { value: "advanced", label: PROFICIENCY_LABELS.advanced }
@@ -31,124 +34,79 @@ export function LearningProfileSettings({
   onChange: (next: LearningProfileDraft) => void;
 }) {
   const registered = new Set(value.knownLanguages.map((item) => item.languageId));
-  const addable = LANGUAGE_FAMILY_IDS.filter((id) => !registered.has(id));
-  const [pendingLanguage, setPendingLanguage] = useState<LanguageFamilyId | "">("");
-  const canAdd = (pendingLanguage: LanguageFamilyId | ""): pendingLanguage is LanguageFamilyId =>
-    pendingLanguage !== "" && value.knownLanguages.length < MAX_KNOWN_LANGUAGES;
-  const disabled = value.comparisonMode === "off";
+  const addableOptions = LANGUAGE_FAMILY_IDS
+    .filter((languageId) => !registered.has(languageId))
+    .map((languageId) => ({ value: languageId, label: languageLabel(languageId) }));
+  const atLimit = value.knownLanguages.length >= MAX_KNOWN_LANGUAGES;
 
   function update(partial: Partial<LearningProfileDraft>) {
     onChange({ ...value, ...partial });
   }
 
-  function addLanguage() {
-    if (!canAdd(pendingLanguage)) return;
-    update({ knownLanguages: [...value.knownLanguages, { languageId: pendingLanguage }] });
-    setPendingLanguage("");
+  function setLevel(languageId: LanguageFamilyId, level: LevelValue) {
+    update({
+      knownLanguages: value.knownLanguages.map((item) =>
+        item.languageId === languageId ? (level === "unspecified" ? { languageId } : { languageId, level }) : item)
+    });
   }
 
   return (
-    <div className="learning-profile-settings">
+    <>
       <div className="setting-item">
-        <div className="setting-label setting-title">
-          <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">code</span>
-          <span>経験のある言語</span>
-        </div>
-        <div className="setting-desc">
-          登録した言語と比べた説明を、<code>/compare</code> や「PHPでいう〜」のような質問で求められます。習熟度は任意です
-        </div>
-        {value.knownLanguages.length === 0 ? (
-          <div className="learning-profile-empty">まだ登録されていません</div>
-        ) : (
-          <ul className="learning-profile-languages">
-            {value.knownLanguages.map((item, index) => (
-              <li key={item.languageId} className="learning-profile-language">
-                <span className="learning-profile-language-name">{languageLabel(item.languageId)}</span>
-                <select
-                  aria-label={`${languageLabel(item.languageId)}の習熟度`}
-                  value={item.level ?? ""}
-                  onChange={(event) => {
-                    const level = event.target.value as ProficiencyLevel | "";
-                    const next = value.knownLanguages.map((entry, entryIndex) =>
-                      entryIndex === index ? (level ? { languageId: entry.languageId, level } : { languageId: entry.languageId }) : entry);
-                    update({ knownLanguages: next });
-                  }}
-                >
-                  {LEVEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
+        <SettingTitle
+          icon="code"
+          help="経験のある言語と、任意で習熟度を登録します。/compare や「PHPでいう〜」のように比較を求めたとき、編集中のファイルの言語を、ここに登録した言語と比べて説明します。編集中の言語と同じ言語は比較に使いません。最大8件まで登録できます。"
+        >
+          経験のある言語
+        </SettingTitle>
+        <div className="setting-desc">比較の説明に使う言語です（{value.knownLanguages.length}/{MAX_KNOWN_LANGUAGES}）</div>
+        {value.knownLanguages.length > 0 && (
+          <div className="learning-language-list">
+            {value.knownLanguages.map((item) => (
+              <div key={item.languageId} className="learning-language-row">
+                <span className="learning-language-name">{languageLabel(item.languageId)}</span>
+                <SettingsSelect<LevelValue>
+                  className="learning-language-level"
+                  ariaLabel={`${languageLabel(item.languageId)}の習熟度`}
+                  value={item.level ?? "unspecified"}
+                  options={LEVEL_OPTIONS}
+                  onChange={(level) => setLevel(item.languageId, level)}
+                />
                 <button
                   type="button"
-                  className="learning-profile-remove"
+                  className="learning-language-remove"
                   aria-label={`${languageLabel(item.languageId)}を削除`}
                   title="削除"
-                  onClick={() => update({ knownLanguages: value.knownLanguages.filter((_, entryIndex) => entryIndex !== index) })}
+                  onClick={() => update({ knownLanguages: value.knownLanguages.filter((entry) => entry.languageId !== item.languageId) })}
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
-        )}
-        {value.knownLanguages.length < MAX_KNOWN_LANGUAGES && addable.length > 0 && (
-          <div className="learning-profile-add">
-            <select
-              aria-label="追加する言語"
-              value={pendingLanguage}
-              onChange={(event) => setPendingLanguage(event.target.value as LanguageFamilyId | "")}
-            >
-              <option value="">言語を選択</option>
-              {addable.map((id) => <option key={id} value={id}>{languageLabel(id)}</option>)}
-            </select>
-            <button type="button" className="btn-gray" disabled={!canAdd(pendingLanguage)} onClick={addLanguage}>追加</button>
           </div>
+        )}
+        {!atLimit && (
+          <SettingsSelect<LanguageFamilyId>
+            className="learning-language-add"
+            ariaLabel="経験のある言語を追加"
+            placeholder="＋ 言語を追加"
+            options={addableOptions}
+            onChange={(languageId) => update({ knownLanguages: [...value.knownLanguages, { languageId }] })}
+          />
         )}
       </div>
 
       <div className="setting-item">
-        <div className="setting-label setting-title">
-          <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">file_open</span>
-          <span>学習中の言語</span>
-        </div>
-        <div className="setting-desc">比較で「学習中」として扱う言語です。学習中の言語と同じ言語は、比較には使いません</div>
-        <div className="choice-options mode-options" role="group" aria-label="学習中の言語">
-          <button
-            type="button"
-            className={`choice-option ${value.targetLanguage === "auto" ? "selected" : ""}`}
-            aria-pressed={value.targetLanguage === "auto"}
-            onClick={() => update({ targetLanguage: "auto" })}
-          >
-            編集中の言語
-          </button>
-          <button
-            type="button"
-            className={`choice-option ${value.targetLanguage !== "auto" ? "selected" : ""}`}
-            aria-pressed={value.targetLanguage !== "auto"}
-            onClick={() => update({ targetLanguage: value.targetLanguage === "auto" ? "typescript" : value.targetLanguage })}
-          >
-            固定する
-          </button>
-        </div>
-        {value.targetLanguage !== "auto" && (
-          <div className="learning-profile-add">
-            <select
-              aria-label="固定する学習中の言語"
-              value={value.targetLanguage}
-              onChange={(event) => update({ targetLanguage: event.target.value as LanguageFamilyId })}
-            >
-              {LANGUAGE_FAMILY_IDS.map((id) => <option key={id} value={id}>{languageLabel(id)}</option>)}
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div className="setting-item">
-        <div className="setting-label setting-title">
-          <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">tune</span>
-          <span>既知言語との比較</span>
-        </div>
+        <SettingTitle
+          icon="tune"
+          help="「求めたときだけ」では、/compare と、言語を指定した比較の質問のときだけ使います。AIへ送るのは比較に使う言語1つの名前と習熟度だけです。「オフ」では、どの相談でも送りません。プロファイルはこのPCのVS Codeにだけ保存され、同期しません。"
+        >
+          既知言語との比較
+        </SettingTitle>
         <div className="setting-desc">
-          「求めたときだけ」では、<code>/compare</code> と、言語を指定した比較の質問のときだけ使います。
-          「控えめに提案」「自動で含める」は今後追加します
+          {value.comparisonMode === "off"
+            ? "登録した言語を、どの相談でもAIへ送りません"
+            : "/compare や言語を指定した比較の質問のときだけ使います"}
         </div>
         <div className="choice-options mode-options" role="group" aria-label="既知言語との比較">
           {AVAILABLE_COMPARISON_MODES.map((mode) => (
@@ -163,12 +121,7 @@ export function LearningProfileSettings({
             </button>
           ))}
         </div>
-        <div className="setting-desc learning-profile-privacy">
-          {disabled
-            ? "オフの間は、登録した言語をどの相談でもAIへ送りません。"
-            : "プロファイルはこのPCのVS Codeにだけ保存され、同期しません。AIへ送るのは、比較を求めたときに使う言語1つの名前と習熟度だけです。"}
-        </div>
       </div>
-    </div>
+    </>
   );
 }

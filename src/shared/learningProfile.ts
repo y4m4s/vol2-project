@@ -23,9 +23,8 @@ export interface KnownLanguage {
 
 export interface LearningProfile {
   schemaVersion: 1;
+  /** 学習中の言語は設定せず、常に編集中のファイルの言語を使う（toLanguageFamily） */
   knownLanguages: KnownLanguage[];
-  /** "auto" は編集中のファイルの言語。固定する場合は言語ファミリーID */
-  targetLanguage: "auto" | LanguageFamilyId;
   comparisonMode: ComparisonMode;
 }
 
@@ -91,7 +90,6 @@ export const MAX_KNOWN_LANGUAGES = 8;
 export const DEFAULT_LEARNING_PROFILE: LearningProfile = {
   schemaVersion: 1,
   knownLanguages: [],
-  targetLanguage: "auto",
   comparisonMode: "onRequest"
 };
 
@@ -134,16 +132,9 @@ export function normalizeLearningProfile(value: unknown): LearningProfile {
     knownLanguages.push(isProficiencyLevel(entry.level) ? { languageId, level: entry.level } : { languageId });
     if (knownLanguages.length >= MAX_KNOWN_LANGUAGES) break;
   }
-  const target = source.targetLanguage === "auto" ? "auto" : toLanguageFamily(typeof source.targetLanguage === "string" ? source.targetLanguage : undefined);
   return {
     schemaVersion: 1,
     knownLanguages,
-    targetLanguage: target ?? DEFAULT_LEARNING_PROFILE.targetLanguage,
     comparisonMode: isComparisonMode(source.comparisonMode) ? source.comparisonMode : DEFAULT_LEARNING_PROFILE.comparisonMode
   };
-}
-
-/** 学習対象の言語。固定されていればそれを、"auto" なら編集中のファイルの言語を使う。 */
-export function resolveTargetLanguage(profile: LearningProfile, activeVscodeLanguageId?: string): LanguageFamilyId | undefined {
-  return profile.targetLanguage === "auto" ? toLanguageFamily(activeVscodeLanguageId) : profile.targetLanguage;
 }

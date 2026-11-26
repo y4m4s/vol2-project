@@ -1123,78 +1123,165 @@
   border-radius: 4px;
 }
 
-/* 学習プロファイル */
-.learning-profile-languages {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.learning-profile-language {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* 設定画面のドロップダウン（SettingsSelect）。見た目は choice-option と一覧パネルに揃える */
+.settings-select {
+  position: relative;
   min-width: 0;
 }
 
-.learning-profile-language-name {
-  flex: 0 0 auto;
-  min-width: 72px;
+.settings-select-trigger {
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 8px 6px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 88%, transparent);
+  color: var(--vscode-foreground);
+  background: color-mix(in srgb, var(--vscode-input-background) 92%, var(--vscode-editorWidget-background));
+  font-size: 0.88em;
   font-weight: 600;
+  text-align: left;
 }
 
-.learning-profile-language select,
-.learning-profile-add select {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: auto;
-  margin: 0;
+.settings-select-trigger:hover:not(:disabled),
+.settings-select.open .settings-select-trigger {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 48%, var(--vscode-panel-border));
+  background: var(--vscode-toolbar-hoverBackground);
 }
 
-.learning-profile-remove {
-  flex: 0 0 auto;
-  width: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 2px;
-  display: inline-flex;
-  align-items: center;
-  border: none;
-  background: transparent;
+.settings-select-trigger.placeholder {
   color: var(--vscode-descriptionForeground);
 }
 
-.learning-profile-remove:hover {
+.settings-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-select-chevron {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--vscode-descriptionForeground);
+  transition: transform 120ms ease-out;
+}
+
+.settings-select.open .settings-select-chevron {
+  transform: rotate(180deg);
+}
+
+.settings-select-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  animation: chat-overlay-in 130ms ease-out;
+  outline: none;
+}
+
+.settings-select-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 8px 5px 4px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 0.88em;
+  cursor: pointer;
+}
+
+.settings-select-option.active {
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground) 34%, transparent);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground) 10%, transparent);
+}
+
+.settings-select-option.selected {
+  color: var(--vscode-textLink-foreground);
+  font-weight: 600;
+}
+
+.settings-select-check {
+  flex: 0 0 18px;
+  font-size: 16px;
+}
+
+.settings-select-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-select-option-meta {
+  flex-shrink: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-select-list {
+    animation: none;
+  }
+}
+
+/* 学習プロファイル */
+.learning-language-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.learning-language-row {
+  display: grid;
+  grid-template-columns: minmax(64px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.learning-language-name {
+  font-size: 0.88em;
+  font-weight: 700;
+}
+
+.learning-language-remove {
+  width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+}
+
+.learning-language-remove:hover {
+  opacity: 1;
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground);
 }
 
-.learning-profile-remove .material-symbols-outlined {
-  font-size: 16px;
+.learning-language-remove .material-symbols-outlined {
+  font-size: 17px;
 }
 
-.learning-profile-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
+.learning-language-add {
+  margin-top: 10px;
 }
 
-.learning-profile-add .btn-gray {
-  flex: 0 0 auto;
-  width: auto;
-  margin: 0;
-}
-
-.learning-profile-empty {
-  margin-top: 8px;
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.88em;
-}
-
-.learning-profile-privacy {
-  margin-top: 8px;
+.learning-language-add .settings-select-trigger {
+  border-style: dashed;
 }

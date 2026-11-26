@@ -16,7 +16,7 @@
 |---|---|
 | 型 | `LearningProfile`（`src/shared/learningProfile.ts`） |
 | 経験のある言語 | `knownLanguages`。最大8件。言語は `LANGUAGE_CATALOG` のファミリーID（`typescriptreact` は `typescript` へ寄せる）。習熟度 `level` は任意（`basic` / `working` / `advanced`） |
-| 学習中の言語 | `targetLanguage`。`"auto"`（編集中のファイルの言語）または固定のファミリーID |
+| 学習中の言語 | 設定項目は設けず、常に編集中のファイルの言語（ファミリーへ寄せたもの）とする。カタログ外の言語（json など）のときは未指定。設計書 §3.4 の「固定する」案は、使う場面が少なく設定を複雑にするため採用しなかった。以前の保存値に `targetLanguage` が残っていても読み捨てる |
 | 比較の設定 | `comparisonMode`。既定は `onRequest`。設定画面で選べるのは `off` と `onRequest`。`suggest` / `auto` は Phase 2 で追加するまで `onRequest` と同じに扱う |
 | 保存先 | `globalState` のキー `aiPairNavigator.learningProfile.v1`（`LearningProfileService`）。ユーザー単位の情報なので、ワークスペース単位の設定（`workspaceState`）とは分ける。Settings Sync の対象にしない |
 | 正規化 | `normalizeLearningProfile()`。未知の言語・重複を捨て、件数を上限で切り、壊れた値は既定値へ寄せる。Webview からの入力は `messages.ts` でも検証する |
@@ -69,7 +69,6 @@
 設定画面の「共通設定」に「学習プロファイル」節を追加した（`LearningProfileSettings.tsx`）。
 
 - 経験のある言語の追加・削除、習熟度の選択（任意）
-- 学習中の言語: 「編集中の言語」または「固定する」
 - 既知言語との比較: 「オフ」「求めたときだけ」
 - 保存は既存の保存バーから行う。学習プロファイルだけを変更した場合は `saveLearningProfile` だけを送り、接続の再確認を伴う `saveSettings` は送らない
 - 「初期値に戻す」（設定の初期化）では学習プロファイルは消えない。別の保存先のため

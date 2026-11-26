@@ -1,9 +1,10 @@
-import { type ReactNode, useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader, PageTitleWithIcon } from "../webview/components/BackHeader";
 import { ProviderLogo } from "../webview/components/ProviderLogo";
 import { RoutingSettings } from "../webview/components/RoutingSettings";
 import { AutoModeIcon } from "../webview/components/AutoModeIcon";
 import { LearningProfileSettings, type LearningProfileDraft } from "../webview/components/LearningProfileSettings";
+import { SettingTitle } from "../webview/components/SettingTitle";
 import { DEFAULT_LEARNING_PROFILE } from "../../shared/learningProfile";
 import { applyRoutingModeSelection, normalizeRoutingSettings, PROVIDER_LABELS, routingConnectionProviderIds } from "../../shared/providerRouting";
 import { useApp } from "../webview/state/AppContext";
@@ -713,7 +714,6 @@ function toLearningProfileDraft(profile?: LearningProfileDraft): LearningProfile
   const source = profile ?? DEFAULT_LEARNING_PROFILE;
   return {
     knownLanguages: source.knownLanguages.map((item) => item.level ? { languageId: item.languageId, level: item.level } : { languageId: item.languageId }),
-    targetLanguage: source.targetLanguage,
     comparisonMode: source.comparisonMode
   };
 }
@@ -1019,59 +1019,6 @@ function OrcaRouterModelButtonGroup({
   );
 }
 
-function SettingTitle({
-  icon,
-  iconNode,
-  endControl,
-  children,
-  help,
-  id,
-  htmlFor
-}: {
-  icon?: string;
-  iconNode?: ReactNode;
-  endControl?: ReactNode;
-  children: ReactNode;
-  help: string;
-  id?: string;
-  htmlFor?: string;
-}) {
-  const tooltipId = useId();
-  const content = (
-    <>
-      {icon && <span className="material-symbols-outlined setting-title-icon" aria-hidden="true">{icon}</span>}
-      {iconNode}
-      <span>{children}</span>
-    </>
-  );
-
-  return (
-    <div className="setting-title-row">
-      {htmlFor ? (
-        <label id={id} className="setting-label setting-title" htmlFor={htmlFor}>{content}</label>
-      ) : (
-        <div id={id} className="setting-label setting-title">{content}</div>
-      )}
-      <div className="setting-title-actions">
-        {endControl}
-        <div className="setting-help">
-          <button
-            type="button"
-            className="setting-help-button"
-            aria-label="この項目のヘルプ"
-            aria-describedby={tooltipId}
-          >
-            <HelpCircleIcon />
-          </button>
-          <div id={tooltipId} className="setting-help-tooltip" role="tooltip">
-            {help}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function RoutingToggle({ checked, disabled, onChange }: {
   checked: boolean;
   disabled: boolean;
@@ -1090,26 +1037,6 @@ function RoutingToggle({ checked, disabled, onChange }: {
       <span className="routing-switch-thumb" />
     </span>
   </button>;
-}
-
-function HelpCircleIcon() {
-  return (
-    <svg
-      className="setting-help-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle cx="12" cy="12" r="9.5" />
-      <path d="M9.4 9.1a2.75 2.75 0 1 1 4.7 1.95c-.98.97-2.1 1.45-2.1 2.95" />
-      <path d="M12 17h.01" />
-    </svg>
-  );
 }
 
 function LmStudioServerControl({

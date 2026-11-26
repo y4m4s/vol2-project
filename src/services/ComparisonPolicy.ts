@@ -6,7 +6,7 @@ import {
   type LearningProfile,
   type ProficiencyLevel,
   languageLabel,
-  resolveTargetLanguage
+  toLanguageFamily
 } from "../shared/learningProfile";
 
 /**
@@ -192,7 +192,8 @@ function notice(reason: ComparisonNoticeReason, label = ""): ComparisonResolutio
  */
 export function resolveComparisonRequest(request: ComparisonRequest): ComparisonResolution {
   const { profile, kind, slashCommand, userPrompt } = request;
-  const targetLanguageId = resolveTargetLanguage(profile, request.activeLanguageId);
+  // 学習中の言語は、編集中のファイルの言語とみなす（カタログ外の言語なら undefined）。
+  const targetLanguageId = toLanguageFamily(request.activeLanguageId);
 
   if (slashCommand === "compare") {
     if (!profile.knownLanguages.length) return notice("no_profile");

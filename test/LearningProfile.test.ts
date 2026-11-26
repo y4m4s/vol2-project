@@ -5,7 +5,6 @@ import {
   MAX_KNOWN_LANGUAGES,
   LANGUAGE_FAMILY_IDS,
   normalizeLearningProfile,
-  resolveTargetLanguage,
   toLanguageFamily
 } from "../src/shared/learningProfile";
 import { LEARNING_PROFILE_STORAGE_KEY, LearningProfileService } from "../src/services/LearningProfileService";
@@ -34,24 +33,21 @@ test("正規化で VS Code の言語IDをファミリーへ寄せ、未知・重
       { languageId: "markdown" },
       "python"
     ],
-    targetLanguage: "javascriptreact",
     comparisonMode: "unknown",
     extra: "dropped"
   });
   assert.deepEqual(normalized, {
     schemaVersion: 1,
     knownLanguages: [{ languageId: "php", level: "advanced" }, { languageId: "typescript" }],
-    targetLanguage: "javascript",
     comparisonMode: "onRequest"
   });
   const many = normalizeLearningProfile({ knownLanguages: LANGUAGE_FAMILY_IDS.map(languageId => ({ languageId })) });
   assert.equal(many.knownLanguages.length, MAX_KNOWN_LANGUAGES);
 });
 
-test("学習中の言語は固定値を優先し、auto なら編集中の言語を使う", () => {
-  assert.equal(resolveTargetLanguage(DEFAULT_LEARNING_PROFILE, "typescriptreact"), "typescript");
-  assert.equal(resolveTargetLanguage(DEFAULT_LEARNING_PROFILE, "plaintext"), undefined);
-  assert.equal(resolveTargetLanguage({ ...DEFAULT_LEARNING_PROFILE, targetLanguage: "go" }, "python"), "go");
+test("以前の保存値に残っている targetLanguage は読み捨てる", () => {
+  assert.deepEqual(normalizeLearningProfile({ knownLanguages: [], targetLanguage: "go", comparisonMode: "off" }),
+    { schemaVersion: 1, knownLanguages: [], comparisonMode: "off" });
 });
 
 test("LearningProfileService は globalState の独立キーへ正規化して保存する", async () => {
@@ -62,9 +58,9 @@ test("LearningProfileService は globalState の独立キーへ正規化して�
   };
   const service = new LearningProfileService(storage as never);
   assert.deepEqual(service.getProfile(), DEFAULT_LEARNING_PROFILE);
-  await service.saveProfile({ knownLanguages: [{ languageId: "php" }, { languageId: "php" }], targetLanguage: "auto", comparisonMode: "off" });
+  await service.saveProfile({ knownLanguages: [{ languageId: "php" }, { languageId: "php" }], comparisonMode: "off" });
   assert.deepEqual(data.get(LEARNING_PROFILE_STORAGE_KEY), {
-    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], targetLanguage: "auto", comparisonMode: "off"
+    schemaVersion: 1, knownLanguages: [{ languageId: "php" }], comparisonMode: "off"
   });
   assert.equal(service.getProfile().comparisonMode, "off");
   await service.resetProfile();
@@ -143,14 +139,13 @@ test("/compare はスキルとして解析され、候補一覧に出る", () =>
 });
 
 test("saveLearningProfile メッセージは型と件数を検証する", () => {
-  const valid = { type: "saveLearningProfile", profile: { knownLanguages: [{ languageId: "php", level: "working" }], targetLanguage: "auto", comparisonMode: "onRequest" } };
+  const valid = { type: "saveLearningProfile", profile: { knownLanguages: [{ languageId: "php", level: "working" }], comparisonMode: "onRequest" } };
   assert.deepEqual(parseWebviewMessage(valid), valid);
   for (const profile of [
-    { knownLanguages: [{ languageId: "markdown" }], targetLanguage: "auto", comparisonMode: "onRequest" },
-    { knownLanguages: [{ languageId: "php", level: "expert" }], targetLanguage: "auto", comparisonMode: "onRequest" },
-    { knownLanguages: [], targetLanguage: "json", comparisonMode: "onRequest" },
-    { knownLanguages: [], targetLanguage: "auto", comparisonMode: "always" },
-    { knownLanguages: LANGUAGE_FAMILY_IDS.map(languageId => ({ languageId })), targetLanguage: "auto", comparisonMode: "off" }
+    { knownLanguages: [{ languageId: "markdown" }], comparisonMode: "onRequest" },
+    { knownLanguages: [{ languageId: "php", level: "expert" }], comparisonMode: "onRequest" },
+    { knownLanguages: [], comparisonMode: "always" },
+    { knownLanguages: LANGUAGE_FAMILY_IDS.map(languageId => ({ languageId })), comparisonMode: "off" }
   ]) {
     assert.equal(parseWebviewMessage({ type: "saveLearningProfile", profile }), undefined);
   }
